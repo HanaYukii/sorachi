@@ -84,7 +84,7 @@ const lessons = [
   {
     label: "先認識一下",
     title: "日文的三種文字，常常一起出現。",
-    intro: "它們各有自己的樣子，也各有用途。這堂課先認得名字就好。",
+    intro: "它們各有自己的樣子，也各有用途。這堂課先認識名字和例子就好。",
     content: `<div class="script-row"><div class="script-cell"><div class="character" lang="ja">あ</div><p>平假名</p></div><div class="script-cell"><div class="character" lang="ja">ア</div><p>片假名</p></div><div class="script-cell"><div class="character" lang="ja">山</div><p>漢字</p></div></div>`,
     tip: "先不用背讀音，也不用一次記住所有字。我們一種一種看。",
   },
@@ -114,7 +114,7 @@ const lessons = [
 ];
 const questions = {
   4: {
-    title: "剛剛的「ねこ」，是哪種文字？",
+    title: "剛剛的「<span lang='ja'>ねこ</span>」，是哪種文字？",
     word: "ねこ",
     note: "剛才見過的「貓」",
     options: ["平假名", "片假名", "漢字"],
@@ -190,7 +190,7 @@ function updateAnswerFeedback() {
 
 function finish() {
   document.title = "完成第一堂小課｜SoraChi";
-  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi · 第一個小步伐</span></header><main id="main" tabindex="-1" class="finish"><div class="finish-art">${friend("", "SoraChi 雲朵精靈開心地抱著小書，陪你完成第一堂課", "cloud-complete.png")}<span class="finish-check">${icons.check}</span></div><div class="eyebrow">第一堂小課，完成了</div><h1 tabindex="-1" class="focus-heading">你和日文，又熟悉了一點。</h1><p>現在你知道，日文裡有這三種文字。<br>今天學到這裡，就很好。</p><div class="summary"><span>あ · 平假名</span><span>ア · 片假名</span><span>山 · 漢字</span></div><div class="finish-actions"><button class="primary" data-action="home">回首頁${icons.arrow}</button><button class="text-button" data-action="restart">再看一次這堂課</button></div><p class="storage-note">${canStore ? "完成紀錄已保存在這個瀏覽器。" : "這次已完成，但瀏覽器無法保存紀錄。"}</p>${warning()}</main>${footer()}</div>`;
+  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi · 第一個小步伐</span></header><main id="main" tabindex="-1" class="finish"><div class="finish-art">${friend("", "SoraChi 雲朵精靈開心地抱著小書，陪你完成第一堂課", "cloud-complete.png")}<span class="finish-check">${icons.check}</span></div><div class="eyebrow">第一堂小課，完成了</div><h1 tabindex="-1" class="focus-heading">你和日文，又熟悉了一點。</h1><p>現在你知道，日文裡有這三種文字。<br>今天學到這裡，就很好。</p><div class="summary"><span><b lang="ja">あ</b> · 平假名</span><span><b lang="ja">ア</b> · 片假名</span><span><b lang="ja">山</b> · 漢字</span></div><div class="finish-actions"><button class="primary" data-action="home">回首頁${icons.arrow}</button><button class="text-button" data-action="restart">再看一次這堂課</button></div><p class="storage-note">${canStore ? "完成紀錄已保存在這個瀏覽器。" : "這次已完成，但瀏覽器無法保存紀錄。"}</p>${warning()}</main>${footer()}</div>`;
   focusHeading();
 }
 
