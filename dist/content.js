@@ -381,409 +381,6 @@ const Content = (() => {
       ]
     }
   ];
-  const travel = [
-    {
-      "id": "t-place",
-      "type": "grammar",
-      "group": "travel",
-      "title": "問位置：廁所、車站",
-      "subtitle": "トイレ・駅・どこ",
-      "steps": [
-        {
-          "title": "找廁所",
-          "keywords": [
-            [
-              "トイレ",
-              "toire",
-              "廁所"
-            ],
-            [
-              "どこ",
-              "doko",
-              "哪裡"
-            ]
-          ],
-          "example": "トイレ？",
-          "reading": "toire?",
-          "meaning": "廁所？",
-          "body": "在店內可以先說「すみません」，再用疑問語氣說「トイレ？」。對方若不明白，可加上「どこ」，或用下面的完整說法。",
-          "polite": "トイレはどこですか？",
-          "politeReading": "toire wa doko desu ka",
-          "politeMeaning": "廁所在哪裡？",
-          "id": "t-place/card/toilet"
-        },
-        {
-          "title": "找車站",
-          "keywords": [
-            [
-              "駅（えき）",
-              "eki",
-              "車站"
-            ],
-            [
-              "どこ",
-              "doko",
-              "哪裡"
-            ]
-          ],
-          "example": "駅、どこですか？",
-          "reading": "eki, doko desu ka",
-          "meaning": "車站，在哪裡？",
-          "body": "把「トイレ」換成「駅」，就能問車站在哪裡。也可以指著地圖上的車站，幫對方確認你想去哪。",
-          "polite": "駅はどこですか？",
-          "politeReading": "eki wa doko desu ka",
-          "politeMeaning": "車站在哪裡？",
-          "id": "t-place/card/station"
-        }
-      ],
-      "questions": [
-        {
-          "prompt": "你想找廁所，先對店員說哪個關鍵字？",
-          "options": [
-            "トイレ",
-            "駅",
-            "どこ"
-          ],
-          "answer": 0,
-          "explanation": "「トイレ」是廁所。「すみません」可先引起店員注意，「どこ」則是問哪裡。",
-          "id": "t-place/question/toilet-keyword"
-        },
-        {
-          "prompt": "「駅、どこですか？」中的「どこ」，是在問什麼？",
-          "options": [
-            "要一個",
-            "在哪裡",
-            "要結帳"
-          ],
-          "answer": 1,
-          "explanation": "「どこ」是「哪裡」。把地點名稱放在前面，就能表達你想找哪個地方。",
-          "id": "t-place/question/where-meaning"
-        }
-      ]
-    },
-    {
-      "id": "t-order",
-      "type": "grammar",
-      "group": "travel",
-      "title": "點餐：品項、數量、冷熱與份量",
-      "subtitle": "これ・ふたつ・ホット・並盛",
-      "steps": [
-        {
-          "title": "指著菜單選餐點",
-          "keywords": [
-            [
-              "これ",
-              "kore",
-              "這個"
-            ],
-            [
-              "お願いします",
-              "onegaishimasu",
-              "麻煩你／請幫我"
-            ]
-          ],
-          "example": "これ、お願いします。",
-          "reading": "kore, onegaishimasu",
-          "meaning": "我要這個，麻煩你。",
-          "body": "指著菜單上的餐點說「これ」，店員通常就知道你選哪一道。加上「お願いします」更有禮貌。",
-          "id": "t-order/card/menu-item"
-        },
-        {
-          "title": "點一份、兩份、三份",
-          "keywords": [
-            [
-              "ひとつ",
-              "hitotsu",
-              "一個／一份"
-            ],
-            [
-              "ふたつ",
-              "futatsu",
-              "兩個／兩份"
-            ],
-            [
-              "みっつ",
-              "mittsu",
-              "三個／三份"
-            ]
-          ],
-          "example": "これ、ふたつ。",
-          "reading": "kore, futatsu",
-          "meaning": "這個，兩份。",
-          "body": "指著菜單上的同一道餐點，說數量，店員通常就能理解。要一份換成「ひとつ」，三份換成「みっつ」。「みっつ」的小「っ」要停頓一下。",
-          "polite": "これ、ふたつお願いします。",
-          "politeReading": "kore, futatsu onegaishimasu",
-          "politeMeaning": "這個請給我兩份。",
-          "id": "t-order/card/quantity"
-        },
-        {
-          "title": "飲料：熱的、冰的",
-          "keywords": [
-            [
-              "ホット",
-              "hotto",
-              "熱的"
-            ],
-            [
-              "アイス",
-              "aisu",
-              "冰的"
-            ]
-          ],
-          "example": "アイス。",
-          "reading": "aisu",
-          "meaning": "我要冰的。",
-          "body": "已經選好飲料，店員確認冷熱時，回答「ホット」或「アイス」即可。這裡的「アイス」指冰飲。",
-          "polite": "アイスでお願いします。",
-          "politeReading": "aisu de onegaishimasu",
-          "politeMeaning": "我要冰的，麻煩你。",
-          "extra": {
-            "title": "進階補充：點酒的喝法",
-            "keywords": [
-              [
-                "ロック",
-                "rokku",
-                "加冰塊喝"
-              ],
-              [
-                "ソーダ割り（ソーダわり）",
-                "sooda wari",
-                "加蘇打水喝"
-              ]
-            ],
-            "example": "ロックで。 ／ ソーダ割りで。",
-            "reading": "rokku de / sooda wari de",
-            "meaning": "加冰。／加蘇打水。",
-            "body": "已經選好威士忌或燒酎等酒款，店員問喝法時，可以這樣回答。「ロック」是酒加冰塊；「ソーダ割り」是酒加蘇打水。",
-            "id": "t-order/extra/drink-style"
-          },
-          "id": "t-order/card/drink-temperature"
-        },
-        {
-          "title": "烏龍麵：熱的、冷的",
-          "keywords": [
-            [
-              "温かい（あたたかい）",
-              "atatakai",
-              "熱的／溫熱的"
-            ],
-            [
-              "冷たい（つめたい）",
-              "tsumetai",
-              "冷的"
-            ]
-          ],
-          "example": "温かいの。",
-          "reading": "atatakai no",
-          "meaning": "熱的那個。",
-          "body": "點烏龍麵，店員確認要熱的還是冷的時，回答「温かい」或「冷たい」，通常就能理解。加上「の」就是「熱的／冷的那個」。",
-          "polite": "温かいの、お願いします。",
-          "politeReading": "atatakai no, onegaishimasu",
-          "politeMeaning": "請給我熱的。",
-          "id": "t-order/card/noodle-temperature"
-        },
-        {
-          "title": "份量：一般份量、大份量",
-          "keywords": [
-            [
-              "並盛（なみもり）",
-              "namimori",
-              "一般份量"
-            ],
-            [
-              "大盛（おおもり）",
-              "oomori",
-              "大份量"
-            ]
-          ],
-          "example": "並盛。",
-          "reading": "namimori",
-          "meaning": "一般份量。",
-          "body": "例如點牛丼，菜單有列份量、店員詢問要哪一種時，回答「並盛」或「大盛」即可。「大盛」開頭的 o 音要拉長。",
-          "polite": "並盛でお願いします。",
-          "politeReading": "namimori de onegaishimasu",
-          "politeMeaning": "請給我一般份量。",
-          "id": "t-order/card/portion"
-        }
-      ],
-      "questions": [
-        {
-          "prompt": "你指著菜單上一道餐點說「これ」，是什麼意思？",
-          "options": [
-            "一份",
-            "這個",
-            "結帳"
-          ],
-          "answer": 1,
-          "explanation": "「これ」是「這個」。指著品項，店員才知道你要的是哪一個。",
-          "id": "t-order/question/item-reference"
-        },
-        {
-          "prompt": "你指著菜單上的一道餐點，想要兩份，要說哪個？",
-          "options": [
-            "ひとつ",
-            "みっつ",
-            "ふたつ"
-          ],
-          "answer": 2,
-          "explanation": "「ふたつ」是兩個或兩份。指著品項說「これ、ふたつ」，就是「這個，兩份」。",
-          "id": "t-order/question/two-portions"
-        }
-      ]
-    },
-    {
-      "id": "t-pay",
-      "type": "grammar",
-      "group": "travel",
-      "title": "結帳：請店員算錢",
-      "subtitle": "お会計（okaikei）・お願いします",
-      "steps": [
-        {
-          "title": "吃完後要結帳",
-          "keywords": [
-            [
-              "お会計（おかいけい）",
-              "okaikei",
-              "結帳"
-            ],
-            [
-              "レジ",
-              "reji",
-              "收銀台"
-            ]
-          ],
-          "example": "お会計。",
-          "reading": "okaikei",
-          "meaning": "結帳。",
-          "body": "餐廳吃完，想請店員結帳時，可以說「お会計、お願いします」。有些餐廳需拿帳單到「レジ」（收銀台）付款，依店內指示即可。",
-          "polite": "お会計、お願いします。",
-          "politeReading": "okaikei, onegaishimasu",
-          "politeMeaning": "麻煩幫我結帳。",
-          "id": "t-pay/card/bill"
-        },
-        {
-          "title": "在需求後加上禮貌用語",
-          "keywords": [
-            [
-              "お願いします",
-              "onegaishimasu",
-              "麻煩你／請幫我"
-            ],
-            [
-              "お会計（おかいけい）",
-              "okaikei",
-              "結帳"
-            ]
-          ],
-          "example": "お会計、お願いします。",
-          "reading": "okaikei, onegaishimasu",
-          "meaning": "麻煩幫我結帳。",
-          "body": "「お会計」是你要做的事，「お願いします」是「麻煩你」。先說需求，再加上這句就可以。",
-          "id": "t-pay/card/polite-request"
-        }
-      ],
-      "questions": [
-        {
-          "prompt": "吃完飯對店員說「お会計」，是在表達什麼需求？",
-          "options": [
-            "想結帳",
-            "想加點餐點",
-            "想找廁所"
-          ],
-          "answer": 0,
-          "explanation": "「お会計」是結帳。可以說「お会計、お願いします」。",
-          "id": "t-pay/question/bill-meaning"
-        },
-        {
-          "prompt": "在「お会計、お願いします」中，「お願いします」有什麼作用？",
-          "options": [
-            "告訴店員要一份",
-            "讓請求更有禮貌",
-            "詢問廁所的位置"
-          ],
-          "answer": 1,
-          "explanation": "需求是「お会計」，「お願いします」則是「麻煩你／請幫我」。",
-          "id": "t-pay/question/request-politeness"
-        }
-      ]
-    },
-    {
-      "id": "t-charge",
-      "type": "grammar",
-      "group": "travel",
-      "title": "交通卡加值",
-      "subtitle": "チャージ・1000円",
-      "steps": [
-        {
-          "title": "請店員幫交通卡加值",
-          "keywords": [
-            [
-              "チャージ",
-              "chaaji",
-              "加值"
-            ],
-            [
-              "お願いします",
-              "onegaishimasu",
-              "麻煩你／請幫我"
-            ]
-          ],
-          "example": "チャージ、お願いします。",
-          "reading": "chaaji, onegaishimasu",
-          "meaning": "麻煩幫我加值。",
-          "body": "先到有人櫃檯出示交通卡，告訴店員加值金額。7-Eleven 與全家櫃檯加值使用現金，部分門市不提供服務。也可使用支援 Suica 的車站售票機；手機版需有對應設備。",
-          "id": "t-charge/card/top-up"
-        },
-        {
-          "title": "告訴店員加值金額",
-          "keywords": [
-            [
-              "1000円（せんえん）",
-              "sen en",
-              "一千日圓"
-            ],
-            [
-              "チャージ",
-              "chaaji",
-              "加值"
-            ]
-          ],
-          "example": "1000円、お願いします。",
-          "reading": "sen en, onegaishimasu",
-          "meaning": "一千日圓，麻煩你。",
-          "body": "店員已經知道你要加值時，接著說「1000円」就能表達金額：一千日圓。",
-          "polite": "1000円、チャージお願いします。",
-          "politeReading": "sen en, chaaji onegaishimasu",
-          "politeMeaning": "麻煩加值一千日圓。",
-          "id": "t-charge/card/amount"
-        }
-      ],
-      "questions": [
-        {
-          "prompt": "在支援加值的超商櫃檯，出示交通卡說「チャージ」，是什麼意思？",
-          "options": [
-            "替手機充電",
-            "買一張車票",
-            "替交通卡加值"
-          ],
-          "answer": 2,
-          "explanation": "在交通卡的情境裡，「チャージ」是加值；還要告訴店員金額。",
-          "id": "t-charge/question/top-up-meaning"
-        },
-        {
-          "prompt": "店員已知道你要加值。你說「1000円」，是在告訴他什麼？",
-          "options": [
-            "加值一千日圓",
-            "要一千張卡",
-            "問車站的位置"
-          ],
-          "answer": 0,
-          "explanation": "「1000円」讀 sen en，是一千日圓。這裡用來說明加值金額。",
-          "id": "t-charge/question/amount-meaning"
-        }
-      ]
-    }
-  ];
   const phrasebook = [
     {
       "id": "basics",
@@ -864,8 +461,6 @@ const Content = (() => {
     },
     {
       "id": "t-order",
-      "type": "grammar",
-      "group": "travel",
       "title": "點餐：數量、冷熱、份量",
       "subtitle": "一到三份・熱的或冷的・一般份或大份",
       "steps": [
@@ -1006,30 +601,6 @@ const Content = (() => {
           "politeMeaning": "請給我一般份量。",
           "id": "phrase/t-order/portion"
         }
-      ],
-      "questions": [
-        {
-          "prompt": "你指著菜單上一道餐點說「これ」，是什麼意思？",
-          "options": [
-            "一份",
-            "這個",
-            "結帳"
-          ],
-          "answer": 1,
-          "explanation": "「これ」是「這個」。指著品項，店員才知道你要的是哪一個。",
-          "id": "t-order/question/item-reference"
-        },
-        {
-          "prompt": "你指著菜單上的一道餐點，想要兩份，要說哪個？",
-          "options": [
-            "ひとつ",
-            "みっつ",
-            "ふたつ"
-          ],
-          "answer": 2,
-          "explanation": "「ふたつ」是兩個或兩份。指著品項說「これ、ふたつ」，就是「這個，兩份」。",
-          "id": "t-order/question/two-portions"
-        }
       ]
     },
     {
@@ -1106,8 +677,6 @@ const Content = (() => {
     },
     {
       "id": "t-pay",
-      "type": "grammar",
-      "group": "travel",
       "title": "結帳與付款",
       "subtitle": "刷卡・Suica・現金",
       "steps": [
@@ -1168,30 +737,6 @@ const Content = (() => {
           "reading": "suika wa tsukaemasu ka",
           "meaning": "可以用西瓜卡付款嗎？",
           "id": "phrase/t-pay/suica"
-        }
-      ],
-      "questions": [
-        {
-          "prompt": "吃完飯對店員說「お会計」，是在表達什麼需求？",
-          "options": [
-            "想結帳",
-            "想加點餐點",
-            "想找廁所"
-          ],
-          "answer": 0,
-          "explanation": "「お会計」是結帳。可以說「お会計、お願いします」。",
-          "id": "t-pay/question/bill-meaning"
-        },
-        {
-          "prompt": "在「お会計、お願いします」中，「お願いします」有什麼作用？",
-          "options": [
-            "告訴店員要一份",
-            "讓請求更有禮貌",
-            "詢問廁所的位置"
-          ],
-          "answer": 1,
-          "explanation": "需求是「お会計」，「お願いします」則是「麻煩你／請幫我」。",
-          "id": "t-pay/question/request-politeness"
         }
       ]
     },
@@ -1264,8 +809,6 @@ const Content = (() => {
     },
     {
       "id": "t-place",
-      "type": "grammar",
-      "group": "travel",
       "title": "找廁所、問位置",
       "subtitle": "廁所・車站・出口・電梯",
       "steps": [
@@ -1340,36 +883,10 @@ const Content = (() => {
           "meaning": "電梯在哪裡？",
           "id": "phrase/t-place/facilities"
         }
-      ],
-      "questions": [
-        {
-          "prompt": "你想找廁所，先對店員說哪個關鍵字？",
-          "options": [
-            "トイレ",
-            "駅",
-            "どこ"
-          ],
-          "answer": 0,
-          "explanation": "「トイレ」是廁所。「すみません」可先引起店員注意，「どこ」則是問哪裡。",
-          "id": "t-place/question/toilet-keyword"
-        },
-        {
-          "prompt": "「駅、どこですか？」中的「どこ」，是在問什麼？",
-          "options": [
-            "要一個",
-            "在哪裡",
-            "要結帳"
-          ],
-          "answer": 1,
-          "explanation": "「どこ」是「哪裡」。把地點名稱放在前面，就能表達你想找哪個地方。",
-          "id": "t-place/question/where-meaning"
-        }
       ]
     },
     {
       "id": "t-charge",
-      "type": "grammar",
-      "group": "travel",
       "title": "交通卡加值",
       "subtitle": "チャージ・加值金額",
       "steps": [
@@ -1415,30 +932,6 @@ const Content = (() => {
           "politeReading": "sen en, chaaji onegaishimasu",
           "politeMeaning": "麻煩加值一千日圓。",
           "id": "phrase/t-charge/amount"
-        }
-      ],
-      "questions": [
-        {
-          "prompt": "在支援加值的超商櫃檯，出示交通卡說「チャージ」，是什麼意思？",
-          "options": [
-            "替手機充電",
-            "買一張車票",
-            "替交通卡加值"
-          ],
-          "answer": 2,
-          "explanation": "在交通卡的情境裡，「チャージ」是加值；還要告訴店員金額。",
-          "id": "t-charge/question/top-up-meaning"
-        },
-        {
-          "prompt": "店員已知道你要加值。你說「1000円」，是在告訴他什麼？",
-          "options": [
-            "加值一千日圓",
-            "要一千張卡",
-            "問車站的位置"
-          ],
-          "answer": 0,
-          "explanation": "「1000円」讀 sen en，是一千日圓。這裡用來說明加值金額。",
-          "id": "t-charge/question/amount-meaning"
         }
       ]
     },
@@ -1589,7 +1082,7 @@ const Content = (() => {
   }
   function buildCourses(source) {
     const registry = Object.create(null);
-    for (const course of [...source.grammar, ...source.travel]) registry[course.id] = course;
+    for (const course of source.grammar) registry[course.id] = course;
     for (const script of ['h', 'k']) {
       for (const [key, row, hiragana, katakana, readings] of source.rows) {
         const id = `${script}-${key}`;
@@ -1613,7 +1106,10 @@ const Content = (() => {
     }
     return registry;
   }
-  const data = { rows, grammar, travel, phrasebook, intro };
+  const data = { rows, grammar, phrasebook, intro };
+  // Titles of the retired #study/t-* courses, for history records saved without a title.
+  // Their content now lives only in the phrasebook under the same ids.
+  const retiredTitles = Object.freeze({"t-place":"問位置：廁所、車站","t-order":"點餐：品項、數量、冷熱與份量","t-pay":"結帳：請店員算錢","t-charge":"交通卡加值"});
   const courses = buildCourses(data);
   const getCourse = id => Object.hasOwn(courses, id) ? courses[id] : null;
   const courseRevision = id => id === 'intro' ? revisionOf({ id: 'intro', ...intro }) : revisionOf(getCourse(id));
@@ -1742,13 +1238,13 @@ const Content = (() => {
     // Generated kana IDs occupy the same registry as authored courses.
     const courseIds = new Set(expected.flatMap(([key]) => [`h-${key}`, `k-${key}`]));
     const cardIds = new Set(), questionIds = new Set();
-    for (const group of ['grammar', 'travel']) {
+    for (const group of ['grammar']) {
       list(candidate[group], group).forEach((course, i) => {
         const path = `${group}[${i}]`;
         if (!record(course)) { fail(path, 'invalid course object'); return; }
         identifier(course.id, `${path}.id`, courseIds, 'course');
         if (course.type !== 'grammar') fail(`${path}.type`, 'course type must be grammar');
-        if (group === 'travel' && course.group !== 'travel') fail(`${path}.group`, 'travel group is required');
+        if (course.group !== undefined) fail(`${path}.group`, 'travel content belongs in the phrasebook');
         text(course.title, `${path}.title`, 'zh'); text(course.subtitle, `${path}.subtitle`);
         list(course.steps, `${path}.steps`).forEach((step, j) => card(step, `${path}.steps[${j}]`, cardIds));
         list(course.questions, `${path}.questions`).forEach((q, j) => question(q, `${path}.questions[${j}]`, questionIds));
@@ -1761,6 +1257,7 @@ const Content = (() => {
       const path = `phrasebook[${i}]`;
       if (!record(category)) { fail(path, 'invalid phrasebook category'); return; }
       identifier(category.id, `${path}.id`, categoryIds, 'category');
+      for (const key of ['questions', 'type', 'group']) if (category[key] !== undefined) fail(`${path}.${key}`, 'phrasebook categories are not quizzes or courses');
       text(category.title, `${path}.title`, 'zh'); text(category.subtitle, `${path}.subtitle`, 'zh');
       list(category.steps, `${path}.steps`).forEach((step, j) => {
         card(step, `${path}.steps[${j}]`, phraseIds, 'phrase');
@@ -1791,5 +1288,5 @@ const Content = (() => {
     return value;
   }
   deepFreeze(data); deepFreeze(courses);
-  return Object.freeze({ rows, grammar, travel, phrasebook, intro, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
+  return Object.freeze({ rows, grammar, phrasebook, intro, retiredTitles, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
 })();

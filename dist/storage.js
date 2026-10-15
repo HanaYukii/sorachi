@@ -189,7 +189,8 @@ const DataStore = (() => {
       writeProgress(flat) {
         const nextLearning = learning(flat);
         if (supported) {
-          // A smaller/older course catalog must not erase opaque future courses.
+          // A smaller/older course catalog must not erase opaque future courses
+          // (or retired ones such as the old t-* travel quizzes).
           // Known courses come only from the caller, so an intentional reset stays reset.
           const unknown = Object.fromEntries(Object.entries(snapshot.learning.study.courses || {}).filter(([id]) => !supported.has(id)));
           nextLearning.study.courses = {...unknown,...nextLearning.study.courses};

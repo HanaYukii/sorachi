@@ -668,29 +668,28 @@ test("home explains the task and sends beginners directly to the first kana grou
   assert.equal(b.state.study.courses['h-a']?.active ?? null, null);
 });
 
-test('travel routes preserve feedback context and completion in shared history', () => {
+test('retired travel quiz routes open the phrasebook and old travel records keep their titles', () => {
   const list = browser({hash:'#travel'});
   assert.equal(list.title, '旅遊常用語｜SoraChi');
   list.action('feedback');
   assert.match(list.html, /旅遊常用語列表/);
   list.action('feedback-back');
   assert.equal(list.hash, '#travel');
-  list.study('study-open', {course:'t-pay'});
-  list.study('study-next');
-  list.action('feedback');
-  assert.match(list.html, /結帳：請店員算錢・認識第 2 步/);
-  list.action('feedback-back');
-  assert.equal(list.hash, '#study/t-pay');
-  list.study('study-next');
-  for(let i=0;i<2;i++) {
-    const active = list.state.study.courses['t-pay'].active;
-    list.study('study-answer', {choice:[0,1][active.order[active.cursor]]});
-    list.study('study-next');
-  }
-  const reloaded = browser({raw:list.stored,hash:'#history'});
+  list.navigate('#study/t-pay');
+  assert.equal(list.hash, '#travel/t-pay');
+  assert.doesNotMatch(list.html, /找不到這堂課/);
+  assert.match(list.html, /お会計/);
+  assert.equal(list.state.study.courses['t-pay'], undefined, 'Browsing the phrasebook never creates course progress');
+  const data = JSON.parse(list.stored);
+  data.attempts = [
+    { id: 'old-pay', courseId: 't-pay', date: '2026-10-01T00:00:00.000Z', courseTitle: '結帳：請店員算錢', courseRevision: 'c1-013959d1f911ef92', total: 2, firstCorrect: 2, retryQuestions: [] },
+    { id: 'old-order', courseId: 't-order', date: '2026-10-02T00:00:00.000Z', total: 2, firstCorrect: 1, retryQuestions: [2] },
+  ];
+  const reloaded = browser({ raw: JSON.stringify(data), hash: '#history' });
   assert.match(reloaded.html, /結帳：請店員算錢/);
+  assert.match(reloaded.html, /點餐：品項、數量、冷熱與份量/, 'A record saved without a title falls back to the retired course title');
   assert.match(reloaded.html, /2 \/ 2/);
-  assert.equal(reloaded.state.history[0].courseId, 't-pay');
+  assert.equal(reloaded.state.history.length, 2);
 });
 
 test('home travel entry is separate from grammar and phrasebook feedback returns without starting a course', () => {
@@ -1016,4 +1015,22 @@ test('backup can be downloaded and restored; the restore reloads so later answer
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(bad.reloads, 0);
   assert.match(bad.node('#backup-status').textContent, /讀不懂這個檔案/);
+});
+
+test('old t-* course progress loads quietly, survives saves, and only known phrasebook ids redirect', () => {
+  const data = JSON.parse(browser().stored);
+  data.learning.study.courses = { 't-pay': { attempts: 2, completedAt: '2026-09-01T00:00:00.000Z', lastResult: { firstCorrect: 2, total: 2 }, active: { phase: 'done' } } };
+  const b = browser({ raw: JSON.stringify(data), hash: '#home' });
+  assert.equal(b.state.study.courses['t-pay'], undefined);
+  b.study('study-open', { course: 'h-a' });
+  assert.equal(JSON.parse(b.stored).learning.study.courses['t-pay'].attempts, 2, 'Retired progress stays in storage untouched');
+  b.navigate('#study/t-charge');
+  assert.equal(b.hash, '#travel/t-charge');
+  assert.equal(b.title, '交通卡加值｜SoraChi');
+  b.navigate('#study/t-unknown');
+  assert.equal(b.hash, '#study/t-unknown');
+  assert.match(b.html, /找不到這堂課/);
+  const legacy = browser({ saved: { step: 5, completed: true, answers: {4:true,5:true}, history: [{ courseId: 't-charge', date: '2026-08-01T00:00:00.000Z', total: 2, firstCorrect: 1, retryQuestions: [2] }] }, hash: '#history' });
+  assert.match(legacy.html, /交通卡加值/);
+  assert.match(legacy.html, /第 2 題/);
 });

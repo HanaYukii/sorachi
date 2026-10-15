@@ -8,12 +8,12 @@ const context = vm.createContext({});
 vm.runInContext(readFileSync(new URL('../dist/content.js', import.meta.url), 'utf8') + '\nglobalThis.loaded = Content;', context);
 const Content = context.loaded;
 const plain = value => JSON.parse(JSON.stringify(value));
-const data = () => plain({ rows: Content.rows, grammar: Content.grammar, travel: Content.travel, phrasebook: Content.phrasebook, intro: Content.intro });
+const data = () => plain({ rows: Content.rows, grammar: Content.grammar, phrasebook: Content.phrasebook, intro: Content.intro });
 const errors = mutate => { const copy = data(); mutate(copy); return Content.validate(copy).join('\n'); };
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '0f59c907cbe5ee3326344164682c844a25c5c1b662331cff336d424c3f17e66f');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '9f4ea5055b56b03f1f525455e4628475a3ffbd1190bbe2df1a95cee61b6a0a07');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -48,7 +48,7 @@ test('question particle explanation does not depend on a question mark or mandat
 });
 
 test('travel guidance scopes charge and IC acceptance rules and keeps shared cards consistent', () => {
-  for (const collection of [Content.travel, Content.phrasebook]) {
+  for (const collection of [Content.phrasebook]) {
     const bill = collection.find(c => c.id === 't-pay').steps[0];
     assert.ok(bill.keywords.some(word => word[0] === 'レジ' && word[1] === 'reji'));
     assert.match(bill.body, /有些餐廳/);
@@ -69,14 +69,8 @@ test('travel guidance scopes charge and IC acceptance rules and keeps shared car
   const decline = Content.phrasebook.find(c => c.id === 'dining').steps.find(s => s.id.endsWith('decline'));
   assert.match(decline.body, /大丈夫です/);
   assert.match(decline.body, /情境/);
-  for (const original of Content.travel) {
-    const copy = Content.phrasebook.find(c => c.id === original.id);
-    for (const card of original.steps) {
-      if (card.id === 't-pay/card/polite-request') continue; // Only the legacy course has this explanatory card.
-      const counterpart = copy.steps.find(s => s.id.endsWith(card.id.split('/').at(-1)));
-      assert.equal(counterpart.body, card.body);
-    }
-  }
+  // The phrasebook is the only travel source now; nothing can drift from a second copy.
+  assert.equal(Content.travel, undefined);
 });
 
 test('question lesson avoids punctuation giveaways and untaught teacher distractors', () => {
@@ -92,7 +86,7 @@ test('intro distractors are balanced and travel phrases retain concise contextua
   const lengths = options.map(option => [...option].length);
   assert.ok(Math.max(...lengths) - Math.min(...lengths) <= 6);
   assert.doesNotMatch(options.join(''), /只會/);
-  for (const collection of [Content.travel, Content.phrasebook]) {
+  for (const collection of [Content.phrasebook]) {
     const pay = collection.find(c => c.id === 't-pay').steps[0];
     assert.equal(pay.keywords[0][0], 'お会計（おかいけい）');
     assert.equal(pay.keywords[0][1], 'okaikei');
@@ -102,14 +96,20 @@ test('intro distractors are balanced and travel phrases retain concise contextua
     const order = collection.find(c => c.id === 't-order').steps;
     assert.equal(order.find(s => s.id.endsWith('drink-temperature')).politeMeaning, '我要冰的，麻煩你。');
   }
-  assert.doesNotMatch(JSON.stringify(Content.travel) + JSON.stringify(Content.phrasebook), /1000 円/);
+  assert.doesNotMatch(JSON.stringify(Content.phrasebook), /1000 円/);
   const reservation = Content.phrasebook.find(c => c.id === 'hotel').steps.find(s => s.id.endsWith('reservation'));
   assert.equal(reservation.keywords.length, 1);
   assert.equal(reservation.keywords[0][0], '予約（よやく）');
 });
 
-test('registry includes 30 kana groups, three grammar courses and four compatible travel courses', () => {
-  assert.equal(Object.keys(Content.courses).length, 37);
+test('registry includes 30 kana groups and three grammar courses; retired travel courses keep only a title', () => {
+  assert.equal(Object.keys(Content.courses).length, 33);
+  for (const id of ['t-place', 't-order', 't-pay', 't-charge']) {
+    assert.equal(Content.getCourse(id), null);
+    assert.ok(Content.phrasebook.some(c => c.id === id));
+    assert.match(Content.retiredTitles[id], /\p{Script=Han}/u);
+    assert.ok(Content.legacyCourseRevision[id], 'The immutable v1 baseline keeps retired ids');
+  }
   for (const script of ['h', 'k']) {
     const courses = Object.values(Content.courses).filter(c => c.script === script);
     assert.equal(courses.length, 15);
@@ -137,13 +137,15 @@ test('schema guards reject missing Japanese, readings, Chinese and partial polit
   assert.match(errors(d => d.grammar[0].steps[0].example = 'English only'), /Japanese/i);
   assert.match(errors(d => d.grammar[0].steps[0].reading = ''), /reading/i);
   assert.match(errors(d => d.grammar[0].steps[0].meaning = ''), /meaning/i);
-  assert.match(errors(d => d.travel[0].steps[0].politeReading = ''), /politeReading/i);
+  assert.match(errors(d => d.phrasebook[0].steps[0].politeReading = ''), /politeReading/i);
   assert.match(errors(d => d.phrasebook[0].steps[0].keywords[0][1] = ''), /reading/i);
 });
 
 test('options must be distinct nonempty strings and the correct index must exist', () => {
   assert.match(errors(d => d.grammar[0].questions[0].options[1] = d.grammar[0].questions[0].options[0]), /distinct/i);
-  assert.match(errors(d => d.travel[0].questions[0].answer = 100), /answer/i);
+  assert.match(errors(d => d.grammar[1].questions[0].answer = 100), /answer/i);
+  assert.match(errors(d => d.phrasebook[0].questions = []), /not quizzes/i);
+  assert.match(errors(d => d.grammar[0].group = 'travel'), /phrasebook/i);
   assert.match(errors(d => d.grammar[0].questions[0].answer = 0.5), /answer/i);
   assert.match(errors(d => d.intro.questions[4].options = []), /options/i);
   assert.match(errors(d => d.intro.questions[5].hint = ''), /hint/i);
@@ -157,7 +159,7 @@ test('kana guards detect missing/duplicate characters, shifted readings and inva
 });
 
 test('malformed schema produces diagnostics instead of throwing', () => {
-  for (const value of [null, {}, { rows: [null], grammar: [null], travel: {}, phrasebook: [1], intro: null }]) {
+  for (const value of [null, {}, { rows: [null], grammar: [null], phrasebook: [1], intro: null }]) {
     assert.doesNotThrow(() => Content.validate(value));
     assert.ok(Content.validate(value).length > 0);
   }

@@ -236,63 +236,26 @@ test('unknown route/course cannot inject markup and unrelated actions pass throu
   assert.equal(b.study.context('#kana'), '五十音學習路線');
 });
 
-test('travel section is separate, and lessons teach keywords before contextual comprehension questions', () => {
+test('travel section is separate; each situation shows keywords and playable phrases without a quiz', () => {
   const b = harness(null, [{lang: 'ja-JP'}]);
-  const answers = Object.fromEntries(['t-place','t-order','t-pay','t-charge'].map(id => [id,b.content.courses[id].questions.map(q=>q.answer)]));
   b.render('#travel');
   assert.equal((b.html.match(/href="#travel\//g) || []).length, 8);
   assert.doesNotMatch(b.html, /data-action="study-open"/);
   assert.doesNotMatch(b.html, /data-course="g-identity"/);
   assert.equal(b.study.context('#travel'), '旅遊常用語列表');
-  for (const [id, correct] of Object.entries(answers)) {
-    b.action('open', {course: id});
+  for (const id of ['t-place', 't-order', 't-pay', 't-charge']) {
+    b.render(`#travel/${id}`);
     assert.match(b.html, /關鍵字/);
-    assert.match(b.html, /可以這樣說/);
     assert.match(b.html, /href="#travel"/);
-    b.action('audio', {index: '0'});
+    assert.doesNotMatch(b.html, /data-action="study-answer"|選一個答案/);
+    b.action('travel-audio', {course: id, index: '0'});
     assert.ok(b.utterances.at(-1).text.length > 0);
-    b.action('next');
-    const reloaded = harness(b.stored);
-    reloaded.render(`#study/${id}`);
-    assert.equal(reloaded.state.courses[id].active.cursor, 1);
-    if (id === 't-order') {
-      assert.match(reloaded.html, /ひとつ/);
-      assert.match(reloaded.html, /ふたつ/);
-      assert.match(reloaded.html, /みっつ/);
-      reloaded.action('next');
-      assert.match(reloaded.html, /ホット/);
-      assert.match(reloaded.html, /アイス/);
-      assert.match(reloaded.html, /<details class="phrase-more"><summary>進階補充：點酒的喝法/);
-      assert.match(reloaded.html, /rokku/);
-      assert.match(reloaded.html, /sooda wari/);
-      assert.doesNotMatch(reloaded.html, /ROKU|琴酒品牌/);
-      reloaded.action('next');
-      assert.match(reloaded.html, /atatakai/);
-      assert.match(reloaded.html, /tsumetai/);
-      reloaded.action('next');
-      assert.match(reloaded.html, /namimori/);
-      assert.match(reloaded.html, /oomori/);
-    }
-    reloaded.action('next');
-    const a = reloaded.state.courses[id].active;
-    assert.equal(a.phase, 'quiz');
-    const q = a.order[0];
-    reloaded.action('answer', {choice: String((correct[q]+1)%3)});
-    reloaded.action('next');
-    assert.equal(a.cursor, 0);
-    while (a.phase === 'quiz') {
-      reloaded.action('answer', {choice: String(correct[a.order[a.cursor]])});
-      reloaded.action('next');
-    }
-    assert.equal(reloaded.records.length, 1);
-    assert.equal(reloaded.records[0].firstCorrect, correct.length - 1);
-    assert.deepEqual(reloaded.records[0].retryQuestions, [1]);
-    assert.match(reloaded.html, /href="#travel"/);
-    const done = harness(reloaded.stored);
-    done.render(`#study/${id}`);
-    assert.equal(done.records.length, 0);
-    assert.equal(done.state.courses[id].active.phase, 'done');
+    assert.equal(b.study.render(`#study/${id}`).includes('找不到這堂課'), true, 'Retired quiz routes are redirected by the app');
   }
+  b.render('#travel/t-order');
+  for (const word of [/ひとつ/, /ふたつ/, /みっつ/, /ホット/, /アイス/, /rokku/, /sooda wari/, /atatakai/, /tsumetai/, /namimori/, /oomori/]) assert.match(b.html, word);
+  assert.match(b.html, /<details class="phrase-more"><summary>進階補充：點酒的喝法/);
+  assert.doesNotMatch(b.html, /ROKU|琴酒品牌/);
 });
 
 test('phrasebook freely shows keywords without changing learning progress, and audio uses the chosen card', () => {

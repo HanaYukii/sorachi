@@ -12,7 +12,7 @@ let feedbackContext = "首頁";
 let feedbackDiagnostics;
 let feedbackDraft = { category: "問題回報", message: "" };
 const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
-const metadata = (id) => ({title: id === "intro" ? "日文的三種文字" : Content.getCourse(id)?.title, legacyRevision: Content.legacyCourseRevision[id]});
+const metadata = (id) => ({title: id === "intro" ? "日文的三種文字" : Content.getCourse(id)?.title ?? Content.retiredTitles[id], legacyRevision: Content.legacyCourseRevision[id]});
 const validHistory = (value) => DataStore.normalizeAttempts(value, metadata).slice(-DataStore.MAX_ATTEMPTS);
 let browserStorage;
 try { browserStorage = localStorage; } catch { /* Restricted browser environment. */ }
@@ -306,6 +306,12 @@ function route() {
   // A historical completion URL must never claim an active replay is finished.
   if (location.hash === "#done" && progress.inProgress) {
     replaceRoute("#lesson");
+    return;
+  }
+  // The retired #study/t-* travel courses now live in the phrasebook under the same id.
+  const retired = location.hash.match(/^#study\/(t-[a-z-]+)$/)?.[1];
+  if (retired && Study.travelTitle(retired)) {
+    replaceRoute(`#travel/${retired}`);
     return;
   }
   selectedWrong = null;
