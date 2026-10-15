@@ -603,7 +603,7 @@ test("feedback returns to the current study card with its course title", () => {
   assert.match(b.html, /認識第 2 步/);
   b.action('feedback-back');
   assert.equal(b.hash, '#study/g-question');
-  assert.match(b.title, /加一個/);
+  assert.match(b.title, /疑問句/);
   assert.equal(b.state.study.courses['g-question'].active.cursor, 1);
 });
 
