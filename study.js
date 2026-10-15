@@ -101,6 +101,42 @@ const Study = (() => {
       ],
     },
   ];
+  // The phrasebook reads independently of course attempts and scores.
+  const phrase = (title, keywords, body, example, reading, meaning) => ({ title, keywords, body, example, reading, meaning });
+  const PHRASEBOOK = [
+    { id: "basics", title: "找人幫忙、聽不懂時", subtitle: "叫店員・再說一次・慢一點", steps: [
+      phrase("叫一下店員", [["すみません", "sumimasen", "不好意思"]], "想請店員幫忙時，可以先說這個字，等對方回應再說需求。", "すみません。", "sumimasen", "不好意思。"),
+      phrase("請對方再說一次", [["もう一度（もういちど）", "mou ichido", "再一次"]], "剛才沒聽清楚，說「もう一度」，對方通常就知道你想再聽一次。", "もう一度、お願いします。", "mou ichido, onegaishimasu", "麻煩再說一次。"),
+      phrase("請對方慢一點", [["ゆっくり", "yukkuri", "慢慢地"]], "對方說太快時，可以用這個詞請他放慢。", "ゆっくり話してください。", "yukkuri hanashite kudasai", "請慢一點說。"),
+      phrase("回應與道謝", [["はい", "hai", "是／好"], ["いいえ", "iie", "不是"], ["ありがとう", "arigatou", "謝謝"]], "確認選項時用「はい／いいえ」。受到幫忙後，可以說謝謝。", "ありがとうございます。", "arigatou gozaimasu", "謝謝您。"),
+    ] },
+    { ...TRAVEL.find(c => c.id === "t-order"), title: "點餐：數量、冷熱、份量", subtitle: "一到三份・熱的或冷的・一般份或大份" },
+    { id: "dining", title: "內用外帶、用餐需求", subtitle: "內用・外帶・水・不需要", steps: [
+      phrase("內用還是外帶", [["店内（てんない）", "tennai", "內用"], ["持ち帰り（もちかえり）", "mochikaeri", "外帶"]], "店員問在哪裡吃時，直接回答其中一個即可。", "持ち帰りでお願いします。", "mochikaeri de onegaishimasu", "我要外帶，麻煩你。"),
+      phrase("想要水", [["お水（おみず）", "omizu", "水"]], "在餐廳向店員表示想要水，可以說「お水」。", "お水をお願いします。", "omizu o onegaishimasu", "麻煩給我水。"),
+      phrase("再來一杯或一碗", [["おかわり", "okawari", "續杯／再一碗"]], "指著杯子或碗說，讓店員知道你想再來一份。是否能續、是否收費要依店家確認。", "おかわりをお願いします。", "okawari o onegaishimasu", "麻煩再給我一份。"),
+      phrase("回答不需要", [["いりません", "irimasen", "不需要"]], "店員問要不要袋子、收據等物品時，可以用這句回答。", "袋はいりません。", "fukuro wa irimasen", "我不需要袋子。"),
+    ] },
+    { ...TRAVEL.find(c => c.id === "t-pay"), title: "結帳與付款", subtitle: "会計・刷卡・現金", steps: [...TRAVEL.find(c => c.id === "t-pay").steps,
+      phrase("刷卡或付現金", [["カード", "kaado", "卡片／刷卡"], ["現金（げんきん）", "genkin", "現金"]], "店員問付款方式時，回答「カード」或「現金」。不確定能不能刷卡時，可以展開下面的問法。", "カードは使えますか？", "kaado wa tsukaemasu ka", "可以刷卡嗎？"),
+    ] },
+    { id: "shopping", title: "買東西", subtitle: "價格・袋子・收據・試穿", steps: [
+      phrase("問價格", [["いくら", "ikura", "多少錢"]], "指著想買的商品詢問，對方才知道你在問哪一樣。", "これはいくらですか？", "kore wa ikura desu ka", "這個多少錢？"),
+      phrase("需要袋子", [["袋（ふくろ）", "fukuro", "袋子"]], "結帳時說「袋」，可以讓店員知道你需要袋子。袋子可能另外收費。", "袋をお願いします。", "fukuro o onegaishimasu", "麻煩給我袋子。"),
+      phrase("需要收據", [["レシート", "reshiito", "購物收據"]], "結帳時，可以用這個詞索取一般購物收據。", "レシートをお願いします。", "reshiito o onegaishimasu", "麻煩給我收據。"),
+      phrase("想試穿", [["試着（しちゃく）", "shichaku", "試穿"]], "拿著想試的衣服問店員。說「試着、いいですか？」就能表達想試穿。", "試着してもいいですか？", "shichaku shite mo ii desu ka", "可以試穿嗎？"),
+    ] },
+    { ...TRAVEL.find(c => c.id === "t-place"), title: "找廁所、問位置", subtitle: "廁所・車站・出口・電梯", steps: [...TRAVEL.find(c => c.id === "t-place").steps,
+      phrase("看標示、找設施", [["出口（でぐち）", "deguchi", "出口"], ["エレベーター", "erebeetaa", "電梯"], ["改札（かいさつ）", "kaisatsu", "車站驗票閘門"]], "記住這幾個名稱，找標示時用得上。問路時可以把名稱接在「どこですか」前面。", "エレベーターはどこですか？", "erebeetaa wa doko desu ka", "電梯在哪裡？"),
+    ] },
+    { ...TRAVEL.find(c => c.id === "t-charge"), subtitle: "チャージ・加值金額" },
+    { id: "hotel", title: "飯店與預約", subtitle: "入住・已預約・寄放行李", steps: [
+      phrase("辦理入住", [["チェックイン", "chekku in", "辦理入住"]], "到飯店櫃檯說「チェックイン」，就能讓工作人員知道你的來意。", "チェックインをお願いします。", "chekku in o onegaishimasu", "麻煩幫我辦理入住。"),
+      phrase("告訴對方已經預約", [["予約（よやく）", "yoyaku", "預約／訂位"], ["予約してます", "yoyaku shitemasu", "我有預約"]], "在飯店或餐廳，說完已有預約，再告訴對方名字或出示訂單。", "予約しています。", "yoyaku shite imasu", "我有預約。"),
+      phrase("想寄放行李", [["荷物（にもつ）", "nimotsu", "行李"], ["預けたい（あずけたい）", "azuketai", "想寄放"]], "指著行李說「荷物、預けたいです」，表達想寄放。單說「荷物」還沒有說明你需要什麼協助。", "荷物を預けてもいいですか？", "nimotsu o azukete mo ii desu ka", "可以寄放行李嗎？"),
+    ] },
+  ];
+  const travelItem = (id) => PHRASEBOOK.find(item => item.id === id);
   const courses = Object.create(null);
   for (const course of [...GRAMMAR, ...TRAVEL]) courses[course.id] = course;
   for (const script of ["h", "k"]) {
@@ -121,6 +157,7 @@ const Study = (() => {
   const size = (course) => course.type === "kana" ? course.letters.length : course.questions.length;
   const cards = (course) => course.type === "kana" ? course.letters.length : course.steps.length;
   const title = (id) => courses[id]?.title || null;
+  const travelTitle = (id) => travelItem(id)?.title || null;
   const total = (id) => courses[id] ? size(courses[id]) : 0;
   const iso = (value) => typeof value === "string" && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
   const permutation = (value, n) => Array.isArray(value) && value.length === n && new Set(value).size === n && value.every((v) => Number.isInteger(v) && v >= 0 && v < n);
@@ -206,11 +243,17 @@ const Study = (() => {
     const learnedBefore = Object.values(state().courses).some((c) => wasEarlierDay(c.completedAt));
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音練習</h1><p class="study-note">每組 3–5 個字，包含認字、讀音與選擇題。羅馬字只作讀音提示，不是照英文拼字唸。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div>${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${Object.values(courses).filter((c) => c.type === "kana" && c.script === script).map(row).join("")}</div><p class="study-note">先練平假名、片假名各 46 個基本字；濁音、半濁音、拗音、促音與長音之後再學。</p>`);
   }
-  function grammarPage(travel = false) {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">句型與旅遊用語</h1><nav class="script-tabs course-sections" aria-label="課程分區"><a href="#grammar"${!travel ? ' aria-current="page"' : ""}>基礎句型</a><a href="#travel"${travel ? ' aria-current="page"' : ""}>旅遊常用語</a></nav><h2 class="course-section-heading">${travel ? "旅遊常用語" : "基礎句型"}</h2><p class="study-note">${travel ? "問路、點餐、結帳、加值時用得到的關鍵字。搭配指物或出示交通卡，短語也能表達需求；每組附簡短練習。" : "每課介紹一個句型，再用兩題練習確認理解。例句附中文意思與讀音。"}</p><div class="course-list">${(travel ? TRAVEL : GRAMMAR).map(row).join("")}</div>`);
+  function grammarPage() {
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">每課介紹一個句型，再用兩題練習確認理解。例句附中文意思與讀音。</p><div class="course-list">${GRAMMAR.map(row).join("")}</div>`);
   }
-  function audioButton(course, index) {
-    return `<button class="text-button" data-action="study-audio" data-course="${course.id}" data-index="${index}" aria-label="播放 ${escape(course.type === "kana" ? course.letters[index] : course.steps[index].example)} 的日文讀音">播放讀音</button><span class="reading-label">裝置合成語音</span><p class="study-audio-status study-note" role="status" aria-live="polite"></p>`;
+  function travelPage(id) {
+    if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">常用關鍵字、讀音與中文。依情境查看，需要時再展開完整說法。</p><nav class="travel-categories" aria-label="旅遊情境">${PHRASEBOOK.map(item => `<a class="course-row" href="#travel/${item.id}"><span><strong>${escape(item.title)}</strong><span class="reading-label">${escape(item.subtitle)}</span></span><span aria-hidden="true">→</span></a>`).join("")}</nav>`);
+    const item = travelItem(id);
+    if (!item) return wrap('<h1 class="focus-heading" tabindex="-1">找不到這個情境</h1><a class="text-button" href="#travel">回旅遊常用語</a>');
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(item.title)}</h1><p class="study-note">先看關鍵字與意思，需要時再展開例句。</p>${item.steps.map((step, index) => `<section class="study-card travel-card"><h2>${escape(step.title)}</h2>${keywordBox(step.keywords)}<p class="study-note">${escape(step.body)}</p><details class="phrase-more"><summary>看完整說法與讀音</summary><p lang="ja">${escape(step.polite || step.example)}</p><p class="reading-label">${escape(step.politeReading || step.reading)}</p><p>${escape(step.politeMeaning || step.meaning)}</p>${audioButton(item, index, true)}</details>${step.extra ? `<details class="phrase-more"><summary>${escape(step.extra.title)}</summary>${keywordBox(step.extra.keywords)}<p lang="ja">${escape(step.extra.example)}</p><p class="reading-label">${escape(step.extra.reading)}</p><p>${escape(step.extra.meaning)}</p><p class="study-note">${escape(step.extra.body)}</p></details>` : ""}</section>`).join("")}<div class="study-nav"><a class="text-button" href="#travel">← 換個情境</a><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#travel", "回旅遊常用語");
+  }
+  function audioButton(course, index, travel = false) {
+    return `<button class="text-button" data-action="${travel ? "study-travel-audio" : "study-audio"}" data-course="${course.id}" data-index="${index}" aria-label="播放 ${escape(course.type === "kana" ? course.letters[index] : (travel ? course.steps[index].polite || course.steps[index].example : course.steps[index].example))} 的日文讀音">播放讀音</button><span class="reading-label">裝置合成語音</span><p class="study-audio-status study-note"${travel ? ` data-audio-for="${course.id}-${index}"` : ""} role="status" aria-live="polite"></p>`;
   }
   function keywordBox(keywords) {
     return `<section class="keyword-box" aria-label="關鍵字"><h3>關鍵字</h3><dl>${keywords.map(([word, reading, meaning]) => `<div><dt><strong lang="ja">${escape(word)}</strong><span>${escape(reading)}</span></dt><dd>${escape(meaning)}</dd></div>`).join("")}</dl></section>`;
@@ -264,7 +307,8 @@ const Study = (() => {
   function render(hash) {
     if (hash === "#kana") return kanaPage();
     if (hash === "#grammar") return grammarPage();
-    if (hash === "#travel") return grammarPage(true);
+    if (hash === "#travel") return travelPage();
+    if (hash.startsWith("#travel/")) return travelPage(hash.slice(8));
     if (hash.startsWith("#study/")) {
       const course = courses[hash.slice(7)];
       return course ? coursePage(course) : wrap('<h1 class="focus-heading" tabindex="-1">找不到這堂課</h1><p class="study-note">請返回課程列表重新選擇。</p><a class="primary" href="#kana">看看五十音</a>');
@@ -281,12 +325,12 @@ const Study = (() => {
     audioGeneration++;
     if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
   }
-  function speak(course, index) {
+  function speak(course, index, selector = ".study-audio-status", full = false) {
     stopAudio();
     const generation = audioGeneration;
     const status = (text) => {
       if (generation !== audioGeneration) return;
-      const node = document.querySelector(".study-audio-status");
+      const node = document.querySelector(selector);
       if (node) node.textContent = text;
     };
     const synth = window.speechSynthesis;
@@ -297,13 +341,13 @@ const Study = (() => {
         voicesListening = true;
         synth.addEventListener("voiceschanged", () => {
           voicesListening = false;
-          const node = document.querySelector(".study-audio-status");
+          const node = document.querySelector(selector);
           if (node && synth.getVoices().some((v) => /^ja(?:-|_|$)/i.test(v.lang))) node.textContent = "日文語音已準備好，可以再按一次播放。";
         }, { once: true });
       }
       return;
     }
-    const spoken = course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : course.steps[index].example;
+    const spoken = course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : full ? course.steps[index].polite || course.steps[index].example : course.steps[index].example;
     const utterance = new SpeechSynthesisUtterance(spoken);
     utterance.voice = voice;
     utterance.lang = "ja-JP";
@@ -329,6 +373,12 @@ const Study = (() => {
     const action = button.dataset.action;
     if (!action?.startsWith("study-")) return false;
     if (button.disabled) return true;
+    if (action === "study-travel-audio") {
+      const item = location.hash.startsWith("#travel/") ? travelItem(location.hash.slice(8)) : null;
+      const index = Number(button.dataset.index);
+      if (item && item.id === button.dataset.course && Number.isInteger(index) && index >= 0 && index < item.steps.length) speak(item, index, `[data-audio-for="${item.id}-${index}"]`, true);
+      return true;
+    }
     if (action === "study-script") {
       state().script = button.dataset.script === "k" ? "k" : "h";
       save(); redraw(`[data-script="${state().script}"]`); return true;
@@ -385,10 +435,11 @@ const Study = (() => {
     if (hash === "#kana") return "五十音學習路線";
     if (hash === "#grammar") return "基礎句型學習路線";
     if (hash === "#travel") return "旅遊常用語列表";
+    if (hash.startsWith("#travel/")) return travelItem(hash.slice(8)) ? `旅遊常用語・${travelItem(hash.slice(8)).title}` : null;
     const course = courses[hash.slice(7)];
     if (!hash.startsWith("#study/") || !course) return null;
     const active = state().courses[course.id]?.active;
     return `${course.title}${active ? active.phase === "done" ? "・完成頁" : `・${active.phase === "cards" ? "認識" : "練習"}第 ${active.cursor + 1} 步` : ""}`;
   }
-  return { sanitize, bind, render, handle, context, stopAudio, title, total };
+  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total };
 })();
