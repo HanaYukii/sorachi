@@ -14,7 +14,7 @@ const metadata = (id) => ({title: id === "intro" ? "日文的三種文字" : Con
 const validHistory = (value) => DataStore.normalizeAttempts(value, metadata).slice(-30);
 let browserStorage;
 try { browserStorage = localStorage; } catch { /* Restricted browser environment. */ }
-const dataStore = DataStore.create({storage: browserStorage, metadata});
+const dataStore = DataStore.create({storage: browserStorage, metadata, supportedCourseIds: Object.keys(Content.courses)});
 progress = dataStore.readProgress();
 const introRevision = progress.contentRevision ?? Content.legacyCourseRevision.intro;
 if (introRevision !== Content.courseRevision("intro")) {
@@ -24,7 +24,14 @@ if (introRevision !== Content.courseRevision("intro")) {
 progress.contentRevision = Content.courseRevision("intro");
 progress.study = Study.sanitize(progress.study);
 canStore = dataStore.canPersist();
-function save() { canStore = dataStore.writeProgress(progress); }
+function updateStorageWarning() {
+  const status = app.querySelector("#storage-status");
+  if (status) status.innerHTML = warningMessage();
+}
+function save() {
+  canStore = dataStore.writeProgress(progress);
+  updateStorageWarning();
+}
 
 const icons = {
   arrow:
@@ -41,11 +48,14 @@ const friend = (className = "", alt = "", asset = "cloud-friend.png") =>
   `<img class="${className}" src="./assets/${asset}" alt="${alt}" width="400" height="420">`;
 const footer = () =>
   '<footer class="footer"><span>SoraChi · 日文入門</span><nav class="quiet-links" aria-label="小工具"><button class="text-button" data-action="history">學習紀錄</button><button class="text-button" data-action="feedback">問題與建議</button></nav></footer>';
-const warning = () =>
+const warningMessage = () =>
   canStore
     ? ""
+    : dataStore.isConflict() ? '<p class="storage-warning" role="status">另一個分頁已更新或清除資料。這個分頁已停止儲存，請重新載入後再繼續。<button class="text-button" data-action="reload">重新載入</button></p>'
     : dataStore.isProtected() ? '<p class="storage-warning" role="status">已保留瀏覽器中的原始資料，但目前版本無法讀取；這次練習不會覆寫原有紀錄。</p>'
     : '<p class="storage-warning" role="status">目前瀏覽器無法儲存進度；這次仍可正常上課，關閉後可能需要重新開始。</p>';
+
+const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
 
 Study.bind({
   getState: () => progress.study,
@@ -63,14 +73,17 @@ function home() {
   const action = begun ? "接著學" : progress.completed ? "再練習一次" : "認識三種日文寫法";
   const kanaIds = ["h", "k"].flatMap((script) => ["a", "ka", "sa", "ta", "na", "ha", "ma", "ya", "ra", "wa"].map((row) => `${script}-${row}`));
   const nextKana = kanaIds.find((id) => progress.study.courses[id]?.active && progress.study.courses[id].active.phase !== "done") || kanaIds.find((id) => !progress.study.courses[id]?.completedAt) || "h-a";
+  const kanaTitle = Study.title(nextKana);
+  const scriptName = nextKana.startsWith("h-") ? "平假名" : "片假名";
+  const scriptCompleted = kanaIds.filter((id) => id[0] === nextKana[0] && progress.study.courses[id]?.completedAt).length;
   const activeKana = progress.study.courses[nextKana]?.active;
   const kanaAction = activeKana && activeKana.phase !== "done" ? "接著練五十音" : progress.study.courses[nextKana]?.completedAt ? "再練一次五十音" : "開始學五十音";
   app.innerHTML = `<div class="shell">
     <header class="site-header"><a class="brand" href="#home" aria-label="SoraChi 首頁">${friend()}<span class="brand-word">SoraChi<span class="brand-dot">.</span></span></a><span class="header-note">日文入門練習</span><span class="prototype">初學者版</span></header>
     <main id="main" tabindex="-1" class="home"><section class="welcome"><h1 class="focus-heading" tabindex="-1">日文入門</h1><p>學習區從五十音與基礎句型開始。<br>旅遊常用語可依情境直接查閱。</p></section>
-    <section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">五十音</span><span>認字・發音</span></div><h2 id="course-title">認識 ${Study.total(nextKana)} 個字及讀音</h2><p class="hero-description">看字與讀音，再做選擇題。<br>完成後可重練，或換下一組。</p><div class="meta"><span>${icons.clock} 每組約 3–5 分鐘</span><span>${icons.leaf} 這組 ${Study.total(nextKana)} 個字</span></div><button class="primary" data-action="study-open" data-course="${nextKana}">${kanaAction}${icons.arrow}</button><div><button class="text-button course-map-link" data-action="kana">查看全部五十音分組</button></div></div><div class="hero-art" aria-hidden="true"><span class="spark">✦</span><span class="small-spark">✧</span><span class="orbit"></span>${friend()}</div></section>
+    <section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">五十音</span><span>認字・發音</span></div><h2 id="course-title">${escapeHTML(kanaTitle)}</h2><p class="hero-description">看字與讀音，再做選擇題。<br>${scriptName}已完成 ${scriptCompleted} / 10 組。</p><div class="meta"><span>${icons.clock} 每組約 3–5 分鐘</span><span>${icons.leaf} 這組 ${Study.total(nextKana)} 個字</span></div><button class="primary" data-action="study-open" data-course="${nextKana}">${kanaAction}${icons.arrow}</button><div><button class="text-button course-map-link" data-action="kana">查看全部五十音分組</button></div></div><div class="hero-art" aria-hidden="true"><span class="spark">✦</span><span class="small-spark">✧</span><span class="orbit"></span>${friend()}</div></section>
     <section class="learning-path" aria-label="學習與旅遊"><div class="path-cards"><div class="path-card"><span class="path-number aqua-label">學習</span><h3>基礎句型</h3><p>認識「A 是 B」、疑問句和指示詞，<br>每課附說明與練習。</p><button class="text-button" data-action="grammar">看基礎句型${icons.arrow}</button></div><div class="path-card travel-entry"><span class="path-number">旅行時查用</span><h3>旅遊常用語</h3><p>點餐、結帳、問路、住宿。<br>先記關鍵字，需要時再看完整說法。</p><button class="text-button" data-action="travel">查旅遊常用語${icons.arrow}</button></div></div><div class="script-supplement"><span>日文的三種文字</span><button class="text-button" data-action="start">${action}${icons.arrow}</button>${begun ? `<span class="path-progress">上次學到第 ${progress.step + 1} 步</span>` : progress.completed ? '<span class="path-progress">已完成</span>' : ''}</div></section>
-    <aside class="gentle-note">${icons.book}<span>每組練習會記錄初答成績，重試不會覆蓋原本的答案。</span></aside>${warning()}</main>${footer()}</div>`;
+    <aside class="gentle-note">${icons.book}<span>每組練習會記錄第一次作答的成績，重試不會覆蓋原本的答案。</span></aside>${warning()}</main>${footer()}</div>`;
 }
 
 const {lessons, questions} = Content.intro;
@@ -142,12 +155,12 @@ function currentResult() {
 function resultCard() {
   const result = currentResult();
   if (result.firstCorrect === null) return "";
-  return `<div class="result-card"><span>練習結果</span><strong>第一次答對 ${result.firstCorrect} / 2 題</strong><p>${result.firstCorrect === 2 ? "兩題皆為初答正確。" : "兩題已完成，包含看提示後重試的題目。"}</p><button class="text-button" data-action="history">看看學習紀錄 ${icons.arrow}</button></div>`;
+  return `<div class="result-card"><span>練習結果</span><strong>第一次答對 ${result.firstCorrect} / 2 題</strong><p>${result.firstCorrect === 2 ? "兩題第一次都答對。" : "兩題已完成，包含看提示後重試的題目。"}</p><button class="text-button" data-action="history">看看學習紀錄 ${icons.arrow}</button></div>`;
 }
 function historyPage(confirmClear = false) {
   document.title = "學習紀錄｜SoraChi";
   const entries = [...progress.history].reverse();
-  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi</span></header><main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">查看完成時間與初答成績。</p>${entries.length ? `<p class="record-note">保留最近 30 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄初答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第 ${entry.retryQuestions.map((q) => entry.courseId ? q : q - 3).join("、")} 題看過提示後完成` : entry.firstCorrect === (entry.total || 2) ? "全部題目皆為初答正確。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過第一課；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成任一組練習後，紀錄會顯示在這裡。"}</p><button class="primary" data-action="kana">選擇五十音練習${icons.arrow}</button></section>`}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${entries.length ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除這個瀏覽器的全部成績紀錄？課程進度與已完成狀態會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績紀錄</button>` : ""}</main>${footer()}</div>`;
+  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi</span></header><main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">查看完成時間與第一次作答的成績。</p>${entries.length ? `<p class="record-note">保留最近 30 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄第一次作答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `${entry.courseId ? Study.retryLabels(entry).map(escapeHTML).join("、") : entry.retryQuestions.map((q) => `第 ${q - 3} 題`).join("、")}：看提示後完成` : entry.firstCorrect === (entry.total || 2) ? "全部題目第一次都答對。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : `<section class="empty-record">${icons.book}<h2>${dataStore.isProtected() ? "目前無法讀取成績紀錄" : "還沒有新的成績紀錄"}</h2><p>${progress.completed ? "你已完成過第一課；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : dataStore.isProtected() ? "原始資料仍保留在瀏覽器中，目前無法顯示其中的紀錄。" : "完成任一組練習後，紀錄會顯示在這裡。"}</p><button class="primary" data-action="kana">選擇五十音練習${icons.arrow}</button></section>`}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${entries.length ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除這個瀏覽器的全部成績紀錄？課程進度與已完成狀態會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績紀錄</button>` : ""}</main>${footer()}</div>`;
   focusHeading();
 }
 function feedbackPage() {
@@ -197,7 +210,7 @@ function route() {
   Study.stopAudio();
   // A historical completion URL must never claim an active replay is finished.
   if (location.hash === "#done" && progress.inProgress) {
-    go("#lesson");
+    replaceRoute("#lesson");
     return;
   }
   selectedWrong = null;
@@ -210,6 +223,10 @@ function route() {
     return;
   }
   if (location.hash === "#lesson") {
+    if (progress.completed && !progress.inProgress) {
+      replaceRoute("#done");
+      return;
+    }
     if (!progress.inProgress) {
       progress.step = 0;
       progress.answers = {};
@@ -225,6 +242,10 @@ function route() {
     home();
     focusHeading();
   }
+}
+function replaceRoute(hash) {
+  window.history.replaceState(null, "", hash);
+  route();
 }
 function go(hash) {
   if (location.hash === hash) route();
@@ -259,6 +280,9 @@ app.addEventListener("click", (event) => {
     return;
   }
   switch (button.dataset.action) {
+    case "reload":
+      location.reload();
+      break;
     case "kana":
       go("#kana");
       break;
@@ -283,7 +307,7 @@ app.addEventListener("click", (event) => {
       historyPage();
       if (!canStore) {
         const warning = app.querySelector(".storage-warning");
-        warning.textContent = "瀏覽器無法儲存變更，成績紀錄尚未清除。請稍後再試。";
+        warning.append(document.createTextNode(" 成績紀錄尚未清除。"));
       }
       break;
     }
@@ -342,6 +366,12 @@ app.addEventListener("click", (event) => {
 document.querySelector(".skip-link").addEventListener("click", (event) => {
   event.preventDefault();
   document.querySelector("#main")?.focus();
+});
+window.addEventListener("storage", (event) => {
+  if (event.key !== null && event.key !== DataStore.KEY) return;
+  dataStore.checkForUpdates();
+  canStore = dataStore.canPersist();
+  updateStorageWarning();
 });
 window.addEventListener("hashchange", route);
 route();

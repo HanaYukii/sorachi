@@ -9,7 +9,7 @@ function setup(initial={}, options={}) {
   const ctx=vm.createContext({console}); vm.runInContext(source+'\nglobalThis.api=DataStore;',ctx);
   const api=ctx.api;
   const config={storage, metadata:id=>id==='g-old'?{title:'Old course',legacyRevision:'old-revision'}:null,...options};
-  return {api,map,store:api.create(config), config, block(){blocked=true;}};
+  return {api,map,store:api.create(config), config, block(){blocked=true;}, unblock(){blocked=false;}};
 }
 const legacyKey='sorachi:first-lesson:v1', key='sorachi:data:v2';
 const old={step:4,completed:true,inProgress:true,answers:{4:true},firstAnswers:{4:false},study:{script:'k',courses:{}},history:[{courseId:'g-old',date:'2026-10-15T00:00:00Z',total:2,firstCorrect:1,retryQuestions:[1]}]};
@@ -144,4 +144,100 @@ test('import into an unused browser restores the selected kana script',()=>{
  const a=setup(); a.store.writeProgress(old);
  const b=setup(); assert.equal(b.store.importBackup(a.store.exportBackup()),true);
  assert.equal(b.store.readProgress().study.script,'k');
+});
+
+test('every mutation rejects an outdated tab without replacing the newer raw data',()=>{
+ const mutations=[
+  (store,flat)=>store.writeProgress(flat),
+  store=>store.saveFavorites(['stale-favorite']),
+  store=>store.savePreferences({ttsRate:0.7}),
+  (store,flat,backup)=>store.importBackup(backup),
+ ];
+ for(const mutate of mutations) {
+  const b=setup(); const stale=b.api.create(b.config);
+  const flat=stale.readProgress(), backup=stale.exportBackup();
+  assert.equal(b.store.writeProgress(old),true);
+  const newer=b.map.get(key);
+  assert.equal(mutate(stale,flat,backup),false);
+  assert.equal(stale.isConflict(),true); assert.equal(stale.canPersist(),false);
+  assert.equal(b.map.get(key),newer);
+  assert.equal(stale.savePreferences({ttsRate:0.9}),false);
+  assert.equal(b.map.get(key),newer);
+ }
+});
+
+test('a stale tab cannot resurrect history cleared by another tab',()=>{
+ const b=setup(); b.store.writeProgress(old);
+ const stale=b.api.create(b.config), oldFlat=stale.readProgress();
+ const cleared=b.store.readProgress(); cleared.history=[];
+ assert.equal(b.store.writeProgress(cleared),true);
+ assert.equal(stale.writeProgress(oldFlat),false);
+ assert.equal(JSON.parse(b.map.get(key)).attempts.length,0);
+});
+
+test('update checks lock deleted, replaced, and same-timestamp data until reload',()=>{
+ for(const replacement of [null,JSON.stringify({schemaVersion:99}), 'same-time']) {
+  const b=setup(); const original=b.map.get(key);
+  if(replacement===null) b.map.delete(key);
+  else if(replacement==='same-time') {
+   const changed=JSON.parse(original); changed.favorites=['other-tab'];
+   b.map.set(key,JSON.stringify(changed));
+  } else b.map.set(key,replacement);
+  assert.equal(b.store.checkForUpdates(),false);
+  assert.equal(b.store.isConflict(),true); assert.equal(b.store.canPersist(),false);
+  b.map.set(key,original);
+  assert.equal(b.store.checkForUpdates(),false);
+  assert.equal(b.store.writeProgress(old),false);
+ }
+});
+
+test('own writes advance the raw baseline and quota failures remain retryable',()=>{
+ const b=setup();
+ assert.equal(b.api.KEY,key);
+ assert.equal(b.store.checkForUpdates(),true);
+ assert.equal(b.store.saveFavorites(['one']),true);
+ assert.equal(b.store.checkForUpdates(),true);
+ const before=b.map.get(key);
+ b.block(); assert.equal(b.store.writeProgress(old),false);
+ assert.equal(b.store.isConflict(),false); assert.equal(b.store.isProtected(),false);
+ assert.equal(b.map.get(key),before);
+ b.unblock(); assert.equal(b.store.writeProgress(old),true);
+ assert.equal(b.store.checkForUpdates(),true); assert.equal(b.store.canPersist(),true);
+});
+
+test('an unreadable commit preflight protects data even if reads later recover',()=>{
+ const map=new Map(); let failReads=false;
+ const b=setup({}, {storage:{getItem(k){if(failReads)throw Error('read denied');return map.get(k)??null;},setItem(k,v){map.set(k,v);}}});
+ const before=map.get(key); failReads=true;
+ assert.equal(b.store.saveFavorites(['one']),false);
+ assert.equal(b.store.isProtected(),true); assert.equal(b.store.canPersist(),false);
+ failReads=false;
+ assert.equal(b.store.writeProgress(old),false); assert.equal(map.get(key),before);
+});
+
+test('malformed attempts inside schema two protect the original primary bytes',()=>{
+ const seed=setup(); const envelope=JSON.parse(seed.store.exportBackup());
+ envelope.attempts=[{...old.history[0],firstCorrect:9}];
+ const raw=JSON.stringify(envelope), b=setup({[key]:raw});
+ assert.equal(b.store.isProtected(),true);
+ assert.equal(b.store.savePreferences({ttsRate:0.8}),false);
+ assert.equal(b.store.writeProgress(old),false);
+ assert.equal(b.map.get(key),raw);
+ assert.throws(()=>b.store.exportBackup(),/unavailable/i);
+});
+
+test('unknown course progress survives a filtered save while known course resets stay cleared',()=>{
+ const seed=setup(); const envelope=JSON.parse(seed.store.exportBackup());
+ envelope.learning.study={script:'h',courses:{
+  'g-known':{active:{phase:'quiz'},attempts:1},
+  'g-remove':{active:{phase:'quiz'},attempts:2},
+  'future-course':{active:{futureFormat:99},earned:'keep'},
+ }};
+ const b=setup({[key]:JSON.stringify(envelope)}, {supportedCourseIds:['g-known','g-remove']});
+ const flat=b.store.readProgress(); flat.study={script:'h',courses:{'g-known':{active:null,attempts:1}}};
+ assert.equal(b.store.writeProgress(flat),true);
+ const courses=JSON.parse(b.map.get(key)).learning.study.courses;
+ assert.deepEqual(courses['future-course'],envelope.learning.study.courses['future-course']);
+ assert.equal(courses['g-known'].active,null);
+ assert.equal(Object.hasOwn(courses,'g-remove'),false);
 });

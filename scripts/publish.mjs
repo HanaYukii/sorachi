@@ -38,7 +38,7 @@ export async function publish({ run = command, validate = () => validateLocal(ru
   await clean();
   if (await run('git', ['branch', '--show-current']) !== 'main' || await run('git', ['rev-parse', 'HEAD']) !== sha || await currentRemote() !== sha) throw new Error('Main changed while waiting for CI; retry with the new commit.');
   await run('git', ['subtree', 'push', '--prefix=dist', 'origin', 'gh-pages']);
-  console.log(`Published dist from tested main ${sha}.`);
+  console.log(`Pushed dist from tested main ${sha} to gh-pages; Pages deployment is still pending.`);
   console.log('After Pages finishes: node scripts/verify-deploy.mjs --attempts 12');
   return sha;
 }

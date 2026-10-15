@@ -13,6 +13,9 @@ const index = readFileSync(
   "utf8",
 );
 const key = "sorachi:first-lesson:v1";
+const contentContext = vm.createContext({});
+vm.runInContext(readFileSync(new URL('../dist/content.js', import.meta.url), 'utf8'), contentContext);
+const introRevision = vm.runInContext('Content.courseRevision("intro")', contentContext);
 
 function browser({
   saved = null,
@@ -60,6 +63,7 @@ function browser({
       },
       append(child) {
         this.children.push(child);
+        this.textContent += child.textContent;
       },
       replaceChildren(...children) {
         this.children = children;
@@ -155,6 +159,15 @@ function browser({
   const document = {
     title: "",
     querySelector,
+    querySelectorAll(selector) {
+      if (selector !== '[data-action="study-answer"]') return [];
+      return [...html.matchAll(/<button\b[^>]*data-action="study-answer"[^>]*>/g)].map(([markup]) => {
+        const choice = markup.match(/data-choice="(\d+)"/)[1];
+        const key = `study-answer-${choice}`;
+        if (!elements.has(key)) elements.set(key, element(key, markup));
+        return elements.get(key);
+      });
+    },
     createElement(tag) {
       return element(tag, `<${tag}>`);
     },
@@ -185,6 +198,7 @@ function browser({
     location,
     window: {
       location,
+      history: {replaceState(_state, _title, hash) { currentHash = hash; }},
       scrollTo() {},
       addEventListener(type, fn) {
         add(windowListeners, type, fn);
@@ -247,6 +261,11 @@ function browser({
   return {
     click,
     blockStorage() { storageBlocked = true; },
+    externalWrite(value) {
+      storage.set("sorachi:data:v2", value);
+      dispatch(windowListeners, "storage", {key:"sorachi:data:v2"});
+      flush();
+    },
     submitFeedback(category, message) {
       querySelector('#feedback-category').value = category;
       querySelector('#feedback-message').value = message;
@@ -348,7 +367,7 @@ test("malformed saved JSON recovers to a usable, persistable fresh lesson", () =
 
 test("out-of-range saved step is clamped and unmet question prerequisite is restored", () => {
   const b = browser({
-    saved: { step: 99, completed: false, answers: {} },
+    saved: { step: 99, completed: false, answers: {}, contentRevision: introRevision },
     hash: "#lesson",
   });
   assert.equal(b.state.step, 4);
@@ -480,10 +499,16 @@ test("legacy completions do not invent a score and history clear preserves learn
   assert.equal(b.state.completed, true);
 });
 
-test("direct lesson revisit after completion starts a new attempt", () => {
+test("back to the lesson after completion preserves results until explicit replay", () => {
   const b = browser();
   complete(b);
   const revisit = browser({ raw:b.stored, hash:'#lesson' });
+  assert.equal(revisit.hash, '#done');
+  assert.equal(revisit.state.step, 5);
+  assert.deepEqual(revisit.state.firstAnswers, b.state.firstAnswers);
+  assert.match(revisit.html, /文字介紹已完成/);
+  revisit.action('restart');
+  assert.equal(revisit.hash, '#lesson');
   assert.equal(revisit.state.step, 0);
   assert.deepEqual(revisit.state.firstAnswers, {});
   assert.equal(revisit.state.history.length, 1);
@@ -523,9 +548,9 @@ test("feedback creates a correctly encoded draft link without publishing or leak
   assert.doesNotMatch(b.html, /<script>alert/);
 });
 
-test("history keeps the last thirty completions and legacy partial attempts remain unscored", () => {
+test("history keeps thirty completions and compatible partial attempts with missing first answers remain unscored", () => {
   const history = Array.from({length:35}, (_,i) => ({date:new Date(2026,0,i+1).toISOString(),firstCorrect:2,retryQuestions:[]}));
-  const b = browser({saved:{step:5,inProgress:true,answers:{4:true},history}, hash:'#lesson'});
+  const b = browser({saved:{step:5,inProgress:true,answers:{4:true},history,contentRevision:introRevision}, hash:'#lesson'});
   assert.equal(b.state.history.length, 30);
   b.answer(1);
   b.action('next');
@@ -663,4 +688,56 @@ test('home travel entry is separate from grammar and phrasebook feedback returns
   assert.equal(item.title, '飯店與預約｜SoraChi');
   assert.equal(item.state.history.length, 0);
   assert.deepEqual(Object.keys(item.state.study.courses), []);
+});
+
+
+test("external storage changes warn in place and block stale progress writes", () => {
+  const b = browser();
+  reachQuiz(b);
+  const renderCount = b.renderCount;
+  const changed = JSON.parse(b.stored);
+  changed.preferences.ttsRate = 0.8;
+  const raw = JSON.stringify(changed);
+  b.externalWrite(raw);
+  assert.equal(b.renderCount, renderCount, 'Keep the current question and focus mounted');
+  assert.match(b.node('#storage-status').innerHTML, /另一個分頁/);
+  b.answer(0);
+  assert.equal(b.stored, raw, 'Do not overwrite the other tab after answering');
+  assert.match(b.node('#storage-status').innerHTML, /重新載入/);
+});
+
+
+test("saving known lessons retains progress for a retired course", () => {
+  const first = browser();
+  first.action('start');
+  const snapshot = JSON.parse(first.stored);
+  const retired = {attempts:2,completedAt:'2026-10-15T10:00:00.000Z',lastResult:{firstCorrect:2,total:2},active:null};
+  snapshot.learning.study.courses['retired-course'] = retired;
+  const b = browser({raw:JSON.stringify(snapshot)});
+  b.action('start');
+  b.action('next');
+  assert.deepEqual(JSON.parse(b.stored).learning.study.courses['retired-course'], retired);
+});
+
+test("invalid primary history remains intact and is not described as no previous learning", () => {
+  const first = browser();
+  first.action('start');
+  const snapshot = JSON.parse(first.stored);
+  snapshot.attempts = [{date:'2026-10-15T10:00:00.000Z',firstCorrect:9,total:2,retryQuestions:[]}];
+  const raw = JSON.stringify(snapshot);
+  const b = browser({raw,hash:'#history'});
+  assert.match(b.html, /目前無法讀取成績紀錄/);
+  assert.equal(b.stored, raw);
+});
+
+
+test("changed intro content resets legacy active answers without erasing earned completion or history", () => {
+  const history = [{date:'2026-10-15T10:00:00.000Z',firstCorrect:2,retryQuestions:[]}];
+  const b = browser({saved:{step:5,inProgress:true,completed:true,answers:{4:true},firstAnswers:{4:true},history},hash:'#lesson'});
+  assert.equal(b.hash, '#done');
+  assert.equal(b.state.inProgress, false);
+  assert.deepEqual(b.state.firstAnswers, {});
+  assert.equal(b.state.completed, true);
+  assert.equal(b.state.history.length, 1);
+  assert.equal(b.state.history[0].firstCorrect, 2);
 });

@@ -150,7 +150,7 @@ const Content = (() => {
           "example": "わたしは がくせいです。",
           "reading": "watashi wa gakusei desu",
           "meaning": "我是學生。",
-          "body": "「わたし」是我，「がくせい」是學生。在這種「A 是 B」的句子裡，用「は」接起來，再以「です」結尾；這是比較禮貌的說法。",
+          "body": "「わたし」是我，「がくせい」是學生。「は」標出這句話的主題，也就是正在談的「我」；後面的「がくせいです」說明我是學生。「です」是較禮貌的句尾。",
           "id": "g-identity/card/noun-sentence"
         },
         {
@@ -164,18 +164,18 @@ const Content = (() => {
       ],
       "questions": [
         {
-          "prompt": "想說「我是學生。」：わたしは がくせい＿＿。最後應放哪一個？",
+          "prompt": "想說「我是學生」：わたし＿＿がくせいです。空格應放哪一個？",
           "options": [
-            "です",
             "は",
-            "わたし"
+            "わ",
+            "です"
           ],
           "answer": 0,
-          "explanation": "句尾放「です」，就是「わたしは がくせいです。」——我是學生。",
+          "explanation": "「は」標出主題「わたし」：わたしは がくせいです。這裡念 wa，但要寫「は」。",
           "id": "g-identity/question/sentence-ending"
         },
         {
-          "prompt": "在「わたしは がくせいです。」裡，連接兩部分的「は」讀作什麼？",
+          "prompt": "在「わたしは がくせいです。」裡，標出主題的「は」讀作什麼？",
           "options": [
             "ha",
             "wa",
@@ -220,25 +220,25 @@ const Content = (() => {
       ],
       "questions": [
         {
-          "prompt": "正面對一個人，詢問他的身分。「がくせいですか？」在問什麼？",
+          "prompt": "對方剛說自己在上學，你接著說「がくせいですか」。這句話的意思是？",
           "options": [
-            "你是學生嗎？",
-            "我是學生。",
-            "我是老師。"
+            "你是學生嗎",
+            "我是學生嗎",
+            "我是學生"
           ],
           "answer": 0,
-          "explanation": "句尾有「か」，是在發問。這個情境下，意思是「你是學生嗎？」。",
+          "explanation": "「か」表示疑問；面對對方這樣說，是在確認對方是不是學生。情境清楚時，不必另外說出「你」。",
           "id": "g-question/question/question-meaning"
         },
         {
-          "prompt": "想把「是學生。」改成「是學生嗎？」：がくせいです＿＿？要加哪一個？",
+          "prompt": "想確認對方是不是學生，哪一句適合？",
           "options": [
-            "わたし",
-            "は",
-            "か"
+            "わたしは がくせいです",
+            "がくせいは わたしです",
+            "がくせいですか"
           ],
           "answer": 2,
-          "explanation": "在「です」後加「か」：がくせいですか？意思是「是學生嗎？」。",
+          "explanation": "「がくせいですか」用句尾的「か」表示疑問。其他兩句是在說明，沒有「か」。",
           "id": "g-question/question/question-ending"
         }
       ]
@@ -296,6 +296,17 @@ const Content = (() => {
           "answer": 0,
           "explanation": "麵包離說話的你和聽話的朋友都遠，所以用「あれ」。",
           "id": "g-demo/question/distant-item"
+        },
+        {
+          "prompt": "朋友站在離你幾步外，手上拿著一個麵包。你指著朋友手上的麵包說：＿＿は パンです。",
+          "options": [
+            "これ",
+            "あれ",
+            "それ"
+          ],
+          "answer": 2,
+          "explanation": "麵包靠近聽你說話的朋友、離你較遠，所以用「それ」。",
+          "id": "g-demo/question/listener-item"
         }
       ]
     }
@@ -325,7 +336,7 @@ const Content = (() => {
           "example": "トイレ？",
           "reading": "toire?",
           "meaning": "廁所？",
-          "body": "對店員用疑問語氣說「トイレ？」，對方通常就知道你在找廁所。想說清楚位置，可以加上「どこ」（哪裡）。",
+          "body": "在店內可以先說「すみません」，再用疑問語氣說「トイレ？」。對方若不明白，可加上「どこ」，或用下面的完整說法。",
           "polite": "トイレはどこですか？",
           "politeReading": "toire wa doko desu ka",
           "politeMeaning": "廁所在哪裡？",
@@ -364,7 +375,7 @@ const Content = (() => {
             "どこ"
           ],
           "answer": 0,
-          "explanation": "「トイレ」是廁所。用疑問語氣說，對方可能就知道你在找廁所；「どこ」則是問哪裡。",
+          "explanation": "「トイレ」是廁所。「すみません」可先引起店員注意，「どこ」則是問哪裡。",
           "id": "t-place/question/toilet-keyword"
         },
         {
@@ -451,11 +462,11 @@ const Content = (() => {
           ],
           "example": "アイス。",
           "reading": "aisu",
-          "meaning": "冰的。",
+          "meaning": "我要冰的。",
           "body": "已經選好飲料，店員確認冷熱時，回答「ホット」或「アイス」即可。這裡的「アイス」指冰飲。",
           "polite": "アイスでお願いします。",
           "politeReading": "aisu de onegaishimasu",
-          "politeMeaning": "請幫我做冰的。",
+          "politeMeaning": "我要冰的，麻煩你。",
           "extra": {
             "title": "進階補充：點酒的喝法",
             "keywords": [
@@ -502,7 +513,7 @@ const Content = (() => {
           "id": "t-order/card/noodle-temperature"
         },
         {
-          "title": "飯量：一般份、大份",
+          "title": "飯的份量：一般份量、大份量",
           "keywords": [
             [
               "並盛（なみもり）",
@@ -512,7 +523,7 @@ const Content = (() => {
             [
               "大盛（おおもり）",
               "oomori",
-              "大份"
+              "大份量"
             ]
           ],
           "example": "並盛。",
@@ -555,21 +566,21 @@ const Content = (() => {
       "type": "grammar",
       "group": "travel",
       "title": "結帳：請店員算錢",
-      "subtitle": "会計（kaikei）・お願いします",
+      "subtitle": "お会計（okaikei）・お願いします",
       "steps": [
         {
           "title": "吃完後要結帳",
           "keywords": [
             [
-              "会計（かいけい）",
-              "kaikei",
+              "お会計（おかいけい）",
+              "okaikei",
               "結帳"
             ]
           ],
-          "example": "会計。",
-          "reading": "kaikei",
+          "example": "お会計。",
+          "reading": "okaikei",
           "meaning": "結帳。",
-          "body": "餐廳吃完，向店員說「会計」，通常就能表達想結帳。「お会計」是常見的較客氣說法，意思一樣。",
+          "body": "餐廳吃完，想請店員結帳時，可以說「お会計」。再加上「お願いします」，就是「麻煩幫我結帳」。",
           "polite": "お会計、お願いします。",
           "politeReading": "okaikei, onegaishimasu",
           "politeMeaning": "麻煩幫我結帳。",
@@ -626,7 +637,7 @@ const Content = (() => {
       "type": "grammar",
       "group": "travel",
       "title": "交通卡加值",
-      "subtitle": "チャージ・1000 円",
+      "subtitle": "チャージ・1000円",
       "steps": [
         {
           "title": "請店員幫交通卡加值",
@@ -652,7 +663,7 @@ const Content = (() => {
           "title": "告訴店員加值金額",
           "keywords": [
             [
-              "1000 円（せんえん）",
+              "1000円（せんえん）",
               "sen en",
               "一千日圓"
             ],
@@ -662,11 +673,11 @@ const Content = (() => {
               "加值"
             ]
           ],
-          "example": "1000 円、お願いします。",
+          "example": "1000円、お願いします。",
           "reading": "sen en, onegaishimasu",
           "meaning": "一千日圓，麻煩你。",
-          "body": "店員已經知道你要加值時，接著說「1000 円」就能表達金額：一千日圓。",
-          "polite": "1000 円、チャージお願いします。",
+          "body": "店員已經知道你要加值時，接著說「1000円」就能表達金額：一千日圓。",
+          "polite": "1000円、チャージお願いします。",
           "politeReading": "sen en, chaaji onegaishimasu",
           "politeMeaning": "麻煩加值一千日圓。",
           "id": "t-charge/card/amount"
@@ -685,14 +696,14 @@ const Content = (() => {
           "id": "t-charge/question/top-up-meaning"
         },
         {
-          "prompt": "店員已知道你要加值。你說「1000 円」，是在告訴他什麼？",
+          "prompt": "店員已知道你要加值。你說「1000円」，是在告訴他什麼？",
           "options": [
             "加值一千日圓",
             "要一千張卡",
             "問車站的位置"
           ],
           "answer": 0,
-          "explanation": "「1000 円」讀 sen en，是一千日圓。這裡用來說明加值金額。",
+          "explanation": "「1000円」讀 sen en，是一千日圓。這裡用來說明加值金額。",
           "id": "t-charge/question/amount-meaning"
         }
       ]
@@ -847,11 +858,11 @@ const Content = (() => {
           ],
           "example": "アイス。",
           "reading": "aisu",
-          "meaning": "冰的。",
+          "meaning": "我要冰的。",
           "body": "已經選好飲料，店員確認冷熱時，回答「ホット」或「アイス」即可。這裡的「アイス」指冰飲。",
           "polite": "アイスでお願いします。",
           "politeReading": "aisu de onegaishimasu",
-          "politeMeaning": "請幫我做冰的。",
+          "politeMeaning": "我要冰的，麻煩你。",
           "extra": {
             "title": "進階補充：點酒的喝法",
             "keywords": [
@@ -898,7 +909,7 @@ const Content = (() => {
           "id": "phrase/t-order/noodle-temperature"
         },
         {
-          "title": "飯量：一般份、大份",
+          "title": "飯的份量：一般份量、大份量",
           "keywords": [
             [
               "並盛（なみもり）",
@@ -908,7 +919,7 @@ const Content = (() => {
             [
               "大盛（おおもり）",
               "oomori",
-              "大份"
+              "大份量"
             ]
           ],
           "example": "並盛。",
@@ -1029,15 +1040,15 @@ const Content = (() => {
           "title": "吃完後要結帳",
           "keywords": [
             [
-              "会計（かいけい）",
-              "kaikei",
+              "お会計（おかいけい）",
+              "okaikei",
               "結帳"
             ]
           ],
-          "example": "会計。",
-          "reading": "kaikei",
+          "example": "お会計。",
+          "reading": "okaikei",
           "meaning": "結帳。",
-          "body": "餐廳吃完，向店員說「会計」，通常就能表達想結帳。「お会計」是常見的較客氣說法，意思一樣。",
+          "body": "餐廳吃完，想請店員結帳時，可以說「お会計」。再加上「お願いします」，就是「麻煩幫我結帳」。",
           "polite": "お会計、お願いします。",
           "politeReading": "okaikei, onegaishimasu",
           "politeMeaning": "麻煩幫我結帳。",
@@ -1195,7 +1206,7 @@ const Content = (() => {
           "example": "トイレ？",
           "reading": "toire?",
           "meaning": "廁所？",
-          "body": "對店員用疑問語氣說「トイレ？」，對方通常就知道你在找廁所。想說清楚位置，可以加上「どこ」（哪裡）。",
+          "body": "在店內可以先說「すみません」，再用疑問語氣說「トイレ？」。對方若不明白，可加上「どこ」，或用下面的完整說法。",
           "polite": "トイレはどこですか？",
           "politeReading": "toire wa doko desu ka",
           "politeMeaning": "廁所在哪裡？",
@@ -1259,7 +1270,7 @@ const Content = (() => {
             "どこ"
           ],
           "answer": 0,
-          "explanation": "「トイレ」是廁所。用疑問語氣說，對方可能就知道你在找廁所；「どこ」則是問哪裡。",
+          "explanation": "「トイレ」是廁所。「すみません」可先引起店員注意，「どこ」則是問哪裡。",
           "id": "t-place/question/toilet-keyword"
         },
         {
@@ -1306,7 +1317,7 @@ const Content = (() => {
           "title": "告訴店員加值金額",
           "keywords": [
             [
-              "1000 円（せんえん）",
+              "1000円（せんえん）",
               "sen en",
               "一千日圓"
             ],
@@ -1316,11 +1327,11 @@ const Content = (() => {
               "加值"
             ]
           ],
-          "example": "1000 円、お願いします。",
+          "example": "1000円、お願いします。",
           "reading": "sen en, onegaishimasu",
           "meaning": "一千日圓，麻煩你。",
-          "body": "店員已經知道你要加值時，接著說「1000 円」就能表達金額：一千日圓。",
-          "polite": "1000 円、チャージお願いします。",
+          "body": "店員已經知道你要加值時，接著說「1000円」就能表達金額：一千日圓。",
+          "polite": "1000円、チャージお願いします。",
           "politeReading": "sen en, chaaji onegaishimasu",
           "politeMeaning": "麻煩加值一千日圓。",
           "id": "phrase/t-charge/amount"
@@ -1339,14 +1350,14 @@ const Content = (() => {
           "id": "t-charge/question/top-up-meaning"
         },
         {
-          "prompt": "店員已知道你要加值。你說「1000 円」，是在告訴他什麼？",
+          "prompt": "店員已知道你要加值。你說「1000円」，是在告訴他什麼？",
           "options": [
             "加值一千日圓",
             "要一千張卡",
             "問車站的位置"
           ],
           "answer": 0,
-          "explanation": "「1000 円」讀 sen en，是一千日圓。這裡用來說明加值金額。",
+          "explanation": "「1000円」讀 sen en，是一千日圓。這裡用來說明加值金額。",
           "id": "t-charge/question/amount-meaning"
         }
       ]
@@ -1378,11 +1389,6 @@ const Content = (() => {
               "予約（よやく）",
               "yoyaku",
               "預約／訂位"
-            ],
-            [
-              "予約してます",
-              "yoyaku shitemasu",
-              "我有預約"
             ]
           ],
           "body": "在飯店或餐廳，說完已有預約，再告訴對方名字或出示訂單。",
@@ -1471,13 +1477,13 @@ const Content = (() => {
       "5": {
         "title": "哪一句說明正確？",
         "options": [
-          "看得懂漢字，日文讀音就和中文一樣。",
-          "平假名、片假名和漢字，可以一起出現在日文裡。",
-          "日文只會用平假名。"
+          "平假名、片假名和漢字，是同一種文字的不同名稱。",
+          "平假名、片假名和漢字，會一起出現在日文句子裡。",
+          "平假名、片假名和漢字，分別屬於三種不同的語言。"
         ],
         "answer": 1,
         "correct": "對，它們會一起出現在日文裡。",
-        "explanation": "同一句日文裡，可以同時使用平假名、片假名和漢字。",
+        "explanation": "這是日文裡的三種文字，不是同一種文字的別名，也不是三種不同語言；它們可以一起出現在句子裡。",
         "wrong": "再看一下提示。",
         "hint": "日文會使用三種文字；看起來熟悉的漢字，讀音也可能和中文不同。",
         "id": "intro/question/mixed-scripts"

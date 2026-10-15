@@ -8,10 +8,69 @@ const studySource = readFileSync(new URL('../dist/study.js', import.meta.url), '
 const plain = value => JSON.parse(JSON.stringify(value));
 const completedAt = '2026-10-15T10:00:00.000Z';
 
-function load(mutation = '') {
+// Fixed deployed V1 fixture; current reviewed content may evolve independently.
+const baselineIdentity = {
+  "id": "g-identity",
+  "type": "grammar",
+  "title": "A 是 B：は・です",
+  "subtitle": "名詞句的基本結構",
+  "steps": [
+    {
+      "title": "本課單字",
+      "example": "わたし ／ がくせい",
+      "reading": "watashi / gakusei",
+      "meaning": "我 ／ 學生",
+      "body": "本課用這兩個詞，練習自我介紹。",
+      "id": "g-identity/card/nouns"
+    },
+    {
+      "title": "句型：A は B です",
+      "example": "わたしは がくせいです。",
+      "reading": "watashi wa gakusei desu",
+      "meaning": "我是學生。",
+      "body": "「わたし」是我，「がくせい」是學生。在這種「A 是 B」的句子裡，用「は」接起來，再以「です」結尾；這是比較禮貌的說法。",
+      "id": "g-identity/card/noun-sentence"
+    },
+    {
+      "title": "助詞 は 的讀音",
+      "example": "わたし は がくせい です。",
+      "reading": "watashi wa gakusei desu",
+      "meaning": "說到我：我是學生。",
+      "body": "這裡的「は」標出我們正在說誰，要讀成 wa。雖然念 wa，寫的仍是「は」，不是「わ」。",
+      "id": "g-identity/card/topic-reading"
+    }
+  ],
+  "questions": [
+    {
+      "prompt": "想說「我是學生。」：わたしは がくせい＿＿。最後應放哪一個？",
+      "options": [
+        "です",
+        "は",
+        "わたし"
+      ],
+      "answer": 0,
+      "explanation": "句尾放「です」，就是「わたしは がくせいです。」——我是學生。",
+      "id": "g-identity/question/sentence-ending"
+    },
+    {
+      "prompt": "在「わたしは がくせいです。」裡，連接兩部分的「は」讀作什麼？",
+      "options": [
+        "ha",
+        "wa",
+        "ka"
+      ],
+      "answer": 1,
+      "explanation": "這裡的「は」是標出主題的小詞，讀作 wa；寫法仍然是「は」。",
+      "id": "g-identity/question/topic-reading"
+    }
+  ]
+};
+
+function load(mutation = '', useBaseline = false) {
   const marker = '  const courses = buildCourses(data);';
   assert.equal(contentSource.split(marker).length, 2, 'The fixture must mutate content before registry construction and freezing.');
-  const source = contentSource.replace(marker, `${mutation}\n${marker}`);
+  const fixture = useBaseline ? `grammar[0] = ${JSON.stringify(baselineIdentity)};` : "";
+  const source = contentSource.replace(marker, `${fixture}\n${mutation}\n${marker}`);
   const context = vm.createContext({});
   vm.runInContext(source, context, { filename: 'dist/content.js' });
   vm.runInContext(studySource, context, { filename: 'dist/study.js' });
@@ -53,7 +112,7 @@ function assertEarnedResultSurvives(result) {
 }
 
 test('legacy baseline resumes shuffled indexes and first responses while stamping revision and IDs', () => {
-  const { content, study } = load();
+  const { content, study } = load('', true);
   const result = study.sanitize(legacySaved()).courses['g-identity'];
   assertEarnedResultSurvives(result);
   assert.equal(result.active.phase, 'quiz');
@@ -72,6 +131,14 @@ test('a current versioned attempt resumes without changing its score or original
   const result = study.sanitize(saved).courses['g-identity'];
   assertEarnedResultSurvives(result);
   assert.deepEqual(plain(result.active), saved.courses['g-identity'].active);
+});
+
+test('reviewed current content rejects the fixed legacy attempt while keeping earned results', () => {
+  const { content, study } = load();
+  assert.notEqual(content.courseRevision('g-identity'), content.legacyCourseRevision['g-identity']);
+  const result = study.sanitize(legacySaved()).courses['g-identity'];
+  assert.equal(result.active, null);
+  assertEarnedResultSurvives(result);
 });
 
 test('changed card content invalidates both legacy and versioned active attempts but preserves earned completion', () => {

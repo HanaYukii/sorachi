@@ -7,7 +7,8 @@ const Study = (() => {
   const travelItem = (id) => PHRASEBOOK.find(item => item.id === id);
   let api;
   let audioGeneration = 0;
-  let voicesListening = false;
+  let voiceListener = null;
+  let audioTimer = null;
   const escape = (text) => String(text).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const size = (course) => course.type === "kana" ? course.letters.length : course.questions.length;
   const cards = (course) => course.type === "kana" ? course.letters.length : course.steps.length;
@@ -96,7 +97,7 @@ const Study = (() => {
   }
   function row(course) {
     const learned = state().courses[course.id];
-    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span><strong>${escape(course.type === "kana" ? course.row : course.title)}</strong><span class="reading-label"${course.type === "kana" ? ' lang="ja"' : ""}>${escape(course.type === "kana" ? course.letters.join("　") : course.subtitle || "一個句型 · 兩題練習")}</span></span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
+    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span><strong>${escape(course.type === "kana" ? course.row : course.title)}</strong><span class="reading-label"${course.type === "kana" ? ' lang="ja"' : ""}>${escape(course.type === "kana" ? course.letters.join("　") : course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span></span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
   }
   function kanaPage() {
     const script = state().script;
@@ -104,7 +105,7 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音練習</h1><p class="study-note">每組 3–5 個字，包含認字、讀音與選擇題。羅馬字只作讀音提示，不是照英文拼字唸。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div>${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${Object.values(courses).filter((c) => c.type === "kana" && c.script === script).map(row).join("")}</div><p class="study-note">先練平假名、片假名各 46 個基本字；濁音、半濁音、拗音、促音與長音之後再學。</p>`);
   }
   function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">每課介紹一個句型，再用兩題練習確認理解。例句附中文意思與讀音。</p><div class="course-list">${GRAMMAR.map(row).join("")}</div>`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">每課介紹一個句型，再用選擇題確認理解。例句附中文意思與讀音。</p><div class="course-list">${GRAMMAR.map(row).join("")}</div>`);
   }
   function travelPage(id) {
     if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">常用關鍵字、讀音與中文。依情境查看，需要時再展開完整說法。</p><nav class="travel-categories" aria-label="旅遊情境">${PHRASEBOOK.map(item => `<a class="course-row" href="#travel/${item.id}"><span><strong>${escape(item.title)}</strong><span class="reading-label">${escape(item.subtitle)}</span></span><span aria-hidden="true">→</span></a>`).join("")}</nav>`);
@@ -123,7 +124,7 @@ const Study = (() => {
     let body;
     if (course.type === "kana") {
       const letter = course.letters[i];
-      const special = course.script === "k" && ["n", "o", "ha", "he"].includes(course.readings[i])
+      const special = course.script === "k" && ["ン", "ヲ", "ハ", "ヘ"].includes(letter)
         ? `${letter} 讀作 ${course.readings[i]}，對應平假名「${course.spoken[i]}」。`
         : course.readings[i] === "n" ? "ん 是鼻音，羅馬字寫作 n。"
         : course.spoken[i] === "を" ? "を 通常用作助詞，讀作 o。"
@@ -149,11 +150,57 @@ const Study = (() => {
     const options = question ? question.options : active.direction === "reading" ? course.letters : course.readings;
     const explanation = question ? question.explanation : `「${course.letters[q]}」的讀音是 ${course.readings[q]}。`;
     const feedback = solved ? `答對了。${explanation}` : active.wrong !== null ? `正解是「${options[correct]}」。${explanation} 再選一次試試看。` : "";
-    return `<p class="reading-label">練習 · ${active.cursor + 1} / ${size(course)} · 選一個答案</p><section class="study-card"><h2>${escape(prompt)}</h2>${question ? "" : `<div class="kana-character"${active.direction === "character" ? ' lang="ja"' : ""}>${escape(active.direction === "reading" ? course.readings[q] : course.letters[q])}</div>`}<div class="study-options" role="group" aria-label="答案選項">${active.options[q].map((choice) => `<button class="answer${solved && choice === correct ? " correct" : active.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}${course.type === "kana" && active.direction === "reading" ? ' lang="ja"' : ""}>${escape(options[choice])}${solved && choice === correct ? '<span class="answer-status"> ✓ 答對了</span>' : ""}</button>`).join("")}</div><p class="study-feedback${!solved && active.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(feedback)}</p></section><div class="study-nav"><button class="text-button" data-action="study-review">回去看看</button><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${active.cursor === size(course) - 1 ? "完成這一輪" : "下一題 →"}</button></div><p class="study-note">答錯可以重試；第一次的答案會留下紀錄，重試不會改寫初答成績。</p>`;
+    return `<p class="reading-label">練習 · ${active.cursor + 1} / ${size(course)} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(prompt)}</h2>${question ? "" : `<div class="kana-character"${active.direction === "character" ? ' lang="ja"' : ""}>${escape(active.direction === "reading" ? course.readings[q] : course.letters[q])}</div>`}<div class="study-options${course.type === "kana" ? " kana-options" : ""}" role="group" aria-label="答案選項">${active.options[q].map((choice) => `<button class="answer${solved && choice === correct ? " correct" : active.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}${course.type === "kana" && active.direction === "reading" ? ' lang="ja"' : ""}>${escape(options[choice])}<span class="answer-status">${solved && choice === correct ? ' ✓ 答對了' : active.wrong === choice ? ' ✕ 再試一次' : ''}</span></button>`).join("")}</div><p class="study-feedback${!solved && active.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(feedback)}</p></section><div class="study-nav"><button class="text-button" data-action="study-review">回去看看</button><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${active.cursor === size(course) - 1 ? "完成這一輪" : "下一題 →"}</button></div><p class="study-note">答錯可以重試；第一次的答案會留下紀錄，重試不會改寫第一次作答的成績。</p>`;
+  }
+  function nextCourse(id) {
+    const course = courses[id];
+    if (course?.type !== "kana") return null;
+    const siblings = Object.values(courses).filter(item => item.type === "kana" && item.script === course.script);
+    return siblings[siblings.findIndex(item => item.id === id) + 1]?.id || null;
+  }
+  function retryLabels(entry) {
+    const course = courses[entry?.courseId];
+    return (Array.isArray(entry?.retryQuestions) ? entry.retryQuestions : []).filter(n => Number.isInteger(n) && n > 0).map(number => {
+      const id = entry.questionIds?.[number - 1];
+      if (course && entry.courseRevision === Content.courseRevision(course.id)) {
+        const question = course.questions.find(item => item.id === id);
+        if (question?.character && question?.reading) return `${question.character}（${question.reading}）`;
+      }
+      // A stable kana ID records the old character, never the current reading.
+      const match = typeof id === "string" && id.startsWith(`${entry.courseId}/question/`) && id.match(/^[hk]-[a-z]+\/question\/u([0-9a-f]{4})$/);
+      if (match) {
+        const point = parseInt(match[1], 16);
+        if ((id.startsWith('h-') && point >= 0x3041 && point <= 0x3096) || (id.startsWith('k-') && point >= 0x30a1 && point <= 0x30fa)) return String.fromCodePoint(point);
+      }
+      return `第 ${number} 題`;
+    });
   }
   function result(course, saved) {
-    const score = saved.lastResult;
-    return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p>第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}<p class="study-note">${course.type === "kana" ? "可重練本組，或返回選擇其他組。" : course.group === "travel" ? "可重練本組，或返回選擇其他情境。" : "可重練本課，或返回選擇其他句型。"}</p><p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><div class="study-nav"><a class="text-button" href="${backHash(course)}">回到${course.type === "kana" ? "五十音" : course.group === "travel" ? "旅遊用語" : "句型列表"}</a><button class="primary" data-action="study-restart">重新練習</button></div></section>`;
+    const score = saved.lastResult, active = saved.active;
+    const retries = retryLabels({ courseId: course.id, courseRevision: active.courseRevision, questionIds: active.order.map(q => active.questionIds[q]), retryQuestions: active.order.flatMap((q, index) => active.first[q] === false ? [index + 1] : []) });
+    const next = nextCourse(course.id);
+    return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p>第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}${retries.length ? `<p class="study-note">第一次答錯：${retries.map(escape).join("、")}</p>` : ""}<p class="study-note">${course.type === "kana" ? "可重練本組，或返回選擇其他組。" : course.group === "travel" ? "可重練本組，或返回選擇其他情境。" : "可重練本課，或返回選擇其他句型。"}</p><p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><div class="study-nav">${next ? `<button class="primary" data-action="study-open" data-course="${next}">下一組：${escape(courses[next].row)}</button>` : ""}<button class="${next ? "text-button" : "primary"}" data-action="study-restart">重新練習</button><a class="text-button" href="${backHash(course)}">回到${course.type === "kana" ? "五十音" : course.group === "travel" ? "旅遊用語" : "句型列表"}</a></div></section>`;
+  }
+  function updateAnswer(course, active) {
+    const q = active.order[active.cursor], solved = active.solved[q] === true;
+    const correct = course.type === "kana" ? q : course.questions[q].answer;
+    const options = course.type === "kana" ? (active.direction === "reading" ? course.letters : course.readings) : course.questions[q].options;
+    const explanation = course.type === "kana" ? `「${course.letters[q]}」的讀音是 ${course.readings[q]}。` : course.questions[q].explanation;
+    for (const node of document.querySelectorAll('[data-action="study-answer"]')) {
+      const choice = Number(node.dataset.choice), right = solved && choice === correct, wrong = !solved && choice === active.wrong;
+      node.classList.toggle("correct", right); node.classList.toggle("wrong", wrong);
+      node.setAttribute("aria-disabled", String(solved)); node.setAttribute("tabindex", solved ? "-1" : "0");
+      const mark = node.querySelector('.answer-status');
+      if (mark) mark.textContent = right ? " ✓ 答對了" : wrong ? " ✕ 再試一次" : "";
+    }
+    const feedback = document.querySelector('.study-feedback');
+    if (feedback) {
+      feedback.textContent = solved ? `答對了。${explanation}` : `正解是「${options[correct]}」。${explanation} 再選一次試試看。`;
+      feedback.classList.toggle('wrong', !solved);
+      feedback.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    }
+    const next = document.querySelector('[data-action="study-next"]');
+    if (next) { next.disabled = !solved; if (solved) next.focus({ preventScroll: true }); }
   }
   function coursePage(course) {
     const saved = courseState(course.id);
@@ -181,41 +228,71 @@ const Study = (() => {
     if (selector === ".focus-heading") window.scrollTo?.({ top: 0, behavior: "instant" });
     app.querySelector(selector)?.focus({ preventScroll: true });
   }
-  function stopAudio() {
+  function pickVoice(voices) {
+    const japanese = voices.filter(v => /^ja(?:-|_|$)/i.test(v.lang || ''));
+    const rank = v => {
+      const jp = /^ja[-_]jp$/i.test(v.lang), local = v.localService === true;
+      const name = `${v.name || ''} ${v.voiceURI || ''}`;
+      return (/eloquence/i.test(name) ? 100 : 0) + (/kyoko/i.test(name) && jp && local ? -10 : 0) + (jp ? (local ? 0 : 1) : (local ? 2 : 3));
+    };
+    return japanese.sort((a,b) => rank(a) - rank(b))[0] || null;
+  }
+  function clearAudioRequest() {
     audioGeneration++;
-    if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+    if (audioTimer !== null) { clearTimeout(audioTimer); audioTimer = null; }
+    if (voiceListener) {
+      try { voiceListener.synth.removeEventListener?.('voiceschanged', voiceListener.callback); } catch { /* Generation guards stale callbacks. */ }
+      voiceListener = null;
+    }
+  }
+  function stopAudio() {
+    clearAudioRequest();
+    try {
+      const synth = typeof window !== "undefined" && window.speechSynthesis;
+      if (synth && (synth.speaking || synth.pending)) synth.cancel();
+    } catch { /* Navigation must remain usable when the speech engine fails. */ }
   }
   function speak(course, index, selector = ".study-audio-status", full = false) {
-    stopAudio();
+    const waiting = audioTimer !== null;
+    clearAudioRequest();
     const generation = audioGeneration;
-    const status = (text) => {
+    const status = text => {
       if (generation !== audioGeneration) return;
       const node = document.querySelector(selector);
       if (node) node.textContent = text;
     };
-    const synth = window.speechSynthesis;
-    const voice = synth?.getVoices().find((v) => /^ja(?:-|_|$)/i.test(v.lang));
-    if (!synth || typeof SpeechSynthesisUtterance === "undefined" || !voice) {
-      status("這個瀏覽器目前沒有日文語音，先看讀音練習也可以。");
-      if (synth && !voicesListening) {
-        voicesListening = true;
-        synth.addEventListener("voiceschanged", () => {
-          voicesListening = false;
-          const node = document.querySelector(selector);
-          if (node && synth.getVoices().some((v) => /^ja(?:-|_|$)/i.test(v.lang))) node.textContent = "日文語音已準備好，可以再按一次播放。";
-        }, { once: true });
+    const failed = () => status("這次沒有播放成功，可以再試一次，或先看讀音練習。");
+    try {
+      const synth = window.speechSynthesis;
+      const voice = synth ? pickVoice(synth.getVoices()) : null;
+      if (!synth || typeof SpeechSynthesisUtterance === "undefined" || !voice) {
+        status("這個瀏覽器目前沒有日文語音，先看讀音練習也可以。");
+        if (synth?.addEventListener) {
+          const callback = () => {
+            if (generation !== audioGeneration) return;
+            voiceListener = null;
+            try { if (pickVoice(synth.getVoices())) status("日文語音已準備好，可以再按一次播放。"); } catch { failed(); }
+          };
+          voiceListener = { synth, callback }; synth.addEventListener('voiceschanged', callback, { once: true });
+        }
+        return;
       }
-      return;
-    }
-    const spoken = course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : full ? course.steps[index].polite || course.steps[index].example : course.steps[index].example;
-    const utterance = new SpeechSynthesisUtterance(spoken);
-    utterance.voice = voice;
-    utterance.lang = "ja-JP";
-    utterance.rate = 0.8;
-    utterance.onstart = () => status("正在播放日文讀音…");
-    utterance.onend = () => status("播放完了，也可以再聽一次。");
-    utterance.onerror = () => status("這次沒有播放成功，可以再試一次，或先看讀音練習。");
-    synth.speak(utterance);
+      const spoken = course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : full ? course.steps[index].polite || course.steps[index].example : course.steps[index].example;
+      const utterance = new SpeechSynthesisUtterance(spoken);
+      utterance.voice = voice; utterance.lang = "ja-JP"; utterance.rate = 0.8;
+      utterance.onstart = () => status("正在播放日文讀音…");
+      utterance.onend = () => status("播放完了，也可以再聽一次。");
+      utterance.onerror = failed;
+      const play = () => {
+        if (generation !== audioGeneration) return;
+        audioTimer = null;
+        try { synth.speak(utterance); } catch { failed(); }
+      };
+      if (waiting || synth.speaking || synth.pending) {
+        if (synth.speaking || synth.pending) synth.cancel();
+        status("準備播放日文讀音…"); audioTimer = setTimeout(play, 130);
+      } else play();
+    } catch { failed(); }
   }
   function complete(course, saved) {
     const active = saved.active;
@@ -273,7 +350,7 @@ const Study = (() => {
       if (correct) { active.solved[q] = true; active.wrong = null; }
       else active.wrong = choice;
       save();
-      redraw(`[data-action="study-answer"][data-choice="${choice}"]`);
+      updateAnswer(course, active);
       return true;
     } else if (action === "study-next") {
       if (active.phase === "cards") {
@@ -301,5 +378,5 @@ const Study = (() => {
     const active = state().courses[course.id]?.active;
     return `${course.title}${active ? active.phase === "done" ? "・完成頁" : `・${active.phase === "cards" ? "認識" : "練習"}第 ${active.cursor + 1} 步` : ""}`;
   }
-  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total };
+  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse };
 })();

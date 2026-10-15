@@ -11,10 +11,52 @@ const plain = value => JSON.parse(JSON.stringify(value));
 const data = () => plain({ rows: Content.rows, grammar: Content.grammar, travel: Content.travel, phrasebook: Content.phrasebook, intro: Content.intro });
 const errors = mutate => { const copy = data(); mutate(copy); return Content.validate(copy).join('\n'); };
 
-test('extracted visible content exactly matches the pre-extraction snapshot', () => {
+test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '845b99c16bcc30bbf559ad95622d91fdeff23bab24b1428855e2daf6993afafe');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '4f1098a991290ac6c76fc8081c78f950f4cc67adac82000fec048e9ca52dc048');
   assert.deepEqual(plain(Content.validate()), []);
+});
+
+test('reviewed grammar teaches topic marking and tests all three spatial demonstratives', () => {
+  const identity = Content.getCourse('g-identity');
+  assert.doesNotMatch(identity.steps.map(s => s.body).join(''), /接起來|連接/);
+  assert.match(identity.steps[1].body, /主題/);
+  assert.match(identity.questions[0].prompt, /わたし＿＿がくせいです/);
+  assert.deepEqual(plain(identity.questions[0].options), ['は', 'わ', 'です']);
+  assert.equal(identity.questions[0].options[identity.questions[0].answer], 'は');
+  assert.doesNotMatch(identity.questions[1].prompt, /連接/);
+  const demo = Content.getCourse('g-demo');
+  assert.equal(demo.questions.length, 3);
+  assert.deepEqual([...new Set(demo.questions.map(q => q.options[q.answer]))].sort(), ['あれ', 'これ', 'それ'].sort());
+});
+
+test('question lesson avoids punctuation giveaways and untaught teacher distractors', () => {
+  const questions = Content.getCourse('g-question').questions;
+  assert.doesNotMatch(questions[0].prompt, /詢問他的身分|がくせいですか？/);
+  assert.doesNotMatch(questions.flatMap(q => q.options).join(''), /老師/);
+  for (const question of questions) assert.ok(question.options.every(option => !/[？?。]/u.test(option)));
+  assert.deepEqual(plain(questions[0].options), ['你是學生嗎', '我是學生嗎', '我是學生']);
+});
+
+test('intro distractors are balanced and travel phrases retain concise contextual wording', () => {
+  const options = Content.intro.questions[5].options;
+  const lengths = options.map(option => [...option].length);
+  assert.ok(Math.max(...lengths) - Math.min(...lengths) <= 6);
+  assert.doesNotMatch(options.join(''), /只會/);
+  for (const collection of [Content.travel, Content.phrasebook]) {
+    const pay = collection.find(c => c.id === 't-pay').steps[0];
+    assert.equal(pay.keywords[0][0], 'お会計（おかいけい）');
+    assert.equal(pay.keywords[0][1], 'okaikei');
+    const place = collection.find(c => c.id === 't-place').steps[0];
+    assert.match(place.body, /すみません/);
+    assert.doesNotMatch(place.body, /通常就知道/);
+    const order = collection.find(c => c.id === 't-order').steps;
+    assert.equal(order.find(s => s.id.endsWith('drink-temperature')).politeMeaning, '我要冰的，麻煩你。');
+  }
+  assert.doesNotMatch(JSON.stringify(Content.travel) + JSON.stringify(Content.phrasebook), /1000 円/);
+  const reservation = Content.phrasebook.find(c => c.id === 'hotel').steps.find(s => s.id.endsWith('reservation'));
+  assert.equal(reservation.keywords.length, 1);
+  assert.equal(reservation.keywords[0][0], '予約（よやく）');
 });
 
 test('registry includes 20 kana groups, three grammar courses and four compatible travel courses', () => {
