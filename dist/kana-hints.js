@@ -106,6 +106,18 @@ const KanaHints = (() => {
     'ん': '「ほん」（書）最後的 ん 讀 n，是鼻音收尾，不要多加 u 音；ん 幾乎不會出現在詞的開頭。',
     'ン': '「パン」（麵包）最後的 ン 記作 n，不要多加 u 音。',
   };
+  // Voiced (゛) and semi-voiced (゜) kana reuse the base shape, so their hints point back to it.
+  const voiced = [
+    ['かきくけこ', 'ka ki ku ke ko', 'ga gi gu ge go'], ['さしすせそ', 'sa shi su se so', 'za ji zu ze zo'],
+    ['たちつてと', 'ta chi tsu te to', 'da ji zu de do'], ['はひふへほ', 'ha hi fu he ho', 'ba bi bu be bo'],
+    ['はひふへほ', 'ha hi fu he ho', 'pa pi pu pe po'],
+  ];
+  const sameSound = {
+    'ぢ': 'ぢ 和 じ 同音，都讀 ji；一般多寫 じ，ぢ 只出現在少數詞，例如「はなぢ」（鼻血）。',
+    'づ': 'づ 和 ず 同音，都讀 zu；一般多寫 ず，づ 只出現在少數詞，例如「つづく」（繼續）。',
+    'ヂ': 'ヂ 和 ジ 同音，都讀 ji；片假名幾乎都寫 ジ。',
+    'ヅ': 'ヅ 和 ズ 同音，都讀 zu；片假名幾乎都寫 ズ。',
+  };
   const data = Object.create(null);
   for (const [letter, shape, word, meaning, reading] of entries) {
     data[letter] = Object.freeze([
@@ -113,6 +125,18 @@ const KanaHints = (() => {
       Object.freeze({ label: '聲音連結', text: special[letter] || (word === letter ? `「${word}」（${meaning}）就是 ${letter} 這一個字，讀 ${reading}。` : `「${word}」（${meaning}）開頭的 ${letter}，讀 ${reading}。`) }),
     ]);
   }
+  voiced.forEach(([bases, baseReadings, readings], row) => {
+    const semi = row === 4, from = baseReadings.split(' '), to = readings.split(' ');
+    for (const katakana of [false, true]) [...bases].forEach((plain, i) => {
+      const base = katakana ? String.fromCharCode(plain.charCodeAt(0) + 0x60) : plain;
+      const letter = (base + (semi ? '゚' : '゙')).normalize('NFC');
+      const mark = semi ? '右上多一個小圈（半濁點）' : '右上多兩點（濁點）';
+      data[letter] = Object.freeze([
+        Object.freeze({ label: '字形聯想', text: `和 ${base} 一樣，只是${mark}。` }),
+        Object.freeze({ label: '聲音連結', text: sameSound[letter] || `${base}（${from[i]}）加上${semi ? '半濁點' : '濁點'}，讀音變成 ${to[i]}。` }),
+      ]);
+    });
+  });
   Object.freeze(data);
   const empty = Object.freeze([]);
   return Object.freeze({

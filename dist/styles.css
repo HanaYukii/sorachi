@@ -1206,6 +1206,9 @@ button svg {
 .script-tabs button { flex: 1; padding: 12px; background: none; border-radius: 12px; font-size: 14px; min-height: 46px; }
 .script-tabs button[aria-pressed="true"], .script-tabs button[aria-selected="true"] { background: white; box-shadow: 0 2px 5px #6750830c; color: var(--purple-deep); font-weight: 600; }
 .course-list { display: grid; gap: 12px; padding: 0; margin: 24px 0; list-style: none; }
+.course-list-heading { font-size: 18px; margin: 32px 0 0; }
+.option-reading { display: block; font-size: 12px; font-weight: 400; color: var(--muted); letter-spacing: 0.5px; }
+.course-list-heading + .study-note { margin: 8px 0 0; }
 .course-row { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 19px 22px; display: flex; gap: 20px; align-items: center; justify-content: space-between; text-align: left; }
 .course-row > div { min-width: 0; }
 .course-row h2, .course-row h3 { font-size: 16px; margin-bottom: 7px; font-weight: 600; line-height: 1.65; }

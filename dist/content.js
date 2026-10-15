@@ -128,6 +128,71 @@ const Content = (() => {
         "o",
         "n"
       ]
+    ],
+    [
+      "ga",
+      "が行",
+      "がぎぐげご",
+      "ガギグゲゴ",
+      [
+        "ga",
+        "gi",
+        "gu",
+        "ge",
+        "go"
+      ]
+    ],
+    [
+      "za",
+      "ざ行",
+      "ざじずぜぞ",
+      "ザジズゼゾ",
+      [
+        "za",
+        "ji",
+        "zu",
+        "ze",
+        "zo"
+      ]
+    ],
+    [
+      "da",
+      "だ行",
+      "だぢづでど",
+      "ダヂヅデド",
+      [
+        "da",
+        "ji",
+        "zu",
+        "de",
+        "do"
+      ]
+    ],
+    [
+      "ba",
+      "ば行",
+      "ばびぶべぼ",
+      "バビブベボ",
+      [
+        "ba",
+        "bi",
+        "bu",
+        "be",
+        "bo"
+      ]
+    ],
+    [
+      "pa",
+      "ぱ行",
+      "ぱぴぷぺぽ",
+      "パピプペポ",
+      [
+        "pa",
+        "pi",
+        "pu",
+        "pe",
+        "po"
+      ]
     ]
   ];
   const grammar = [
@@ -170,6 +235,7 @@ const Content = (() => {
             "わ",
             "です"
           ],
+          "readings": ["wa","wa","desu"],
           "answer": 0,
           "explanation": "「は」標出主題「わたし」：わたしは がくせいです。這裡念 wa，但要寫「は」。",
           "id": "g-identity/question/sentence-ending"
@@ -237,6 +303,7 @@ const Content = (() => {
             "がくせいは わたしです",
             "がくせいですか"
           ],
+          "readings": ["watashi wa gakusei desu","gakusei wa watashi desu","gakusei desu ka"],
           "answer": 2,
           "explanation": "「がくせいですか」用句尾的「か」表示疑問。其他兩句是在說明，沒有「か」。",
           "id": "g-question/question/question-ending"
@@ -282,6 +349,7 @@ const Content = (() => {
             "これ",
             "あれ"
           ],
+          "readings": ["sore","kore","are"],
           "answer": 1,
           "explanation": "麵包就在說話的你手上，靠近你自己，所以用「これ」。",
           "id": "g-demo/question/held-item"
@@ -293,6 +361,7 @@ const Content = (() => {
             "それ",
             "これ"
           ],
+          "readings": ["are","sore","kore"],
           "answer": 0,
           "explanation": "麵包離說話的你和聽話的朋友都遠，所以用「あれ」。",
           "id": "g-demo/question/distant-item"
@@ -304,6 +373,7 @@ const Content = (() => {
             "あれ",
             "それ"
           ],
+          "readings": ["kore","are","sore"],
           "answer": 2,
           "explanation": "麵包靠近聽你說話的朋友、離你較遠，所以用「それ」。",
           "id": "g-demo/question/listener-item"
@@ -1639,6 +1709,7 @@ const Content = (() => {
       const normalized = options.filter(option => typeof option === 'string').map(option => option.normalize('NFC').trim());
       if (new Set(normalized).size !== normalized.length) fail(`${path}.options`, 'options must be distinct');
       if (!Number.isInteger(value.answer) || value.answer < 0 || value.answer >= options.length) fail(`${path}.answer`, 'answer must identify an existing option');
+      if (value.readings !== undefined && (!Array.isArray(value.readings) || value.readings.length !== options.length || !value.readings.every((reading, i) => text(reading, `${path}.readings[${i}]`, 'reading')))) fail(`${path}.readings`, 'readings must match options');
       if (introQuestion) {
         for (const key of ['correct', 'wrong', 'hint']) text(value[key], `${path}.${key}`, 'zh');
         if (value.word !== undefined) { text(value.word, `${path}.word`, 'ja'); text(value.note, `${path}.note`, 'zh'); }
@@ -1651,9 +1722,13 @@ const Content = (() => {
       ['na','なにぬねの','ナニヌネノ','na ni nu ne no'], ['ha','はひふへほ','ハヒフヘホ','ha hi fu he ho'],
       ['ma','まみむめも','マミムメモ','ma mi mu me mo'], ['ya','やゆよ','ヤユヨ','ya yu yo'],
       ['ra','らりるれろ','ラリルレロ','ra ri ru re ro'], ['wa','わをん','ワヲン','wa o n'],
+      // Voiced and semi-voiced rows. ぢ／づ sound the same as じ／ず, so they share ji／zu.
+      ['ga','がぎぐげご','ガギグゲゴ','ga gi gu ge go'], ['za','ざじずぜぞ','ザジズゼゾ','za ji zu ze zo'],
+      ['da','だぢづでど','ダヂヅデド','da ji zu de do'], ['ba','ばびぶべぼ','バビブベボ','ba bi bu be bo'],
+      ['pa','ぱぴぷぺぽ','パピプペポ','pa pi pu pe po'],
     ];
     const sourceRows = list(candidate.rows, 'rows');
-    if (sourceRows.length !== expected.length) fail('rows', 'kana coverage requires ten rows per script');
+    if (sourceRows.length !== expected.length) fail('rows', 'kana coverage requires fifteen rows per script');
     const rowIds = new Set();
     sourceRows.forEach((row, i) => {
       if (!Array.isArray(row) || row.length !== 5) { fail(`rows[${i}]`, 'invalid kana row tuple'); return; }
@@ -1677,6 +1752,8 @@ const Content = (() => {
         text(course.title, `${path}.title`, 'zh'); text(course.subtitle, `${path}.subtitle`);
         list(course.steps, `${path}.steps`).forEach((step, j) => card(step, `${path}.steps[${j}]`, cardIds));
         list(course.questions, `${path}.questions`).forEach((q, j) => question(q, `${path}.questions[${j}]`, questionIds));
+        // Grammar lessons are open before kana practice, so kana options carry romaji (Chinese options need none).
+        if (group === 'grammar' && Array.isArray(course.questions)) course.questions.forEach((q, j) => { if (record(q) && Array.isArray(q.options) && q.options.some(option => /[぀-ヿ]/u.test(option)) && q.readings === undefined) fail(`${path}.questions[${j}].readings`, 'Japanese options require readings'); });
       });
     }
     const categoryIds = new Set(), phraseIds = new Set();

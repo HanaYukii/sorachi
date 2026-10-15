@@ -915,3 +915,17 @@ test('author route links the personal website without changing learning progress
  b.navigate('#home'); assert.match(b.html,/href="#about"/);
  assert.doesNotMatch(b.html,/#guide|使用說明書/);
 });
+
+test('home goes on to voiced hiragana after the basic rows, but keeps katakana learners on katakana', () => {
+  const withCompleted = (ids) => {
+    const data = JSON.parse(browser().stored);
+    for (const id of ids) data.learning.study.courses[id] = { completedAt: '2026-10-01T00:00:00.000Z' };
+    return browser({ raw: JSON.stringify(data) });
+  };
+  const basicH = ['a','ka','sa','ta','na','ha','ma','ya','ra','wa'].map((row) => `h-${row}`);
+  const hiragana = withCompleted(basicH);
+  assert.match(hiragana.html, /data-action="study-open" data-course="h-ga"/);
+  assert.match(hiragana.html, /平假名已完成 10 \/ 15 組/);
+  const katakana = withCompleted([...basicH, 'k-a', 'k-ka']);
+  assert.match(katakana.html, /data-action="study-open" data-course="k-sa"/);
+});

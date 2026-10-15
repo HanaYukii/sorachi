@@ -10,13 +10,13 @@
 
 視覺使用原創雲朵精靈，淡紫為主、水色輔助、杏橘色作為主要操作。白色留白與單一學習路徑優先於功能數量。
 
-這是新手基礎課程雛形，尚未包含完整 N5/N4 課程或題庫。五十音目前涵蓋平假名、片假名各 46 個基本字；濁音、半濁音、拗音、促音、長音與書寫練習尚未加入。後續以新手學習為主，題庫作為練習補充。
+這是新手基礎課程雛形，尚未包含完整 N5/N4 課程或題庫。五十音目前涵蓋平假名、片假名各 46 個基本字與 25 個濁音・半濁音；拗音、促音、長音與書寫練習尚未加入。後續以新手學習為主，題庫作為練習補充。
 
 ## Beginner learning flow
 
-- Kana: 20 groups (10 per script), each with 3–5 cards and two switchable memory hints per character. Quizzes mix character-to-reading and reading-to-character within a round, using the current and completed rows for distractors while excluding duplicate readings. Missed characters return once at the end in the opposite direction. Short reviews prioritize recently missed characters, then older learned characters, up to five per round. Practice results do not claim long-term mastery.
+- Kana: 30 groups (15 per script: 10 basic rows plus が/ざ/だ/ば/ぱ), each with 3–5 cards and two switchable memory hints per character. Voiced hints point back to the base character; ぢ/づ share ji/zu with じ/ず and say so. Quizzes mix character-to-reading and reading-to-character within a round, using the current and completed rows for distractors while excluding duplicate readings; a voiced character and its learned base (か/が) count as look-alikes. Missed characters return once at the end in the opposite direction. Short reviews prioritize missed characters (longest-waiting first), then older learned characters, up to five per round. Practice results do not claim long-term mastery.
 - Pronunciation: device speech synthesis explicitly selects an available Japanese voice. A missing Japanese voice or failed playback produces a visible fallback message. Audio quality and availability depend on the device; these are not reviewed human recordings. Isolated は/へ are synthesized as ハ/ヘ to avoid particle readings; を is synthesized as お while preserving its displayed spelling.
-- Grammar: three micro-lessons cover noun sentences with は／です, questions with ですか, and spatial これ／それ／あれ. Each contains three explanation cards and two questions. Examples include romaji support and Chinese meanings; no kana completion gate is imposed.
+- Grammar: three micro-lessons cover noun sentences with は／です, questions with ですか, and spatial これ／それ／あれ. Each contains three explanation cards and two questions. Examples include romaji, Chinese meanings and device audio; Japanese answer options show romaji (enforced by `validate()`), so no kana completion gate is imposed.
 - Travel phrasebook: independent `#travel` index and `#travel/<category>` pages cover asking for help, ordering, dining needs, credit card/Suica/cash payments, shopping, places, IC top-ups, and hotels/reservations. Keyword/romaji/Chinese panels are immediately visible; full expressions and device audio are collapsed by default. The drink-style supplement stays optional. Browsing never creates attempts, scores, or learning progress. Per-card audio reports status beside the selected example. Contextual feedback returns to the exact category. Previous `#study/t-*` routes and records remain compatible but are not the phrasebook entry points.
 - Travel references: drink-style terminology checked against [Suntory rocks](https://www.suntory.co.jp/whisky/hibiki/time/drinkstyle/rocks.html) and [soda](https://www.suntory.co.jp/whisky/hibiki/time/drinkstyle/soda.html) guides. Top-up context checked against [JR East Suica charging guidance](https://www.jreast.co.jp/es/suica/chrg/index.html/); examples are original.
 - Progress and first responses survive reload. All courses use the same history and contextual feedback entry points. A completed round is recorded once; clearing records ends unfinished kana practice while preserving completed-course status and non-kana progress.
@@ -97,7 +97,7 @@ node scripts/verify-deploy.mjs --attempts 12
 - `dist/content.js`：獨立教材、穩定課程／題目／卡片 ID、內容版本與驗證。
 - `dist/diagnostics.js`：公開回報用的版本與教材 ID 白名單，不包含身分或成績。
 - `dist/kana-practice.js`：短輪混合練習、延後重考、字級複習狀態與進行中資料驗證。
-- `dist/kana-hints.js`：92 個基本假名的兩種原創記憶提示。
+- `dist/kana-hints.js`：142 個假名（基本字與濁音・半濁音）的兩種記憶提示。
 - `dist/storage.js`：版本化本機資料、舊版遷移、成績合併與備份 primitives。
 - `dist/release.json`：自動產生的發佈內容清單。
 - `tests/content.test.mjs`、`storage.test.mjs`、`revision.test.mjs`、`deploy.test.mjs`：教材、資料、教材改版與發佈保護測試。

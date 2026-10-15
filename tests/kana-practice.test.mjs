@@ -98,3 +98,19 @@ test('options keep two same-row peers so the row label cannot reveal the answer'
   s.questions.forEach(q=>check(q,'review'));
  }
 });
+
+test('voiced rows contrast with their learned base row and long review pools still reload',()=>{
+ for(let run=0;run<30;run++){
+  const s=P.create(ids('h-ga'),{completedIds:['h-ka']});
+  for(const q of s.questions){
+   const base=P.entry(q.id).character.normalize('NFD')[0];
+   assert.ok(q.options.some(id=>P.entry(id).character===base),`${P.entry(q.id).character} should meet ${base}`);
+  }
+  const d=P.create(ids('h-da'),{completedIds:['h-za']});
+  for(const q of d.questions) assert.equal(new Set(q.options.map(id=>P.entry(id).reading)).size,q.options.length);
+ }
+ const all=Object.values(C.courses).filter(c=>c.type==='kana').map(c=>c.id);
+ const s=P.create(ids('h-pa'),{completedIds:all,mode:'review'});
+ assert.ok(s.pool.length>92);
+ assert.ok(P.sanitize(clone(s)));
+});

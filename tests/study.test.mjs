@@ -58,7 +58,7 @@ function harness(saved, voices = [], history = []) {
     get voiceReads() { return voiceReads; }, voicesReady() { for (const callback of [...(speechEvents.voiceschanged || [])]) callback(); },
   };
 }
-const groupKeys = ['a','ka','sa','ta','na','ha','ma','ya','ra','wa'];
+const groupKeys = ['a','ka','sa','ta','na','ha','ma','ya','ra','wa','ga','za','da','ba','pa'];
 function startQuiz(b, id) {
   b.action('open', { course: id });
   const course = b.content.courses[id]; const count = course.type === 'kana' ? course.letters.length : course.steps.length;
@@ -83,14 +83,15 @@ function finishQuiz(b, id, missFirst = false) {
   }
 }
 
-test('two scripts cover exactly 46 unique basic characters each and only one script is listed', () => {
+test('two scripts cover 46 basic and 25 voiced characters each and only one script is listed', () => {
   const b = harness();
   assert.equal(b.study.render('#home'), null);
   assert.equal(b.study.total('missing'), 0);
   assert.equal(b.study.title('missing'), null);
   for (const script of ['h', 'k']) {
     b.render('#kana'); b.action('script', { script });
-    assert.equal((b.html.match(/data-action="study-open"/g) || []).length, 10);
+    assert.equal((b.html.match(/data-action="study-open"/g) || []).length, 15);
+    assert.match(b.html, /濁音・半濁音/);
     const letters = [];
     for (const key of groupKeys) {
       const id = `${script}-${key}`;
@@ -102,8 +103,8 @@ test('two scripts cover exactly 46 unique basic characters each and only one scr
         b.action('next');
       }
     }
-    assert.equal(letters.length, 46);
-    assert.equal(new Set(letters).size, 46);
+    assert.equal(letters.length, 71);
+    assert.equal(new Set(letters).size, 71);
     assert.ok(!letters.some((c) => ['ゐ','ゑ','ヰ','ヱ'].includes(c)));
   }
 });
@@ -370,7 +371,7 @@ test('retry labels use question identity and revision, with safe historical and 
   assert.deepEqual([...b.study.retryLabels({...entry,courseRevision:'old'})],[q.character]);
   assert.deepEqual([...b.study.retryLabels({...entry,questionIds:undefined})],['第 1 題']);
   assert.match(b.html,/第一次答錯/); assert.match(b.html,/下一組/);
-  assert.equal(b.study.nextCourse('h-a'),'h-ka'); assert.equal(b.study.nextCourse('k-a'),'k-ka'); assert.equal(b.study.nextCourse('k-wa'),null); assert.equal(b.study.nextCourse('g-identity'),null);
+  assert.equal(b.study.nextCourse('h-a'),'h-ka'); assert.equal(b.study.nextCourse('k-a'),'k-ka'); assert.equal(b.study.nextCourse('k-wa'),'k-ga'); assert.equal(b.study.nextCourse('h-pa'),null); assert.equal(b.study.nextCourse('k-pa'),null); assert.equal(b.study.nextCourse('g-identity'),null);
 });
 
 test('katakana special hints distinguish o from wo by character', () => {
@@ -494,4 +495,26 @@ test('grammar still requires a correct retry and preserves its live region and f
  b.action('answer',{choice:String(chooseCurrent(b,'g-identity',true))});assert.equal(b.next.disabled,true);b.action('next');assert.equal(active.cursor,0);
  b.action('answer',{choice:String(chooseCurrent(b,'g-identity'))});assert.equal(b.renders,renders);assert.equal(b.answers,nodes);assert.equal(b.feedback,feedback);assert.equal(b.next.disabled,false);assert.equal(b.focused,'[data-action="study-next"]');
  finishQuiz(b,'g-identity');assert.equal(b.records[0].firstCorrect,b.content.courses['g-identity'].questions.length-1);
+});
+
+test('grammar examples can be played and Japanese quiz options show romaji', () => {
+  const b = harness(null, [{ lang: 'ja-JP' }]);
+  b.action('open', { course: 'g-identity' });
+  assert.match(b.html, /data-action="study-audio"/);
+  b.action('audio', { index: '0' }); assert.equal(b.utterances.at(-1).text, 'わたし、がくせい');
+  b.action('next'); b.action('audio', { index: '1' }); assert.equal(b.utterances.at(-1).text, 'わたしは がくせいです。');
+  b.action('next'); b.action('next');
+  // Question order is shuffled; answer the plain-romaji question first if it comes up.
+  if (!/option-reading/.test(b.html)) { b.action('answer', { choice: '1' }); b.action('next'); }
+  assert.match(b.html, /<span lang="ja">です<\/span><span class="option-reading">desu<\/span>/);
+  b.render('#grammar');
+  assert.match(b.html, /ou、ei 和 aa、ii、uu、ee、oo 通常是拉長的音/);
+});
+
+test('ぢ／づ cards say up front that they share a reading with じ／ず', () => {
+  const b = harness();
+  b.action('open', { course: 'h-da' }); b.action('next');
+  assert.match(b.html, /ぢ 和 じ 同音，都讀 ji/);
+  b.action('open', { course: 'k-da' }); b.action('next'); b.action('next');
+  assert.match(b.html, /ヅ 和 ズ 同音，都讀 zu/);
 });

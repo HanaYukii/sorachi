@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), 'b0a78ecbe0d156f8df19e63d2c002cd66786546403ae68a6d45a78a7be3c6d63');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '0f59c907cbe5ee3326344164682c844a25c5c1b662331cff336d424c3f17e66f');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -108,15 +108,15 @@ test('intro distractors are balanced and travel phrases retain concise contextua
   assert.equal(reservation.keywords[0][0], '予約（よやく）');
 });
 
-test('registry includes 20 kana groups, three grammar courses and four compatible travel courses', () => {
-  assert.equal(Object.keys(Content.courses).length, 27);
+test('registry includes 30 kana groups, three grammar courses and four compatible travel courses', () => {
+  assert.equal(Object.keys(Content.courses).length, 37);
   for (const script of ['h', 'k']) {
     const courses = Object.values(Content.courses).filter(c => c.script === script);
-    assert.equal(courses.length, 10);
-    assert.equal(courses.flatMap(c => c.letters).length, 46);
-    assert.equal(new Set(courses.flatMap(c => c.letters)).size, 46);
-    assert.equal(courses.flatMap(c => c.cards).length, 46);
-    assert.equal(courses.flatMap(c => c.questions).length, 46);
+    assert.equal(courses.length, 15);
+    assert.equal(courses.flatMap(c => c.letters).length, 71);
+    assert.equal(new Set(courses.flatMap(c => c.letters)).size, 71);
+    assert.equal(courses.flatMap(c => c.cards).length, 71);
+    assert.equal(courses.flatMap(c => c.questions).length, 71);
     for (const c of courses) assert.ok(c.cards.every(card => card.id.includes(card.character.codePointAt(0).toString(16))));
   }
   assert.equal(Content.getCourse('__proto__'), null);
@@ -183,4 +183,23 @@ test('legacy revision baseline is literal and matches the exact initial extracti
   const source = readFileSync(new URL('../dist/content.js', import.meta.url), 'utf8');
   assert.match(source, /const legacyCourseRevision = Object\.freeze\(\{/);
   assert.notEqual(Content.revisionOf({ ...plain(Content.getCourse('g-identity')), title: 'changed' }), Content.legacyCourseRevision['g-identity']);
+});
+
+test('voiced and semi-voiced rows are required with the shared ji／zu readings', () => {
+  const voiced = Content.rows.slice(10).map(row => row[0]);
+  assert.deepEqual(plain(voiced), ['ga', 'za', 'da', 'ba', 'pa']);
+  assert.deepEqual(plain(Content.getCourse('h-da').readings), ['da', 'ji', 'zu', 'de', 'do']);
+  assert.deepEqual(plain(Content.getCourse('k-pa').letters), ['パ', 'ピ', 'プ', 'ペ', 'ポ']);
+  const withoutPa = { ...JSON.parse(JSON.stringify(data())), rows: plain(Content.rows).slice(0, 14) };
+  assert.ok(plain(Content.validate(withoutPa)).some(message => /fifteen rows/.test(message)));
+});
+
+test('grammar questions with Japanese options must carry matching romaji, travel legacy courses are exempt', () => {
+  const candidate = JSON.parse(JSON.stringify(data()));
+  delete candidate.grammar[0].questions[0].readings;
+  candidate.grammar[2].questions[0].readings = ['kore'];
+  const messages = plain(Content.validate(candidate));
+  assert.ok(messages.some((m) => /grammar\[0\]\.questions\[0\]\.readings: Japanese options require readings/.test(m)));
+  assert.ok(messages.some((m) => /grammar\[2\]\.questions\[0\]\.readings: readings must match options/.test(m)));
+  assert.ok(!messages.some((m) => m.startsWith('travel')));
 });

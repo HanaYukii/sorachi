@@ -9,8 +9,8 @@ vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 
 const { content, hints } = context;
 const letters = content.rows.flatMap(row => [...row[2], ...row[3]]);
 
-test('all 92 taught kana have two distinct short plain-text memory hints', () => {
-  assert.equal(letters.length, 92);
+test('all 142 taught kana have two distinct short plain-text memory hints', () => {
+  assert.equal(letters.length, 142);
   for (const letter of letters) {
     const entries = hints.get(letter);
     assert.equal(entries.length, 2, letter);
@@ -52,7 +52,7 @@ test('hints and unknown results are immutable and do not resolve inherited prope
     for (const entry of hints.get(letter)) assert.ok(Object.isFrozen(entry));
   }
   assert.throws(() => { hints.get('あ')[0].text = 'changed'; }, TypeError);
-  for (const value of ['', 'あい', 'が', 'ゃ', 'A', '__proto__', 'constructor', null, undefined, 1, {}]) {
+  for (const value of ['', 'あい', 'ゔ', 'ゃ', 'A', '__proto__', 'constructor', null, undefined, 1, {}]) {
     assert.equal(hints.get(value).length, 0);
     assert.ok(Object.isFrozen(hints.get(value)));
   }
