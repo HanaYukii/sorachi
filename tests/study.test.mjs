@@ -481,3 +481,15 @@ test('ぢ／づ cards say up front that they share a reading with じ／ず', ()
   b.action('open', { course: 'k-da' }); b.action('next'); b.action('next');
   assert.match(b.html, /ヅ 和 ズ 同音，都讀 zu/);
 });
+
+test('audio buttons say what is visible, keyword boxes are not repeated landmarks, kana rows are marked Japanese', () => {
+  const b = harness(null, [{ lang: 'ja-JP' }]);
+  b.render('#travel/t-order');
+  assert.doesNotMatch(b.html, /aria-label="播放/);
+  assert.match(b.html, />播放讀音<span class="visually-hidden">：<span lang="ja">/);
+  assert.doesNotMatch(b.html, /<section class="keyword-box"|aria-label="關鍵字"/);
+  b.render('#kana');
+  assert.match(b.html, /<strong lang="ja">あ行<\/strong>/);
+  b.render('#grammar');
+  assert.match(b.html, /<span class="course-subtitle">/);
+});

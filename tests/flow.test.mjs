@@ -363,7 +363,7 @@ test("earned completion survives replay, and paused replay resumes after reload"
   b.action("next");
   b.action("next");
   assert.equal(b.state.completed, true);
-  b.action("home");
+  b.navigate('#home');
   const reloaded = browser({ raw: b.stored });
   assert.match(reloaded.html, />接著學/);
   reloaded.action("start");
@@ -466,7 +466,7 @@ test("opening the lesson URL directly records an active resumable attempt", () =
   const b = browser({ hash: "#lesson" });
   assert.equal(b.state.inProgress, true);
   b.action("next");
-  b.action("home");
+  b.navigate('#home');
   const reloaded = browser({ raw: b.stored });
   assert.match(reloaded.html, />接著學/);
   reloaded.action("start");
@@ -497,7 +497,7 @@ test("first response is retained through retries and reload and recorded once", 
   assert.deepEqual(resumed.state.history[0].retryQuestions, [4]);
   const done = browser({ raw: resumed.stored, hash: '#done' });
   assert.equal(done.state.history.length, 1);
-  done.action('home');
+  done.navigate('#home');
   complete(done);
   assert.equal(done.state.history.length, 2);
   assert.equal(done.state.history[1].firstCorrect, 2);
@@ -507,7 +507,7 @@ test("legacy completions do not invent a score and history clear preserves learn
   const b = browser({ saved: { step: 5, completed: true, answers: {4:true,5:true} }, hash:'#history' });
   assert.match(b.html, /尚未留下成績/);
   assert.equal(b.state.history.length, 0);
-  b.action('home');
+  b.navigate('#home');
   complete(b);
   b.action('history');
   b.action('clear-history');
@@ -1004,7 +1004,7 @@ test('backup can be downloaded and restored; the restore reloads so later answer
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(b.reloads, 1);
   const stored = b.stored;
-  b.action('home');
+  b.navigate('#home');
   b.navigate('#lesson');
   assert.equal(b.stored, stored, 'Clicks and route changes before the reload must not save stale memory');
   const reloaded = browser({ raw: stored, hash: '#history' });
@@ -1033,4 +1033,40 @@ test('old t-* course progress loads quietly, survives saves, and only known phra
   const legacy = browser({ saved: { step: 5, completed: true, answers: {4:true,5:true}, history: [{ courseId: 't-charge', date: '2026-08-01T00:00:00.000Z', total: 2, firstCorrect: 1, retryQuestions: [2] }] }, hash: '#history' });
   assert.match(legacy.html, /交通卡加值/);
   assert.match(legacy.html, /第 2 題/);
+});
+
+test('accessibility details: progress text, list role, form descriptions, plain warnings and not-found title', () => {
+  const lesson = browser({ hash: '#lesson' });
+  assert.match(lesson.html, /role="progressbar"[^>]*aria-valuemin="1"[^>]*aria-valuenow="1" aria-valuetext="第 1 步，共 6 步"><span style="width:16\.\d+%">/);
+  assert.match(lesson.html, /<a class="exit" href="#home">/);
+  const home = browser();
+  assert.match(home.html, /<h2>基礎句型<\/h2>/);
+  assert.doesNotMatch(home.html, /<h3>基礎句型<\/h3>/);
+  complete(home); home.action('history');
+  assert.match(home.html, /<ol class="history-list" role="list">/);
+  home.action('feedback');
+  assert.match(home.html, /aria-describedby="feedback-limit feedback-privacy"/);
+  assert.match(home.html, /id="feedback-limit"/); assert.match(home.html, /id="feedback-privacy"/);
+  const blocked = browser({ storageBlocked: true });
+  assert.match(blocked.html, /<div id="storage-status"><p class="storage-warning">/);
+  assert.doesNotMatch(blocked.html, /storage-warning[^>]*role="status"/);
+  const missing = browser({ hash: '#study/nope' });
+  assert.equal(missing.title, '找不到頁面｜SoraChi');
+});
+
+test('a change in saving state is announced once outside the page, not on every answer', () => {
+  const b = browser({ hash: '#study/h-a' });
+  for (let i = 0; i < 5; i++) b.study('study-next');
+  const announcer = b.node('#announcer');
+  assert.equal(announcer.textContent, '');
+  b.blockStorage();
+  let q = b.state.study.courses['h-a'].active.practice.questions[0];
+  b.study('study-answer', { choice: q.options.indexOf(q.id) });
+  assert.equal(announcer.textContent, '這次的進度沒有存到瀏覽器。');
+  announcer.textContent = '';
+  b.study('study-next');
+  q = b.state.study.courses['h-a'].active.practice.questions[1];
+  b.study('study-answer', { choice: q.options.indexOf(q.id) });
+  assert.equal(announcer.textContent, '', 'A repeated failure is not announced again');
+  assert.doesNotMatch(b.html, /storage-warning[^>]*role="status"/);
 });

@@ -48,3 +48,16 @@ test('shared-origin rules: no service worker or blanket clears, every storage ke
 test('the page shows a static loading note that stays if the scripts never run', () => {
   assert.match(read('index.html'), /<div id="app"><main class="shell"><p role="status">正在載入 SoraChi…<\/p><p>若一直停在這裡，請重新整理頁面。<\/p>/);
 });
+
+test('accessibility floor keeps small text readable, targets tall and disabled controls distinct', () => {
+  const css = read('styles.css');
+  const floor = css.slice(css.indexOf('/* Accessibility floor (#15)'));
+  assert.ok(floor.length > 100);
+  assert.match(floor, /\.exit, \.brand, \.author-credit \{ min-height: 44px;/);
+  assert.match(floor, /\.storage-warning, \.feedback-privacy, \.study-feedback, \.phrase-more \.reading-label[^{]*\{ font-size: 14px; \}/);
+  assert.match(floor, /\.storage-note, \.step-hint, \.question-tag, \.result-card > span, \.word-type \{ font-size: 12px; \}/);
+  assert.match(floor, /\.course-state, \.course-row \.course-state \{ font-size: 12px; \}/);
+  assert.match(floor, /button\.text-button:disabled \{ color: var\(--muted\);/);
+  assert.match(floor, /summary:focus-visible \{ outline: 3px solid/);
+  assert.match(floor, /\.visually-hidden \{ position: absolute;/);
+});
