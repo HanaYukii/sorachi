@@ -65,10 +65,13 @@ const Study = (() => {
       ],
     },
     {
-      id: "t-order", type: "grammar", group: "travel", title: "點餐：這個、要幾份", subtitle: "これ・ひとつ・ふたつ・みっつ",
+      id: "t-order", type: "grammar", group: "travel", title: "點餐：品項、數量、冷熱與份量", subtitle: "これ・ふたつ・ホット・並盛",
       steps: [
         { title: "指著菜單選餐點", keywords: [["これ", "kore", "這個"], ["お願いします", "onegaishimasu", "麻煩你／請幫我"]], example: "これ、お願いします。", reading: "kore, onegaishimasu", meaning: "我要這個，麻煩你。", body: "指著菜單上的餐點說「これ」，店員通常就知道你選哪一道。加上「お願いします」更有禮貌。" },
         { title: "點一份、兩份、三份", keywords: [["ひとつ", "hitotsu", "一個／一份"], ["ふたつ", "futatsu", "兩個／兩份"], ["みっつ", "mittsu", "三個／三份"]], example: "これ、ふたつ。", reading: "kore, futatsu", meaning: "這個，兩份。", body: "指著菜單上的同一道餐點，說數量，店員通常就能理解。要一份換成「ひとつ」，三份換成「みっつ」。「みっつ」的小「っ」要停頓一下。", polite: "これ、ふたつお願いします。", politeReading: "kore, futatsu onegaishimasu", politeMeaning: "這個請給我兩份。" },
+        { title: "飲料：熱的、冰的", keywords: [["ホット", "hotto", "熱的"], ["アイス", "aisu", "冰的"]], example: "アイス。", reading: "aisu", meaning: "冰的。", body: "已經選好飲料，店員確認冷熱時，回答「ホット」或「アイス」即可。這裡的「アイス」指冰飲。", polite: "アイスでお願いします。", politeReading: "aisu de onegaishimasu", politeMeaning: "請幫我做冰的。", extra: { title: "進階補充：點酒的喝法", keywords: [["ロック", "rokku", "加冰塊喝"], ["ソーダ割り（ソーダわり）", "sooda wari", "加蘇打水喝"]], example: "ロックで。 ／ ソーダ割りで。", reading: "rokku de / sooda wari de", meaning: "加冰。／加蘇打水。", body: "已經選好威士忌或燒酎等酒款，店員問喝法時，可以這樣回答。「ロック」是酒加冰塊；「ソーダ割り」是酒加蘇打水。" } },
+        { title: "烏龍麵：熱的、冷的", keywords: [["温かい（あたたかい）", "atatakai", "熱的／溫熱的"], ["冷たい（つめたい）", "tsumetai", "冷的"]], example: "温かいの。", reading: "atatakai no", meaning: "熱的那個。", body: "點烏龍麵，店員確認要熱的還是冷的時，回答「温かい」或「冷たい」，通常就能理解。加上「の」就是「熱的／冷的那個」。", polite: "温かいの、お願いします。", politeReading: "atatakai no, onegaishimasu", politeMeaning: "請給我熱的。" },
+        { title: "飯量：一般份、大份", keywords: [["並盛（なみもり）", "namimori", "一般份量"], ["大盛（おおもり）", "oomori", "大份"]], example: "並盛。", reading: "namimori", meaning: "一般份量。", body: "例如點牛丼，菜單有列份量、店員詢問要哪一種時，回答「並盛」或「大盛」即可。「大盛」開頭的 o 音要拉長。", polite: "並盛でお願いします。", politeReading: "namimori de onegaishimasu", politeMeaning: "請給我一般份量。" },
       ],
       questions: [
         { prompt: "你指著菜單上一道餐點說「これ」，是什麼意思？", options: ["一份", "這個", "結帳"], answer: 1, explanation: "「これ」是「這個」。指著品項，店員才知道你要的是哪一個。" },
@@ -76,9 +79,9 @@ const Study = (() => {
       ],
     },
     {
-      id: "t-pay", type: "grammar", group: "travel", title: "結帳：請店員算錢", subtitle: "お会計・お願いします",
+      id: "t-pay", type: "grammar", group: "travel", title: "結帳：請店員算錢", subtitle: "会計（kaikei）・お願いします",
       steps: [
-        { title: "吃完後要結帳", keywords: [["お会計（おかいけい）", "okaikei", "結帳"]], example: "お会計。", reading: "okaikei", meaning: "結帳。", body: "在餐廳吃完、向店員表達要結帳時，「お会計」就是主要關鍵字。對方通常能理解，再加上「お願いします」會更有禮貌。", polite: "お会計、お願いします。", politeReading: "okaikei, onegaishimasu", politeMeaning: "麻煩幫我結帳。" },
+        { title: "吃完後要結帳", keywords: [["会計（かいけい）", "kaikei", "結帳"]], example: "会計。", reading: "kaikei", meaning: "結帳。", body: "餐廳吃完，向店員說「会計」，通常就能表達想結帳。「お会計」是常見的較客氣說法，意思一樣。", polite: "お会計、お願いします。", politeReading: "okaikei, onegaishimasu", politeMeaning: "麻煩幫我結帳。" },
         { title: "在需求後加上禮貌用語", keywords: [["お願いします", "onegaishimasu", "麻煩你／請幫我"], ["お会計（おかいけい）", "okaikei", "結帳"]], example: "お会計、お願いします。", reading: "okaikei, onegaishimasu", meaning: "麻煩幫我結帳。", body: "「お会計」是你要做的事，「お願いします」是「麻煩你」。先說需求，再加上這句就可以。" },
       ],
       questions: [
@@ -204,10 +207,13 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音練習</h1><p class="study-note">每組 3–5 個字，包含認字、讀音與選擇題。羅馬字只作讀音提示，不是照英文拼字唸。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div>${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${Object.values(courses).filter((c) => c.type === "kana" && c.script === script).map(row).join("")}</div><p class="study-note">先練平假名、片假名各 46 個基本字；濁音、半濁音、拗音、促音與長音之後再學。</p>`);
   }
   function grammarPage(travel = false) {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">句型與旅遊用語</h1><nav class="script-tabs course-sections" aria-label="課程分區"><a href="#grammar"${!travel ? ' aria-current="page"' : ""}>基礎句型</a><a href="#travel"${travel ? ' aria-current="page"' : ""}>旅遊常用語</a></nav><h2 class="course-section-heading">${travel ? "旅遊常用語" : "基礎句型"}</h2><p class="study-note">${travel ? "問路、點餐、結帳、加值時用得到的關鍵字。搭配指物或出示交通卡，短語也能表達需求；每組附兩題練習。" : "每課介紹一個句型，再用兩題練習確認理解。例句附中文意思與讀音。"}</p><div class="course-list">${(travel ? TRAVEL : GRAMMAR).map(row).join("")}</div>`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">句型與旅遊用語</h1><nav class="script-tabs course-sections" aria-label="課程分區"><a href="#grammar"${!travel ? ' aria-current="page"' : ""}>基礎句型</a><a href="#travel"${travel ? ' aria-current="page"' : ""}>旅遊常用語</a></nav><h2 class="course-section-heading">${travel ? "旅遊常用語" : "基礎句型"}</h2><p class="study-note">${travel ? "問路、點餐、結帳、加值時用得到的關鍵字。搭配指物或出示交通卡，短語也能表達需求；每組附簡短練習。" : "每課介紹一個句型，再用兩題練習確認理解。例句附中文意思與讀音。"}</p><div class="course-list">${(travel ? TRAVEL : GRAMMAR).map(row).join("")}</div>`);
   }
   function audioButton(course, index) {
     return `<button class="text-button" data-action="study-audio" data-course="${course.id}" data-index="${index}" aria-label="播放 ${escape(course.type === "kana" ? course.letters[index] : course.steps[index].example)} 的日文讀音">播放讀音</button><span class="reading-label">裝置合成語音</span><p class="study-audio-status study-note" role="status" aria-live="polite"></p>`;
+  }
+  function keywordBox(keywords) {
+    return `<section class="keyword-box" aria-label="關鍵字"><h3>關鍵字</h3><dl>${keywords.map(([word, reading, meaning]) => `<div><dt><strong lang="ja">${escape(word)}</strong><span>${escape(reading)}</span></dt><dd>${escape(meaning)}</dd></div>`).join("")}</dl></section>`;
   }
   function card(course, active) {
     const i = active.cursor;
@@ -224,8 +230,10 @@ const Study = (() => {
       body = `<div class="kana-character" lang="ja">${course.letters[i]}</div><div class="reading-label">讀音 <strong>${course.readings[i]}</strong></div>${audioButton(course, i)}<p class="study-note">${special}</p>`;
     } else {
       const step = course.steps[i];
-      const keywords = step.keywords ? `<section class="keyword-box" aria-label="關鍵字"><h3>關鍵字</h3><dl>${step.keywords.map(([word, reading, meaning]) => `<div><dt><strong lang="ja">${escape(word)}</strong><span>${escape(reading)}</span></dt><dd>${escape(meaning)}</dd></div>`).join("")}</dl></section>` : "";
-      body = `<h2>${escape(step.title)}</h2>${keywords}${step.keywords ? '<h3 class="phrase-label">可以這樣說</h3>' : ""}<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="reading-label">${escape(step.reading)}</p>` : ""}<p>${escape(step.meaning)}</p>${step.keywords ? audioButton(course, i) : ""}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>較完整的說法</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p></details>` : ""}`;
+      const keywords = step.keywords ? keywordBox(step.keywords) : "";
+      const extra = step.extra;
+      const supplement = extra ? `<details class="phrase-more"><summary>${escape(extra.title)}</summary>${keywordBox(extra.keywords)}<p lang="ja">${escape(extra.example)}</p><p class="reading-label">${escape(extra.reading)}</p><p>${escape(extra.meaning)}</p><p class="study-note">${escape(extra.body)}</p></details>` : "";
+      body = `<h2>${escape(step.title)}</h2>${keywords}${step.keywords ? '<h3 class="phrase-label">可以這樣說</h3>' : ""}<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="reading-label">${escape(step.reading)}</p>` : ""}<p>${escape(step.meaning)}</p>${step.keywords ? audioButton(course, i) : ""}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>較完整的說法</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p></details>` : ""}${supplement}`;
     }
     return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : course.group === "travel" ? "旅遊用語" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button><button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button></div>`;
   }
