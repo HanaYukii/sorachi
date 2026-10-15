@@ -37,6 +37,8 @@ node --test tests/flow.test.mjs
 
 `main` 保存程式與測試；`gh-pages` 只發佈 `dist/`。GitHub Pages 的來源設定為 `gh-pages` 分支根目錄。
 
+CSS 或 JavaScript 變更後，請更新 `index.html` 中對應資源的 `?v=` 版本值，避免瀏覽器繼續沿用舊快取。
+
 先提交變更並推送 `main`，再執行：
 
 ```sh
@@ -50,7 +52,7 @@ node --test tests/flow.test.mjs
 - `dist/index.html`：頁面入口與網站資訊。
 - `dist/styles.css`：桌機與手機版型、配色與互動狀態。
 - `dist/app.js`：六步小課、答題回饋與本機進度。
-- `dist/assets/cloud-friend.png`：本專案使用的原創 AI 生成角色插圖。
+- `dist/assets/cloud-friend.png`、`cloud-complete.png`：本專案使用的原創 AI 生成角色與抱書完成姿勢。
 - `tests/flow.test.mjs`：互動流程回歸檢查。
 
 進度只存在目前瀏覽器，沒有帳號或跨裝置同步；清除網站資料也會移除紀錄。網站未加入分析追蹤。字型使用 Google Fonts，無法取得時會使用裝置的字型。
