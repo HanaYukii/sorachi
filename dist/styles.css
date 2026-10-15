@@ -1159,8 +1159,11 @@ button svg {
 .result-card p { font-size: 13px; line-height: 1.9; color: var(--aqua-ink); }
 .result-card .text-button { font-size: 12px; margin-top: 5px; min-height: 44px; }
 .clear-button { font-size: 12px; color: var(--muted); margin-top: 14px; min-height: 44px; }
-.clear-confirm { background: var(--yellow); padding: 18px 22px; border-radius: 16px; margin-top: 25px; font-size: 13px; line-height: 1.9; }
-.clear-confirm .text-button { min-height: 44px; }
+.clear-confirm, .recovery-panel { background: var(--yellow); padding: 18px 22px; border-radius: 16px; margin-top: 25px; font-size: 13px; line-height: 1.9; }
+.clear-confirm .text-button, .recovery-panel .text-button { min-height: 44px; }
+.recovery-panel p { margin: 0 0 8px; }
+.recovery-panel summary { min-height: 44px; display: list-item; align-content: center; cursor: pointer; color: var(--muted); }
+.raw-data { width: 100%; font: 12px/1.5 ui-monospace, monospace; }
 .feedback-form { background: white; border: 1px solid var(--line); border-radius: 24px; padding: 28px; }
 .feedback-form label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 10px; }
 .feedback-form select, .feedback-form textarea { display: block; width: 100%; color: var(--ink); background: var(--paper); border: 1px solid #c3b5d2; border-radius: 12px; font: inherit; font-size: 16px; padding: 12px 14px; }

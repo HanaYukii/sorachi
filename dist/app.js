@@ -53,7 +53,9 @@ const warningMessage = () =>
   canStore
     ? ""
     : dataStore.isConflict() ? '<p class="storage-warning storage-conflict" role="status">另一個分頁已更新或清除資料。這個分頁已停止儲存，請重新載入後再繼續。<button class="text-button" data-action="reload">重新載入</button></p>'
-    : dataStore.isProtected() ? '<p class="storage-warning" role="status">已保留瀏覽器中的原始資料，但目前版本無法讀取；這次練習不會覆寫原有紀錄。</p>'
+    : dataStore.lockReason() === "newer" ? '<p class="storage-warning" role="status">網站已更新，這個頁面還是舊版本，練習暫時不會儲存。<button class="text-button" data-action="reload">重新整理</button></p>'
+    : dataStore.lockReason() === "invalid" ? `<p class="storage-warning" role="status">瀏覽器裡的學習資料無法讀取，練習暫時不會儲存；原始資料沒有被改動。${location.hash === "#history" ? "" : '<button class="text-button" data-action="history">到學習紀錄處理</button>'}</p>`
+    : dataStore.isProtected() ? '<p class="storage-warning" role="status">目前無法讀取瀏覽器中的資料，練習不會儲存，也不會改動原有紀錄。</p>'
     : '<p class="storage-warning" role="status">目前瀏覽器無法儲存進度；這次仍可正常上課，關閉後可能需要重新開始。</p>';
 
 const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
@@ -166,11 +168,35 @@ function resultCard() {
   if (result.firstCorrect === null) return "";
   return `<div class="result-card"><span>練習結果</span><strong>第一次答對 ${result.firstCorrect} / 2 題</strong><p>${result.firstCorrect === 2 ? "兩題第一次都答對。" : "兩題已完成，包含看提示後重試的題目。"}</p><button class="text-button" data-action="history">看看學習紀錄 ${icons.arrow}</button></div>`;
 }
-function historyPage(confirmClear = false) {
+// Offered only while stored data is locked; both paths keep the original text.
+function recoveryPanel(confirmRestart) {
+  const raw = dataStore.rawData();
+  if (raw === null) return "";
+  const newer = dataStore.lockReason() === "newer";
+  const intro = newer ? "這份資料是較新版本的網站寫的，先重新整理這個頁面。通常重新整理後就能繼續。" : "這份資料損壞或缺少欄位，目前的網站讀不了。可以先下載原始資料留存，再重新開始。";
+  const confirmText = newer ? "重新開始後，學習紀錄與進度會從空白開始，之後新版網站也不會顯示這份資料。原始資料會另外保存在這個瀏覽器，建議先下載一份。" : "重新開始後，學習紀錄與進度會從空白開始。原始資料會另外保存在這個瀏覽器，建議先下載一份。";
+  const actions = confirmRestart
+    ? `<p>${confirmText}</p><div class="quiet-links"><button class="text-button" data-action="history">先不要</button><button class="text-button" data-action="confirm-restart">確認重新開始</button></div>`
+    : `<div class="quiet-links">${newer ? '<button class="text-button" data-action="reload">重新整理</button>' : ""}<button class="text-button" data-action="download-raw">下載原始資料</button><button class="text-button" data-action="restart-protected">${newer ? "重新整理後還是這樣：重新開始" : "保存原始資料後重新開始"}</button></div>`;
+  // Download can fail silently in in-app browsers, so the text stays copyable here.
+  return `<section class="recovery-panel" aria-label="處理無法讀取的資料"><p>${intro}</p>${actions}<details><summary>沒有下載成功？直接複製原始資料</summary><textarea class="raw-data" readonly rows="4" aria-label="原始資料">${escapeHTML(raw)}</textarea></details></section>`;
+}
+function downloadRaw() {
+  const raw = dataStore.rawData();
+  if (raw === null) return;
+  const link = document.createElement("a");
+  let href;
+  try { href = URL.createObjectURL(new Blob([raw], { type: "application/json" })); } catch { href = `data:application/json;charset=utf-8,${encodeURIComponent(raw)}`; }
+  link.href = href;
+  link.download = `sorachi-data-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body?.append(link); link.click?.(); link.remove?.();
+  if (href.startsWith("blob:")) setTimeout(() => URL.revokeObjectURL(href), 1000);
+}
+function historyPage(confirmClear = false, confirmRestart = false) {
   document.title = "學習紀錄｜SoraChi";
   const entries = [...progress.history].reverse();
   const hasReviewData = Study.reviewSummary().hasData;
-  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi</span></header><main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">查看完成時間與第一次作答的成績。</p>${entries.length ? `<p class="record-note">保留最近 ${DataStore.MAX_ATTEMPTS} 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄第一次作答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第一次答錯：${entry.courseId ? Study.retryLabels(entry).map(escapeHTML).join("、") : entry.retryQuestions.map((q) => `第 ${q - 3} 題`).join("、")}` : entry.firstCorrect === (entry.total || 2) ? "全部題目第一次都答對。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : `<section class="empty-record">${icons.book}<h2>${dataStore.isProtected() ? "目前無法讀取成績紀錄" : "還沒有新的成績紀錄"}</h2><p>${progress.completed ? "你已完成過日文的三種文字；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : dataStore.isProtected() ? "原始資料仍保留在瀏覽器中，目前無法顯示其中的紀錄。" : "完成任一組練習後，紀錄會顯示在這裡。"}</p><button class="primary" data-action="kana">選擇五十音練習${icons.arrow}</button></section>`}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${entries.length || hasReviewData ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除全部成績與複習紀錄？這也會結束尚未完成的五十音練習與複習；已完成狀態與其他課程進度會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績與複習紀錄</button>` : ""}</main>${footer()}</div>`;
+  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi</span></header><main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">查看完成時間與第一次作答的成績。</p>${entries.length ? `<p class="record-note">保留最近 ${DataStore.MAX_ATTEMPTS} 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄第一次作答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第一次答錯：${entry.courseId ? Study.retryLabels(entry).map(escapeHTML).join("、") : entry.retryQuestions.map((q) => `第 ${q - 3} 題`).join("、")}` : entry.firstCorrect === (entry.total || 2) ? "全部題目第一次都答對。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : dataStore.isProtected() ? `<section class="empty-record">${icons.book}<h2>目前無法讀取成績紀錄</h2></section>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過日文的三種文字；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成任一組練習後，紀錄會顯示在這裡。"}</p><button class="primary" data-action="kana">選擇五十音練習${icons.arrow}</button></section>`}${recoveryPanel(confirmRestart)}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${!dataStore.isProtected() && (entries.length || hasReviewData) ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除全部成績與複習紀錄？這也會結束尚未完成的五十音練習與複習；已完成狀態與其他課程進度會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績與複習紀錄</button>` : ""}</main>${footer()}</div>`;
   focusHeading();
 }
 function captureFeedback(hash) {
@@ -286,9 +312,10 @@ function restart() {
   save();
   go("#lesson");
 }
+let restarting = false;
 app.addEventListener("click", (event) => {
   const button = event.target.closest("button");
-  if (!button || button.disabled) return;
+  if (!button || button.disabled || restarting) return;
   if (Study.handle(button)) return;
   if (button.dataset.answer !== undefined) {
     const answer = Number(button.dataset.answer);
@@ -307,6 +334,19 @@ app.addEventListener("click", (event) => {
   switch (button.dataset.action) {
     case "reload":
       location.reload();
+      break;
+    case "download-raw":
+      downloadRaw();
+      break;
+    case "restart-protected":
+      historyPage(false, true);
+      app.querySelector('[data-action="confirm-restart"]').focus();
+      break;
+    case "confirm-restart":
+      // A clean reload rebuilds every in-memory view from the fresh snapshot; until it
+      // happens, ignore clicks so the old in-memory progress is not saved into it.
+      if (dataStore.restartProtected()) { restarting = true; location.reload(); }
+      else { historyPage(); app.querySelector(".storage-warning")?.append(document.createTextNode(dataStore.isConflict() ? " 另一個分頁已經處理過這份資料，請重新整理。" : " 這次沒有重新開始，原始資料保持不變。")); }
       break;
     case "kana":
       go("#kana");

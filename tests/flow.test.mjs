@@ -31,6 +31,8 @@ function browser({
   const pending = [];
   let html = "";
   let renderCount = 0;
+  let reloads = 0;
+  const created = [];
   let focused = null;
   let currentHash = hash;
   const elements = new Map();
@@ -170,7 +172,10 @@ function browser({
       });
     },
     createElement(tag) {
-      return element(tag, `<${tag}>`);
+      const node = element(tag, `<${tag}>`);
+      node.click = () => { node.clicked = true; };
+      created.push(node);
+      return node;
     },
     createTextNode(text) {
       return { textContent: text };
@@ -182,7 +187,7 @@ function browser({
       add(documentListeners, type, fn);
     },
   };
-  const location = {};
+  const location = { reload() { reloads++; } };
   Object.defineProperty(location, "hash", {
     get() {
       return currentHash;
@@ -313,6 +318,9 @@ function browser({
     get legacy() {
       return storage.get(key);
     },
+    get reloads() { return reloads; },
+    get created() { return created; },
+    get storage() { return storage; },
     get nextDisabled() {
       return querySelector('[data-action="next"]')?.disabled;
     },
@@ -928,4 +936,52 @@ test('home goes on to voiced hiragana after the basic rows, but keeps katakana l
   assert.match(hiragana.html, /平假名已完成 10 \/ 15 組/);
   const katakana = withCompleted([...basicH, 'k-a', 'k-ka']);
   assert.match(katakana.html, /data-action="study-open" data-course="k-sa"/);
+});
+
+test('locked data offers a raw download and a restart that keeps the original and skips v1 migration', () => {
+  const locked = JSON.stringify({ schemaVersion: 3, learning: {} });
+  const b = browser({ raw: locked, hash: '#history' });
+  b.storage.set(key, JSON.stringify({ step: 5, completed: true, answers: {4:true,5:true} }));
+  assert.match(b.html, /網站已更新/);
+  assert.match(b.html, /目前無法讀取成績紀錄/);
+  assert.doesNotMatch(b.html, /還沒有新的成績紀錄/);
+  assert.doesNotMatch(b.html, /data-action="clear-history"/);
+  b.action('download-raw');
+  const link = b.created.at(-1);
+  assert.equal(link.clicked, true);
+  assert.equal(decodeURIComponent(link.href.replace(/^data:application\/json;charset=utf-8,/, '')), locked);
+  assert.match(link.download, /^sorachi-data-\d{4}-\d{2}-\d{2}\.json$/);
+  b.action('restart-protected');
+  assert.match(b.html, /原始資料會另外保存在這個瀏覽器/);
+  b.action('confirm-restart');
+  assert.equal(b.reloads, 1);
+  const quarantine = [...b.storage.keys()].find((name) => name.startsWith('sorachi:data:v2:quarantine:'));
+  assert.equal(b.storage.get(quarantine), locked);
+  const fresh = browser({ raw: b.storage.get('sorachi:data:v2'), hash: '#history' });
+  assert.match(fresh.html, /還沒有新的成績紀錄/);
+  assert.equal(fresh.state.completed, false, 'Restart must not migrate the v1 copy again');
+});
+
+test('damaged data points to the record page instead of claiming there is nothing to show', () => {
+  const b = browser({ raw: '{"schemaVersion":2}', hash: '#kana' });
+  assert.match(b.html, /學習資料無法讀取/);
+  assert.match(b.html, /data-action="history">到學習紀錄處理/);
+  b.action('history');
+  assert.match(b.html, /損壞或缺少欄位/);
+  assert.match(b.html, /data-action="download-raw"/);
+});
+
+test('newer data leads with refresh, warns that restart hides it from the new site, and ignores clicks while reloading', () => {
+  const b = browser({ raw: JSON.stringify({ schemaVersion: 3 }), hash: '#history' });
+  assert.match(b.html, /先重新整理這個頁面/);
+  assert.match(b.html, /<button class="text-button" data-action="reload">重新整理<\/button><button class="text-button" data-action="download-raw">/);
+  assert.match(b.html, /<textarea class="raw-data" readonly[^>]*>\{&quot;schemaVersion&quot;:3\}<\/textarea>/);
+  assert.doesNotMatch(b.html, /選擇五十音練習/);
+  b.action('restart-protected');
+  assert.match(b.html, /之後新版網站也不會顯示這份資料/);
+  b.action('confirm-restart');
+  assert.equal(b.reloads, 1);
+  const stored = b.stored;
+  b.action('history');
+  assert.equal(b.stored, stored, 'Clicks after a successful restart wait for the reload');
 });

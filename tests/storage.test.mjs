@@ -255,3 +255,44 @@ test('unknown course progress survives a filtered save while known course resets
  assert.equal(courses['g-known'].active,null);
  assert.equal(Object.hasOwn(courses,'g-remove'),false);
 });
+
+test('locked data reports why, offers its untouched text, and restarts without reviving v1',()=>{
+ const valid=JSON.stringify({schemaVersion:2,owner:{kind:'guest',id:'g'},learning:{intro:{},study:{}},attempts:[],favorites:[],preferences:{}});
+ const cases={newer:JSON.stringify({schemaVersion:3,learning:{}}),invalid:'{not json',missing:JSON.stringify({schemaVersion:2})};
+ for(const [name,raw] of Object.entries(cases)){
+  const b=setup({[key]:raw,[legacyKey]:JSON.stringify(old)});
+  assert.equal(b.store.isProtected(),true,name);
+  assert.equal(b.store.lockReason(),name==='newer'?'newer':'invalid',name);
+  assert.equal(b.store.rawData(),raw,name);
+  assert.equal(b.store.restartProtected(new Date('2026-10-16T01:02:03.000Z')),true,name);
+  assert.equal(b.map.get(`${key}:quarantine:2026-10-16T01:02:03.000Z`),raw,name);
+  assert.equal(b.store.isProtected(),false); assert.equal(b.store.canPersist(),true); assert.equal(b.store.rawData(),null);
+  const reloaded=setup(Object.fromEntries(b.map));
+  assert.equal(reloaded.store.isProtected(),false,name);
+  assert.equal(reloaded.store.readProgress().history.length,0,'v1 history must not be migrated back');
+  assert.equal(reloaded.store.readProgress().completed,false);
+ }
+ assert.equal(setup({[key]:valid}).store.lockReason(),null);
+});
+
+test('restart refuses when storage changed, cannot be read, or the quarantine write fails',()=>{
+ const raw='{damaged';
+ const changed=setup({[key]:raw}); changed.map.set(key,'{other');
+ assert.equal(changed.store.restartProtected(),false); assert.equal(changed.store.isConflict(),true); assert.equal(changed.map.get(key),'{other');
+ const blocked=setup({[key]:raw}); blocked.block();
+ assert.equal(blocked.store.restartProtected(),false); assert.equal(blocked.map.get(key),raw); assert.equal(blocked.store.isProtected(),true);
+ const ctx=vm.createContext({console}); vm.runInContext(source+'\nglobalThis.api=DataStore;',ctx);
+ const unreadable=ctx.api.create({storage:{getItem(){throw Error('denied');},setItem(){}}});
+ assert.equal(unreadable.lockReason(),'unreadable'); assert.equal(unreadable.rawData(),null); assert.equal(unreadable.restartProtected(),false);
+});
+
+test('a failed fresh write removes only the copy just made, and empty stored text is still recoverable',()=>{
+ const raw='{damaged', map=new Map([[key,raw]]); let writes=0;
+ const storage={getItem:k=>map.get(k)??null,setItem(k,v){if(k===key&&++writes) throw Error('quota'); map.set(k,v);},removeItem:k=>map.delete(k)};
+ const ctx=vm.createContext({console}); vm.runInContext(source+'\nglobalThis.api=DataStore;',ctx);
+ const store=ctx.api.create({storage});
+ for(let i=0;i<3;i++) assert.equal(store.restartProtected(new Date(Date.UTC(2026,9,16,0,0,i))),false);
+ assert.deepEqual([...map.keys()],[key]); assert.equal(map.get(key),raw); assert.equal(store.isProtected(),true);
+ const empty=setup({[key]:''});
+ assert.equal(empty.store.isProtected(),true); assert.equal(empty.store.rawData(),'');
+});

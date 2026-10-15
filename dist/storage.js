@@ -64,7 +64,8 @@ const DataStore = (() => {
   }
   function create({storage,metadata = () => null,supportedCourseIds} = {}) {
     const supported = supportedCourseIds === undefined ? null : new Set(supportedCourseIds);
-    let writable = true, protectedData = false, conflict = false, baselineRaw = null;
+    // lockReason explains protectedData: "newer" (a later app wrote it), "invalid" (damaged or incomplete), "unreadable" (storage threw).
+    let writable = true, protectedData = false, conflict = false, baselineRaw = null, lockReason = null;
     let snapshot = {schemaVersion:2,owner:{kind:"guest",id:uid()},updatedAt:new Date().toISOString(),learning:learning(null),attempts:[],favorites:[],preferences:{}};
     // Reject an observed stale snapshot. This synchronous read/write check is
     // not a cross-tab transaction and does not claim to serialize concurrent writes.
@@ -76,7 +77,7 @@ const DataStore = (() => {
           conflict = true; writable = false; return false;
         }
         return true;
-      } catch { protectedData = true; writable = false; return false; }
+      } catch { protectedData = true; lockReason ||= "unreadable"; writable = false; return false; }
     }
     function commit(next) {
       if (!checkForUpdates()) return false;
@@ -94,10 +95,11 @@ const DataStore = (() => {
       if (raw !== null) {
         try {
           const parsed = JSON.parse(raw);
+          if (object(parsed) && typeof parsed.schemaVersion === "number" && parsed.schemaVersion > 2) { lockReason = "newer"; throw Error("Newer data"); }
           if (!validSnapshot(parsed) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) throw Error("Unsupported data");
           snapshot = clean(parsed);
         }
-        catch { protectedData = true; writable = false; }
+        catch { protectedData = true; lockReason ||= "invalid"; writable = false; }
       } else {
         const legacyRaw = storage?.getItem(LEGACY_KEY);
         let legacy = null;
@@ -105,11 +107,30 @@ const DataStore = (() => {
         if (object(legacy)) snapshot = {...snapshot,learning:learning(legacy),attempts:normalizeAttempts(legacy.history,metadata).slice(-MAX_ATTEMPTS)};
         commit(snapshot);
       }
-    } catch { writable = false; protectedData = true; }
+    } catch { writable = false; protectedData = true; lockReason = "unreadable"; }
     return {
       readProgress: () => clone({...snapshot.learning.intro,study:snapshot.learning.study,history:snapshot.attempts}),
       readSnapshot: () => clone(snapshot), canPersist: () => writable, isProtected: () => protectedData,
-      isConflict: () => conflict, checkForUpdates,
+      isConflict: () => conflict, checkForUpdates, lockReason: () => protectedData ? lockReason : null,
+      // The untouched stored text behind a lock, for the learner to download.
+      rawData: () => protectedData && lockReason !== "unreadable" ? baselineRaw : null,
+      // Keep the locked text under a quarantine key, then start a fresh v2 snapshot.
+      // Writing v2 (instead of removing it) keeps the v1 copy from being migrated again.
+      restartProtected(now = new Date()) {
+        if (!protectedData || lockReason === "unreadable" || conflict || baselineRaw === null) return false;
+        try {
+          if ((storage.getItem(KEY) ?? null) !== baselineRaw) { conflict = true; return false; }
+          var quarantineKey = `${KEY}:quarantine:${now.toISOString()}`;
+          storage.setItem(quarantineKey, baselineRaw);
+        } catch { return false; }
+        const fresh = {schemaVersion:2,owner:{kind:"guest",id:uid()},updatedAt:now.toISOString(),learning:learning(null),attempts:[],favorites:[],preferences:{}};
+        protectedData = false; writable = true;
+        if (commit(fresh)) { lockReason = null; return true; }
+        // Drop only the copy made just now (the original key is untouched) so retries do not pile up copies.
+        protectedData = true; writable = false;
+        try { storage.removeItem(quarantineKey); } catch { /* The extra copy is harmless; the original stays intact. */ }
+        return false;
+      },
       // After an intentional clear, the v1 copy must not be migrated back if v2 later disappears.
       forgetLegacy() { if (!writable || !checkForUpdates()) return false; try { storage.removeItem(LEGACY_KEY); return true; } catch { return false; } },
       writeProgress(flat) {
