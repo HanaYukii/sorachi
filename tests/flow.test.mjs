@@ -319,6 +319,10 @@ function browser({
       return storage.get(key);
     },
     get reloads() { return reloads; },
+    change(id, files) {
+      dispatch(app._listeners, 'change', { target: { id, files } });
+      flush();
+    },
     get created() { return created; },
     get storage() { return storage; },
     get nextDisabled() {
@@ -984,4 +988,32 @@ test('newer data leads with refresh, warns that restart hides it from the new si
   const stored = b.stored;
   b.action('history');
   assert.equal(b.stored, stored, 'Clicks after a successful restart wait for the reload');
+});
+
+test('backup can be downloaded and restored; the restore reloads so later answers cannot overwrite it', async () => {
+  const source = browser({ hash: '#home' });
+  complete(source);
+  const backup = JSON.parse(source.stored);
+  const b = browser({ hash: '#history' });
+  assert.match(b.html, /data-action="export-backup"/);
+  assert.match(b.html, /<input type="file" id="backup-file"/);
+  b.action('export-backup');
+  assert.match(b.created.at(-1).download, /^sorachi-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  const raw = JSON.stringify(backup);
+  const file = { size: raw.length, text: async () => raw };
+  b.change('backup-file', [file]);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(b.reloads, 1);
+  const stored = b.stored;
+  b.action('home');
+  b.navigate('#lesson');
+  assert.equal(b.stored, stored, 'Clicks and route changes before the reload must not save stale memory');
+  const reloaded = browser({ raw: stored, hash: '#history' });
+  assert.equal(reloaded.state.history.length, 1);
+  assert.equal(reloaded.state.completed, true);
+  const bad = browser({ hash: '#history' });
+  bad.change('backup-file', [{ size: 5, text: async () => 'nope!' }]);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(bad.reloads, 0);
+  assert.match(bad.node('#backup-status').textContent, /讀不懂這個檔案/);
 });

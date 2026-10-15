@@ -296,3 +296,74 @@ test('a failed fresh write removes only the copy just made, and empty stored tex
  const empty=setup({[key]:''});
  assert.equal(empty.store.isProtected(),true); assert.equal(empty.store.rawData(),'');
 });
+
+test('backup import reports added, existing and over-limit records instead of silently dropping them',()=>{
+ const target=setup(), progress=target.store.readProgress();
+ progress.history=Array.from({length:200},(_,i)=>({id:`new-${i}`,date:new Date(Date.UTC(2026,5,1,0,i)).toISOString(),total:2,firstCorrect:2,retryQuestions:[]}));
+ target.store.writeProgress(progress);
+ const source=setup(), older=source.store.readProgress();
+ older.history=[{id:'old-1',date:'2025-01-01T00:00:00.000Z',total:2,firstCorrect:1,retryQuestions:[4]},{id:'new-3',date:new Date(Date.UTC(2026,5,1,0,3)).toISOString(),total:2,firstCorrect:2,retryQuestions:[]}];
+ source.store.writeProgress(older);
+ const result=target.store.importBackupDetailed(source.store.exportBackup());
+ assert.deepEqual({...result},{ok:true,added:0,existing:1,skipped:1,dropped:0});
+ assert.equal(target.store.readProgress().history.length,200);
+ assert.equal(target.store.importBackupDetailed('x'.repeat(target.api.MAX_BACKUP_CHARS+1)).reason,'too-large');
+ assert.equal(target.store.importBackupDetailed('{').reason,'invalid');
+});
+
+test('course merge keeps the latest completion with its result, the larger count, and only fills an idle round',()=>{
+ const local=setup(), here=local.store.readProgress();
+ here.study={script:'h',courses:{
+  'h-a':{attempts:1,completedAt:null,lastResult:null,active:{phase:'cards',cursor:0}},
+  'h-ka':{attempts:5,completedAt:'2026-03-01T00:00:00.000Z',lastResult:{firstCorrect:5,total:5},active:{phase:'quiz',cursor:2}},
+ }};
+ here.history=[{id:'ka-new',courseId:'h-ka',date:'2026-09-01T00:00:00.000Z',total:5,firstCorrect:3,retryQuestions:[1,2]}];
+ local.store.writeProgress(here);
+ const remote=setup(), there=remote.store.readProgress();
+ there.completed=true;
+ there.study={script:'h',courses:{
+  'h-a':{attempts:3,completedAt:'2026-02-01T00:00:00.000Z',lastResult:{firstCorrect:4,total:5},active:{phase:'done',cursor:0}},
+  'h-ka':{attempts:2,completedAt:'2026-01-01T00:00:00.000Z',lastResult:{firstCorrect:1,total:5},active:null},
+ }};
+ there.history=[{id:'ka-old',courseId:'h-ka',date:'2026-01-01T00:00:00.000Z',total:5,firstCorrect:1,retryQuestions:[1,2,3,4]}];
+ remote.store.writeProgress(there);
+ assert.equal(local.store.importBackupDetailed(remote.store.exportBackup()).ok,true);
+ const merged=local.store.readProgress();
+ assert.equal(merged.completed,true);
+ const a=merged.study.courses['h-a'], ka=merged.study.courses['h-ka'];
+ assert.equal(a.completedAt,'2026-02-01T00:00:00.000Z','A course only opened here must not hide the imported completion');
+ assert.equal(a.attempts,3); assert.equal(a.active.phase,'done');
+ assert.equal(ka.completedAt,'2026-03-01T00:00:00.000Z','completedAt is the most recent completion'); assert.equal(ka.attempts,5);
+ assert.deepEqual({...ka.lastResult},{firstCorrect:5,total:5}); assert.equal(ka.active.cursor,2);
+});
+
+test('import reports local records pushed out by newer imported ones',()=>{
+ const target=setup(), mine=target.store.readProgress();
+ mine.history=Array.from({length:200},(_,i)=>({id:`old-${i}`,date:new Date(Date.UTC(2025,0,1,0,i)).toISOString(),total:2,firstCorrect:2,retryQuestions:[]}));
+ target.store.writeProgress(mine);
+ const source=setup(), theirs=source.store.readProgress();
+ theirs.history=Array.from({length:3},(_,i)=>({id:`new-${i}`,date:new Date(Date.UTC(2026,0,1,0,i)).toISOString(),total:2,firstCorrect:2,retryQuestions:[]}));
+ source.store.writeProgress(theirs);
+ assert.deepEqual({...target.store.importBackupDetailed(source.store.exportBackup())},{ok:true,added:3,existing:0,skipped:0,dropped:3});
+});
+
+test('a clear on either side keeps older mistakes and review sessions from coming back',()=>{
+ const mistake={lastSeen:'2026-05-01T00:00:00.000Z',wrong:true};
+ const cleared=setup(), here=cleared.store.readProgress();
+ here.study={script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:'2026-06-01T00:00:00.000Z'};
+ cleared.store.writeProgress(here);
+ const old=setup(), there=old.store.readProgress();
+ there.study={script:'k',courses:{'k-a':{attempts:1,completedAt:'2026-04-01T00:00:00.000Z',lastResult:{firstCorrect:5,total:5},active:null}},kanaReview:{'k-a/question/u30a2':mistake},reviewSession:{mode:'review'}};
+ old.store.writeProgress(there);
+ assert.equal(cleared.store.importBackupDetailed(old.store.exportBackup()).ok,true);
+ let study=cleared.store.readProgress().study;
+ assert.deepEqual({...study.kanaReview},{}); assert.equal(study.reviewSession,null); assert.equal(study.reviewClearedAt,'2026-06-01T00:00:00.000Z');
+ assert.equal(study.script,'k','A browser with no real progress takes the backup script');
+ const fresh=setup(), mine=fresh.store.readProgress();
+ mine.study={script:'h',courses:{},kanaReview:{'h-a/question/u3042':mistake}};
+ fresh.store.writeProgress(mine);
+ assert.equal(fresh.store.importBackupDetailed(cleared.store.exportBackup()).ok,true);
+ study=fresh.store.readProgress().study;
+ assert.deepEqual({...study.kanaReview},{},'The backup was cleared after this mistake');
+ assert.equal(study.reviewClearedAt,'2026-06-01T00:00:00.000Z');
+});

@@ -39,6 +39,36 @@ const DataStore = (() => {
     for (const item of normalizeAttempts([...a, ...b])) if (!byId.has(item.id)) byId.set(item.id, item);
     return [...byId.values()].sort((a,b) => a.date.localeCompare(b.date));
   }
+  const MAX_BACKUP_CHARS = 2000000;
+  const time = (v) => typeof v === "string" && Number.isFinite(Date.parse(v)) ? Date.parse(v) : null;
+  const later = (x, y) => (time(x) ?? -Infinity) >= (time(y) ?? -Infinity) ? x : y;
+  const realProgress = (active) => object(active) && (active.phase !== "cards" || (Number.isInteger(active.cursor) && active.cursor > 0));
+  // completedAt records the most recent completion, so the later side also supplies lastResult.
+  function mergeCourse(local, incoming) {
+    if (!object(incoming)) return local;
+    if (!object(local)) return incoming;
+    const newer = later(local.completedAt, incoming.completedAt) === local.completedAt ? local : incoming;
+    return {...incoming,...local,
+      completedAt: time(newer.completedAt) === null ? null : newer.completedAt,
+      attempts: Math.max(Number.isInteger(local.attempts) ? local.attempts : 0, Number.isInteger(incoming.attempts) ? incoming.attempts : 0),
+      lastResult: newer.lastResult ?? null,
+      active: realProgress(local.active) ? local.active : incoming.active ?? local.active ?? null};
+  }
+  function mergeStudy(local, incoming) {
+    const courses = {...(incoming.courses || {})};
+    for (const [id, course] of Object.entries(local.courses || {})) courses[id] = mergeCourse(course, incoming.courses?.[id]);
+    // A clear on either side wins over older mistakes and sessions from the other.
+    const cleared = later(local.reviewClearedAt, incoming.reviewClearedAt);
+    const clearedAt = time(cleared) === null ? null : cleared;
+    const fresh = (item) => clearedAt === null || (time(item?.lastSeen) ?? -Infinity) > time(clearedAt);
+    const review = {};
+    for (const source of [incoming.kanaReview, local.kanaReview]) for (const [id, item] of Object.entries(object(source) ? source : {})) if (fresh(item) && later(item?.lastSeen, review[id]?.lastSeen) === item?.lastSeen) review[id] = item;
+    const localCleared = (time(local.reviewClearedAt) ?? -Infinity) > (time(incoming.reviewClearedAt) ?? -Infinity);
+    const learned = Object.values(local.courses || {}).some((course) => object(course) && (time(course.completedAt) !== null || realProgress(course.active)));
+    return {...incoming,...local,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,
+      reviewSession:local.reviewSession ?? (localCleared ? null : incoming.reviewSession ?? null),
+      ...(clearedAt ? {reviewClearedAt:clearedAt} : {})};
+  }
   const emptyIntro = () => ({step:0,completed:false,inProgress:false,answers:{},firstAnswers:{}});
   function learning(flat) {
     const intro = {...emptyIntro()};
@@ -87,6 +117,29 @@ const DataStore = (() => {
         storage.setItem(KEY,raw);
         snapshot = candidate; baselineRaw = raw; writable = true; return true;
       } catch { writable = false; return false; }
+    }
+    // Restores a backup into this browser. Records merge by id (newest 200 kept);
+    // each course keeps the latest completion with its result and the larger attempt
+    // count, and an in-progress round only fills in where this browser has none.
+    // This is a local backup primitive, not cloud sync.
+    function importBackupDetailed(raw) {
+      if (typeof raw !== "string" || raw.length > MAX_BACKUP_CHARS) return {ok:false,reason:"too-large"};
+      let parsed;
+      try { parsed = JSON.parse(raw); } catch { return {ok:false,reason:"invalid"}; }
+      if (!validSnapshot(parsed) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) return {ok:false,reason:"invalid"};
+      const incoming = clean(parsed), current = snapshot.learning;
+      const localIds = new Set(snapshot.attempts.map((item) => item.id));
+      // Count from the whole file (clean() keeps only the newest 200), each id once.
+      const all = normalizeAttempts(parsed.attempts,metadata), incomingIds = new Set(all.map((item) => item.id));
+      const attempts = mergeAttempts(snapshot.attempts,all).slice(-MAX_ATTEMPTS);
+      const keptIds = new Set(attempts.map((item) => item.id));
+      const fresh = [...incomingIds].filter((id) => !localIds.has(id));
+      const report = {added:fresh.filter((id) => keptIds.has(id)).length,existing:incomingIds.size - fresh.length,skipped:fresh.filter((id) => !keptIds.has(id)).length,dropped:[...localIds].filter((id) => !keptIds.has(id)).length};
+      const introStarted = current.intro.completed || current.intro.inProgress || current.intro.step > 0;
+      const intro = introStarted ? {...current.intro,completed:current.intro.completed || incoming.learning.intro.completed} : incoming.learning.intro;
+      const study = mergeStudy(current.study,incoming.learning.study);
+      const ok = commit({...snapshot,learning:{intro,study},attempts,favorites:favorites([...snapshot.favorites,...incoming.favorites]),preferences:{...incoming.preferences,...snapshot.preferences}});
+      return ok ? {ok,...report} : {ok,reason:"write"};
     }
     function clean(v) { return {...v,learning:learning({...v.learning.intro,study:v.learning.study}),attempts:normalizeAttempts(v.attempts,metadata).slice(-MAX_ATTEMPTS),favorites:favorites(v.favorites),preferences:preferences(v.preferences)}; }
     try {
@@ -149,18 +202,9 @@ const DataStore = (() => {
         if (!checkForUpdates()) throw Error("Backup unavailable: stored data changed or could not be read safely; reload before exporting.");
         return JSON.stringify(snapshot,null,2);
       },
-      // Import merges records and favorites; restores imported course progress only
-      // where this browser has none. This is a local backup primitive, not cloud sync.
-      importBackup(raw) {
-        try {
-          const parsed = JSON.parse(raw); if (!validSnapshot(parsed) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) return false;
-          const incoming = clean(parsed), current = snapshot.learning;
-          const introStarted = current.intro.completed || current.intro.inProgress || current.intro.step > 0;
-          const studyStarted = Object.keys(current.study.courses || {}).length > 0 || current.study.script === "k";
-          return commit({...snapshot,learning:{intro:introStarted ? current.intro : incoming.learning.intro,study:{...incoming.learning.study,...(studyStarted ? current.study : {}),courses:{...incoming.learning.study.courses,...current.study.courses}}},attempts:mergeAttempts(snapshot.attempts,incoming.attempts).slice(-MAX_ATTEMPTS),favorites:favorites([...snapshot.favorites,...incoming.favorites]),preferences:{...incoming.preferences,...snapshot.preferences}});
-        } catch { return false; }
-      },
+      importBackup: (raw) => importBackupDetailed(raw).ok,
+      importBackupDetailed,
     };
   }
-  return {KEY,MAX_ATTEMPTS,create,normalizeAttempts,makeAttempt,mergeAttempts};
+  return {KEY,MAX_ATTEMPTS,MAX_BACKUP_CHARS,create,normalizeAttempts,makeAttempt,mergeAttempts};
 })();
