@@ -216,6 +216,7 @@ function browser({
   const flush = () => {
     while (pending.length) pending.shift()();
   };
+  vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
   vm.runInContext(source, context, { filename: "dist/app.js" });
   flush();
   function click(selector, { force = false } = {}) {
@@ -257,6 +258,12 @@ function browser({
     get renderCount() {
       return renderCount;
     },
+    study(action, extra = {}) {
+      const markup = `<button data-action="${action}" ${Object.entries(extra).map(([key,value]) => `data-${key}="${value}"`).join(' ')}>`;
+      dispatch(app._listeners, 'click', {target:element('button', markup)});
+      flush();
+    },
+    get title() { return document.title; },
     action(name, options) {
       click(`[data-action="${name}"]`, options);
     },
@@ -395,7 +402,7 @@ test("answer feedback and focused choices remain mounted across retries and succ
   assert.equal(b.renderCount, renders);
   assert.equal(b.node(".feedback"), feedback);
   assert.equal(b.focused, '[data-answer="1"]');
-  assert.match(feedback.textContent, /再看一次/);
+  assert.match(feedback.textContent, /再看一下提示/);
   b.answer(0);
   assert.equal(b.renderCount, renders);
   assert.equal(b.node(".feedback"), feedback);
@@ -430,7 +437,7 @@ test("start button begins at the first step when a stale attempt is no longer ac
   const b = browser({
     saved: { step: 3, completed: false, inProgress: false },
   });
-  assert.match(b.html, />開始第一堂小課/);
+  assert.match(b.html, />認識三種日文寫法/);
   b.action("start");
   assert.equal(b.state.step, 0);
   assert.equal(b.state.inProgress, true);
@@ -561,4 +568,53 @@ test("an old completion route cannot show an unfinished replay as completed", ()
   assert.equal(revisit.state.history.length, 1);
   assert.equal(revisit.state.history[0].firstCorrect, 2);
   assert.doesNotMatch(revisit.html, /兩題都完成了/);
+});
+
+
+test("kana attempts share the history store and resume first responses across reload", () => {
+  const b = browser({hash:'#study/h-a'});
+  for (let i=0;i<5;i++) b.study('study-next');
+  const firstQ = b.state.study.courses['h-a'].active.order[0];
+  b.study('study-answer', {choice:(firstQ+1)%5});
+  const resumed = browser({raw:b.stored, hash:'#study/h-a'});
+  assert.equal(resumed.state.study.courses['h-a'].active.first[firstQ], false);
+  for (let i=0;i<5;i++) {
+    const active = resumed.state.study.courses['h-a'].active;
+    resumed.study('study-answer', {choice:active.order[active.cursor]});
+    resumed.study('study-next');
+  }
+  assert.equal(resumed.state.history.length, 1);
+  assert.equal(resumed.state.history[0].courseId, 'h-a');
+  assert.equal(resumed.state.history[0].total, 5);
+  assert.equal(resumed.state.history[0].firstCorrect, 4);
+  const reloaded = browser({raw:resumed.stored,hash:'#history'});
+  assert.match(reloaded.html, /平假名・あ行/);
+  assert.match(reloaded.html, /4 \/ 5/);
+  reloaded.action('clear-history');
+  reloaded.action('confirm-clear');
+  assert.equal(reloaded.state.history.length, 0);
+  assert.equal(reloaded.state.study.courses['h-a'].attempts, 1);
+});
+
+test("feedback returns to the current study card with its course title", () => {
+  const b = browser({hash:'#study/g-question'});
+  b.study('study-next');
+  b.action('feedback');
+  assert.match(b.html, /認識第 2 步/);
+  b.action('feedback-back');
+  assert.equal(b.hash, '#study/g-question');
+  assert.match(b.title, /加一個/);
+  assert.equal(b.state.study.courses['g-question'].active.cursor, 1);
+});
+
+
+test("home explains the task and sends beginners directly to the first kana group", () => {
+  const b = browser();
+  assert.match(b.html, /日文入門/);
+  assert.match(b.html, /看字與讀音，再做選擇題/);
+  assert.match(b.html, /data-action="study-open" data-course="h-a"/);
+  assert.doesNotMatch(b.html, /あ、ア、山/);
+  b.study('study-open', {course:'h-a'});
+  assert.equal(b.hash, '#study/h-a');
+  assert.equal(b.state.study.courses['h-a'].active.cursor, 0);
 });

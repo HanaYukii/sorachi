@@ -6,5 +6,6 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 node --check dist/app.js
-node --test tests/flow.test.mjs
+node --check dist/study.js
+node --test tests/*.test.mjs
 git subtree push --prefix dist origin gh-pages
