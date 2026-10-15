@@ -966,6 +966,181 @@ const Content = (() => {
       ]
     },
     {
+      "id": "transit",
+      "title": "交通：買票與搭車",
+      "subtitle": "單程・來回・對號座・月台・轉乘・下車",
+      "steps": [
+        {
+          "title": "買票：到哪裡、單程或來回",
+          "keywords": [
+            [
+              "きっぷ",
+              "kippu",
+              "車票"
+            ],
+            [
+              "片道（かたみち）",
+              "katamichi",
+              "單程"
+            ],
+            [
+              "往復（おうふく）",
+              "oufuku",
+              "來回"
+            ]
+          ],
+          "body": "在售票處指著手機上的目的地，說「〇〇まで」（到〇〇），再加上片道或往復就可以。",
+          "example": "京都まで、片道。",
+          "reading": "kyouto made, katamichi",
+          "meaning": "到京都，單程。",
+          "polite": "京都まで、片道でお願いします。",
+          "politeReading": "kyouto made, katamichi de onegaishimasu",
+          "politeMeaning": "麻煩給我到京都的單程票。",
+          "id": "phrase/transit/ticket"
+        },
+        {
+          "title": "座位：對號座、自由座",
+          "keywords": [
+            [
+              "指定席（していせき）",
+              "shiteiseki",
+              "對號座"
+            ],
+            [
+              "自由席（じゆうせき）",
+              "jiyuuseki",
+              "自由座"
+            ]
+          ],
+          "body": "指定席有固定座位；自由席不保證有位子。搭特急或新幹線時，除了車票通常還要另買特急券，有些列車也只有指定席，實際規定以車站說明為準。",
+          "example": "指定席で。",
+          "reading": "shiteiseki de",
+          "meaning": "要對號座。",
+          "polite": "指定席でお願いします。",
+          "politeReading": "shiteiseki de onegaishimasu",
+          "politeMeaning": "麻煩給我對號座。",
+          "id": "phrase/transit/seat"
+        },
+        {
+          "title": "一日券、大人與小孩",
+          "keywords": [
+            [
+              "一日券（いちにちけん）",
+              "ichinichiken",
+              "一日券"
+            ],
+            [
+              "大人（おとな）",
+              "otona",
+              "成人票"
+            ],
+            [
+              "子ども（こども）",
+              "kodomo",
+              "兒童票"
+            ]
+          ],
+          "body": "票名也可能寫「一日乗車券」，兒童票在售票機上也可能寫「小児（しょうに）」。每種一日券能搭的區域和路線不同，買之前先看清楚範圍；幾歲算兒童以車站說明為準。站務員可能用「〜枚（まい）」算張數，回答ひとつ、ふたつ也聽得懂。",
+          "example": "一日券、大人ひとつ。",
+          "reading": "ichinichiken, otona hitotsu",
+          "meaning": "一日券，一張成人票。",
+          "polite": "一日券を大人ひとつお願いします。",
+          "politeReading": "ichinichiken o otona hitotsu onegaishimasu",
+          "politeMeaning": "麻煩給我一張成人一日券。",
+          "staffAsks": {
+            "example": "何枚ですか？",
+            "reading": "nanmai desu ka",
+            "meaning": "要幾張？"
+          },
+          "id": "phrase/transit/day-pass"
+        },
+        {
+          "title": "找月台：往哪裡、幾號線",
+          "keywords": [
+            [
+              "ホーム",
+              "hoomu",
+              "月台"
+            ],
+            [
+              "何番線（なんばんせん）",
+              "nanbansen",
+              "幾號月台"
+            ],
+            [
+              "〜行き（ゆき）",
+              "yuki",
+              "往〜"
+            ]
+          ],
+          "body": "站內標示常寫「〇番線」和「〇〇行き」，「行き」後面是這班車的終點站。目的地不是終點時看板上不會出現，可以改問「京都に行く電車は何番線ですか？」，或指著手機上的路線問。",
+          "example": "京都行き、何番線？",
+          "reading": "kyouto yuki, nanbansen",
+          "meaning": "往京都的車，在幾號月台？",
+          "polite": "京都行きは何番線ですか？",
+          "politeReading": "kyouto yuki wa nanbansen desu ka",
+          "politeMeaning": "往京都的車在幾號月台？",
+          "id": "phrase/transit/platform"
+        },
+        {
+          "title": "上車前確認方向",
+          "keywords": [
+            [
+              "この電車（このでんしゃ）",
+              "kono densha",
+              "這班車"
+            ]
+          ],
+          "body": "指著列車問。只說站名，對方不一定知道你想問什麼，所以要說出「この電車」和目的地。",
+          "example": "この電車、京都に行きますか？",
+          "reading": "kono densha, kyouto ni ikimasu ka",
+          "meaning": "這班車有到京都嗎？",
+          "id": "phrase/transit/direction"
+        },
+        {
+          "title": "轉乘",
+          "keywords": [
+            [
+              "乗り換え（のりかえ）",
+              "norikae",
+              "轉乘"
+            ]
+          ],
+          "body": "先讓對方看手機上的目的地或路線再問，對方比較容易回答。",
+          "example": "乗り換え、どこですか？",
+          "reading": "norikae, doko desu ka",
+          "meaning": "在哪裡轉乘？",
+          "polite": "京都まで行きたいです。どこで乗り換えますか？",
+          "politeReading": "kyouto made ikitai desu. doko de norikaemasu ka",
+          "politeMeaning": "我想到京都，要在哪裡轉乘？",
+          "id": "phrase/transit/transfer"
+        },
+        {
+          "title": "在哪一站下車",
+          "keywords": [
+            [
+              "降りる（おりる）",
+              "oriru",
+              "下車"
+            ],
+            [
+              "次の駅（つぎのえき）",
+              "tsugi no eki",
+              "下一站"
+            ]
+          ],
+          "body": "指著目的地問。對方可能回「次の駅」（下一站），再對照車廂裡的站名顯示就好。",
+          "example": "どの駅で降りればいい？",
+          "reading": "dono eki de orireba ii",
+          "meaning": "要在哪一站下車？",
+          "polite": "どの駅で降りればいいですか？",
+          "politeReading": "dono eki de orireba ii desu ka",
+          "politeMeaning": "我應該在哪一站下車？",
+          "id": "phrase/transit/get-off"
+        }
+      ]
+    },
+    {
       "id": "hotel",
       "title": "飯店與預約",
       "subtitle": "入住・已預約・寄放行李",
