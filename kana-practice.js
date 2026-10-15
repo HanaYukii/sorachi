@@ -18,7 +18,9 @@ const KanaPractice = (() => {
   function question(id,direction,pool) {
     const target=entry(id), seen=new Set([target.reading]);
     const shares=(list,candidate)=>list.some(group=>group.includes(target.character)&&group.includes(entry(candidate).character));
-    const similar=candidate=>shares(groups,candidate)?2:shares(looseGroups,candidate)?1:0;
+    // か／が／ぱ-style pairs differ only by the voicing mark, the most common confusion once both are learned.
+    const base=character=>character.normalize('NFD')[0];
+    const similar=candidate=>shares(groups,candidate)||base(entry(candidate).character)===base(target.character)?2:shares(looseGroups,candidate)?1:0;
     const peers=shuffled(pool.filter(candidate=>candidate!==id && entry(candidate).script===target.script)).sort((a,b)=>similar(b)-similar(a));
     const sameRow=peers.filter(candidate=>entry(candidate).courseId===target.courseId), otherRows=peers.filter(candidate=>entry(candidate).courseId!==target.courseId);
     const options=[id];
@@ -64,7 +66,7 @@ const KanaPractice = (() => {
   const firstCorrect = session => session.questions.filter((q,index)=>q.options[session.answers[index]]===q.id).length;
   function sanitize(raw,{allowedCourseIds=null}={}) {
     if(!raw || raw.version!==VERSION || !['course','review'].includes(raw.mode) || !['first','retry','done'].includes(raw.round))return null;
-    if(!Array.isArray(raw.pool)||raw.pool.length>92||new Set(raw.pool).size!==raw.pool.length||raw.pool.some(id=>!entry(id)))return null;
+    if(!Array.isArray(raw.pool)||raw.pool.length>entries.length||new Set(raw.pool).size!==raw.pool.length||raw.pool.some(id=>!entry(id)))return null;
     if(allowedCourseIds && raw.pool.some(id=>!allowedCourseIds.includes(entry(id).courseId)))return null;
     const usedCourses=[...new Set(raw.pool.map(id=>entry(id).courseId))];
     if(!raw.revisions || usedCourses.some(id=>raw.revisions[id]!==Content.courseRevision(id)))return null;
