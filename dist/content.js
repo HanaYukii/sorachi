@@ -550,7 +550,7 @@ const Content = (() => {
             "example": "ロックで。 ／ ソーダ割りで。",
             "reading": "rokku de / sooda wari de",
             "meaning": "加冰。／加蘇打水。",
-            "body": "已經選好威士忌或燒酎等酒款，店員問喝法時，可以這樣回答。「ロック」是酒加冰塊；「ソーダ割り」是酒加蘇打水。",
+            "body": "已經選好威士忌或燒酎等酒款，店員問喝法時，可以這樣回答。「ロック」是酒加冰塊；「ソーダ割り」是酒加蘇打水。菜單上的「ハイボール」（haibooru）是威士忌加蘇打水。",
             "id": "phrase/t-order/extra/drink-style"
           },
           "id": "phrase/t-order/drink-temperature"
@@ -606,8 +606,23 @@ const Content = (() => {
     {
       "id": "dining",
       "title": "內用外帶、用餐需求",
-      "subtitle": "內用・外帶・水・不需要",
+      "subtitle": "幾位・內用・外帶・水・不需要",
       "steps": [
+        {
+          "title": "進門時：幾位？",
+          "keywords": [
+            [
+              "何名様（なんめいさま）",
+              "nanmeisama",
+              "幾位"
+            ]
+          ],
+          "body": "進餐廳時店員常這樣問人數。比手指回答就可以，例如比出兩根手指；超過五人用兩隻手比。",
+          "example": "何名様ですか？",
+          "reading": "nanmeisama desu ka",
+          "meaning": "請問幾位？",
+          "id": "phrase/dining/party-size"
+        },
         {
           "title": "內用還是外帶",
           "keywords": [
@@ -626,6 +641,11 @@ const Content = (() => {
           "example": "持ち帰りでお願いします。",
           "reading": "mochikaeri de onegaishimasu",
           "meaning": "我要外帶，麻煩你。",
+          "staffAsks": {
+            "example": "店内でお召し上がりですか？",
+            "reading": "tennai de omeshiagari desu ka",
+            "meaning": "內用嗎？"
+          },
           "id": "phrase/dining/takeout"
         },
         {
@@ -667,10 +687,15 @@ const Content = (() => {
               "不需要"
             ]
           ],
-          "body": "店員問要不要袋子、收據等物品時，可以用這句回答。「大丈夫です」（daijoubu desu）也可能表示婉拒，但依情境也能表示「沒問題」；要清楚表達不需要，可用「いりません」。",
+          "body": "店員問要不要袋子、收據等物品時，可以用這句回答。「大丈夫です」（daijoubu desu）也可能表示婉拒，但依情境也能表示「沒問題」；要清楚表達不需要，可用「いりません」。超商店員問「温めますか？」時，不用加熱就回「大丈夫です」。",
           "example": "袋はいりません。",
           "reading": "fukuro wa irimasen",
           "meaning": "我不需要袋子。",
+          "staffAsks": {
+            "example": "温めますか？",
+            "reading": "atatamemasu ka",
+            "meaning": "（超商便當）要加熱嗎？"
+          },
           "id": "phrase/dining/decline"
         }
       ]
@@ -773,6 +798,11 @@ const Content = (() => {
           "example": "袋をお願いします。",
           "reading": "fukuro o onegaishimasu",
           "meaning": "麻煩給我袋子。",
+          "staffAsks": {
+            "example": "袋はご利用ですか？",
+            "reading": "fukuro wa goriyou desu ka",
+            "meaning": "需要袋子嗎？"
+          },
           "id": "phrase/shopping/bag"
         },
         {
@@ -784,7 +814,7 @@ const Content = (() => {
               "購物收據"
             ]
           ],
-          "body": "結帳時，可以用這個詞索取一般購物收據。",
+          "body": "結帳時，可以用這個詞索取一般購物收據。需要報帳用、寫抬頭的收據時，說「領収書（りょうしゅうしょ，ryoushuusho）」。",
           "example": "レシートをお願いします。",
           "reading": "reshiito o onegaishimasu",
           "meaning": "麻煩給我收據。",
@@ -953,6 +983,11 @@ const Content = (() => {
           "example": "チェックインをお願いします。",
           "reading": "chekku in o onegaishimasu",
           "meaning": "麻煩幫我辦理入住。",
+          "staffAsks": {
+            "example": "パスポートをお願いします。",
+            "reading": "pasupooto o onegaishimasu",
+            "meaning": "麻煩出示護照。"
+          },
           "id": "phrase/hotel/check-in"
         },
         {
@@ -1193,6 +1228,10 @@ const Content = (() => {
         text(value.politeMeaning, `${path}.politeMeaning`, 'zh');
       }
       if (value.extra !== undefined) card(value.extra, `${path}.extra`, seen, kind);
+      if (value.staffAsks !== undefined) {
+        if (!record(value.staffAsks)) fail(`${path}.staffAsks`, 'invalid staff question');
+        else { text(value.staffAsks.example, `${path}.staffAsks.example`, 'ja'); text(value.staffAsks.reading, `${path}.staffAsks.reading`, 'reading'); text(value.staffAsks.meaning, `${path}.staffAsks.meaning`, 'zh'); }
+      }
     }
     function question(value, path, seen, introQuestion = false) {
       if (!record(value)) { fail(path, 'invalid question object'); return; }

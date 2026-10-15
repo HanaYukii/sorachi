@@ -493,3 +493,15 @@ test('audio buttons say what is visible, keyword boxes are not repeated landmark
   b.render('#grammar');
   assert.match(b.html, /<span class="course-subtitle">/);
 });
+
+test('travel pages show staff questions and Japanese keywords; other pages link to travel phrases', () => {
+  const b = harness();
+  b.render('#travel');
+  assert.match(b.html, /<span class="travel-keywords" lang="ja">お会計・レジ・カード・現金・Suica<\/span>/);
+  assert.match(b.html, />何名様・店内・持ち帰り・お水・おかわり・いりません</);
+  assert.doesNotMatch(b.html, /travel-keywords[^>]*>[^<]*(お願いします|1000円)/);
+  b.render('#travel/dining');
+  assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">店員可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
+  b.render('#kana');
+  assert.match(b.html, /<a class="header-link" href="#travel">旅遊常用語<\/a>/);
+});

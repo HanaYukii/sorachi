@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '9f4ea5055b56b03f1f525455e4628475a3ffbd1190bbe2df1a95cee61b6a0a07');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '573d5f43008c37d5582b2dcf67443cd5f5f77c996da08da6cca8be5ebb71e9fb');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -204,4 +204,22 @@ test('grammar questions with Japanese options must carry matching romaji, travel
   assert.ok(messages.some((m) => /grammar\[0\]\.questions\[0\]\.readings: Japanese options require readings/.test(m)));
   assert.ok(messages.some((m) => /grammar\[2\]\.questions\[0\]\.readings: readings must match options/.test(m)));
   assert.ok(!messages.some((m) => m.startsWith('travel')));
+});
+
+test('four travel cards say what staff may ask, and party size is answered by gesture', () => {
+  const card = (cat, tail) => Content.phrasebook.find(c => c.id === cat).steps.find(s => s.id.endsWith(`/${tail}`));
+  const expected = { 'dining/takeout': '店内でお召し上がりですか？', 'shopping/bag': '袋はご利用ですか？', 'dining/decline': '温めますか？', 'hotel/check-in': 'パスポートをお願いします。' };
+  for (const [key, ask] of Object.entries(expected)) {
+    const [cat, tail] = key.split('/');
+    const staff = card(cat, tail).staffAsks;
+    assert.equal(staff.example, ask);
+    assert.match(staff.reading, /^[a-z -]+$/); assert.match(staff.meaning, /\p{Script=Han}/u);
+  }
+  const party = card('dining', 'party-size');
+  assert.equal(party.example, '何名様ですか？');
+  assert.match(party.body, /比手指/);
+  assert.ok(card('t-pay', 'bill').keywords.some(k => k[0] === 'レジ'));
+  assert.match(card('shopping', 'receipt').body, /領収書/);
+  assert.match(card('t-order', 'drink-temperature').extra.body, /ハイボール/);
+  assert.match(errors(d => { d.phrasebook[2].steps[1].staffAsks = { example: 'English', reading: 'x', meaning: '中文' }; }), /staffAsks\.example/);
 });

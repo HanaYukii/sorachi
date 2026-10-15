@@ -1374,3 +1374,14 @@ button.text-button:disabled { color: var(--muted); opacity: .55; text-decoration
 .study-main .primary:disabled { opacity: 1; }
 summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; border-radius: 6px; }
 .path-card h2 { font-size: 17px; margin: 14px 0 8px; }
+
+/* Travel additions (#16) */
+.header-link { min-height: 44px; display: inline-flex; align-items: center; font-size: 13px; color: var(--purple-deep); white-space: nowrap; }
+.staff-asks { display: grid; gap: 2px; margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--aqua); color: var(--aqua-ink); font-size: 14px; line-height: 1.7; }
+.staff-asks-label { font-size: 12px; font-weight: 600; }
+.staff-asks [lang="ja"] { font-size: 16px; color: var(--ink); }
+.staff-asks-reading { font-size: 14px; }
+.travel-keywords { display: block; font-size: 14px; color: var(--ink); margin-top: 4px; }
+@media (max-width: 400px) {
+  .site-header .prototype { display: none; }
+}
