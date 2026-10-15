@@ -55,8 +55,8 @@ const icons = {
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4 10-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   book: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5C8 3 5 3 3 4v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-2-1-5-1-9 1Zm0 0v15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
-const friend = (className = "", alt = "") =>
-  `<img class="${className}" src="./assets/cloud-friend.png" alt="${alt}" width="400" height="420">`;
+const friend = (className = "", alt = "", asset = "cloud-friend.png") =>
+  `<img class="${className}" src="./assets/${asset}" alt="${alt}" width="400" height="420">`;
 const footer = () =>
   '<footer class="footer"><span class="jp" lang="ja">ひとつずつ、ゆっくり。</span><span>SoraChi · 首頁與第一課雛形</span></footer>';
 const warning = () =>
@@ -190,7 +190,7 @@ function updateAnswerFeedback() {
 
 function finish() {
   document.title = "完成第一堂小課｜SoraChi";
-  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi · 第一個小步伐</span></header><main id="main" tabindex="-1" class="finish"><div class="finish-art">${friend("", "SoraChi 雲朵精靈陪你完成第一堂課")}<span class="finish-check">${icons.check}</span></div><div class="eyebrow">第一堂小課，完成了</div><h1 tabindex="-1" class="focus-heading">你和日文，又熟悉了一點。</h1><p>現在你知道，日文裡有這三種文字。<br>今天學到這裡，就很好。</p><div class="summary"><span>あ · 平假名</span><span>ア · 片假名</span><span>山 · 漢字</span></div><div class="finish-actions"><button class="primary" data-action="home">回首頁${icons.arrow}</button><button class="text-button" data-action="restart">再看一次這堂課</button></div><p class="storage-note">${canStore ? "完成紀錄已保存在這個瀏覽器。" : "這次已完成，但瀏覽器無法保存紀錄。"}</p>${warning()}</main>${footer()}</div>`;
+  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi · 第一個小步伐</span></header><main id="main" tabindex="-1" class="finish"><div class="finish-art">${friend("", "SoraChi 雲朵精靈開心地抱著小書，陪你完成第一堂課", "cloud-complete.png")}<span class="finish-check">${icons.check}</span></div><div class="eyebrow">第一堂小課，完成了</div><h1 tabindex="-1" class="focus-heading">你和日文，又熟悉了一點。</h1><p>現在你知道，日文裡有這三種文字。<br>今天學到這裡，就很好。</p><div class="summary"><span>あ · 平假名</span><span>ア · 片假名</span><span>山 · 漢字</span></div><div class="finish-actions"><button class="primary" data-action="home">回首頁${icons.arrow}</button><button class="text-button" data-action="restart">再看一次這堂課</button></div><p class="storage-note">${canStore ? "完成紀錄已保存在這個瀏覽器。" : "這次已完成，但瀏覽器無法保存紀錄。"}</p>${warning()}</main>${footer()}</div>`;
   focusHeading();
 }
 
