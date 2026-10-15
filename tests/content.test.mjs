@@ -13,12 +13,13 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '4f1098a991290ac6c76fc8081c78f950f4cc67adac82000fec048e9ca52dc048');
+  assert.equal(createHash('sha256').update(original).digest('hex'), 'b0a78ecbe0d156f8df19e63d2c002cd66786546403ae68a6d45a78a7be3c6d63');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
 test('reviewed grammar teaches topic marking and tests all three spatial demonstratives', () => {
   const identity = Content.getCourse('g-identity');
+  assert.equal(identity.title, '名詞句：〜は〜です');
   assert.doesNotMatch(identity.steps.map(s => s.body).join(''), /接起來|連接/);
   assert.match(identity.steps[1].body, /主題/);
   assert.match(identity.questions[0].prompt, /わたし＿＿がくせいです/);
@@ -26,8 +27,56 @@ test('reviewed grammar teaches topic marking and tests all three spatial demonst
   assert.equal(identity.questions[0].options[identity.questions[0].answer], 'は');
   assert.doesNotMatch(identity.questions[1].prompt, /連接/);
   const demo = Content.getCourse('g-demo');
+  assert.doesNotMatch(demo.questions[0].prompt, /這是麵包/);
   assert.equal(demo.questions.length, 3);
   assert.deepEqual([...new Set(demo.questions.map(q => q.options[q.answer]))].sort(), ['あれ', 'これ', 'それ'].sort());
+});
+
+test('intro teaches mixed scripts before testing them and uses neutral lesson copy', () => {
+  const cards = Content.intro.lessons.map(card => `${card.intro} ${card.content} ${card.tip}`).join('');
+  assert.match(cards, /日本のパン/);
+  assert.match(cards, /三種文字.*一起|一起.*三種文字/);
+  assert.doesNotMatch(cards, /有意思|重要起點/);
+});
+
+test('question particle explanation does not depend on a question mark or mandatory rising tone', () => {
+  const card = Content.getCourse('g-question').steps[1];
+  assert.equal(card.example, 'がくせいですか。');
+  assert.match(card.body, /句號|「。」/);
+  assert.match(card.body, /不一定|依情境/);
+  assert.doesNotMatch(card.body, /都要.*上揚|一律.*上揚/);
+});
+
+test('travel guidance scopes charge and IC acceptance rules and keeps shared cards consistent', () => {
+  for (const collection of [Content.travel, Content.phrasebook]) {
+    const bill = collection.find(c => c.id === 't-pay').steps[0];
+    assert.ok(bill.keywords.some(word => word[0] === 'レジ' && word[1] === 'reji'));
+    assert.match(bill.body, /有些餐廳/);
+    const charge = collection.find(c => c.id === 't-charge').steps[0];
+    assert.match(charge.body, /有人櫃檯/);
+    assert.match(charge.body, /7-Eleven.*全家.*現金/);
+    assert.match(charge.body, /部分門市/);
+    assert.match(charge.body, /支援.*Suica.*售票機/);
+    assert.ok(charge.body.split('。').filter(Boolean).length <= 3);
+    assert.equal(collection.find(c => c.id === 't-order').steps.find(s => s.id.endsWith('portion')).title, '份量：一般份量、大份量');
+    assert.equal(collection.find(c => c.id === 't-charge').steps[1].keywords[0][1], 'sen en');
+  }
+  const suica = Content.phrasebook.find(c => c.id === 't-pay').steps.find(s => s.id.endsWith('suica'));
+  assert.match(suica.body, /ICOCA.*PASMO/);
+  assert.match(suica.body, /店家.*支援標示/);
+  assert.match(suica.body, /自己的卡名/);
+  assert.doesNotMatch(suica.body, /相互利用|PiTaPa|全部|所有/);
+  const decline = Content.phrasebook.find(c => c.id === 'dining').steps.find(s => s.id.endsWith('decline'));
+  assert.match(decline.body, /大丈夫です/);
+  assert.match(decline.body, /情境/);
+  for (const original of Content.travel) {
+    const copy = Content.phrasebook.find(c => c.id === original.id);
+    for (const card of original.steps) {
+      if (card.id === 't-pay/card/polite-request') continue; // Only the legacy course has this explanatory card.
+      const counterpart = copy.steps.find(s => s.id.endsWith(card.id.split('/').at(-1)));
+      assert.equal(counterpart.body, card.body);
+    }
+  }
 });
 
 test('question lesson avoids punctuation giveaways and untaught teacher distractors', () => {

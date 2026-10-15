@@ -130,7 +130,7 @@ test('a current versioned attempt resumes without changing its score or original
   const saved = versionedSaved();
   const result = study.sanitize(saved).courses['g-identity'];
   assertEarnedResultSurvives(result);
-  assert.deepEqual(plain(result.active), saved.courses['g-identity'].active);
+  assert.deepEqual(plain(result.active), {...saved.courses['g-identity'].active,touched:true});
 });
 
 test('reviewed current content rejects the fixed legacy attempt while keeping earned results', () => {
@@ -214,13 +214,15 @@ test('opening an invalidated course starts clean cards at the new revision witho
   changed.study.bind({ getState: () => state, save: () => { saves++; }, record: () => { records++; }, footer: () => '', warning: () => '' });
   const html = changed.study.render('#study/g-identity');
   const course = state.courses['g-identity'];
-  assert.equal(course.active.phase, 'cards');
-  assert.equal(course.active.cursor, 0);
-  assert.equal(course.active.courseRevision, changed.content.courseRevision('g-identity'));
-  assert.deepEqual(plain(course.active.first), {});
-  assert.deepEqual(plain(course.active.solved), {});
+  assert.equal(course.active, null);
+  const draft = changed.study.currentAttempt('g-identity');
+  assert.equal(draft.phase, 'cards');
+  assert.equal(draft.cursor, 0);
+  assert.equal(draft.courseRevision, changed.content.courseRevision('g-identity'));
+  assert.deepEqual(plain(draft.first), {});
+  assert.deepEqual(plain(draft.solved), {});
   assertEarnedResultSurvives(course);
   assert.match(html, /新版內容/);
   assert.equal(records, 0);
-  assert.equal(saves, 1);
+  assert.equal(saves, 0);
 });

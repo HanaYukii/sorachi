@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "245d95476db24874c5a66f306980df88e41d9845df0a9efe138f608936f94c4a",
+  "buildId": "b86bdf97ed9de7d4a49d9557518318de5599e368ba78527bdeaeeab550b5ea39",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app.js",
-      "sha256": "be474720e7ce115882534b6ead579aa99c6264d6dca300b184000a2bd7a9c6cd",
-      "bytes": 26678,
+      "sha256": "7af8983efa435123429847ceddd59b87e0fb3c25e03908075bbd8f40da93725a",
+      "bytes": 27724,
       "mime": "text/javascript"
     },
     {
@@ -28,14 +28,20 @@
     },
     {
       "path": "content.js",
-      "sha256": "fab892a367eaf364df6b070f31ad3aa862297330a1ffa9758d20ebff36a45bba",
-      "bytes": 63332,
+      "sha256": "ece6dd56fd79319564a748520dc8527580b213a3c2dc7f9a06359dca619594eb",
+      "bytes": 64191,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "diagnostics.js",
+      "sha256": "ef81f93eda3621e4d1dced56d6069ad51644d0bd5ccdd72602586a18853ae9b1",
+      "bytes": 6164,
       "mime": "text/javascript"
     },
     {
       "path": "index.html",
-      "sha256": "6e08245e1f6fd3e3855ab2c53a52484c9ae50be34756732f66938beddf06d719",
-      "bytes": 1136,
+      "sha256": "a6cd37f0c40052afeb9bc9338bfb184c654ed197e30c3d13462082a720e5a9de",
+      "bytes": 1206,
       "mime": "text/html"
     },
     {
@@ -46,14 +52,14 @@
     },
     {
       "path": "study.js",
-      "sha256": "e4140a9c6e5a9f6e3e452d73bc0c6d68e74c656f9e06aea026c48f4ecb7b28f2",
-      "bytes": 30110,
+      "sha256": "1c37e0cca4e915fcd831d20ea6708a768ccb196dec2b03673dac09041da56466",
+      "bytes": 32434,
       "mime": "text/javascript"
     },
     {
       "path": "styles.css",
-      "sha256": "e3294642b6834edddba134455e460d9a844c96fee326946e12c9aa94ee547020",
-      "bytes": 32623,
+      "sha256": "3273381f35da664516acf5d89dd10d8e03517870938fc6bb4b567add904767bf",
+      "bytes": 32821,
       "mime": "text/css"
     }
   ]

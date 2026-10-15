@@ -15,7 +15,7 @@ function harness(saved, voices = []) {
   const feedback = makeNode(), next = makeNode(); next.selector = '[data-action="study-next"]';
   let answerNodes = [];
 
-  let cancels = 0;
+  let cancels = 0, voiceReads = 0;
   const app = {
     get innerHTML() { return html; },
     set innerHTML(value) {
@@ -27,10 +27,10 @@ function harness(saved, voices = []) {
   const document = { querySelectorAll() { return answerNodes; }, querySelector(selector) { if (selector === '.study-feedback') return feedback; if (selector === '[data-action="study-next"]') return next; return selector === '#app' ? app : (selector === '.study-audio-status' || selector.startsWith('[data-audio-for=')) ? status : null; } };
   const location = { hash: '#kana' };
   const speechSynthesis = { speaking: false, pending: false,
-    getVoices() { return voices; },
+    getVoices() { voiceReads++; return voices; },
     cancel() { cancels++; },
     speak(u) { utterances.push(u); u.onstart?.(); },
-    addEventListener(name, callback) { speechEvents[name] = callback; }, removeEventListener(name, callback) { if (speechEvents[name] === callback) delete speechEvents[name]; },
+    addEventListener(name, callback) { (speechEvents[name] ||= new Set()).add(callback); }, removeEventListener(name, callback) { speechEvents[name]?.delete(callback); },
   };
   const context = vm.createContext({ setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); }, document, location, window: { speechSynthesis }, SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } }, console });
   vm.runInContext(readFileSync(new URL("../dist/content.js", import.meta.url), "utf8"), context);
@@ -54,7 +54,7 @@ function harness(saved, voices = []) {
     get answers() { return answerNodes; }, get renders() { return renders; }, get scrolls() { return scrolls; }, flushTimers() { const jobs = [...timers.values()]; timers.clear(); jobs.forEach(fn => fn()); },
     action(action, data = {}) { return study.handle({ dataset: { action: `study-${action}`, ...data }, disabled: false }); },
     get state() { return currentState; }, get html() { return html; }, get stored() { return stored; }, get focused() { return focused; }, get cancels() { return cancels; },
-    voicesReady() { speechEvents.voiceschanged?.(); },
+    get voiceReads() { return voiceReads; }, voicesReady() { for (const callback of [...(speechEvents.voiceschanged || [])]) callback(); },
   };
 }
 const groupKeys = ['a','ka','sa','ta','na','ha','ma','ya','ra','wa'];
@@ -124,7 +124,7 @@ test('wrong first answer survives reload and retry; completion records once with
   const wrong = (q + 1) % 5;
   b.action('answer', { choice: String(wrong) });
   assert.equal(a.first[q], false);
-  assert.match(b.feedback.textContent, /正解是/);
+  assert.match(b.feedback.textContent, /正確答案/);
   b.action('next'); assert.equal(a.cursor, 0);
   const restored = harness(b.stored); restored.render('#study/h-a');
   finishQuiz(restored, 'h-a');
@@ -145,7 +145,7 @@ test('resume preserves card and quiz progress; replay alternates direction witho
   paused.action('next'); paused.action('next'); finishQuiz(paused, 'h-wa');
   const savedResult = clone(paused.state.courses['h-wa'].lastResult);
   paused.action('restart');
-  assert.equal(paused.state.courses['h-wa'].active.direction, 'reading');
+  assert.equal(paused.study.currentAttempt('h-wa').direction, 'reading');
   assert.deepEqual(clone(paused.state.courses['h-wa'].lastResult), savedResult);
   for (let i = 0; i < 3; i++) paused.action('next');
   assert.match(paused.html, /這個讀音，對應哪個字/);
@@ -357,7 +357,7 @@ test('answer updates retain options and live region, mark wrong in text and focu
   const nodes=b.answers, feedback=b.feedback, renders=b.renders;
   b.action('answer',{choice:String((q+1)%5)});
   assert.equal(b.renders,renders); assert.equal(b.answers,nodes); assert.equal(b.feedback,feedback);
-  assert.ok(nodes.some(n=>n.mark.textContent.includes('再試一次'))); assert.match(feedback.textContent,/正解是/);
+  assert.ok(nodes.some(n=>n.mark.textContent.includes('再試一次'))); assert.match(feedback.textContent,/正確答案/);
   b.action('answer',{choice:String(q)}); assert.equal(b.renders,renders); assert.equal(b.next.disabled,false); assert.equal(b.focused,'[data-action="study-next"]'); assert.ok(b.scrolls>=1);
   assert.match(b.html,/study-quiz/); assert.match(b.html,/kana-options/);
   const g=harness(); startQuiz(g,'g-identity'); assert.doesNotMatch(g.html,/kana-options/);
@@ -382,7 +382,7 @@ test('katakana special hints distinguish o from wo by character', () => {
 test('voice fallback ranking accepts language variants and prioritizes local standard Japanese', () => {
   const cases = [
     [[{name:'remote',lang:'ja-JP',localService:false},{name:'local',lang:'JA_jp',localService:true}], 'local'],
-    [[{name:'generic',lang:'ja',localService:true},{name:'regional',lang:'ja-JP',localService:false}], 'regional'],
+    [[{name:'generic',lang:'ja',localService:true},{name:'regional',lang:'ja-JP',localService:false}], 'generic'],
     [[{name:'Eddy',voiceURI:'eloquence',lang:'ja-JP',localService:true},{name:'other',lang:'ja',localService:true}], 'other'],
   ];
   for(const [voices,name] of cases) { const b=harness(null,voices); b.action('open',{course:'h-a'}); b.action('audio',{index:'0'}); assert.equal(b.utterances[0].voice.name,name); }
@@ -395,4 +395,70 @@ test('malformed or unrelated historical question IDs never become current kana r
   assert.deepEqual([...b.study.retryLabels({courseId:'h-a',courseRevision:'old',questionIds,retryQuestions:[1]})],['第 1 題']);
  }
  assert.deepEqual([...b.study.retryLabels(null)],[]);
+});
+
+
+test('kana feedback gives one concise mapping in either direction; grammar keeps explanation', () => {
+  for (const direction of ['character','reading']) {
+    const b=harness(); startQuiz(b,'h-a'); const a=b.state.courses['h-a'].active; a.direction=direction; a.order=[1,0,2,3,4]; b.render('#study/h-a');
+    b.action('answer',{choice:'0'}); assert.equal(b.feedback.textContent,'正確答案：い＝i');
+    assert.match(b.render('#study/h-a'), /正確答案：い＝i/);
+    b.action('answer',{choice:'1'}); assert.equal(b.feedback.textContent,'答對了：い＝i');
+  }
+  const b=harness(); startQuiz(b,'g-identity'); const q=b.state.courses['g-identity'].active.order[0], question=b.content.courses['g-identity'].questions[q];
+  b.action('answer',{choice:String((question.answer+1)%question.options.length)});
+  assert.ok(b.feedback.textContent.includes(question.explanation));
+});
+
+test('bind primes Japanese voices and voice events without auto-playing or changing lesson state', () => {
+  const voices=[]; const b=harness(null,voices); assert.equal(b.voiceReads,1); assert.equal(b.utterances.length,0);
+  voices.push({name:'Kyoko',lang:'ja-JP',localService:true}); b.voicesReady(); assert.equal(b.voiceReads,2); assert.equal(b.utterances.length,0); assert.equal(b.stored,null);
+  b.action('open',{course:'h-a'}); b.action('audio',{index:'0'}); assert.equal(b.utterances.length,1); assert.equal(b.utterances[0].voice.name,'Kyoko');
+});
+
+test('all eight named fallback voices rank below standard Japanese even without Eloquence URI', () => {
+  for(const name of ['Eddy','Flo','Grandma','Grandpa','Reed','Rocko','Sandy','Shelley']) {
+    const fallback={name:`${name} (日文（日本）)`,voiceURI:name,lang:'ja-JP',localService:true};
+    const standard={name:'Otoya',lang:'ja-JP',localService:true}; const b=harness(null,[fallback,standard]); b.action('open',{course:'h-a'}); b.action('audio',{index:'0'}); assert.equal(b.utterances[0].voice,standard);
+    const only=harness(null,[fallback]); only.action('open',{course:'h-a'}); only.action('audio',{index:'0'}); assert.equal(only.utterances[0].voice,fallback);
+  }
+});
+
+test('opening and reading a first card stays a private draft even when another course saves', () => {
+  const b=harness(); b.render('#study/h-ka'); assert.equal(b.stored,null); assert.equal(b.study.hasProgress('h-ka'),false);
+  assert.equal(b.study.currentAttempt('h-ka').cursor,0); const snapshot=b.study.currentAttempt('h-ka'); snapshot.cursor=4; assert.equal(b.study.currentAttempt('h-ka').cursor,0);
+  assert.match(b.study.context('#study/h-ka'),/認識第 1 步/);
+  b.action('open',{course:'h-a'}); assert.equal(b.stored,null); b.action('next');
+  assert.equal(b.study.hasProgress('h-a'),true); assert.equal(b.study.hasProgress('h-ka'),false);
+  assert.ok(!b.stored.courses['h-ka']?.active); assert.equal(b.stored.courses['h-a'].active.touched,true);
+  b.action('prev'); assert.equal(b.state.courses['h-a'].active.cursor,0); assert.equal(b.study.hasProgress('h-a'),true);
+  const reloaded=harness(b.stored); assert.equal(reloaded.study.hasProgress('h-a'),true); assert.equal(reloaded.study.hasProgress('h-ka'),false);
+  assert.equal(reloaded.study.currentAttempt('h-ka'),null); assert.equal(reloaded.study.currentAttempt('unknown'),null);
+});
+
+test('sanitization infers legacy learning evidence but discards persisted untouched drafts', () => {
+  const b=harness(); b.render('#study/h-a'); const draft=b.study.currentAttempt('h-a');
+  for(const explicit of [true,false]) {
+    const saved={script:'h',courses:{'h-a':{active:{...draft,touched:false}}}};
+    if (!explicit) delete saved.courses['h-a'].active.touched;
+    const restored=harness(saved); assert.equal(restored.study.hasProgress('h-a'),false); assert.equal(restored.state.courses['h-a'].active,null);
+  }
+  b.action('next'); b.action('prev'); const touched=clone(b.stored); assert.equal(harness(touched).study.hasProgress('h-a'),true);
+  delete touched.courses['h-a'].active.touched; touched.courses['h-a'].active.cursor=1; assert.equal(harness(touched).study.hasProgress('h-a'),true);
+  touched.courses['h-a'].active.cursor=0; touched.courses['h-a'].active.first={0:false}; assert.equal(harness(touched).study.hasProgress('h-a'),true);
+});
+
+test('completed group stays completed until a replay draft is actually advanced', () => {
+  const b=harness(); startQuiz(b,'h-a'); finishQuiz(b,'h-a'); const count=b.records.length, saved=clone(b.stored);
+  b.action('restart'); assert.equal(b.study.currentAttempt('h-a').touched,false); assert.equal(b.study.currentAttempt('h-a').direction,'reading');
+  assert.deepEqual(b.stored,saved); assert.match(b.render('#kana'),/已完成・可再練/);
+  b.render('#study/h-a'); b.action('next'); assert.equal(b.state.courses['h-a'].active.touched,true); assert.equal(b.state.courses['h-a'].active.direction,'reading');
+  assert.equal(b.records.length,count); assert.equal(b.study.nextCourse('h-a'),'h-ka');
+});
+
+
+test('draft preview, first-card back, and hidden quiz audio do not create learning progress', () => {
+ const b=harness(null,[{name:'Kyoko',lang:'ja-JP',localService:true}]); b.render('#study/h-a');
+ b.action('prev'); b.action('audio',{index:'0'}); assert.equal(b.stored,null); assert.equal(b.study.hasProgress('h-a'),false);
+ for(let i=0;i<5;i++)b.action('next'); const count=b.utterances.length; b.action('audio',{index:'0'}); assert.equal(b.utterances.length,count);
 });

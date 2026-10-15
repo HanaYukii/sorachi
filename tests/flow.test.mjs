@@ -158,6 +158,7 @@ function browser({
   app.querySelector = querySelector;
   const document = {
     title: "",
+    scripts: [...index.matchAll(/<script[^>]+src="([^"]+)"/g)].map(([,src]) => ({src})),
     querySelector,
     querySelectorAll(selector) {
       if (selector !== '[data-action="study-answer"]') return [];
@@ -234,6 +235,7 @@ function browser({
   };
   for (const file of ["content.js", "storage.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
+  vm.runInContext(readFileSync(new URL("../dist/diagnostics.js", import.meta.url), "utf8"), context);
   vm.runInContext(source, context, { filename: "dist/app.js" });
   flush();
   function click(selector, { force = false } = {}) {
@@ -260,6 +262,7 @@ function browser({
   }
   return {
     click,
+    navigate(hash) { location.hash = hash; flush(); },
     blockStorage() { storageBlocked = true; },
     externalWrite(value) {
       storage.set("sorachi:data:v2", value);
@@ -506,7 +509,7 @@ test("back to the lesson after completion preserves results until explicit repla
   assert.equal(revisit.hash, '#done');
   assert.equal(revisit.state.step, 5);
   assert.deepEqual(revisit.state.firstAnswers, b.state.firstAnswers);
-  assert.match(revisit.html, /文字介紹已完成/);
+  assert.match(revisit.html, /日文的三種文字已完成/);
   revisit.action('restart');
   assert.equal(revisit.hash, '#lesson');
   assert.equal(revisit.state.step, 0);
@@ -644,7 +647,8 @@ test("home explains the task and sends beginners directly to the first kana grou
   assert.doesNotMatch(b.html, /あ、ア、山/);
   b.study('study-open', {course:'h-a'});
   assert.equal(b.hash, '#study/h-a');
-  assert.equal(b.state.study.courses['h-a'].active.cursor, 0);
+  assert.match(b.html, /認字與讀音 · 1 \/ 5/);
+  assert.equal(b.state.study.courses['h-a']?.active ?? null, null);
 });
 
 test('travel routes preserve feedback context and completion in shared history', () => {
@@ -740,4 +744,54 @@ test("changed intro content resets legacy active answers without erasing earned 
   assert.equal(b.state.completed, true);
   assert.equal(b.state.history.length, 1);
   assert.equal(b.state.history[0].firstCorrect, 2);
+});
+
+
+test("viewing a later kana group does not hijack the home recommendation; flipping a card does", () => {
+  const b = browser();
+  const initial = b.stored;
+  b.study('study-open', {course:'h-sa'});
+  assert.equal(b.stored, initial);
+  b.navigate('#home');
+  assert.match(b.html, /data-course="h-a"/);
+  b.study('study-open', {course:'h-ka'});
+  b.study('study-next');
+  b.study('study-prev');
+  b.navigate('#home');
+  assert.match(b.html, /data-course="h-ka"/);
+  assert.match(b.html, /接著練五十音/);
+  const resumed = browser({raw:b.stored});
+  assert.match(resumed.html, /data-course="h-ka"/);
+});
+
+test("new visitors see one intro entry beside the main course; it moves after learning starts", () => {
+  const b = browser();
+  assert.equal((b.html.match(/data-action="start"/g) || []).length, 1);
+  assert.ok(b.html.indexOf('intro-entry') < b.html.indexOf('learning-path'));
+  b.study('study-open', {course:'h-a'});
+  b.study('study-next');
+  b.navigate('#home');
+  assert.doesNotMatch(b.html, /intro-entry/);
+  assert.equal((b.html.match(/data-action="start"/g) || []).length, 1);
+  assert.match(b.html, /不用登入；進度只存在這個瀏覽器/);
+});
+
+test("feedback captures the displayed shuffled question and loaded asset versions without private learning data", () => {
+  const b = browser({hash:'#study/h-a'});
+  for (let i=0;i<5;i++) b.study('study-next');
+  const active = b.state.study.courses['h-a'].active;
+  const questionId = active.questionIds[active.order[active.cursor]];
+  const owner = JSON.parse(b.stored).owner.id;
+  b.action('feedback');
+  b.submitFeedback('問題回報','字'.repeat(600));
+  const href = b.node('#feedback-ready').children[1].href;
+  const body = new URL(href).searchParams.get('body');
+  assert.match(body, /h-a/);
+  assert.ok(body.includes(questionId));
+  assert.ok(body.includes(active.courseRevision));
+  assert.ok(body.includes(active.direction));
+  for (const file of ['content','app']) assert.ok(body.includes(index.match(new RegExp(file + '\\.js\\?v=([a-f0-9]{10})'))[1]));
+  assert.ok(!body.includes(owner));
+  assert.doesNotMatch(body, /firstCorrect|firstAnswers|history|guest|成績|螢幕|userAgent/i);
+  assert.ok(Buffer.byteLength(href) < 8192);
 });

@@ -134,7 +134,7 @@ const Content = (() => {
     {
       "id": "g-identity",
       "type": "grammar",
-      "title": "A 是 B：は・です",
+      "title": "名詞句：〜は〜です",
       "subtitle": "名詞句的基本結構",
       "steps": [
         {
@@ -203,15 +203,15 @@ const Content = (() => {
         },
         {
           "title": "疑問句：〜ですか",
-          "example": "がくせいですか？",
+          "example": "がくせいですか。",
           "reading": "gakusei desu ka",
           "meaning": "是學生嗎？",
-          "body": "在剛才的「です」後面加上「か」，就能把說明變成問題。「か」讀作 ka。",
+          "body": "在「です」後加上「か」，就能表示疑問。「か」讀作 ka；句尾也可以寫句號「。」，不用靠問號判斷。說話時常用上揚語調詢問，但會依情境改變，不一定都上揚。",
           "id": "g-question/card/question-particle"
         },
         {
           "title": "情境清楚時，可省略人稱",
-          "example": "がくせいですか？",
+          "example": "がくせいですか。",
           "reading": "gakusei desu ka",
           "meaning": "你是學生嗎？",
           "body": "例如正面對一個人、詢問他的身分時，這句就是「你是學生嗎？」。日文常把情境裡已經清楚的人省略，不必每句都加上「你」。",
@@ -276,7 +276,7 @@ const Content = (() => {
       ],
       "questions": [
         {
-          "prompt": "你拿著一個麵包，朋友站在離你幾步外。你想說「這是麵包。」：＿＿は パンです。",
+          "prompt": "你拿著一個麵包，朋友站在離你幾步外。你向朋友介紹手上的麵包：＿＿は パンです。",
           "options": [
             "それ",
             "これ",
@@ -513,7 +513,7 @@ const Content = (() => {
           "id": "t-order/card/noodle-temperature"
         },
         {
-          "title": "飯的份量：一般份量、大份量",
+          "title": "份量：一般份量、大份量",
           "keywords": [
             [
               "並盛（なみもり）",
@@ -575,12 +575,17 @@ const Content = (() => {
               "お会計（おかいけい）",
               "okaikei",
               "結帳"
+            ],
+            [
+              "レジ",
+              "reji",
+              "收銀台"
             ]
           ],
           "example": "お会計。",
           "reading": "okaikei",
           "meaning": "結帳。",
-          "body": "餐廳吃完，想請店員結帳時，可以說「お会計」。再加上「お願いします」，就是「麻煩幫我結帳」。",
+          "body": "餐廳吃完，想請店員結帳時，可以說「お会計、お願いします」。有些餐廳需拿帳單到「レジ」（收銀台）付款，依店內指示即可。",
           "polite": "お会計、お願いします。",
           "politeReading": "okaikei, onegaishimasu",
           "politeMeaning": "麻煩幫我結帳。",
@@ -656,7 +661,7 @@ const Content = (() => {
           "example": "チャージ、お願いします。",
           "reading": "chaaji, onegaishimasu",
           "meaning": "麻煩幫我加值。",
-          "body": "在支援加值的超商櫃檯，出示交通卡說「チャージ」，再告訴店員金額。這裡指交通卡加值；「aa」是拉長的 a 音。",
+          "body": "先到有人櫃檯出示交通卡，告訴店員加值金額。7-Eleven 與全家櫃檯加值使用現金，部分門市不提供服務。也可使用支援 Suica 的車站售票機；手機版需有對應設備。",
           "id": "t-charge/card/top-up"
         },
         {
@@ -909,7 +914,7 @@ const Content = (() => {
           "id": "phrase/t-order/noodle-temperature"
         },
         {
-          "title": "飯的份量：一般份量、大份量",
+          "title": "份量：一般份量、大份量",
           "keywords": [
             [
               "並盛（なみもり）",
@@ -1021,7 +1026,7 @@ const Content = (() => {
               "不需要"
             ]
           ],
-          "body": "店員問要不要袋子、收據等物品時，可以用這句回答。",
+          "body": "店員問要不要袋子、收據等物品時，可以用這句回答。「大丈夫です」（daijoubu desu）也可能表示婉拒，但依情境也能表示「沒問題」；要清楚表達不需要，可用「いりません」。",
           "example": "袋はいりません。",
           "reading": "fukuro wa irimasen",
           "meaning": "我不需要袋子。",
@@ -1043,12 +1048,17 @@ const Content = (() => {
               "お会計（おかいけい）",
               "okaikei",
               "結帳"
+            ],
+            [
+              "レジ",
+              "reji",
+              "收銀台"
             ]
           ],
           "example": "お会計。",
           "reading": "okaikei",
           "meaning": "結帳。",
-          "body": "餐廳吃完，想請店員結帳時，可以說「お会計」。再加上「お願いします」，就是「麻煩幫我結帳」。",
+          "body": "餐廳吃完，想請店員結帳時，可以說「お会計、お願いします」。有些餐廳需拿帳單到「レジ」（收銀台）付款，依店內指示即可。",
           "polite": "お会計、お願いします。",
           "politeReading": "okaikei, onegaishimasu",
           "politeMeaning": "麻煩幫我結帳。",
@@ -1083,7 +1093,7 @@ const Content = (() => {
               "西瓜卡／交通 IC 卡"
             ]
           ],
-          "body": "想用西瓜卡付款時，直接說「Suica」，讓店員知道是哪一種卡。不確定店家是否接受時，可以先問能不能使用。",
+          "body": "付款前先看店家的支援標示，不確定時可問能不能使用。持 ICOCA 或 PASMO 時，把句中的 Suica 換成自己的卡名即可。",
           "example": "Suica は使えますか？",
           "reading": "suika wa tsukaemasu ka",
           "meaning": "可以用西瓜卡付款嗎？",
@@ -1310,7 +1320,7 @@ const Content = (() => {
           "example": "チャージ、お願いします。",
           "reading": "chaaji, onegaishimasu",
           "meaning": "麻煩幫我加值。",
-          "body": "在支援加值的超商櫃檯，出示交通卡說「チャージ」，再告訴店員金額。這裡指交通卡加值；「aa」是拉長的 a 音。",
+          "body": "先到有人櫃檯出示交通卡，告訴店員加值金額。7-Eleven 與全家櫃檯加值使用現金，部分門市不提供服務。也可使用支援 Suica 的車站售票機；手機版需有對應設備。",
           "id": "phrase/t-charge/top-up"
         },
         {
@@ -1425,7 +1435,7 @@ const Content = (() => {
       {
         "label": "先認識一下",
         "title": "貓、麵包、山，日文怎麼寫？",
-        "intro": "先看三個有意思的例子，認識日文裡常見的三種寫法。",
+        "intro": "先看三個例子，認識日文裡常見的三種寫法。",
         "content": "<div class=\"script-row word-examples\"><div class=\"script-cell\"><div class=\"character\" lang=\"ja\">ねこ</div><strong>貓</strong><p>這是平假名</p></div><div class=\"script-cell\"><div class=\"character\" lang=\"ja\">パン</div><strong>麵包</strong><p>這是片假名</p></div><div class=\"script-cell\"><div class=\"character\" lang=\"ja\">山</div><strong>山</strong><p>這是漢字</p></div></div>",
         "tip": "接下來分別介紹這三種寫法。",
         "id": "intro/card/three-scripts"
@@ -1433,7 +1443,7 @@ const Content = (() => {
       {
         "label": "平假名",
         "title": "先從平假名認識日文。",
-        "intro": "平假名可以記錄日文的聲音，也是學習日文的重要起點。",
+        "intro": "平假名可以記錄日文的聲音。",
         "content": "<span class=\"word-type\">平假名</span><div class=\"example-large\"><span class=\"example-word\" lang=\"ja\">ねこ</span><span class=\"example-meaning\"><small>意思是</small>貓</span></div><p class=\"explain\"><strong lang=\"ja\">ね、こ</strong> 都是平假名。<br>這兩個字組在一起，就是「貓」。這裡先認識寫法，讀音可在五十音課練習。</p>",
         "tip": "五十音課會介紹各個平假名的讀音。",
         "id": "intro/card/hiragana"
@@ -1452,7 +1462,7 @@ const Content = (() => {
         "title": "有些字，你可能已經認得。",
         "intro": "日文也使用漢字，像「山」「人」「日」。",
         "className": "example-orange",
-        "content": "<span class=\"word-type\">漢字</span><div class=\"example-large\"><span class=\"example-word\" lang=\"ja\">山</span><span class=\"example-meaning\"><small>意思是</small>山</span></div><p class=\"explain\">漢字能幫助我們辨認詞的意思。<br>不過，<strong>看得懂字形，不代表日文讀音和中文一樣</strong>；讀音之後再學就好。</p>",
+        "content": "<span class=\"word-type\">漢字</span><div class=\"example-large\"><span class=\"example-word\" lang=\"ja\">山</span><span class=\"example-meaning\"><small>意思是</small>山</span></div><p class=\"explain\">漢字能幫助我們辨認詞的意思。<br>不過，<strong>看得懂字形，不代表日文讀音和中文一樣</strong>；讀音之後再學就好。</p><p class=\"explain\">三種文字會一起出現在日文裡。例如 <strong lang=\"ja\">日本のパン</strong>（日本的麵包）：「日本」是漢字、「の」是平假名、「パン」是片假名。</p>",
         "tip": "日文漢字的讀音需要另外學習，不能直接套用中文讀音。",
         "id": "intro/card/kanji"
       }
@@ -1485,7 +1495,7 @@ const Content = (() => {
         "correct": "對，它們會一起出現在日文裡。",
         "explanation": "這是日文裡的三種文字，不是同一種文字的別名，也不是三種不同語言；它們可以一起出現在句子裡。",
         "wrong": "再看一下提示。",
-        "hint": "日文會使用三種文字；看起來熟悉的漢字，讀音也可能和中文不同。",
+        "hint": "回想「日本のパン」：漢字、平假名和片假名，會一起出現在日文裡。",
         "id": "intro/question/mixed-scripts"
       }
     }
