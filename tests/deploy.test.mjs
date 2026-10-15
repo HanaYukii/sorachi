@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:http';
 import { prepareRelease } from '../scripts/prepare-release.mjs';
-import { verifyDeployment } from '../scripts/verify-deploy.mjs';
+import { verifyDeployment, verifyWithRetry } from '../scripts/verify-deploy.mjs';
 import { publish } from '../scripts/publish.mjs';
 
 async function fixture(t) {
@@ -120,10 +120,61 @@ test('publish waits for exact CI and rechecks main before subtree push', async (
     if (cmd === 'gh' && args[1] === 'view') return JSON.stringify({ headSha: sha, status: 'completed', conclusion: 'success' });
     throw new Error(`unexpected command: ${cmd} ${args}`);
   };
-  assert.equal(await publish({ run, validate: async () => {} }), sha);
+  const verified = [];
+  const verify = async () => { verified.push(calls.length); return { buildId: 'build-1', files: 3 }; };
+  assert.equal(await publish({ run, validate: async () => {}, verify }), sha);
+  const pushed = calls.findIndex((c) => c.includes('subtree push'));
+  assert.ok(pushed >= 0 && verified[0] > pushed, 'Pages is verified after the push');
   assert.ok(calls.findIndex((c) => c.includes('run watch 7')) < calls.findIndex((c) => c.includes('subtree push')));
   calls.length = 0;
   changed = true;
-  await assert.rejects(publish({ run, validate: async () => {} }), /changed/i);
+  await assert.rejects(publish({ run, validate: async () => {}, verify }), /changed/i);
   assert.ok(!calls.some((c) => c.includes('subtree')));
+});
+
+function gitStub({ branch = 'main', head = 'd'.repeat(40), remote = head, runs, push } = {}) {
+  const calls = [];
+  const run = async (cmd, args) => {
+    calls.push([cmd, ...args].join(' '));
+    if (args[0] === 'status') return '';
+    if (args[0] === 'branch') return branch;
+    if (args[0] === 'rev-parse') return head;
+    if (args[0] === 'ls-remote') return `${remote}\trefs/heads/main`;
+    if (cmd === 'gh' && args[1] === 'list') return JSON.stringify(runs ?? [{ databaseId: 9, headSha: head, event: 'push', status: 'completed', conclusion: 'success' }]);
+    if (args[0] === 'subtree') { if (push) throw push; return ''; }
+    throw new Error(`unexpected command: ${cmd} ${args}`);
+  };
+  return { run, calls };
+}
+
+test('publish refuses other branches, an unpushed HEAD, a missing CI run and a rejected push', async () => {
+  const ok = async () => ({ buildId: 'b', files: 1 });
+  const noValidate = async () => {};
+  await assert.rejects(publish({ run: gitStub({ branch: 'feature' }).run, validate: noValidate, verify: ok }), /main/);
+  const behind = gitStub({ remote: 'e'.repeat(40) });
+  await assert.rejects(publish({ run: behind.run, validate: noValidate, verify: ok }), /Push the current main/);
+  assert.ok(!behind.calls.some((c) => c.startsWith('gh')));
+  await assert.rejects(publish({ run: gitStub({ runs: [] }).run, validate: noValidate, verify: ok }), /No main push CI run/);
+  let verified = false;
+  const rejected = gitStub({ push: new Error('! [rejected] gh-pages (non-fast-forward)') });
+  await assert.rejects(publish({ run: rejected.run, validate: noValidate, verify: async () => { verified = true; } }), /rejected/);
+  assert.equal(verified, false, 'A rejected push is never reported as published');
+});
+
+test('publish fails when Pages never serves the pushed build', async () => {
+  const { run } = gitStub();
+  await assert.rejects(publish({ run, validate: async () => {}, verify: async () => { throw new Error('app.js: deployed bytes do not match release'); } }), (error) => /already pushed/.test(error.message) && /deployed bytes/.test(error.message) && /verify-deploy/.test(error.message));
+});
+
+test('verification retries until the build is served and gives up after the limit', async () => {
+  let calls = 0; const logs = [];
+  const result = await verifyWithRetry({ attempts: 3, intervalMs: 1, log: (m) => logs.push(m), wait: async () => {}, verify: async () => { if (++calls < 3) throw new Error('not yet'); return { buildId: 'x', files: 2 }; } });
+  assert.equal(result.buildId, 'x'); assert.equal(logs.length, 2);
+  await assert.rejects(verifyWithRetry({ attempts: 2, wait: async () => {}, log: () => {}, verify: async () => { throw new Error('still old'); } }), /still old/);
+});
+
+test('a failing child command reports its full output, not a truncated error object', async () => {
+  const { command } = await import('../scripts/publish.mjs');
+  const script = "console.log('not ok 1 - the failing test name'); console.log('x'.repeat(9000)); process.exit(1)";
+  await assert.rejects(command(process.execPath, ['-e', script]), (error) => /exit 1/.test(error.message) && error.message.includes('the failing test name') && error.message.length > 9000);
 });

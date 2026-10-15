@@ -82,13 +82,52 @@ node scripts/prepare-release.mjs
 
 發佈腳本要求乾淨的 `main`，本機 HEAD 與 `origin/main` 一致，並等候**同一提交**的 push CI 成功；等待後再次檢查狀態，才推送 `gh-pages`。CI 包含語法、內容驗證、全部回歸測試及 release manifest 檢查。
 
-發佈後等候 GitHub Pages 建置完成，再執行：
+推送後，腳本會等 GitHub Pages 實際送出這一版（每 10 秒重試，最多 18 次），驗證通過才印出 `Published and verified build <buildId>`。Pages 建置被取消或一直是舊版時，腳本會失敗，不會誤報已發佈。也可以單獨執行：
 
 ```sh
-node scripts/verify-deploy.mjs --attempts 12
+node scripts/verify-deploy.mjs --attempts 18 --interval-ms 10000
 ```
 
 部署驗證會檢查網站入口、全部 manifest 資源與 release.json 的 HTTP 狀態、MIME、長度及完整雜湊，並確認不存在的資源回傳 404。`#travel` 等 hash 路由不會送到伺服器；頁面操作、版型與語音仍須另做瀏覽器 QA。
+
+CI 失敗時，log 會印出子程序的完整輸出（含失敗的測試名稱與斷言），不會只剩被截斷的錯誤物件。
+
+### 自訂網域
+
+要用自訂網域時，把網域寫進 `dist/CNAME` 並照一般流程發佈，**不要在 GitHub Settings 裡設定**。在 Settings 設定時，GitHub 會直接在 `gh-pages` 提交一個 CNAME，下一次 subtree push 就會因為 non-fast-forward 被拒；這時不要用 `--force` 推，那會把 CNAME 刪掉。
+
+換網域之前還要處理兩件事（細節見 #17、#18）：
+
+- 換網域等於換 origin，使用者在 `hanayukii.github.io` 存的進度不會跟過去。要先讓使用者用紀錄頁的「下載備份」，到新網域再「從備份檔還原」。
+- 舊網址會 301 轉到新網域，而部署驗證不跟隨轉址。要同步更新 `scripts/verify-deploy.mjs` 的預設 URL。
+
+### 回滾
+
+- **一般情況**：在 `main` 上 `git revert <壞的提交>` → `node scripts/prepare-release.mjs` → 提交並推送 → `./scripts/publish.sh`。這是正常的往前發佈，不需要特殊權限。
+- **緊急情況**（`main` 的 CI 一時過不了，但線上必須先恢復）：
+
+  ```sh
+  git ls-remote origin refs/heads/gh-pages   # 記下目前 gh-pages 的 SHA
+  git push --force-with-lease=refs/heads/gh-pages:<目前 gh-pages 的 SHA> origin $(git subtree split --prefix=dist <好的提交>):refs/heads/gh-pages
+  git worktree add ../sorachi-good <好的提交>
+  node scripts/verify-deploy.mjs --dir ../sorachi-good --attempts 18 --interval-ms 10000
+  git worktree remove ../sorachi-good
+  ```
+
+  驗證要用好的提交的 `dist`（`--dir`），不能用目前工作目錄，否則會比對到壞掉的那一版。
+
+  事後仍要在 `main` 上 revert，讓 `main` 和線上一致；直接 subtree push 舊提交會被拒（non-fast-forward），所以才需要 `--force-with-lease`。
+- **規則**：有改 storage schema 或遷移的版本只能往前修，不回滾。舊版只讀得懂舊格式：例如 47a3673 只讀 v1，現版有 v2 就不讀 v1，回滾期間存的進度在重新前進時會消失。版本較新的資料會被舊版鎖住、不覆寫（見 Locked data）。
+- 回滾步驟尚未實際演練。
+
+### 共用 origin 的規則
+
+`hanayukii.github.io` 上還有其他 Pages 專案，共用同一個 origin 的 localStorage、sessionStorage 與儲存配額：
+
+- 不加 Service Worker，也不清除 Cache Storage（會影響同 origin 的其他專案）。
+- 不呼叫 `localStorage.clear()` 或 `sessionStorage.clear()`；只刪自己的 key。
+- key 一律以 `sorachi:` 開頭。
+- 不要叫使用者「清除網站資料」來解決問題；資料無法讀取時，用紀錄頁的下載與重新開始。
 
 ## 檔案
 

@@ -33,6 +33,18 @@ export async function verifyDeployment({ dir = resolve('dist'), url = 'https://h
   return { buildId: manifest.buildId, files: files.length, url: base.href };
 }
 
+// Pages usually finishes 20–60 s after a push; retry until the exact build is served.
+export async function verifyWithRetry({ attempts = 18, intervalMs = 10000, log = console.error, verify = verifyDeployment, wait = delay, ...options } = {}) {
+  for (let attempt = 1; ; attempt++) {
+    try { return await verify(options); }
+    catch (error) {
+      if (attempt >= attempts) throw error;
+      log(`Attempt ${attempt}/${attempts}: ${error.message}`);
+      await wait(intervalMs);
+    }
+  }
+}
+
 if (isMain(import.meta.url)) {
   try {
     const options = {}, args = process.argv.slice(2);
@@ -40,26 +52,19 @@ if (isMain(import.meta.url)) {
     while (args.length) {
       const key = args.shift(), value = args.shift();
       if (key === '--url' && value) options.url = value;
+      // --dir verifies a checkout other than ./dist, e.g. the good commit after an emergency rollback.
+      else if (key === '--dir' && value) options.dir = resolve(value, 'dist');
       else if (['--attempts', '--interval-ms', '--timeout-ms'].includes(key) && /^\d+$/.test(value || '')) {
         const number = Number(value);
         if (!Number.isSafeInteger(number) || number < 1) throw new Error(`Invalid ${key}`);
         if (key === '--attempts') attempts = number;
         else if (key === '--interval-ms') intervalMs = number;
         else options.timeoutMs = number;
-      } else throw new Error('Usage: node scripts/verify-deploy.mjs [--url URL] [--attempts N] [--interval-ms N] [--timeout-ms N]');
+      } else throw new Error('Usage: node scripts/verify-deploy.mjs [--url URL] [--dir CHECKOUT] [--attempts N] [--interval-ms N] [--timeout-ms N]');
     }
     if (attempts > 60 || intervalMs > 60000 || (options.timeoutMs || 10000) > 60000) throw new Error('Limits: 60 attempts, 60000 ms interval/timeout');
-    for (let attempt = 1; attempt <= attempts; attempt++) {
-      try {
-        const result = await verifyDeployment(options);
-        console.log(`Verified ${result.files} files, root and missing-resource 404: ${result.buildId}`);
-        console.log('Hash-route rendering, interactions and audio still require browser QA.');
-        break;
-      } catch (error) {
-        if (attempt === attempts) throw error;
-        console.error(`Attempt ${attempt}/${attempts}: ${error.message}`);
-        await delay(intervalMs);
-      }
-    }
+    const result = await verifyWithRetry({ attempts, intervalMs, ...options });
+    console.log(`Verified ${result.files} files, root and missing-resource 404: ${result.buildId}`);
+    console.log('Hash-route rendering, interactions and audio still require browser QA.');
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

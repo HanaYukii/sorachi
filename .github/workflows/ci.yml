@@ -19,9 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22.16.0'
       - name: Syntax, content, regression and release checks
-        run: node --input-type=module -e "import { validateLocal } from './scripts/publish.mjs'; await validateLocal();"
+        run: node --input-type=module -e "import { validateLocal } from './scripts/publish.mjs'; try { await validateLocal(); } catch (error) { console.error(error.message); process.exit(1); }"

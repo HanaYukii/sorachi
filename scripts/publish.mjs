@@ -2,9 +2,14 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readdir } from 'node:fs/promises';
 import { prepareRelease, isMain } from './prepare-release.mjs';
+import { verifyWithRetry } from './verify-deploy.mjs';
 
 const exec = promisify(execFile);
-const command = async (bin, args) => (await exec(bin, args, { timeout: 20 * 60 * 1000, maxBuffer: 4 * 1024 * 1024 })).stdout.trim();
+// On failure, put the child's full output in the message so CI logs show which test failed.
+export const command = async (bin, args) => {
+  try { return (await exec(bin, args, { timeout: 20 * 60 * 1000, maxBuffer: 16 * 1024 * 1024 })).stdout.trim(); }
+  catch (error) { throw new Error(`${bin} ${args.join(' ')} failed (${error.signal ? `signal ${error.signal}` : `exit ${error.code ?? 'unknown'}`})\n${error.stdout || ''}${error.stderr || ''}`, { cause: error }); }
+};
 
 export async function validateLocal(run = command) {
   await prepareRelease({ check: true });
@@ -15,7 +20,7 @@ export async function validateLocal(run = command) {
   await run('node', ['--test', ...tests]);
 }
 
-export async function publish({ run = command, validate = () => validateLocal(run) } = {}) {
+export async function publish({ run = command, validate = () => validateLocal(run), verify = () => verifyWithRetry() } = {}) {
   const clean = async () => {
     if (await run('git', ['status', '--porcelain', '--untracked-files=all'])) throw new Error('Publish requires a clean working tree; prepare, review and commit release files first.');
   };
@@ -38,8 +43,12 @@ export async function publish({ run = command, validate = () => validateLocal(ru
   await clean();
   if (await run('git', ['branch', '--show-current']) !== 'main' || await run('git', ['rev-parse', 'HEAD']) !== sha || await currentRemote() !== sha) throw new Error('Main changed while waiting for CI; retry with the new commit.');
   await run('git', ['subtree', 'push', '--prefix=dist', 'origin', 'gh-pages']);
-  console.log(`Pushed dist from tested main ${sha} to gh-pages; Pages deployment is still pending.`);
-  console.log('After Pages finishes: node scripts/verify-deploy.mjs --attempts 12');
+  console.log(`Pushed dist from tested main ${sha} to gh-pages; waiting for Pages to serve it…`);
+  // A cancelled Pages build would otherwise look published; only the served bytes count.
+  let result;
+  try { result = await verify(); }
+  catch (error) { throw new Error(`gh-pages is already pushed from main ${sha}, but Pages did not serve this build yet: ${error.message}\nCheck again later: node scripts/verify-deploy.mjs --attempts 18 --interval-ms 10000`, { cause: error }); }
+  console.log(`Published and verified build ${result.buildId} (${result.files} files) from main ${sha}.`);
   return sha;
 }
 

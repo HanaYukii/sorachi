@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
 
 const read = (file) => readFileSync(new URL(`../dist/${file}`, import.meta.url), 'utf8');
 const exists = (file) => existsSync(new URL(`../dist/${file}`, import.meta.url));
@@ -26,4 +26,25 @@ test('images and icons are small WebP/PNG files that exist and are referenced wi
     assert.ok(statSync(new URL(`../dist/${file}`, import.meta.url)).size < 60000, file);
   }
   assert.match(app, /srcset="\$\{widths\.map/);
+});
+
+test('shared-origin rules: no service worker or blanket clears, every storage key is namespaced', () => {
+  const sources = readdirSync(new URL('../dist/', import.meta.url)).filter((file) => file.endsWith('.js')).map(read).join('\n');
+  assert.doesNotMatch(sources, /serviceWorker|caches\./);
+  // Only Map/Set clears are allowed; no storage object may be cleared or used outside get/set/removeItem.
+  for (const [call] of sources.matchAll(/(\w+)\.clear\(\)/g)) assert.match(call, /^(drafts|hintChoices)\.clear\(\)$/, call);
+  assert.doesNotMatch(sources, /(?:local|session)Storage\s*(?:\[|\.(?!getItem|setItem|removeItem))/);
+  // Every storage call names its key through a constant (or ${KEY}-prefixed template) defined as sorachi:...
+  const constants = Object.fromEntries([...sources.matchAll(/\b([A-Z_]+) = ["']([^"']+)["']/g)].map(([, name, value]) => [name, value]));
+  const calls = [...sources.matchAll(/\.(?:get|set|remove)Item\(([^,)]+)/g)].map(([, arg]) => arg.trim());
+  assert.ok(calls.length >= 6);
+  for (const arg of calls) {
+    const derived = sources.match(new RegExp(`\\b${arg} = \`\\$\\{([A-Z_]+)\\}`))?.[1];
+    const name = arg.match(/^`?\$\{([A-Z_]+)\}/)?.[1] ?? derived ?? arg;
+    assert.match(constants[name] ?? '', /^sorachi:/, arg);
+  }
+});
+
+test('the page shows a static loading note that stays if the scripts never run', () => {
+  assert.match(read('index.html'), /<div id="app"><main class="shell"><p role="status">正在載入 SoraChi…<\/p><p>若一直停在這裡，請重新整理頁面。<\/p>/);
 });
