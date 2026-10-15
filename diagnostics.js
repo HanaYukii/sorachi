@@ -11,14 +11,15 @@ const Diagnostics = (() => {
   const integer = (value, length) => Number.isInteger(value) && value >= 0 && value < length;
   const permutation = (value, length) => Array.isArray(value) && value.length === length && new Set(value).size === length && value.every(index => integer(index, length));
 
+  const assetVersions = {content:"contentVersion",app:"appVersion","kana-practice":"practiceAssetVersion","kana-hints":"hintsVersion"};
   function loadedVersions(scripts) {
-    const values = {content:new Set(),app:new Set()};
+    const values = Object.fromEntries(Object.keys(assetVersions).map(name => [name,new Set()]));
     // document.scripts is live; copy only this small list of script sources.
     for (const script of Array.from(scripts || []).slice(0,64)) {
       try {
         const source = typeof script === "string" ? script : script?.src;
         if (typeof source !== "string" || source.length > 2048) continue;
-        const match = source.match(/(?:^|\/)(content|app)\.js\?([^#]*)(?:#.*)?$/);
+        const match = source.match(/(?:^|\/)(content|app|kana-practice|kana-hints)\.js\?([^#]*)(?:#.*)?$/);
         if (!match) continue;
         const tokens = [...match[2].matchAll(/(?:^|&)v=([^&]*)/g)];
         if (tokens.length !== 1) continue;
@@ -27,12 +28,20 @@ const Diagnostics = (() => {
       } catch { /* An unreadable tag contributes no diagnostic value. */ }
     }
     const result = {};
-    for (const name of ["content","app"]) if (values[name].size === 1) result[`${name}Version`] = [...values[name]][0];
+    for (const name of Object.keys(assetVersions)) if (values[name].size === 1) result[assetVersions[name]] = [...values[name]][0];
     return result;
   }
 
-  function capture({hash = "",progress = {},scripts,attempt} = {}) {
+  function capture({hash = "",progress = {},scripts,attempt,practice} = {}) {
     const result = loadedVersions(scripts === undefined && typeof document !== "undefined" ? document.scripts : scripts);
+    const practiceCourse = course(practice?.courseId);
+    if (practiceCourse?.type === "kana" && practice?.practiceVersion === 1 &&
+        ["first","retry"].includes(practice.round) && ["character","reading"].includes(practice.direction) &&
+        (hash === "#kana-review" || hash === `#study/${practiceCourse.id}`) &&
+        practiceCourse.questions.some(question => question.id === practice.questionId)) {
+      return Object.freeze({...result,courseId:practiceCourse.id,courseRevision:Content.courseRevision(practiceCourse.id),
+        questionId:practice.questionId,direction:practice.direction,practiceVersion:1,round:practice.round});
+    }
     if (hash === "#lesson" || hash === "#done") {
       result.courseId = "intro";
       result.courseRevision = Content.courseRevision("intro");
@@ -75,8 +84,8 @@ const Diagnostics = (() => {
   function format(snapshot = {}) {
     if (!snapshot || typeof snapshot !== "object") return "";
     const lines = [];
-    for (const name of ["content","app"]) {
-      const token = version(snapshot[`${name}Version`]);
+    for (const name of Object.keys(assetVersions)) {
+      const token = version(snapshot[assetVersions[name]]);
       if (token) lines.push(`${name}.js: ${token}`);
     }
     const current = snapshot.courseId === "intro" ? Content.intro : course(snapshot.courseId);
@@ -89,6 +98,9 @@ const Diagnostics = (() => {
       if (id(snapshot.questionId) && questions.some(question => question.id === snapshot.questionId)) lines.push(`questionId: ${snapshot.questionId}`);
       if (id(snapshot.cardId) && cards.some(card => card.id === snapshot.cardId)) lines.push(`cardId: ${snapshot.cardId}`);
       if (current.type === "kana" && id(snapshot.questionId) && questions.some(question => question.id === snapshot.questionId) && ["character","reading"].includes(snapshot.direction)) lines.push(`direction: ${snapshot.direction}`);
+      if (current.type === "kana" && questions.some(question => question.id === snapshot.questionId) && snapshot.practiceVersion === 1 && ["first","retry"].includes(snapshot.round)) {
+        lines.push("practiceVersion: 1",`round: ${snapshot.round}`);
+      }
     }
     if (category(snapshot.categoryId)) lines.push(`categoryId: ${snapshot.categoryId}`);
     return lines.join("\n");
