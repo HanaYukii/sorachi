@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "buildId": "22de5a02d5bb3a8b8a580b524369d36e1184480fdac6b88f0c39488a59d7cca3",
+  "files": [
+    {
+      "path": ".nojekyll",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "mime": null
+    },
+    {
+      "path": "app.js",
+      "sha256": "88251d8ce3a81021f3c2a660960e1abae866b93a8576aee6571d2929f9216d27",
+      "bytes": 25186,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "assets/cloud-complete.png",
+      "sha256": "2a8a78cd9ae520eae08cf689fb36df9c57a5af2639b8e0c4a33d4026efcdddb9",
+      "bytes": 778023,
+      "mime": "image/png"
+    },
+    {
+      "path": "assets/cloud-friend.png",
+      "sha256": "3ab3491c01c5d761ed175cda545cb2b90a90c0d91c947c7b551f843747408301",
+      "bytes": 745162,
+      "mime": "image/png"
+    },
+    {
+      "path": "content.js",
+      "sha256": "36dce77506b8915cc8df44bf468e295f82a6a475a2078795cfe0630fed29311a",
+      "bytes": 62684,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "index.html",
+      "sha256": "51a6af8c1c2d0b44f1b74ec939245eafe80f43d3dcbb8ffb1376c0b8bcca3586",
+      "bytes": 1010,
+      "mime": "text/html"
+    },
+    {
+      "path": "storage.js",
+      "sha256": "4637b7b52d615c067b9401f243e75af90707016aebee03e6601abec0c4a49ce5",
+      "bytes": 7874,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "study.js",
+      "sha256": "564e0c0ab30eda5107252088cb0dabc1f1dfa72de7c4aab826799fba91eebcea",
+      "bytes": 24955,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "styles.css",
+      "sha256": "990a3fb1814a706e6920061269aaa6e0eabcce75def1922cc49da86995155855",
+      "bytes": 31435,
+      "mime": "text/css"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 "use strict";
 
 const app = document.querySelector("#app");
-const STORAGE_KEY = "sorachi:first-lesson:v1";
+
 const TOTAL_STEPS = 6;
 let canStore = true;
 let progress = { step: 0, completed: false, inProgress: false, answers: {}, firstAnswers: {}, history: [] };
@@ -10,61 +10,21 @@ let feedbackReturn = "#home";
 let feedbackContext = "首頁";
 let feedbackDraft = { category: "問題回報", message: "" };
 const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
-function validHistory(value) {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item) => {
-    if (!item || typeof item.date !== "string" || !Number.isFinite(Date.parse(item.date))) return false;
-    const total = item.courseId ? Study.total(item.courseId) : 2;
-    if (!total || (item.courseId && item.total !== total)) return false;
-    const validScore = item.firstCorrect === null || (Number.isInteger(item.firstCorrect) && item.firstCorrect >= 0 && item.firstCorrect <= total);
-    return validScore && Array.isArray(item.retryQuestions) && item.retryQuestions.every((q) => item.courseId ? Number.isInteger(q) && q >= 1 && q <= total : q === 4 || q === 5);
-  }).slice(-30).map((item) => ({
-    date: new Date(item.date).toISOString(), firstCorrect: item.firstCorrect,
-    retryQuestions: [...new Set(item.retryQuestions)],
-    ...(item.courseId ? {courseId: item.courseId, total: Study.total(item.courseId)} : {}),
-  }));
+const metadata = (id) => ({title: id === "intro" ? "日文的三種文字" : Content.getCourse(id)?.title, legacyRevision: Content.legacyCourseRevision[id]});
+const validHistory = (value) => DataStore.normalizeAttempts(value, metadata).slice(-30);
+let browserStorage;
+try { browserStorage = localStorage; } catch { /* Restricted browser environment. */ }
+const dataStore = DataStore.create({storage: browserStorage, metadata});
+progress = dataStore.readProgress();
+const introRevision = progress.contentRevision ?? Content.legacyCourseRevision.intro;
+if (introRevision !== Content.courseRevision("intro")) {
+  // Keep earned completion and historical scores; restart only incompatible work.
+  Object.assign(progress, {step:0,inProgress:false,answers:{},firstAnswers:{}});
 }
-
-let saved = null;
-try {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  // Corrupt data can be discarded; it does not mean storage access is blocked.
-  try {
-    saved = JSON.parse(raw || "null");
-  } catch {
-    /* Start fresh. */
-  }
-} catch {
-  canStore = false;
-}
-
-if (saved && typeof saved === "object") {
-  progress = {
-    step: Number.isInteger(saved.step)
-      ? Math.max(0, Math.min(5, saved.step))
-      : 0,
-    completed: saved.completed === true,
-    inProgress:
-      saved.inProgress === true ||
-      (saved.inProgress === undefined && saved.step > 0 && !saved.completed),
-    answers: { 4: saved.answers?.[4] === true, 5: saved.answers?.[5] === true },
-    firstAnswers: Object.fromEntries([4, 5].filter((q) => typeof saved.firstAnswers?.[q] === "boolean").map((q) => [q, saved.firstAnswers[q]])),
-    history: validHistory(saved.history),
-  };
-  // Never restore a later question unless the prerequisite was answered.
-  if (progress.step === 5 && !progress.answers[4]) progress.step = 4;
-}
-
-progress.study = Study.sanitize(saved?.study);
-
-function save() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-    canStore = true;
-  } catch {
-    canStore = false;
-  }
-}
+progress.contentRevision = Content.courseRevision("intro");
+progress.study = Study.sanitize(progress.study);
+canStore = dataStore.canPersist();
+function save() { canStore = dataStore.writeProgress(progress); }
 
 const icons = {
   arrow:
@@ -84,13 +44,14 @@ const footer = () =>
 const warning = () =>
   canStore
     ? ""
+    : dataStore.isProtected() ? '<p class="storage-warning" role="status">已保留瀏覽器中的原始資料，但目前版本無法讀取；這次練習不會覆寫原有紀錄。</p>'
     : '<p class="storage-warning" role="status">目前瀏覽器無法儲存進度；這次仍可正常上課，關閉後可能需要重新開始。</p>';
 
 Study.bind({
   getState: () => progress.study,
   save,
   record: (entry) => {
-    progress.history = validHistory([...progress.history, entry]);
+    progress.history = validHistory([...progress.history, DataStore.makeAttempt(entry)]);
     save();
   },
   escape: escapeHTML, friend, icons, footer, warning, go,
@@ -112,64 +73,7 @@ function home() {
     <aside class="gentle-note">${icons.book}<span>每組練習會記錄初答成績，重試不會覆蓋原本的答案。</span></aside>${warning()}</main>${footer()}</div>`;
 }
 
-const lessons = [
-  {
-    label: "先認識一下",
-    title: "貓、麵包、山，日文怎麼寫？",
-    intro: "先看三個有意思的例子，認識日文裡常見的三種寫法。",
-    content: `<div class="script-row word-examples"><div class="script-cell"><div class="character" lang="ja">ねこ</div><strong>貓</strong><p>這是平假名</p></div><div class="script-cell"><div class="character" lang="ja">パン</div><strong>麵包</strong><p>這是片假名</p></div><div class="script-cell"><div class="character" lang="ja">山</div><strong>山</strong><p>這是漢字</p></div></div>`,
-    tip: "接下來分別介紹這三種寫法。",
-  },
-  {
-    label: "平假名",
-    title: "先從平假名認識日文。",
-    intro: "平假名可以記錄日文的聲音，也是學習日文的重要起點。",
-    content: `<span class="word-type">平假名</span><div class="example-large"><span class="example-word" lang="ja">ねこ</span><span class="example-meaning"><small>意思是</small>貓</span></div><p class="explain"><strong lang="ja">ね、こ</strong> 都是平假名。<br>這兩個字組在一起，就是「貓」。這裡先認識寫法，讀音可在五十音課練習。</p>`,
-    tip: "五十音課會介紹各個平假名的讀音。",
-  },
-  {
-    label: "片假名",
-    title: "外來語，常會用到片假名。",
-    intro: "片假名常用來寫從其他語言借來的詞。",
-    className: "example-aqua",
-    content: `<span class="word-type">片假名</span><div class="example-large"><span class="example-word" lang="ja">パン</span><span class="example-meaning"><small>意思是</small>麵包</span></div><p class="explain"><strong lang="ja">パン</strong> 使用片假名書寫。<br>外來語和外國人名，常會用到片假名。</p>`,
-    tip: "片假名也有其他用途；這裡先以外來語為例。",
-  },
-  {
-    label: "漢字",
-    title: "有些字，你可能已經認得。",
-    intro: "日文也使用漢字，像「山」「人」「日」。",
-    className: "example-orange",
-    content: `<span class="word-type">漢字</span><div class="example-large"><span class="example-word" lang="ja">山</span><span class="example-meaning"><small>意思是</small>山</span></div><p class="explain">漢字能幫助我們辨認詞的意思。<br>不過，<strong>看得懂字形，不代表日文讀音和中文一樣</strong>；讀音之後再學就好。</p>`,
-    tip: "日文漢字的讀音需要另外學習，不能直接套用中文讀音。",
-  },
-];
-const questions = {
-  4: {
-    title: "剛剛的「<span lang='ja'>ねこ</span>」，是哪種文字？",
-    word: "ねこ",
-    note: "剛才見過的「貓」",
-    options: ["平假名", "片假名", "漢字"],
-    answer: 0,
-    correct: "沒錯，是平假名。",
-    explanation: "「ね、こ」都是平假名，組在一起表示「貓」。",
-    wrong: "再看一下提示。",
-    hint: "「ねこ」是剛才介紹平假名時的例子。再選一次就好。",
-  },
-  5: {
-    title: "哪一句說明正確？",
-    options: [
-      "看得懂漢字，日文讀音就和中文一樣。",
-      "平假名、片假名和漢字，可以一起出現在日文裡。",
-      "日文只會用平假名。",
-    ],
-    answer: 1,
-    correct: "對，它們會一起出現在日文裡。",
-    explanation: "同一句日文裡，可以同時使用平假名、片假名和漢字。",
-    wrong: "再看一下提示。",
-    hint: "日文會使用三種文字；看起來熟悉的漢字，讀音也可能和中文不同。",
-  },
-};
+const {lessons, questions} = Content.intro;
 
 function lesson(focus = true) {
   const step = progress.step;
@@ -229,7 +133,8 @@ function finish() {
 function currentResult() {
   const known = [4, 5].every((q) => typeof progress.firstAnswers[q] === "boolean");
   return {
-    date: new Date().toISOString(),
+    date: new Date().toISOString(), total: 2, courseTitle: "日文的三種文字",
+    courseRevision: Content.courseRevision("intro"), questionIds: [questions[4].id, questions[5].id],
     firstCorrect: known ? [4, 5].filter((q) => progress.firstAnswers[q]).length : null,
     retryQuestions: [4, 5].filter((q) => progress.firstAnswers[q] === false),
   };
@@ -242,7 +147,7 @@ function resultCard() {
 function historyPage(confirmClear = false) {
   document.title = "學習紀錄｜SoraChi";
   const entries = [...progress.history].reverse();
-  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi</span></header><main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">查看完成時間與初答成績。</p>${entries.length ? `<p class="record-note">保留最近 30 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(Study.title(entry.courseId)) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄初答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第 ${entry.retryQuestions.map((q) => entry.courseId ? q : q - 3).join("、")} 題看過提示後完成` : entry.firstCorrect === (entry.total || 2) ? "全部題目皆為初答正確。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過第一課；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成任一組練習後，紀錄會顯示在這裡。"}</p><button class="primary" data-action="kana">選擇五十音練習${icons.arrow}</button></section>`}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${entries.length ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除這個瀏覽器的全部成績紀錄？課程進度與已完成狀態會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績紀錄</button>` : ""}</main>${footer()}</div>`;
+  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi</span></header><main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">查看完成時間與初答成績。</p>${entries.length ? `<p class="record-note">保留最近 30 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄初答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第 ${entry.retryQuestions.map((q) => entry.courseId ? q : q - 3).join("、")} 題看過提示後完成` : entry.firstCorrect === (entry.total || 2) ? "全部題目皆為初答正確。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過第一課；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成任一組練習後，紀錄會顯示在這裡。"}</p><button class="primary" data-action="kana">選擇五十音練習${icons.arrow}</button></section>`}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${entries.length ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除這個瀏覽器的全部成績紀錄？課程進度與已完成狀態會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績紀錄</button>` : ""}</main>${footer()}</div>`;
   focusHeading();
 }
 function feedbackPage() {
@@ -419,7 +324,7 @@ app.addEventListener("click", (event) => {
     case "next":
       if (progress.step >= 4 && !progress.answers[progress.step]) return;
       if (progress.step === 5) {
-        if (progress.inProgress) progress.history = [...progress.history, currentResult()].slice(-30);
+        if (progress.inProgress) progress.history = validHistory([...progress.history, DataStore.makeAttempt(currentResult())]);
         progress.completed = true;
         progress.inProgress = false;
         save();
