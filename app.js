@@ -4,6 +4,7 @@ const app = document.querySelector("#app");
 
 const TOTAL_STEPS = 6;
 let canStore = true;
+let restarting = false; // set once a reload is pending; later clicks would save stale memory
 let progress = { step: 0, completed: false, inProgress: false, answers: {}, firstAnswers: {}, history: [] };
 let selectedWrong = null;
 let feedbackReturn = "#home";
@@ -30,6 +31,7 @@ function updateStorageWarning() {
   if (status) status.innerHTML = warningMessage();
 }
 function save() {
+  if (restarting) return;
   canStore = dataStore.writeProgress(progress);
   updateStorageWarning();
 }
@@ -188,21 +190,52 @@ function recoveryPanel(confirmRestart) {
 }
 function downloadRaw() {
   const raw = dataStore.rawData();
-  if (raw === null) return;
+  if (raw !== null) downloadText(raw, "sorachi-data");
+}
+function downloadText(raw, name) {
   const link = document.createElement("a");
   let href;
   try { href = URL.createObjectURL(new Blob([raw], { type: "application/json" })); } catch { href = `data:application/json;charset=utf-8,${encodeURIComponent(raw)}`; }
   link.href = href;
-  link.download = `sorachi-data-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = `${name}-${new Date().toISOString().slice(0, 10)}.json`;
   document.body?.append(link); link.click?.(); link.remove?.();
   if (href.startsWith("blob:")) setTimeout(() => URL.revokeObjectURL(href), 1000);
+}
+// The import result survives the reload that rebuilds every view from storage.
+const IMPORT_NOTE = "sorachi:import-note";
+let importNote = null;
+try { importNote = sessionStorage.getItem(IMPORT_NOTE); sessionStorage.removeItem(IMPORT_NOTE); } catch { /* Optional. */ }
+function backupPanel() {
+  if (dataStore.isProtected()) return "";
+  return `<section class="backup-panel" aria-labelledby="backup-title"><h2 id="backup-title">備份</h2><p>紀錄只存在這個瀏覽器。換瀏覽器或清除網站資料前，可以先下載備份檔，之後再還原。</p><div class="quiet-links"><button class="text-button" data-action="export-backup">下載備份</button><label class="text-button file-button">從備份檔還原<input type="file" id="backup-file"></label></div><p id="backup-status" role="status" aria-live="polite"></p></section>`;
+}
+function importSummary(result) {
+  if (!result.ok) return result.reason === "too-large" ? "這個檔案太大，不像 SoraChi 的備份檔。" : result.reason === "write" ? (dataStore.isConflict() ? "另一個分頁更新了資料，請重新整理後再還原。" : "這次沒有還原成功，瀏覽器無法儲存。原本的紀錄沒有改動。") : "讀不懂這個檔案，請選 SoraChi 下載的備份檔。原本的紀錄沒有改動。";
+  return `已從備份還原：新增 ${result.added} 筆紀錄${result.existing ? `，${result.existing} 筆原本就有` : ""}${result.skipped ? `，${result.skipped} 筆較舊的紀錄超過 ${DataStore.MAX_ATTEMPTS} 筆上限，沒有加入` : ""}${result.dropped ? `，本機 ${result.dropped} 筆較舊的紀錄超過 ${DataStore.MAX_ATTEMPTS} 筆上限，已移除` : ""}。課程進度已合併。`;
+}
+async function importFile(file) {
+  const status = app.querySelector("#backup-status");
+  if (!file) return;
+  if (file.size > DataStore.MAX_BACKUP_CHARS * 4) { status.textContent = importSummary({ok:false,reason:"too-large"}); return; }
+  let result;
+  try { result = dataStore.importBackupDetailed(await file.text()); } catch { result = {ok:false,reason:"invalid"}; }
+  if (!result.ok) { status.textContent = importSummary(result); return; }
+  // Reload so the in-memory progress cannot overwrite what was just imported.
+  try { sessionStorage.setItem(IMPORT_NOTE, importSummary(result)); } catch { /* The reload still shows the merged data. */ }
+  restarting = true;
+  location.reload();
 }
 function historyPage(confirmClear = false, confirmRestart = false) {
   document.title = "學習紀錄｜SoraChi";
   const entries = [...progress.history].reverse();
   const hasReviewData = Study.reviewSummary().hasData;
-  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi</span></header><main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">查看完成時間與第一次作答的成績。</p>${entries.length ? `<p class="record-note">保留最近 ${DataStore.MAX_ATTEMPTS} 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄第一次作答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第一次答錯：${entry.courseId ? Study.retryLabels(entry).map(escapeHTML).join("、") : entry.retryQuestions.map((q) => `第 ${q - 3} 題`).join("、")}` : entry.firstCorrect === (entry.total || 2) ? "全部題目第一次都答對。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : dataStore.isProtected() ? `<section class="empty-record">${icons.book}<h2>目前無法讀取成績紀錄</h2></section>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過日文的三種文字；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成任一組練習後，紀錄會顯示在這裡。"}</p><button class="primary" data-action="kana">選擇五十音練習${icons.arrow}</button></section>`}${recoveryPanel(confirmRestart)}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${!dataStore.isProtected() && (entries.length || hasReviewData) ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除全部成績與複習紀錄？這也會結束尚未完成的五十音練習與複習；已完成狀態與其他課程進度會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績與複習紀錄</button>` : ""}</main>${footer()}</div>`;
+  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi</span></header><main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">查看完成時間與第一次作答的成績。</p>${entries.length ? `<p class="record-note">保留最近 ${DataStore.MAX_ATTEMPTS} 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄第一次作答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第一次答錯：${entry.courseId ? Study.retryLabels(entry).map(escapeHTML).join("、") : entry.retryQuestions.map((q) => `第 ${q - 3} 題`).join("、")}` : entry.firstCorrect === (entry.total || 2) ? "全部題目第一次都答對。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : dataStore.isProtected() ? `<section class="empty-record">${icons.book}<h2>目前無法讀取成績紀錄</h2></section>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過日文的三種文字；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成任一組練習後，紀錄會顯示在這裡。"}</p><button class="primary" data-action="kana">選擇五十音練習${icons.arrow}</button></section>`}${recoveryPanel(confirmRestart)}${backupPanel()}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${!dataStore.isProtected() && (entries.length || hasReviewData) ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除全部成績與複習紀錄？這也會結束尚未完成的五十音練習與複習；已完成狀態與其他課程進度會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績與複習紀錄</button>` : ""}</main>${footer()}</div>`;
   focusHeading();
+  // Announce the restore result once, after the page exists, so the live region reads it.
+  if (importNote) {
+    const note = importNote; importNote = null;
+    setTimeout(() => { const status = app.querySelector("#backup-status"); if (status) status.textContent = note; }, 50);
+  }
 }
 function captureFeedback(hash) {
   const id = hash.startsWith("#study/") ? hash.slice(7) : null;
@@ -220,6 +253,13 @@ function buildFeedbackURL(category, message, context) {
   url.searchParams.set("body", `${message.trim()}\n\n---\n所在位置：${context}\n${Diagnostics.format(feedbackDiagnostics || captureFeedback("#home"))}`);
   return url.href;
 }
+app.addEventListener("change", (event) => {
+  if (event.target?.id !== "backup-file" || restarting) return;
+  const file = event.target.files?.[0];
+  // Clearing the value lets the same file be chosen again after a failed try.
+  try { event.target.value = ""; } catch { /* Read-only in some engines. */ }
+  importFile(file);
+});
 app.addEventListener("input", () => {
   if (location.hash !== "#feedback") return;
   feedbackDraft = {category: app.querySelector("#feedback-category").value, message: app.querySelector("#feedback-message").value};
@@ -317,7 +357,6 @@ function restart() {
   save();
   go("#lesson");
 }
-let restarting = false;
 app.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button || button.disabled || restarting) return;
@@ -342,6 +381,10 @@ app.addEventListener("click", (event) => {
       break;
     case "download-raw":
       downloadRaw();
+      break;
+    case "export-backup":
+      try { downloadText(dataStore.exportBackup(), "sorachi-backup"); }
+      catch { app.querySelector("#backup-status").textContent = dataStore.isConflict() ? "另一個分頁更新了資料，請重新整理後再下載備份。" : "目前讀不到瀏覽器裡的資料，沒辦法下載備份。"; }
       break;
     case "restart-protected":
       historyPage(false, true);
