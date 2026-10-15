@@ -125,7 +125,7 @@ button svg {
   display: inline-flex;
   padding: 6px 11px;
   background: #f0ecf5;
-  color: #776982;
+  color: var(--muted);
   border-radius: 99px;
   font-size: 11px;
   font-weight: 500;
@@ -375,7 +375,7 @@ button svg {
   color: var(--aqua-ink);
 }
 .tiny-script:nth-child(3) strong {
-  color: #a96740;
+  color: #965a39;
 }
 .gentle-note {
   margin: 34px 0 0;
@@ -719,6 +719,8 @@ button svg {
 }
 .answer-status {
   margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
   font-size: 12px;
   color: var(--aqua-ink);
 }
