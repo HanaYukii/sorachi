@@ -401,7 +401,7 @@ button svg {
   padding: 23px 0 25px;
   border-top: 1px solid var(--line);
   font-size: 11px;
-  color: #8a8292;
+  color: var(--muted);
 }
 .footer .jp {
   font-family: "Noto Sans JP", sans-serif;

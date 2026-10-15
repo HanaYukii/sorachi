@@ -411,3 +411,11 @@ test("opening the lesson URL directly records an active resumable attempt", () =
   reloaded.action("start");
   assert.equal(reloaded.state.step, 1);
 });
+
+test("start button begins at the first step when a stale attempt is no longer active", () => {
+  const b = browser({ saved: { step: 3, completed: false, inProgress: false } });
+  assert.match(b.html, />開始第一堂小課/);
+  b.action("start");
+  assert.equal(b.state.step, 0);
+  assert.equal(b.state.inProgress, true);
+});
