@@ -56,3 +56,25 @@ test('short review presents the selected recent mistake before older successful 
   assert.deepEqual(clone(session.questions.map(q=>q.id)),clone(selected));
  }
 });
+
+test('options keep two same-row peers so the row label cannot reveal the answer',()=>{
+ const rows=['a','ka','sa','ta','na','ha','ma','ya','ra','wa'];
+ const check=(q,label)=>{
+  const row=P.entry(q.id).courseId,same=q.options.filter(id=>P.entry(id).courseId===row).length;
+  assert.ok(same>=3,`${label} ${P.entry(q.id).character}: only ${same} same-row options`);
+  assert.ok(q.options.length-same<=1,`${label} ${P.entry(q.id).character}: more than one cross-row option`);
+ };
+ for(const script of ['h','k'])for(let r=1;r<rows.length;r++){
+  const id=`${script}-${rows[r]}`,completed=rows.slice(0,r).map(row=>`${script}-${row}`);
+  for(let run=0;run<20;run++){
+   const s=P.create(ids(id),{completedIds:completed});
+   s.questions.forEach(q=>check(q,id));
+   finishFirst(s,s.questions.map(q=>q.id));
+   s.retryQuestions.forEach(q=>check(q,`${id} retry`));
+  }
+ }
+ for(let run=0;run<20;run++){
+  const s=P.create([...ids('h-ka').slice(0,2),...ids('h-a').slice(0,3)],{completedIds:['h-a','h-ka','h-sa'],mode:'review'});
+  s.questions.forEach(q=>check(q,'review'));
+ }
+});

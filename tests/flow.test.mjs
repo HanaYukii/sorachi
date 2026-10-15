@@ -707,6 +707,7 @@ test("external storage changes warn in place and block stale progress writes", (
   b.externalWrite(raw);
   assert.equal(b.renderCount, renderCount, 'Keep the current question and focus mounted');
   assert.match(b.node('#storage-status').innerHTML, /另一個分頁/);
+  assert.match(b.node('#storage-status').innerHTML, /storage-conflict/, 'Use the pinned conflict style');
   b.answer(0);
   assert.equal(b.stored, raw, 'Do not overwrite the other tab after answering');
   assert.match(b.node('#storage-status').innerHTML, /重新載入/);

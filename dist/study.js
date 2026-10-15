@@ -185,7 +185,7 @@ const Study = (() => {
   }
   function reviewEntry() {
     const summary=reviewSummary();
-    return summary.availableCount ? `<section class="study-review-entry"><h2>複習 ${Math.min(5,summary.availableCount)} 個字</h2>${summary.wrongLabels.length?`<p class="study-note">最近答錯：${summary.wrongLabels.map(escape).join('、')}</p>`:''}<a class="text-button" href="#kana-review">${summary.canResume?'繼續複習':`複習 ${Math.min(5,summary.availableCount)} 個字`}</a></section>`:'';
+    return summary.availableCount ? `<section class="study-review-entry"><h2>${summary.canResume?'還有一輪沒練完':'複習學過的字'}</h2>${summary.wrongLabels.length?`<p class="study-note">最近答錯：${summary.wrongLabels.map(escape).join('、')}</p>`:''}<a class="text-button" href="#kana-review">${summary.canResume?'繼續複習':`複習 ${Math.min(5,summary.availableCount)} 個字`}</a></section>`:'';
   }
   function kanaPage() {
     const script = state().script;

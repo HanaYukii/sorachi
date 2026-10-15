@@ -15,11 +15,15 @@ const KanaPractice = (() => {
   };
   function question(id,direction,pool) {
     const target=entry(id), seen=new Set([target.reading]);
-    const peers=shuffled(pool.filter(candidate=>candidate!==id && entry(candidate).script===target.script));
     const similar=candidate=>groups.some(group=>group.includes(target.character)&&group.includes(entry(candidate).character));
-    peers.sort((a,b)=>Number(similar(b))-Number(similar(a)) || Number(entry(b).courseId!==target.courseId)-Number(entry(a).courseId!==target.courseId));
+    const peers=shuffled(pool.filter(candidate=>candidate!==id && entry(candidate).script===target.script)).sort((a,b)=>Number(similar(b))-Number(similar(a)));
+    const sameRow=peers.filter(candidate=>entry(candidate).courseId===target.courseId), otherRows=peers.filter(candidate=>entry(candidate).courseId!==target.courseId);
     const options=[id];
-    for(const candidate of peers){if(seen.has(entry(candidate).reading))continue;options.push(candidate);seen.add(entry(candidate).reading);if(options.length===4)break;}
+    const add=candidate=>{if(options.length>=4||options.includes(candidate)||seen.has(entry(candidate).reading))return false;options.push(candidate);seen.add(entry(candidate).reading);return true;};
+    // Two same-row peers keep the row from revealing the answer; at most one learned row adds a cross-row contrast.
+    sameRow.slice(0,2).forEach(add);
+    otherRows.some(add);
+    sameRow.forEach(add);
     return {id,direction,options:shuffled(options)};
   }
   function create(ids,{completedIds=[],mode='course'}={}) {
