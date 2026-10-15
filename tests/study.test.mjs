@@ -227,7 +227,7 @@ test('unknown route/course cannot inject markup and unrelated actions pass throu
   assert.equal(b.study.context('#kana'), '五十音學習路線');
 });
 
-test('travel section is separate, and each lesson teaches keywords before two comprehension questions', () => {
+test('travel section is separate, and lessons teach keywords before contextual comprehension questions', () => {
   const answers = { 't-place': [0, 1], 't-order': [1, 2], 't-pay': [0, 1], 't-charge': [2, 0] };
   const b = harness(null, [{lang: 'ja-JP'}]);
   b.render('#travel');
@@ -246,6 +246,24 @@ test('travel section is separate, and each lesson teaches keywords before two co
     const reloaded = harness(b.stored);
     reloaded.render(`#study/${id}`);
     assert.equal(reloaded.state.courses[id].active.cursor, 1);
+    if (id === 't-order') {
+      assert.match(reloaded.html, /ひとつ/);
+      assert.match(reloaded.html, /ふたつ/);
+      assert.match(reloaded.html, /みっつ/);
+      reloaded.action('next');
+      assert.match(reloaded.html, /ホット/);
+      assert.match(reloaded.html, /アイス/);
+      assert.match(reloaded.html, /<details class="phrase-more"><summary>進階補充：點酒的喝法/);
+      assert.match(reloaded.html, /rokku/);
+      assert.match(reloaded.html, /sooda wari/);
+      assert.doesNotMatch(reloaded.html, /ROKU|琴酒品牌/);
+      reloaded.action('next');
+      assert.match(reloaded.html, /atatakai/);
+      assert.match(reloaded.html, /tsumetai/);
+      reloaded.action('next');
+      assert.match(reloaded.html, /namimori/);
+      assert.match(reloaded.html, /oomori/);
+    }
     reloaded.action('next');
     const a = reloaded.state.courses[id].active;
     assert.equal(a.phase, 'quiz');
@@ -258,7 +276,7 @@ test('travel section is separate, and each lesson teaches keywords before two co
       reloaded.action('next');
     }
     assert.equal(reloaded.records.length, 1);
-    assert.equal(reloaded.records[0].firstCorrect, 1);
+    assert.equal(reloaded.records[0].firstCorrect, correct.length - 1);
     assert.deepEqual(reloaded.records[0].retryQuestions, [1]);
     assert.match(reloaded.html, /href="#travel"/);
     const done = harness(reloaded.stored);
