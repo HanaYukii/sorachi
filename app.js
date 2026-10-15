@@ -4,8 +4,19 @@ const app = document.querySelector("#app");
 const STORAGE_KEY = "sorachi:first-lesson:v1";
 const TOTAL_STEPS = 6;
 let canStore = true;
-let progress = { step: 0, completed: false, inProgress: false, answers: {} };
+let progress = { step: 0, completed: false, inProgress: false, answers: {}, firstAnswers: {}, history: [] };
 let selectedWrong = null;
+let feedbackReturn = "#home";
+let feedbackContext = "首頁";
+let feedbackDraft = { category: "問題回報", message: "" };
+const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+function validHistory(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item) => item && typeof item.date === "string" && Number.isFinite(Date.parse(item.date)) &&
+    (item.firstCorrect === null || (Number.isInteger(item.firstCorrect) && item.firstCorrect >= 0 && item.firstCorrect <= 2)) &&
+    Array.isArray(item.retryQuestions) && item.retryQuestions.every((q) => q === 4 || q === 5))
+    .slice(-30).map(({date, firstCorrect, retryQuestions}) => ({date: new Date(date).toISOString(), firstCorrect, retryQuestions: [...new Set(retryQuestions)]}));
+}
 
 let saved = null;
 try {
@@ -30,6 +41,8 @@ if (saved && typeof saved === "object") {
       saved.inProgress === true ||
       (saved.inProgress === undefined && saved.step > 0 && !saved.completed),
     answers: { 4: saved.answers?.[4] === true, 5: saved.answers?.[5] === true },
+    firstAnswers: Object.fromEntries([4, 5].filter((q) => typeof saved.firstAnswers?.[q] === "boolean").map((q) => [q, saved.firstAnswers[q]])),
+    history: validHistory(saved.history),
   };
   // Never restore a later question unless the prerequisite was answered.
   if (progress.step === 5 && !progress.answers[4]) progress.step = 4;
@@ -58,7 +71,7 @@ const icons = {
 const friend = (className = "", alt = "", asset = "cloud-friend.png") =>
   `<img class="${className}" src="./assets/${asset}" alt="${alt}" width="400" height="420">`;
 const footer = () =>
-  '<footer class="footer"><span class="jp" lang="ja">ひとつずつ、ゆっくり。</span><span>SoraChi · 首頁與第一課雛形</span></footer>';
+  '<footer class="footer"><span class="jp" lang="ja">ひとつずつ、ゆっくり。</span><nav class="quiet-links" aria-label="小工具"><button class="text-button" data-action="history">學習紀錄</button><button class="text-button" data-action="feedback">問題與建議</button></nav></footer>';
 const warning = () =>
   canStore
     ? ""
@@ -150,7 +163,7 @@ function lesson(focus = true) {
     : current.content;
   app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi · 認識日文</span></header><div class="lesson-progress"><div class="track" role="progressbar" aria-label="小課進度" aria-valuemin="0" aria-valuemax="${TOTAL_STEPS}" aria-valuenow="${step}"><span style="width:${(step / TOTAL_STEPS) * 100}%"></span></div><span class="step-count">${step + 1} / ${TOTAL_STEPS}</span></div>
     <main id="main" tabindex="-1" class="lesson-main"><div class="eyebrow">${isQuiz ? "不用緊張，試試看" : current.label}</div><h1 tabindex="-1" class="lesson-title focus-heading">${current.title}</h1><p class="lesson-intro">${isQuiz ? "答錯也沒關係，看看提示，再試一次。" : current.intro}</p><section class="content-card ${current.className || ""} ${isQuiz ? "quiz-card" : ""}" aria-label="${isQuiz ? "練習題" : "課程內容"}">${content}</section>${isQuiz ? "" : `<aside class="mascot-tip">${friend()}<span>${current.tip}</span></aside>`}${warning()}
-    <div class="lesson-navigation"><button class="back-button" data-action="back">${icons.back}${step === 0 ? "回首頁" : "上一步"}</button><div class="next-wrap"><button class="primary" data-action="next" ${isQuiz && !answered ? "disabled" : ""}>${step === 5 ? "完成這堂小課" : isQuiz ? "下一個小問題" : step === 3 ? "試兩個小問題" : "下一步"}${icons.arrow}</button>${isQuiz && !answered ? '<p class="step-hint">先選一個答案</p>' : ""}</div></div></main></div>`;
+    <div class="lesson-navigation"><button class="back-button" data-action="back">${icons.back}${step === 0 ? "回首頁" : "上一步"}</button><div class="next-wrap"><button class="primary" data-action="next" ${isQuiz && !answered ? "disabled" : ""}>${step === 5 ? "完成這堂小課" : isQuiz ? "下一個小問題" : step === 3 ? "試兩個小問題" : "下一步"}${icons.arrow}</button>${isQuiz && !answered ? '<p class="step-hint">先選一個答案</p>' : ""}</div></div><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div></main></div>`;
   if (focus) focusHeading();
 }
 
@@ -190,23 +203,92 @@ function updateAnswerFeedback() {
 
 function finish() {
   document.title = "完成第一堂小課｜SoraChi";
-  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi · 第一個小步伐</span></header><main id="main" tabindex="-1" class="finish"><div class="finish-art">${friend("", "SoraChi 雲朵精靈開心地抱著小書，陪你完成第一堂課", "cloud-complete.png")}<span class="finish-check">${icons.check}</span></div><div class="eyebrow">第一堂小課，完成了</div><h1 tabindex="-1" class="focus-heading">你和日文，又熟悉了一點。</h1><p>現在你知道，日文裡有這三種文字。<br>今天學到這裡，就很好。</p><div class="summary"><span><b lang="ja">あ</b> · 平假名</span><span><b lang="ja">ア</b> · 片假名</span><span><b lang="ja">山</b> · 漢字</span></div><div class="finish-actions"><button class="primary" data-action="home">回首頁${icons.arrow}</button><button class="text-button" data-action="restart">再看一次這堂課</button></div><p class="storage-note">${canStore ? "完成紀錄已保存在這個瀏覽器。" : "這次已完成，但瀏覽器無法保存紀錄。"}</p>${warning()}</main>${footer()}</div>`;
+  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi · 第一個小步伐</span></header><main id="main" tabindex="-1" class="finish"><div class="finish-art">${friend("", "SoraChi 雲朵精靈開心地抱著小書，陪你完成第一堂課", "cloud-complete.png")}<span class="finish-check">${icons.check}</span></div><div class="eyebrow">第一堂小課，完成了</div><h1 tabindex="-1" class="focus-heading">你和日文，又熟悉了一點。</h1><p>現在你知道，日文裡有這三種文字。<br>今天學到這裡，就很好。</p><div class="summary"><span><b lang="ja">あ</b> · 平假名</span><span><b lang="ja">ア</b> · 片假名</span><span><b lang="ja">山</b> · 漢字</span></div>${resultCard()}<div class="finish-actions"><button class="primary" data-action="home">回首頁${icons.arrow}</button><button class="text-button" data-action="restart">再看一次這堂課</button></div><p class="storage-note">${canStore ? "完成紀錄已保存在這個瀏覽器。" : "這次已完成，但瀏覽器無法保存紀錄。"}</p>${warning()}</main>${footer()}</div>`;
   focusHeading();
 }
+
+function currentResult() {
+  const known = [4, 5].every((q) => typeof progress.firstAnswers[q] === "boolean");
+  return {
+    date: new Date().toISOString(),
+    firstCorrect: known ? [4, 5].filter((q) => progress.firstAnswers[q]).length : null,
+    retryQuestions: [4, 5].filter((q) => progress.firstAnswers[q] === false),
+  };
+}
+function resultCard() {
+  const result = currentResult();
+  if (result.firstCorrect === null) return "";
+  return `<div class="result-card"><span>這次的小練習</span><strong>第一次答對 ${result.firstCorrect} / 2 題</strong><p>${result.firstCorrect === 2 ? "兩個小觀念，都掌握了。" : "看過提示後，兩題都完成了。再想一次，也是學習。"}</p><button class="text-button" data-action="history">看看學習紀錄 ${icons.arrow}</button></div>`;
+}
+function historyPage(confirmClear = false) {
+  document.title = "學習紀錄｜SoraChi";
+  const entries = [...progress.history].reverse();
+  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="home">${icons.back}回首頁</button><span class="lesson-name">SoraChi · 小小的累積</span></header><main id="main" tabindex="-1" class="utility-main"><div class="eyebrow">每一步，都算數</div><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">記下每一次練習，不急著和誰比較。</p>${entries.length ? `<p class="record-note">保留最近 30 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list">${entries.map((entry) => `<li><div class="record-top"><span>認識日文 · 第一課</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄初答成績" : `第一次答對 <strong>${entry.firstCorrect} / 2</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第 ${entry.retryQuestions.map((q) => q - 3).join("、")} 題看過提示後完成` : entry.firstCorrect === 2 ? "兩題都一次答對，做得很好。" : "這次已完成兩題練習。"}</p></li>`).join("")}</ol>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過第一課；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成第一堂小課後，你的小小累積就會出現在這裡。"}</p><button class="primary" data-action="start">${progress.inProgress ? "接著學" : progress.completed ? "再練習一次" : "開始第一堂小課"}${icons.arrow}</button></section>`}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${entries.length ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除這個瀏覽器的全部成績紀錄？課程進度與已完成狀態會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績紀錄</button>` : ""}</main>${footer()}</div>`;
+  focusHeading();
+}
+function feedbackPage() {
+  document.title = "問題與建議｜SoraChi";
+  app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><button class="exit" data-action="feedback-back">${icons.back}回到剛才的頁面</button><span class="lesson-name">SoraChi · 一起變得更好</span></header><main id="main" tabindex="-1" class="utility-main"><div class="eyebrow">想聽聽你的聲音</div><h1 class="focus-heading" tabindex="-1">問題與建議</h1><p class="utility-intro">哪裡看不懂、哪裡卡住了，或想學些什麼？</p><form id="feedback-form" class="feedback-form"><label for="feedback-category">你想告訴我們什麼？</label><select id="feedback-category" name="category">${["問題回報","學習建議","其他想法"].map((kind) => `<option${feedbackDraft.category === kind ? " selected" : ""}>${kind}</option>`).join("")}</select><label for="feedback-message">內容</label><textarea id="feedback-message" name="message" rows="5" maxlength="600" required placeholder="例如：這個說明看不太懂，希望多一個例子。">${escapeHTML(feedbackDraft.message)}</textarea><p class="record-note">最多 600 字。會附上所在位置：${escapeHTML(feedbackContext)}。</p><aside class="feedback-privacy">這版使用 GitHub 接收回報，需要 GitHub 帳號。送出後內容會公開，請勿填入姓名、Email 或其他私人資料。</aside><button class="primary" type="submit">準備回報內容 ${icons.arrow}</button><p class="record-note">下一步會產生連結，讓你到 GitHub 確認後送出。</p><div id="feedback-ready" role="status" aria-live="polite"></div></form></main>${footer()}</div>`;
+  focusHeading();
+}
+function buildFeedbackURL(category, message, context) {
+  const url = new URL("https://github.com/HanaYukii/sorachi/issues/new");
+  url.searchParams.set("title", `[${category}] SoraChi 使用回饋`);
+  url.searchParams.set("body", `${message.trim()}\n\n---\n所在位置：${context}\n版本：第一課雛形`);
+  return url.href;
+}
+app.addEventListener("input", () => {
+  if (location.hash !== "#feedback") return;
+  feedbackDraft = {category: app.querySelector("#feedback-category").value, message: app.querySelector("#feedback-message").value};
+  app.querySelector("#feedback-ready").replaceChildren();
+});
+app.addEventListener("submit", (event) => {
+  if (event.target.id !== "feedback-form") return;
+  event.preventDefault();
+  const message = app.querySelector("#feedback-message");
+  const category = app.querySelector("#feedback-category").value;
+  if (!message.value.trim() || message.value.length > 600) {
+    message.setCustomValidity(message.value.length > 600 ? "請縮短到 600 字以內。" : "請先寫下一點內容。");
+    message.reportValidity();
+    message.addEventListener("input", () => message.setCustomValidity(""), {once:true});
+    return;
+  }
+  feedbackDraft = {category, message: message.value};
+  const ready = app.querySelector("#feedback-ready");
+  const note = document.createElement("p");
+  note.textContent = "內容已準備好，還沒有送出。";
+  const link = document.createElement("a");
+  link.href = buildFeedbackURL(category, message.value, feedbackContext);
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.className = "text-button";
+  link.textContent = "前往 GitHub 確認並送出 ↗";
+  ready.replaceChildren(note, link);
+});
 
 function focusHeading() {
   app.querySelector(".focus-heading")?.focus({ preventScroll: true });
 }
 function route() {
+  // A historical completion URL must never claim an active replay is finished.
+  if (location.hash === "#done" && progress.inProgress) {
+    go("#lesson");
+    return;
+  }
   selectedWrong = null;
   window.scrollTo({ top: 0, behavior: "instant" });
   if (location.hash === "#lesson") {
     if (!progress.inProgress) {
+      progress.step = 0;
+      progress.answers = {};
+      progress.firstAnswers = {};
       progress.inProgress = true;
       save();
     }
     lesson();
   } else if (location.hash === "#done" && progress.completed) finish();
+  else if (location.hash === "#history") historyPage();
+  else if (location.hash === "#feedback") feedbackPage();
   else {
     home();
     focusHeading();
@@ -219,6 +301,7 @@ function go(hash) {
 function restart() {
   progress.step = 0;
   progress.answers = {};
+  progress.firstAnswers = {};
   progress.inProgress = true;
   // Retain the earned completion record while replaying the lesson.
   selectedWrong = null;
@@ -232,15 +315,46 @@ app.addEventListener("click", (event) => {
     const answer = Number(button.dataset.answer);
     const question = questions[progress.step];
     if (!question || progress.answers[progress.step]) return;
+    if (progress.firstAnswers[progress.step] === undefined) progress.firstAnswers[progress.step] = answer === question.answer;
     if (answer === question.answer) {
       progress.answers[progress.step] = true;
       selectedWrong = null;
       save();
     } else selectedWrong = answer;
+    save();
     updateAnswerFeedback();
     return;
   }
   switch (button.dataset.action) {
+    case "history":
+      go("#history");
+      break;
+    case "clear-history":
+      historyPage(true);
+      app.querySelector('[data-action="history"]').focus();
+      break;
+    case "confirm-clear": {
+      const previous = progress.history;
+      progress.history = [];
+      save();
+      if (!canStore) progress.history = previous;
+      historyPage();
+      if (!canStore) {
+        const warning = app.querySelector(".storage-warning");
+        warning.textContent = "瀏覽器無法儲存變更，成績紀錄尚未清除。請稍後再試。";
+      }
+      break;
+    }
+    case "feedback":
+      if (location.hash !== "#feedback") {
+        feedbackReturn = ["#lesson", "#done", "#history"].includes(location.hash) ? location.hash : "#home";
+        feedbackContext = feedbackReturn === "#lesson" ? `第一課・第 ${progress.step + 1} 步${progress.step >= 4 ? `・小練習 ${progress.step - 3}` : ""}` : feedbackReturn === "#done" ? "第一課完成頁" : feedbackReturn === "#history" ? "學習紀錄" : "首頁";
+      }
+      go("#feedback");
+      break;
+    case "feedback-back":
+      go(feedbackReturn);
+      break;
     case "home":
       go("#home");
       break;
@@ -268,6 +382,7 @@ app.addEventListener("click", (event) => {
     case "next":
       if (progress.step >= 4 && !progress.answers[progress.step]) return;
       if (progress.step === 5) {
+        if (progress.inProgress) progress.history = [...progress.history, currentResult()].slice(-30);
         progress.completed = true;
         progress.inProgress = false;
         save();
