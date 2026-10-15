@@ -408,6 +408,7 @@ button svg {
   letter-spacing: 1px;
 }
 .text-button {
+  min-height: 44px;
   background: none;
   padding: 8px 0;
   color: var(--purple-deep);
@@ -686,7 +687,7 @@ button svg {
     border-color 0.15s,
     background 0.15s;
 }
-.answer:hover:not(:disabled):not([aria-disabled="true"]) {
+.answer:hover:not(:disabled):not([aria-disabled="true"]):not(.wrong):not(.correct) {
   border-color: #b39bcd;
   background: #fbf8ff;
 }
@@ -804,11 +805,13 @@ button svg {
 }
 .summary {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 9px;
   margin: 25px 0;
 }
 .summary span {
+  white-space: nowrap;
   border: 1px solid var(--line);
   background: white;
   border-radius: 12px;
@@ -1202,7 +1205,7 @@ button svg {
 .course-state { font-size: 11px; line-height: 1.8; color: var(--aqua-ink); display: block; margin-top: 6px; }
 .study-options { display: grid; gap: 11px; margin: 22px 0; }
 .study-options button { border: 1px solid #d7cce2; padding: 17px 20px; border-radius: 14px; background: var(--white); text-align: left; min-height: 56px; font-size: 16px; line-height: 1.8; }
-.study-options button:hover { background: var(--paper); border-color: var(--purple); }
+.study-options button:hover:not([aria-disabled="true"]):not(.wrong):not(.correct) { background: var(--paper); border-color: var(--purple); }
 .study-options button.correct { background: var(--aqua); color: var(--aqua-ink); border-color: #a3c8d0; }
 .study-options button.wrong { background: #fff0e5; border-color: #e4b393; }
 .study-options button[aria-disabled="true"] { cursor: default; }
@@ -1280,3 +1283,19 @@ button svg {
 .travel-entry { border-color: #e5cbb8; }
 .script-supplement { margin-top: 18px; padding: 12px 8px; display: flex; flex-wrap: wrap; align-items: center; column-gap: 20px; font-size: 13px; color: var(--muted); }
 @media (max-width: 600px) { .travel-categories { grid-template-columns: 1fr; } }
+
+:lang(ja) { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; }
+.course-row .reading-label:not([lang="ja"]) { font-size: 13px; color: var(--muted); }
+.study-options .answer-status:empty { display: none; }
+.study-options .wrong .answer-status { color: var(--orange-ink); }
+.study-options .answer-status { display: block; font-size: 12px; line-height: 1.5; margin: 3px 0 0; }
+@media (max-width: 600px) {
+  .study-quiz { padding: 18px 16px; margin-top: 16px; }
+  .study-quiz .kana-character { font-size: 64px; line-height: 1.3; }
+  .study-quiz .reading-label { font-size: 24px; margin-bottom: 10px; }
+  .study-quiz .kana-options { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+  .study-quiz .kana-options button { display: flex; flex-direction: column; gap: 2px; justify-content: center; align-items: center; min-height: 52px; padding: 8px 5px; text-align: center; }
+  .study-quiz .study-feedback { margin-top: 12px; padding: 12px; }
+}
+
+.study-result .study-nav { flex-wrap: wrap; }

@@ -61,22 +61,41 @@ const DataStore = (() => {
   function validSnapshot(v) {
     return object(v) && v.schemaVersion === 2 && object(v.owner) && v.owner.kind === "guest" && text(v.owner.id) && object(v.learning) && object(v.learning.intro) && object(v.learning.study) && Array.isArray(v.attempts) && Array.isArray(v.favorites) && object(v.preferences);
   }
-  function create({storage,metadata = () => null} = {}) {
-    let writable = true, protectedData = false;
+  function create({storage,metadata = () => null,supportedCourseIds} = {}) {
+    const supported = supportedCourseIds === undefined ? null : new Set(supportedCourseIds);
+    let writable = true, protectedData = false, conflict = false, baselineRaw = null;
     let snapshot = {schemaVersion:2,owner:{kind:"guest",id:uid()},updatedAt:new Date().toISOString(),learning:learning(null),attempts:[],favorites:[],preferences:{}};
+    // Reject an observed stale snapshot. This synchronous read/write check is
+    // not a cross-tab transaction and does not claim to serialize concurrent writes.
+    function checkForUpdates() {
+      if (protectedData || conflict) return false;
+      if (!storage) { writable = false; return false; }
+      try {
+        if ((storage.getItem(KEY) ?? null) !== baselineRaw) {
+          conflict = true; writable = false; return false;
+        }
+        return true;
+      } catch { protectedData = true; writable = false; return false; }
+    }
     function commit(next) {
-      if (protectedData) return false;
+      if (!checkForUpdates()) return false;
       const candidate = {...next,updatedAt:new Date().toISOString()};
       try {
-        if (!storage) throw Error("Storage unavailable");
-        storage.setItem(KEY,JSON.stringify(candidate)); snapshot = candidate; writable = true; return true;
+        const raw = JSON.stringify(candidate);
+        storage.setItem(KEY,raw);
+        snapshot = candidate; baselineRaw = raw; writable = true; return true;
       } catch { writable = false; return false; }
     }
     function clean(v) { return {...v,learning:learning({...v.learning.intro,study:v.learning.study}),attempts:normalizeAttempts(v.attempts,metadata).slice(-30),favorites:favorites(v.favorites),preferences:preferences(v.preferences)}; }
     try {
-      const raw = storage?.getItem(KEY);
-      if (raw !== null && raw !== undefined) {
-        try { const parsed = JSON.parse(raw); if (!validSnapshot(parsed)) throw Error("Unsupported data"); snapshot = clean(parsed); }
+      const raw = storage?.getItem(KEY) ?? null;
+      baselineRaw = raw;
+      if (raw !== null) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (!validSnapshot(parsed) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) throw Error("Unsupported data");
+          snapshot = clean(parsed);
+        }
         catch { protectedData = true; writable = false; }
       } else {
         const legacyRaw = storage?.getItem(LEGACY_KEY);
@@ -89,11 +108,21 @@ const DataStore = (() => {
     return {
       readProgress: () => clone({...snapshot.learning.intro,study:snapshot.learning.study,history:snapshot.attempts}),
       readSnapshot: () => clone(snapshot), canPersist: () => writable, isProtected: () => protectedData,
-      writeProgress: (flat) => commit({...snapshot,learning:learning(flat),attempts:normalizeAttempts(flat.history,metadata).slice(-30)}),
+      isConflict: () => conflict, checkForUpdates,
+      writeProgress(flat) {
+        const nextLearning = learning(flat);
+        if (supported) {
+          // A smaller/older course catalog must not erase opaque future courses.
+          // Known courses come only from the caller, so an intentional reset stays reset.
+          const unknown = Object.fromEntries(Object.entries(snapshot.learning.study.courses || {}).filter(([id]) => !supported.has(id)));
+          nextLearning.study.courses = {...unknown,...nextLearning.study.courses};
+        }
+        return commit({...snapshot,learning:nextLearning,attempts:normalizeAttempts(flat.history,metadata).slice(-30)});
+      },
       saveFavorites: (ids) => commit({...snapshot,favorites:favorites(ids)}),
       savePreferences: (value) => commit({...snapshot,preferences:preferences(value)}),
       exportBackup() {
-        if (protectedData) throw Error("Backup unavailable: stored data could not be read safely; reload after restoring access.");
+        if (!checkForUpdates()) throw Error("Backup unavailable: stored data changed or could not be read safely; reload before exporting.");
         return JSON.stringify(snapshot,null,2);
       },
       // Import merges records and favorites; restores imported course progress only
@@ -109,5 +138,5 @@ const DataStore = (() => {
       },
     };
   }
-  return {create,normalizeAttempts,makeAttempt,mergeAttempts};
+  return {KEY,create,normalizeAttempts,makeAttempt,mergeAttempts};
 })();
