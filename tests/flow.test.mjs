@@ -643,3 +643,21 @@ test('travel routes preserve feedback context and completion in shared history',
   assert.match(reloaded.html, /2 \/ 2/);
   assert.equal(reloaded.state.history[0].courseId, 't-pay');
 });
+
+test('home travel entry is separate from grammar and phrasebook feedback returns without starting a course', () => {
+  const b = browser();
+  assert.match(b.html, /data-action="travel"/);
+  b.action('travel');
+  assert.equal(b.hash, '#travel');
+  assert.doesNotMatch(b.html, /基礎句型|data-action="study-open"/);
+  assert.deepEqual(Object.keys(b.state.study.courses), []);
+  const item = browser({hash:'#travel/hotel'});
+  assert.equal(item.title, '飯店與預約｜SoraChi');
+  item.action('feedback');
+  assert.match(item.html, /旅遊常用語・飯店與預約/);
+  item.action('feedback-back');
+  assert.equal(item.hash, '#travel/hotel');
+  assert.equal(item.title, '飯店與預約｜SoraChi');
+  assert.equal(item.state.history.length, 0);
+  assert.deepEqual(Object.keys(item.state.study.courses), []);
+});

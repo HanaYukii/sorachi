@@ -1270,3 +1270,13 @@ button svg {
 .phrase-more p[lang="ja"] { font-size: 19px; color: var(--purple-deep); margin-top: 10px; }
 .phrase-more .reading-label { font-size: 12px; text-align: left; letter-spacing: 0; margin: 4px 0; overflow-wrap: anywhere; }
 @media (max-width: 400px) { .keyword-box { padding: 14px; } .keyword-box dt strong { font-size: 16px; } }
+
+.travel-categories { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+.travel-categories a { text-decoration: none; color: inherit; }
+.travel-categories .reading-label { font-size: 13px; color: var(--muted); }
+.travel-card h2 { font-size: 19px; }
+.travel-card .keyword-box { margin-bottom: 12px; }
+.travel-card .study-note { margin: 12px 0; }
+.travel-entry { border-color: #e5cbb8; }
+.script-supplement { margin-top: 18px; padding: 12px 8px; display: flex; flex-wrap: wrap; align-items: center; column-gap: 20px; font-size: 13px; color: var(--muted); }
+@media (max-width: 600px) { .travel-categories { grid-template-columns: 1fr; } }

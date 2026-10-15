@@ -15,7 +15,7 @@ function harness(saved, voices = []) {
     set innerHTML(value) { html = value; },
     querySelector(selector) { return { focus() { focused = selector; } }; },
   };
-  const document = { querySelector(selector) { return selector === '#app' ? app : selector === '.study-audio-status' ? status : null; } };
+  const document = { querySelector(selector) { return selector === '#app' ? app : (selector === '.study-audio-status' || selector.startsWith('[data-audio-for=')) ? status : null; } };
   const location = { hash: '#kana' };
   const speechSynthesis = {
     getVoices() { return voices; },
@@ -231,8 +231,8 @@ test('travel section is separate, and lessons teach keywords before contextual c
   const answers = { 't-place': [0, 1], 't-order': [1, 2], 't-pay': [0, 1], 't-charge': [2, 0] };
   const b = harness(null, [{lang: 'ja-JP'}]);
   b.render('#travel');
-  assert.equal((b.html.match(/data-action="study-open"/g) || []).length, 4);
-  assert.match(b.html, /href="#travel" aria-current="page"/);
+  assert.equal((b.html.match(/href="#travel\//g) || []).length, 8);
+  assert.doesNotMatch(b.html, /data-action="study-open"/);
   assert.doesNotMatch(b.html, /data-course="g-identity"/);
   assert.equal(b.study.context('#travel'), '旅遊常用語列表');
   for (const [id, correct] of Object.entries(answers)) {
@@ -284,4 +284,29 @@ test('travel section is separate, and lessons teach keywords before contextual c
     assert.equal(done.records.length, 0);
     assert.equal(done.state.courses[id].active.phase, 'done');
   }
+});
+
+test('phrasebook freely shows keywords without changing learning progress, and audio uses the chosen card', () => {
+  const b = harness(null, [{lang:'ja-JP'}]);
+  b.action('open', {course:'h-a'}); b.action('next');
+  const before = clone(b.state);
+  for (const id of ['basics','t-order','dining','t-pay','shopping','t-place','t-charge','hotel']) {
+    b.render(`#travel/${id}`);
+    assert.match(b.html, /關鍵字/);
+    assert.match(b.html, /看完整說法與讀音/);
+    assert.doesNotMatch(b.html, /data-action="study-next"|開始練習|data-action="study-answer"/);
+    assert.deepEqual(clone(b.state), before);
+    assert.equal(b.records.length, 0);
+  }
+  b.render('#travel/t-order');
+  assert.match(b.html, /ひとつ/); assert.match(b.html, /並盛/);
+  b.action('travel-audio', {course:'t-order',index:'2'});
+  assert.equal(b.utterances.at(-1).text, 'アイスでお願いします。');
+  assert.match(b.status.textContent, /正在播放/);
+  b.action('travel-audio', {course:'t-order',index:'99'});
+  b.action('travel-audio', {course:'hotel',index:'0'});
+  assert.equal(b.utterances.length, 1);
+  assert.deepEqual(clone(b.state), before);
+  assert.match(b.render('#travel/__proto__'), /找不到這個情境/);
+  assert.equal(b.study.context('#travel/__proto__'), null);
 });
