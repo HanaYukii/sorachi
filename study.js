@@ -9,6 +9,9 @@ const Study = (() => {
   let audioGeneration = 0;
   let voiceListener = null;
   let audioTimer = null;
+  let warmVoiceListener = null;
+  const drafts = new Map();
+  let draftState = null;
   const escape = (text) => String(text).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const size = (course) => course.type === "kana" ? course.letters.length : course.questions.length;
   const cards = (course) => course.type === "kana" ? course.letters.length : course.steps.length;
@@ -29,7 +32,7 @@ const Study = (() => {
   function freshAttempt(course, attempts) {
     return {
       courseRevision: Content.courseRevision(course.id), questionIds: course.questions.map(q => q.id),
-      phase: "cards", cursor: 0, order: shuffle(size(course)),
+      phase: "cards", cursor: 0, touched: false, order: shuffle(size(course)),
       options: Array.from({ length: size(course) }, (_, q) => shuffle(course.type === "kana" ? size(course) : course.questions[q].options.length)),
       direction: course.type === "kana" && attempts % 2 === 1 ? "reading" : "character",
       first: {}, solved: {}, wrong: null,
@@ -64,19 +67,46 @@ const Study = (() => {
           if (typeof active.first?.[q] === "boolean") result.active.first[q] = active.first[q];
           if (active.solved?.[q] === true && typeof result.active.first[q] === "boolean") result.active.solved[q] = true;
         }
+        result.active.touched = active.touched === true || result.active.cursor > 0 || Object.keys(result.active.first).length > 0 || phase === "quiz" || phase === "done";
         // A restored quiz cannot skip a question that was never completed.
         if (phase === "quiz") {
           const firstOpen = result.active.order.findIndex((q) => !result.active.solved[q]);
           if (firstOpen !== -1) result.active.cursor = Math.min(result.active.cursor, firstOpen);
         }
+        if (!result.active.touched) result.active = null;
       }
       state.courses[id] = result;
     }
     return state;
   }
-  function bind(callbacks) { api = callbacks; }
+  function bind(callbacks) {
+    api = callbacks;
+    warmVoices();
+  }
   const state = () => api.getState();
-  const courseState = (id) => state().courses[id] ||= blankCourse();
+  const courseState = (id) => state().courses[id] || blankCourse();
+  function peekAttempt(id) {
+    const current = state();
+    if (draftState !== current) { drafts.clear(); draftState = current; }
+    return drafts.get(id) || current.courses[id]?.active || null;
+  }
+  function currentAttempt(id) {
+    const active = peekAttempt(id);
+    return active ? JSON.parse(JSON.stringify(active)) : null;
+  }
+  const hasProgress = id => peekAttempt(id)?.touched === true;
+  function draftAttempt(course, saved) {
+    peekAttempt(course.id);
+    const active = freshAttempt(course, saved.attempts);
+    drafts.set(course.id, active);
+    return active;
+  }
+  function touch(course, saved, active) {
+    active.touched = true;
+    saved.active = active;
+    state().courses[course.id] = saved;
+    drafts.delete(course.id);
+  }
   const save = () => api.save();
   const currentId = () => location.hash.startsWith("#study/") ? location.hash.slice(7) : null;
   const backHash = (course) => course.type === "kana" ? "#kana" : course.group === "travel" ? "#travel" : "#grammar";
@@ -91,8 +121,8 @@ const Study = (() => {
   }
   function status(id) {
     const saved = state().courses[id];
-    if (saved?.active && saved.active.phase !== "done") return "接著練";
-    if (saved?.completedAt) return "已練習 · 重練";
+    if (hasProgress(id) && peekAttempt(id).phase !== "done") return "接著練";
+    if (saved?.completedAt) return "已完成・可再練";
     return "開始";
   }
   function row(course) {
@@ -141,6 +171,13 @@ const Study = (() => {
     }
     return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : course.group === "travel" ? "旅遊用語" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button><button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button></div>`;
   }
+  function answerFeedback(course, active) {
+    const q = active.order[active.cursor], solved = active.solved[q] === true;
+    if (!solved && active.wrong === null) return "";
+    if (course.type === "kana") return `${solved ? "答對了" : "正確答案"}：${course.letters[q]}＝${course.readings[q]}`;
+    const question = course.questions[q];
+    return solved ? `答對了。${question.explanation}` : `正確答案：${question.options[question.answer]}。${question.explanation}`;
+  }
   function quiz(course, active) {
     const q = active.order[active.cursor];
     const solved = active.solved[q] === true;
@@ -148,8 +185,7 @@ const Study = (() => {
     const prompt = question ? question.prompt : active.direction === "reading" ? "這個讀音，對應哪個字？" : "這個字，讀音是哪一個？";
     const correct = question ? question.answer : q;
     const options = question ? question.options : active.direction === "reading" ? course.letters : course.readings;
-    const explanation = question ? question.explanation : `「${course.letters[q]}」的讀音是 ${course.readings[q]}。`;
-    const feedback = solved ? `答對了。${explanation}` : active.wrong !== null ? `正解是「${options[correct]}」。${explanation} 再選一次試試看。` : "";
+    const feedback = answerFeedback(course, active);
     return `<p class="reading-label">練習 · ${active.cursor + 1} / ${size(course)} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(prompt)}</h2>${question ? "" : `<div class="kana-character"${active.direction === "character" ? ' lang="ja"' : ""}>${escape(active.direction === "reading" ? course.readings[q] : course.letters[q])}</div>`}<div class="study-options${course.type === "kana" ? " kana-options" : ""}" role="group" aria-label="答案選項">${active.options[q].map((choice) => `<button class="answer${solved && choice === correct ? " correct" : active.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}${course.type === "kana" && active.direction === "reading" ? ' lang="ja"' : ""}>${escape(options[choice])}<span class="answer-status">${solved && choice === correct ? ' ✓ 答對了' : active.wrong === choice ? ' ✕ 再試一次' : ''}</span></button>`).join("")}</div><p class="study-feedback${!solved && active.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(feedback)}</p></section><div class="study-nav"><button class="text-button" data-action="study-review">回去看看</button><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${active.cursor === size(course) - 1 ? "完成這一輪" : "下一題 →"}</button></div><p class="study-note">答錯可以重試；第一次的答案會留下紀錄，重試不會改寫第一次作答的成績。</p>`;
   }
   function nextCourse(id) {
@@ -176,7 +212,7 @@ const Study = (() => {
     });
   }
   function result(course, saved) {
-    const score = saved.lastResult, active = saved.active;
+    const score = saved.lastResult, active = peekAttempt(course.id);
     const retries = retryLabels({ courseId: course.id, courseRevision: active.courseRevision, questionIds: active.order.map(q => active.questionIds[q]), retryQuestions: active.order.flatMap((q, index) => active.first[q] === false ? [index + 1] : []) });
     const next = nextCourse(course.id);
     return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p>第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}${retries.length ? `<p class="study-note">第一次答錯：${retries.map(escape).join("、")}</p>` : ""}<p class="study-note">${course.type === "kana" ? "可重練本組，或返回選擇其他組。" : course.group === "travel" ? "可重練本組，或返回選擇其他情境。" : "可重練本課，或返回選擇其他句型。"}</p><p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><div class="study-nav">${next ? `<button class="primary" data-action="study-open" data-course="${next}">下一組：${escape(courses[next].row)}</button>` : ""}<button class="${next ? "text-button" : "primary"}" data-action="study-restart">重新練習</button><a class="text-button" href="${backHash(course)}">回到${course.type === "kana" ? "五十音" : course.group === "travel" ? "旅遊用語" : "句型列表"}</a></div></section>`;
@@ -184,8 +220,6 @@ const Study = (() => {
   function updateAnswer(course, active) {
     const q = active.order[active.cursor], solved = active.solved[q] === true;
     const correct = course.type === "kana" ? q : course.questions[q].answer;
-    const options = course.type === "kana" ? (active.direction === "reading" ? course.letters : course.readings) : course.questions[q].options;
-    const explanation = course.type === "kana" ? `「${course.letters[q]}」的讀音是 ${course.readings[q]}。` : course.questions[q].explanation;
     for (const node of document.querySelectorAll('[data-action="study-answer"]')) {
       const choice = Number(node.dataset.choice), right = solved && choice === correct, wrong = !solved && choice === active.wrong;
       node.classList.toggle("correct", right); node.classList.toggle("wrong", wrong);
@@ -195,20 +229,17 @@ const Study = (() => {
     }
     const feedback = document.querySelector('.study-feedback');
     if (feedback) {
-      feedback.textContent = solved ? `答對了。${explanation}` : `正解是「${options[correct]}」。${explanation} 再選一次試試看。`;
+      feedback.textContent = answerFeedback(course, active);
       feedback.classList.toggle('wrong', !solved);
-      feedback.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+      const bounds = feedback.getBoundingClientRect?.();
+      if (!bounds || bounds.top < 0 || bounds.bottom > window.innerHeight) feedback.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     }
     const next = document.querySelector('[data-action="study-next"]');
     if (next) { next.disabled = !solved; if (solved) next.focus({ preventScroll: true }); }
   }
   function coursePage(course) {
     const saved = courseState(course.id);
-    if (!saved.active) {
-      saved.active = freshAttempt(course, saved.attempts);
-      save();
-    }
-    const active = saved.active;
+    const active = peekAttempt(course.id) || draftAttempt(course, saved);
     return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(course.title)}</h1>${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, backHash(course), course.type === "kana" ? "回五十音" : course.group === "travel" ? "回旅遊用語" : "回句型列表");
   }
   function render(hash) {
@@ -228,12 +259,32 @@ const Study = (() => {
     if (selector === ".focus-heading") window.scrollTo?.({ top: 0, behavior: "instant" });
     app.querySelector(selector)?.focus({ preventScroll: true });
   }
+  function warmVoices() {
+    if (warmVoiceListener) {
+      try { warmVoiceListener.synth.removeEventListener?.('voiceschanged', warmVoiceListener.callback); } catch { /* Optional engine capability. */ }
+      warmVoiceListener = null;
+    }
+    try {
+      const synth = typeof window !== "undefined" && window.speechSynthesis;
+      if (!synth) return;
+      const callback = () => { try { synth.getVoices(); } catch { /* Playback has its own visible fallback. */ } };
+      // Subscribe before priming: some engines populate the list asynchronously.
+      if (synth.addEventListener) {
+        synth.addEventListener('voiceschanged', callback);
+        warmVoiceListener = { synth, callback };
+      }
+      callback();
+    } catch { /* Voice discovery must never interrupt course setup. */ }
+  }
   function pickVoice(voices) {
     const japanese = voices.filter(v => /^ja(?:-|_|$)/i.test(v.lang || ''));
+    const preferred = [/kyoko/i, /otoya/i, /o-ren/i, /hattori/i, /google.*日本語/i, /microsoft.*(?:nanami|ayumi|haruka|ichiro)/i];
     const rank = v => {
       const jp = /^ja[-_]jp$/i.test(v.lang), local = v.localService === true;
       const name = `${v.name || ''} ${v.voiceURI || ''}`;
-      return (/eloquence/i.test(name) ? 100 : 0) + (/kyoko/i.test(name) && jp && local ? -10 : 0) + (jp ? (local ? 0 : 1) : (local ? 2 : 3));
+      const fallback = /eloquence|\b(?:eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley)\b/i.test(name);
+      const preferredIndex = preferred.findIndex(pattern => pattern.test(name));
+      return (fallback ? 10000 : 0) + (local ? (jp ? 0 : 100) : (jp ? 200 : 300)) + (preferredIndex === -1 ? 20 : preferredIndex);
     };
     return japanese.sort((a,b) => rank(a) - rank(b))[0] || null;
   }
@@ -324,22 +375,26 @@ const Study = (() => {
       const course = courses[button.dataset.course];
       if (!course) return true;
       const saved = courseState(course.id);
-      if (!saved.active || saved.active.phase === "done") saved.active = freshAttempt(course, saved.attempts);
-      save(); api.go(`#study/${course.id}`); return true;
+      const active = peekAttempt(course.id);
+      if (!active || active.phase === "done") draftAttempt(course, saved);
+      api.go(`#study/${course.id}`); return true;
     }
     const course = courses[currentId()];
     if (!course) return true;
     const saved = courseState(course.id);
-    const active = saved.active;
+    const active = peekAttempt(course.id);
     if (!active) return true;
     if (action === "study-audio") {
       const index = Number(button.dataset.index);
-      if ((course.type === "kana" || course.group === "travel") && Number.isInteger(index) && index >= 0 && index < cards(course)) speak(course, index);
+      if (active.phase === "cards" && (course.type === "kana" || course.group === "travel") && Number.isInteger(index) && index >= 0 && index < cards(course)) speak(course, index);
       return true;
     }
     stopAudio();
-    if (action === "study-restart") saved.active = freshAttempt(course, saved.attempts);
-    else if (action === "study-prev" && active.phase === "cards") active.cursor = Math.max(0, active.cursor - 1);
+    if (action === "study-restart") { draftAttempt(course, saved); redraw(); return true; }
+    else if (action === "study-prev" && active.phase === "cards") {
+      if (active.cursor === 0) return true;
+      active.cursor--;
+    }
     else if (action === "study-review" && active.phase === "quiz") { active.phase = "cards"; active.cursor = 0; active.wrong = null; }
     else if (action === "study-answer" && active.phase === "quiz") {
       const q = active.order[active.cursor];
@@ -349,6 +404,7 @@ const Study = (() => {
       if (active.first[q] === undefined) active.first[q] = correct;
       if (correct) { active.solved[q] = true; active.wrong = null; }
       else active.wrong = choice;
+      touch(course, saved, active);
       save();
       updateAnswer(course, active);
       return true;
@@ -365,6 +421,7 @@ const Study = (() => {
         else { active.cursor++; active.wrong = null; }
       } else return true;
     } else return true;
+    touch(course, saved, active);
     save(); redraw();
     return true;
   }
@@ -375,8 +432,8 @@ const Study = (() => {
     if (hash.startsWith("#travel/")) return travelItem(hash.slice(8)) ? `旅遊常用語・${travelItem(hash.slice(8)).title}` : null;
     const course = courses[hash.slice(7)];
     if (!hash.startsWith("#study/") || !course) return null;
-    const active = state().courses[course.id]?.active;
+    const active = peekAttempt(course.id);
     return `${course.title}${active ? active.phase === "done" ? "・完成頁" : `・${active.phase === "cards" ? "認識" : "練習"}第 ${active.cursor + 1} 步` : ""}`;
   }
-  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse };
+  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse, hasProgress, currentAttempt };
 })();

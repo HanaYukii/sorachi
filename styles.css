@@ -1299,3 +1299,6 @@ button svg {
 }
 
 .study-result .study-nav { flex-wrap: wrap; }
+
+.intro-entry { margin: 18px 0 0; padding: 16px 22px; border: 1px solid var(--line); border-radius: 18px; }
+.intro-entry p { color: var(--muted); font-size: 13px; line-height: 1.8; margin: 4px 0; }
