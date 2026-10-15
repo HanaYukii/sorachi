@@ -48,7 +48,7 @@ test('every intermediate first/retry state can reload without changing results o
   }
 });
 
-test('review prioritizes recent mistakes then oldest learned and remains at most five unique characters', () => {
+test('review puts mistakes first, longest-waiting first, then oldest learned, at most five unique characters', () => {
   const questions = ids('h-a');
   const review = Object.fromEntries(questions.map((id, index) => [id, {
     lastSeen: `2026-01-0${index + 1}T00:00:00.000Z`, wrong: index < 2,
@@ -56,7 +56,7 @@ test('review prioritizes recent mistakes then oldest learned and remains at most
   const chosen = [...P.selectReview(review, { 'h-ka': { completedAt: '2025-01-01T00:00:00Z' } }, 99)];
   assert.equal(chosen.length, 5);
   assert.equal(new Set(chosen).size, 5);
-  assert.deepEqual(chosen.slice(0, 2), [questions[1], questions[0]]);
+  assert.deepEqual(chosen.slice(0, 2), [questions[0], questions[1]]);
   assert.ok(chosen.slice(2).every(id => P.entry(id).courseId === 'h-ka'));
 });
 
@@ -117,4 +117,15 @@ test('clear ends active course and review sessions without reviving old mistakes
   assert.deepEqual(Object.keys(restored.state.kanaReview), []);
   assert.equal(restored.state.reviewSession, null);
   assert.equal(restored.S.reviewSummary().wrongCount, 0);
+});
+
+test('with more than five mistakes, the listed characters are exactly the ones the next round practices', () => {
+  const missed = [...ids('h-a'), ...ids('h-ka').slice(0, 2)];
+  const kanaReview = Object.fromEntries(missed.map((id, i) => [id, { lastSeen: `2026-10-0${i + 1}T00:00:00.000Z`, wrong: true }]));
+  const b = studyHarness({ kanaReview });
+  const html = b.S.render('#kana-review');
+  const listed = html.match(/答錯的字：([^<]*)/)[1];
+  assert.match(listed, /（共 7 個）$/);
+  const chosen = [...b.P.selectReview(b.state.kanaReview, b.state.courses)].map(id => b.P.entry(id).character);
+  assert.deepEqual(listed.replace(/（共.*$/, '').split('、').map(label => label[0]), chosen);
 });

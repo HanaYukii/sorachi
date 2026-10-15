@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "7c9479b55d14cf8cce4648526b80fa7e48dd1d24aa4a4a5a1f0cc77a23b64ebc",
+  "buildId": "5239a0ac75148a9aafe303c9245737b0b6bcb9c1a06e494867d4ac12dd4afe25",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app.js",
-      "sha256": "495afd641f12b58baf8ad2f9c6eb9f8cc6daf7d17c8289bde06aef5a99d92bff",
-      "bytes": 30524,
+      "sha256": "502c57a0b383a43111859f05979201ad5a8329666fac7e19a8befe38c2de8848",
+      "bytes": 30561,
       "mime": "text/javascript"
     },
     {
@@ -40,38 +40,38 @@
     },
     {
       "path": "index.html",
-      "sha256": "c49f1097870cbd0d3589359ecd79df629f79bc5407f152890b3cf18a3374af3f",
+      "sha256": "b4ac17a42e14623998587235fae355a27013395440acb96613a11cc808057b79",
       "bytes": 1335,
       "mime": "text/html"
     },
     {
       "path": "kana-hints.js",
-      "sha256": "d7eb5daf860544747ded066602509970895293eb866307de8fc951abde525e35",
-      "bytes": 10992,
+      "sha256": "e8561f5f23323160cf50bfbcbdee0e29e132de2272c269f33aa5e6d1b50d0dcd",
+      "bytes": 11407,
       "mime": "text/javascript"
     },
     {
       "path": "kana-practice.js",
-      "sha256": "2605c2aa179bf14111679af1dcf1691faa69434d007f2bb9f796f9782c72b4cd",
-      "bytes": 9248,
+      "sha256": "26d313718096374e8465c19863766014e03391ebffc824ab4644c9930aa819a4",
+      "bytes": 9620,
       "mime": "text/javascript"
     },
     {
       "path": "storage.js",
-      "sha256": "5ff047e48793f378f5aa35470b0e91117e3535d95404672ba389ee9a9ac992be",
-      "bytes": 9340,
+      "sha256": "7eb63964c6f9b06b9e0377488b9d7bb7a64adb55b225928007f534571d461c64",
+      "bytes": 9593,
       "mime": "text/javascript"
     },
     {
       "path": "study.js",
-      "sha256": "2394d611c0fbf2f8d9333479c1893a9afd9d65090ddc1048b414a5756ca5f23f",
-      "bytes": 45517,
+      "sha256": "2f1d600670e1e6465be810fb0a1536b6f83ad87c0db7094662c451edf4dfcf1f",
+      "bytes": 46366,
       "mime": "text/javascript"
     },
     {
       "path": "styles.css",
-      "sha256": "edbe0602bc5fc8e68945e5eb0c42b9f131124f721c0fbd47c25043dd56db67ba",
-      "bytes": 35783,
+      "sha256": "8236930a580fb4b1c78e9f96ac1a49cbaf849fcc4777363ba0ac11d066b57997",
+      "bytes": 35770,
       "mime": "text/css"
     }
   ]

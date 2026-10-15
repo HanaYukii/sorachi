@@ -37,13 +37,33 @@ test('reload validates all answers, unique options, revisions and prevents skipp
  const retry=P.current(s);P.answer(s,(retry.options.indexOf(retry.id)+1)%retry.options.length);P.next(s);assert.equal(s.round,'done');assert.ok(P.sanitize(clone(s)));
 });
 
-test('review selection is bounded, prioritizes recent wrong then oldest learned, and migrates safe history only',()=>{
+test('review selection is bounded, prioritizes wrong then oldest learned, and migrates safe history only',()=>{
  const all=ids('h-a');const review={}; const history=[{date:'2026-01-01T00:00:00Z',courseId:'h-a',questionIds:all,retryQuestions:[2],total:5}];
  P.seedReview(review,history,null);assert.equal(review[all[1]].wrong,true);assert.equal(P.selectReview(review,{},5)[0],all[1]);
  review[all[1]]={lastSeen:'2026-02-01T00:00:00.000Z',wrong:false};P.seedReview(review,history,null);assert.equal(review[all[1]].wrong,false);
  assert.equal(P.selectReview(review,{},5).length,5);assert.equal(P.selectReview({}, {'h-ka':{completedAt:'2025-01-01T00:00:00Z'}},5).length,5);
  const empty={};P.seedReview(empty,[{...history[0],questionIds:undefined}],null);assert.equal(Object.keys(empty).length,0);P.seedReview(empty,history,'2026-01-02T00:00:00Z');assert.equal(Object.keys(empty).length,0);
  assert.equal(Object.keys(P.sanitizeReview({...review,unknown:{lastSeen:'bad',wrong:true}})).length,5);
+});
+
+test('repeated misses rotate so every missed character returns within two short rounds',()=>{
+ const row=[...ids('h-a'),...ids('h-ka').slice(0,2)];
+ const review=Object.fromEntries(row.map((id,i)=>[id,{lastSeen:`2026-10-0${i+1}T00:00:00.000Z`,wrong:true}]));
+ const seen=new Set();
+ for(let round=0;round<2;round++){
+  const chosen=P.selectReview(review,{});
+  assert.equal(chosen.length,5);
+  chosen.forEach((id,i)=>{seen.add(id);review[id]={lastSeen:`2026-11-0${round+1}T00:00:0${i}.000Z`,wrong:true};});
+ }
+ assert.equal(seen.size,row.length);
+});
+
+test('looser look-alikes from a learned row fill the cross-row slot (き meets ち)',()=>{
+ for(let run=0;run<40;run++){
+  const s=P.create(ids('h-ka'),{completedIds:['h-ta']});
+  const ki=[...s.questions].find(q=>P.entry(q.id).character==='き');
+  assert.ok(ki.options.some(id=>P.entry(id).character==='ち'));
+ }
 });
 
 test('short review presents the selected recent mistake before older successful characters',()=>{

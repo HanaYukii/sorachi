@@ -310,6 +310,9 @@ function browser({
     get stored() {
       return storage.get("sorachi:data:v2") ?? storage.get(key);
     },
+    get legacy() {
+      return storage.get(key);
+    },
     get nextDisabled() {
       return querySelector('[data-action="next"]')?.disabled;
     },
@@ -815,9 +818,13 @@ function finishKanaRound(b, {missFirst=false,missRetry=false}={}) {
 test('short review is reachable from home, clears a recent mistake, and leaves first-attempt history intact',()=>{
   const b=browser({hash:'#study/h-a'});
   const before=b.stored;
+  const renders=b.renderCount;
   b.study('study-hint');
   assert.equal(b.stored,before,'Hint switching must not create learning progress');
-  assert.match(b.html,/聲音連結/);
+  assert.equal(b.renderCount,renders,'Hint switching updates the live region in place');
+  assert.match(b.node('.hint-label').textContent,/聲音連結/);
+  assert.match(b.node('.hint-text').textContent,/讀 a/);
+  assert.match(b.html,/<div aria-live="polite" aria-atomic="true"><p class="reading-label hint-label">/);
   for(let i=0;i<5;i++)b.study('study-next');
   const missedId=b.state.study.courses['h-a'].active.practice.questions[0].id;
   finishKanaRound(b,{missFirst:true,missRetry:true});
@@ -867,6 +874,32 @@ test('clearing review-only data explains unfinished practice, persists atomicall
   const reloaded=browser({raw:restored.stored});
   assert.deepEqual(reloaded.state.study.kanaReview,{});
   assert.doesNotMatch(reloaded.html,/有 1 個字上次答錯/);
+});
+
+test('clearing records also retires the v1 copy so a lost v2 key cannot revive cleared history',()=>{
+  const legacy={ step: 5, completed: true, answers: {4:true,5:true} };
+  const failed=browser({ saved: legacy, hash:'#home' });
+  complete(failed); failed.action('history');
+  failed.blockStorage(); failed.action('clear-history'); failed.action('confirm-clear');
+  assert.ok(failed.legacy, 'A failed clear must not drop the v1 source');
+  const b=browser({ saved: legacy, hash:'#home' });
+  assert.ok(b.legacy, 'Migration keeps the v1 source until an explicit clear');
+  complete(b); b.action('history');
+  b.action('clear-history'); b.action('confirm-clear');
+  assert.equal(b.state.history.length, 0);
+  assert.equal(b.legacy, undefined);
+});
+
+test('starting review again while a round is unfinished resumes it instead of replacing it',()=>{
+  const b=browser({hash:'#study/h-a'});
+  for(let i=0;i<5;i++)b.study('study-next');
+  finishKanaRound(b);
+  b.navigate('#kana-review'); b.study('study-review-start');
+  const session=b.state.study.reviewSession, q=session.questions[0];
+  b.study('study-answer',{choice:q.options.indexOf(q.id)}); b.study('study-next');
+  b.study('study-review-start');
+  assert.equal(b.state.study.reviewSession.cursor,1);
+  assert.deepEqual(b.state.study.reviewSession.questions.map(x=>x.id),session.questions.map(x=>x.id));
 });
 
 test('author route links the personal website without changing learning progress or publishing a guide',()=>{
