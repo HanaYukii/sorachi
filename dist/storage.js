@@ -2,6 +2,7 @@
 
 // One atomic envelope; separate domains can acquire remote adapters later.
 const DataStore = (() => {
+  const MAX_ATTEMPTS = 200;
   const KEY = "sorachi:data:v2", LEGACY_KEY = "sorachi:first-lesson:v1";
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const object = (v) => v && typeof v === "object" && !Array.isArray(v);
@@ -86,7 +87,7 @@ const DataStore = (() => {
         snapshot = candidate; baselineRaw = raw; writable = true; return true;
       } catch { writable = false; return false; }
     }
-    function clean(v) { return {...v,learning:learning({...v.learning.intro,study:v.learning.study}),attempts:normalizeAttempts(v.attempts,metadata).slice(-30),favorites:favorites(v.favorites),preferences:preferences(v.preferences)}; }
+    function clean(v) { return {...v,learning:learning({...v.learning.intro,study:v.learning.study}),attempts:normalizeAttempts(v.attempts,metadata).slice(-MAX_ATTEMPTS),favorites:favorites(v.favorites),preferences:preferences(v.preferences)}; }
     try {
       const raw = storage?.getItem(KEY) ?? null;
       baselineRaw = raw;
@@ -101,7 +102,7 @@ const DataStore = (() => {
         const legacyRaw = storage?.getItem(LEGACY_KEY);
         let legacy = null;
         try { legacy = JSON.parse(legacyRaw || "null"); } catch { /* Keep original malformed legacy bytes intact. */ }
-        if (object(legacy)) snapshot = {...snapshot,learning:learning(legacy),attempts:normalizeAttempts(legacy.history,metadata).slice(-30)};
+        if (object(legacy)) snapshot = {...snapshot,learning:learning(legacy),attempts:normalizeAttempts(legacy.history,metadata).slice(-MAX_ATTEMPTS)};
         commit(snapshot);
       }
     } catch { writable = false; protectedData = true; }
@@ -117,7 +118,7 @@ const DataStore = (() => {
           const unknown = Object.fromEntries(Object.entries(snapshot.learning.study.courses || {}).filter(([id]) => !supported.has(id)));
           nextLearning.study.courses = {...unknown,...nextLearning.study.courses};
         }
-        return commit({...snapshot,learning:nextLearning,attempts:normalizeAttempts(flat.history,metadata).slice(-30)});
+        return commit({...snapshot,learning:nextLearning,attempts:normalizeAttempts(flat.history,metadata).slice(-MAX_ATTEMPTS)});
       },
       saveFavorites: (ids) => commit({...snapshot,favorites:favorites(ids)}),
       savePreferences: (value) => commit({...snapshot,preferences:preferences(value)}),
@@ -133,10 +134,10 @@ const DataStore = (() => {
           const incoming = clean(parsed), current = snapshot.learning;
           const introStarted = current.intro.completed || current.intro.inProgress || current.intro.step > 0;
           const studyStarted = Object.keys(current.study.courses || {}).length > 0 || current.study.script === "k";
-          return commit({...snapshot,learning:{intro:introStarted ? current.intro : incoming.learning.intro,study:{...incoming.learning.study,...(studyStarted ? current.study : {}),courses:{...incoming.learning.study.courses,...current.study.courses}}},attempts:mergeAttempts(snapshot.attempts,incoming.attempts).slice(-30),favorites:favorites([...snapshot.favorites,...incoming.favorites]),preferences:{...incoming.preferences,...snapshot.preferences}});
+          return commit({...snapshot,learning:{intro:introStarted ? current.intro : incoming.learning.intro,study:{...incoming.learning.study,...(studyStarted ? current.study : {}),courses:{...incoming.learning.study.courses,...current.study.courses}}},attempts:mergeAttempts(snapshot.attempts,incoming.attempts).slice(-MAX_ATTEMPTS),favorites:favorites([...snapshot.favorites,...incoming.favorites]),preferences:{...incoming.preferences,...snapshot.preferences}});
         } catch { return false; }
       },
     };
   }
-  return {KEY,create,normalizeAttempts,makeAttempt,mergeAttempts};
+  return {KEY,MAX_ATTEMPTS,create,normalizeAttempts,makeAttempt,mergeAttempts};
 })();

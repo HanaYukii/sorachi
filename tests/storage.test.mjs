@@ -14,6 +14,20 @@ function setup(initial={}, options={}) {
 const legacyKey='sorachi:first-lesson:v1', key='sorachi:data:v2';
 const old={step:4,completed:true,inProgress:true,answers:{4:true},firstAnswers:{4:false},study:{script:'k',courses:{}},history:[{courseId:'g-old',date:'2026-10-15T00:00:00Z',total:2,firstCorrect:1,retryQuestions:[1]}]};
 
+test('retains the latest 200 completed rounds through write, reload and backup import',()=>{
+ const b=setup(), progress=b.store.readProgress();
+ progress.history=Array.from({length:205},(_,i)=>({id:`round-${i}`,date:new Date(2026,0,i+1).toISOString(),total:2,firstCorrect:2,retryQuestions:[]}));
+ assert.equal(b.store.writeProgress(progress),true);
+ const saved=b.store.readProgress().history;
+ assert.equal(saved.length,200); assert.equal(saved[0].id,'round-5'); assert.equal(saved.at(-1).id,'round-204');
+ const reloaded=setup(Object.fromEntries(b.map));
+ assert.equal(reloaded.store.readProgress().history.length,200);
+ const target=setup(); assert.equal(target.store.importBackup(b.store.exportBackup()),true);
+ assert.equal(target.store.readProgress().history.length,200);
+ assert.equal(target.store.importBackup(b.store.exportBackup()),true);
+ assert.equal(target.store.readProgress().history.length,200);
+});
+
 test('legacy migration is repeatable, preserves source and separates progress from records',()=>{
  const raw=JSON.stringify(old); const b=setup({[legacyKey]:raw});
  assert.equal(b.map.get(legacyKey),raw);

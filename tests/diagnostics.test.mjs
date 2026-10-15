@@ -146,3 +146,31 @@ test('malformed or ambiguous version tokens and overlong inputs are omitted inst
  assert.deepEqual(plain(result),{});
  assert.equal(Diagnostics.format({contentVersion:'secret',appVersion:'a'.repeat(5000),courseId:'__proto__',categoryId:'unknown'}),'');
 });
+
+test('mixed review reports the actual source question and round without learner data',()=>{
+ const {Content,Diagnostics}=setup();
+ const question=Content.getCourse('k-sa').questions[1];
+ const practice={courseId:'k-sa',questionId:question.id,direction:'reading',round:'retry',practiceVersion:1,wrong:true,lastSeen:'private-date',guest:'private-owner'};
+ const result=Diagnostics.capture({hash:'#kana-review',practice});
+ assert.equal(result.questionId,question.id);
+ assert.equal(result.courseRevision,Content.courseRevision('k-sa'));
+ assert.equal(result.direction,'reading'); assert.equal(result.round,'retry');
+ const formatted=Diagnostics.format(result);
+ assert.match(formatted,/practiceVersion: 1/); assert.match(formatted,/round: retry/);
+ assert.doesNotMatch(JSON.stringify(result)+formatted,/private|lastSeen|wrong|guest/);
+ for(const invalid of [{...practice,practiceVersion:99},{...practice,questionId:'h-a/question/u3042'},{...practice,round:'secret'}]) {
+  assert.equal(Diagnostics.capture({hash:'#kana-review',practice:invalid}).questionId,undefined);
+ }
+ assert.equal(Diagnostics.capture({hash:'#study/h-a',practice}).questionId,undefined);
+ assert.equal(Diagnostics.capture({hash:'#travel/t-pay',practice}).questionId,undefined);
+});
+
+
+test('practice and hint asset hashes identify their exact loaded releases without leaking source paths',()=>{
+ const {Diagnostics}=setup();
+ const snapshot=Diagnostics.capture({scripts:['https://host.test/private/kana-practice.js?v=123456789a&secret=hidden','./kana-hints.js?v=abc4567890']});
+ assert.equal(snapshot.practiceAssetVersion,'123456789a');
+ assert.equal(snapshot.hintsVersion,'abc4567890');
+ assert.match(Diagnostics.format(snapshot),/kana-practice\.js: 123456789a/);
+ assert.doesNotMatch(Diagnostics.format(snapshot),/private|hidden|host|secret/);
+});

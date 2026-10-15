@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "b86bdf97ed9de7d4a49d9557518318de5599e368ba78527bdeaeeab550b5ea39",
+  "buildId": "3b8221bcc107a789396947c5377991bcd8823d969493363ff3b28b6f81c40fd2",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app.js",
-      "sha256": "7af8983efa435123429847ceddd59b87e0fb3c25e03908075bbd8f40da93725a",
-      "bytes": 27724,
+      "sha256": "c5a51bebd37df2686cb3e91f71274cc3ee87a733c21d696a5c7a0bbfa237c83e",
+      "bytes": 30507,
       "mime": "text/javascript"
     },
     {
@@ -34,32 +34,44 @@
     },
     {
       "path": "diagnostics.js",
-      "sha256": "ef81f93eda3621e4d1dced56d6069ad51644d0bd5ccdd72602586a18853ae9b1",
-      "bytes": 6164,
+      "sha256": "e0e7fd0c39295ca99bf1e2390805f86d92bf5137438af5f6f348c14271cbfb1c",
+      "bytes": 7313,
       "mime": "text/javascript"
     },
     {
       "path": "index.html",
-      "sha256": "a6cd37f0c40052afeb9bc9338bfb184c654ed197e30c3d13462082a720e5a9de",
-      "bytes": 1206,
+      "sha256": "5b6f2e0ff768048bb2087a0910896d87219190bf168861f9b97f465706f56855",
+      "bytes": 1335,
       "mime": "text/html"
     },
     {
+      "path": "kana-hints.js",
+      "sha256": "d7eb5daf860544747ded066602509970895293eb866307de8fc951abde525e35",
+      "bytes": 10992,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "kana-practice.js",
+      "sha256": "f36f7bfbdfd0ed9578cb4ace84a1270bdf7aadab3424d03b1f828961bd69f9f6",
+      "bytes": 8948,
+      "mime": "text/javascript"
+    },
+    {
       "path": "storage.js",
-      "sha256": "a7bf93089ddd0cf1cd611ab4393f22307b1b3302184273c76029f64633455cff",
-      "bytes": 9259,
+      "sha256": "5ff047e48793f378f5aa35470b0e91117e3535d95404672ba389ee9a9ac992be",
+      "bytes": 9340,
       "mime": "text/javascript"
     },
     {
       "path": "study.js",
-      "sha256": "1c37e0cca4e915fcd831d20ea6708a768ccb196dec2b03673dac09041da56466",
-      "bytes": 32434,
+      "sha256": "208cf7d31a0fc82e48852a4548c192b8031dbc683579a5e86a7ba5c87a7463b8",
+      "bytes": 45503,
       "mime": "text/javascript"
     },
     {
       "path": "styles.css",
-      "sha256": "3273381f35da664516acf5d89dd10d8e03517870938fc6bb4b567add904767bf",
-      "bytes": 32821,
+      "sha256": "e7281f19507476f60bcd284f4a42d76bd591c373c3fab86935369174cb693f5a",
+      "bytes": 35508,
       "mime": "text/css"
     }
   ]

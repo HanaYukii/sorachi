@@ -233,7 +233,7 @@ function browser({
   const flush = () => {
     while (pending.length) pending.shift()();
   };
-  for (const file of ["content.js", "storage.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
+  for (const file of ["content.js", "storage.js", "kana-practice.js", "kana-hints.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/diagnostics.js", import.meta.url), "utf8"), context);
   vm.runInContext(source, context, { filename: "dist/app.js" });
@@ -551,14 +551,14 @@ test("feedback creates a correctly encoded draft link without publishing or leak
   assert.doesNotMatch(b.html, /<script>alert/);
 });
 
-test("history keeps thirty completions and compatible partial attempts with missing first answers remain unscored", () => {
-  const history = Array.from({length:35}, (_,i) => ({date:new Date(2026,0,i+1).toISOString(),firstCorrect:2,retryQuestions:[]}));
+test("history keeps two hundred completions and compatible partial attempts with missing first answers remain unscored", () => {
+  const history = Array.from({length:205}, (_,i) => ({date:new Date(2026,0,i+1).toISOString(),firstCorrect:2,retryQuestions:[]}));
   const b = browser({saved:{step:5,inProgress:true,answers:{4:true},history,contentRevision:introRevision}, hash:'#lesson'});
-  assert.equal(b.state.history.length, 30);
+  assert.equal(b.state.history.length, 200);
   b.answer(1);
   b.action('next');
-  assert.equal(b.state.history.length, 30);
-  assert.equal(b.state.history[29].firstCorrect, null);
+  assert.equal(b.state.history.length, 200);
+  assert.equal(b.state.history[199].firstCorrect, null);
 });
 
 
@@ -606,12 +606,14 @@ test("kana attempts share the history store and resume first responses across re
   const b = browser({hash:'#study/h-a'});
   for (let i=0;i<5;i++) b.study('study-next');
   const firstQ = b.state.study.courses['h-a'].active.order[0];
-  b.study('study-answer', {choice:(firstQ+1)%5});
+  const firstPractice = b.state.study.courses['h-a'].active.practice.questions[0];
+  b.study('study-answer', {choice:firstPractice.options.findIndex(id=>id!==firstPractice.id)});
   const resumed = browser({raw:b.stored, hash:'#study/h-a'});
   assert.equal(resumed.state.study.courses['h-a'].active.first[firstQ], false);
-  for (let i=0;i<5;i++) {
-    const active = resumed.state.study.courses['h-a'].active;
-    resumed.study('study-answer', {choice:active.order[active.cursor]});
+  for (let guard=0;guard<12 && resumed.state.study.courses['h-a'].active.phase!=='done';guard++) {
+    const session = resumed.state.study.courses['h-a'].active.practice;
+    const q = (session.round==='retry'?session.retryQuestions:session.questions)[session.cursor];
+    resumed.study('study-answer', {choice:q.options.indexOf(q.id)});
     resumed.study('study-next');
   }
   assert.equal(resumed.state.history.length, 1);
@@ -794,4 +796,88 @@ test("feedback captures the displayed shuffled question and loaded asset version
   assert.ok(!body.includes(owner));
   assert.doesNotMatch(body, /firstCorrect|firstAnswers|history|guest|成績|螢幕|userAgent/i);
   assert.ok(Buffer.byteLength(href) < 8192);
+});
+
+function finishKanaRound(b, {missFirst=false,missRetry=false}={}) {
+  for(let guard=0;guard<12;guard++) {
+    const active=b.state.study.courses['h-a'].active;
+    if(active.phase==='done')return;
+    const session=active.practice;
+    const q=(session.round==='retry'?session.retryQuestions:session.questions)[session.cursor];
+    const miss=(session.round==='first'&&session.cursor===0&&missFirst)||(session.round==='retry'&&missRetry);
+    b.study('study-answer',{choice:q.options.findIndex(id=>miss?id!==q.id:id===q.id)});
+    b.study('study-next');
+  }
+  assert.fail('Kana round must finish after bounded delayed retries');
+}
+
+test('short review is reachable from home, clears a recent mistake, and leaves first-attempt history intact',()=>{
+  const b=browser({hash:'#study/h-a'});
+  const before=b.stored;
+  b.study('study-hint');
+  assert.equal(b.stored,before,'Hint switching must not create learning progress');
+  assert.match(b.html,/聲音連結/);
+  for(let i=0;i<5;i++)b.study('study-next');
+  const missedId=b.state.study.courses['h-a'].active.practice.questions[0].id;
+  finishKanaRound(b,{missFirst:true,missRetry:true});
+  assert.equal(b.state.history[0].firstCorrect,4);
+  assert.equal(b.state.study.kanaReview[missedId].wrong,true);
+  const resumed=browser({raw:b.stored});
+  assert.match(resumed.html,/有 1 個字上次答錯/);
+  assert.match(resumed.html,/href="#kana-review"/);
+  resumed.navigate('#kana-review'); resumed.study('study-review-start');
+  assert.equal(resumed.title,'五十音複習｜SoraChi');
+  assert.ok(resumed.state.study.reviewSession.questions.some(q=>q.id===missedId));
+  const first=resumed.state.study.reviewSession.questions[0];
+  resumed.action('feedback'); resumed.submitFeedback('問題回報','字'.repeat(600));
+  const link=resumed.node('#feedback-ready').children[1].href;
+  const body=new URL(link).searchParams.get('body');
+  assert.ok(body.includes(first.id)); assert.ok(body.includes(first.direction));
+  assert.match(body,/practiceVersion: 1/); assert.match(body,/round: first/);
+  assert.ok(Buffer.byteLength(link)<8192);
+  resumed.action('feedback-back');
+  for(let guard=0;guard<12&&resumed.state.study.reviewSession.round!=='done';guard++){
+    const session=resumed.state.study.reviewSession;
+    const q=(session.round==='retry'?session.retryQuestions:session.questions)[session.cursor];
+    resumed.study('study-answer',{choice:q.options.indexOf(q.id)}); resumed.study('study-next');
+  }
+  assert.equal(resumed.state.study.reviewSession.round,'done');
+  assert.equal(resumed.state.history.length,1); assert.equal(resumed.state.history[0].firstCorrect,4);
+  const final=browser({raw:resumed.stored});
+  assert.equal(final.state.study.kanaReview[missedId].wrong,false);
+  assert.doesNotMatch(final.html,/有 1 個字上次答錯/);
+});
+
+test('clearing review-only data explains unfinished practice, persists atomically, and rolls back on write failure',()=>{
+  const b=browser({hash:'#study/h-a'});
+  for(let i=0;i<5;i++)b.study('study-next');
+  const q=b.state.study.courses['h-a'].active.practice.questions[0];
+  b.study('study-answer',{choice:q.options.findIndex(id=>id!==q.id)});
+  assert.equal(b.state.history.length,0);
+  b.navigate('#history'); assert.match(b.html,/清除成績與複習紀錄/);
+  b.action('clear-history'); assert.match(b.html,/結束尚未完成的五十音/);
+  const stored=b.stored, state=b.state.study;
+  b.blockStorage(); b.action('confirm-clear');
+  assert.equal(b.stored,stored); assert.deepEqual(b.state.study,state);
+  const restored=browser({raw:stored,hash:'#history'});
+  restored.action('clear-history'); restored.action('confirm-clear');
+  assert.deepEqual(restored.state.study.kanaReview,{});
+  assert.equal(restored.state.study.courses['h-a'].active,null);
+  const reloaded=browser({raw:restored.stored});
+  assert.deepEqual(reloaded.state.study.kanaReview,{});
+  assert.doesNotMatch(reloaded.html,/有 1 個字上次答錯/);
+});
+
+test('author route links the personal website without changing learning progress or publishing a guide',()=>{
+ const b=browser({hash:'#study/h-a'});
+ b.study('study-next'); const stored=b.stored;
+ b.navigate('#about');
+ assert.equal(b.title,'關於 SoraChi｜SoraChi');
+ assert.match(b.html,/花雪（HanaYukii）/);
+ assert.match(b.html,/大量偶像相關翻譯素材/);
+ assert.match(b.html,/href="https:\/\/hanayukii.dev\/about" target="_blank" rel="noopener noreferrer"/);
+ assert.doesNotMatch(b.html,/#guide|使用說明書/);
+ assert.equal(b.stored,stored);
+ b.navigate('#home'); assert.match(b.html,/href="#about"/);
+ assert.doesNotMatch(b.html,/#guide|使用說明書/);
 });

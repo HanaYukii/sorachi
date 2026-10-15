@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../dist/study.js', import.meta.url), 'utf8');
 const clone = (value) => JSON.parse(JSON.stringify(value));
-function harness(saved, voices = []) {
+function harness(saved, voices = [], history = []) {
   let html = '', focused = null, stored = null, currentState;
   const records = [], utterances = [], speechEvents = {};
   const status = { textContent: '' };
@@ -34,7 +34,8 @@ function harness(saved, voices = []) {
   };
   const context = vm.createContext({ setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); }, document, location, window: { speechSynthesis }, SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } }, console });
   vm.runInContext(readFileSync(new URL("../dist/content.js", import.meta.url), "utf8"), context);
-  vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content;`, context);
+  vm.runInContext(readFileSync(new URL("../dist/kana-practice.js", import.meta.url), "utf8"), context);
+  vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice;`, context);
   const study = context.moduleStudy;
   currentState = study.sanitize(saved);
   const render = (hash = location.hash) => { location.hash = hash; app.innerHTML = study.render(hash); return html; };
@@ -47,10 +48,10 @@ function harness(saved, voices = []) {
       stored = clone(currentState);
       records.push(clone(record));
     },
-    footer: () => '<footer>footer</footer>', warning: () => '', go: render,
+    history: () => history, footer: () => '<footer>footer</footer>', warning: () => '', go: render,
   });
   return {
-    study, content: context.moduleContent, records, utterances, status, render, feedback, next, speechSynthesis,
+    study, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, speechSynthesis,
     get answers() { return answerNodes; }, get renders() { return renders; }, get scrolls() { return scrolls; }, flushTimers() { const jobs = [...timers.values()]; timers.clear(); jobs.forEach(fn => fn()); },
     action(action, data = {}) { return study.handle({ dataset: { action: `study-${action}`, ...data }, disabled: false }); },
     get state() { return currentState; }, get html() { return html; }, get stored() { return stored; }, get focused() { return focused; }, get cancels() { return cancels; },
@@ -65,17 +66,20 @@ function startQuiz(b, id) {
   assert.equal(b.state.courses[id].active.phase, 'quiz');
 }
 function correctChoice(b, id, q) { return b.content.courses[id].questions[q].answer; }
+function chooseCurrent(b,id,wrong=false) {
+  const a=b.state.courses[id].active;
+  if(a.practice){const q=b.practice.current(a.practice),correct=q.options.indexOf(q.id);return wrong?(correct+1)%q.options.length:correct;}
+  const q=a.order[a.cursor],correct=correctChoice(b,id,q);
+  return wrong?a.options[q].find(x=>x!==correct):correct;
+}
 function finishQuiz(b, id, missFirst = false) {
   const active = b.state.courses[id].active;
-  while (active.phase === 'quiz') {
-    const q = active.order[active.cursor];
-    const correct = correctChoice(b, id, q);
-    if (missFirst && active.cursor === 0) {
-      b.action('answer', { choice: String(active.options[q].find((x) => x !== correct)) });
-      missFirst = false;
-    }
-    b.action('answer', { choice: String(correct) });
-    b.action('next');
+  let guard=0;
+  while(active.phase==='quiz'){
+    assert.ok(++guard<25,'practice must terminate');
+    b.action('answer',{choice:String(chooseCurrent(b,id,missFirst))});
+    if(missFirst && !active.practice)b.action('answer',{choice:String(chooseCurrent(b,id))});
+    missFirst=false;b.action('next');
   }
 }
 
@@ -104,28 +108,30 @@ test('two scripts cover exactly 46 unique basic characters each and only one scr
   }
 });
 
-test('each kana appears once; choices stay inside its own row and preserve shuffle after reload', () => {
+test('each kana appears once with mixed directions; choices and order persist after reload', () => {
   for (const id of ['h-a', 'h-ya', 'h-wa', 'k-wa']) {
     const b = harness(); startQuiz(b, id);
     const a = b.state.courses[id].active, n = b.study.total(id);
     assert.deepEqual([...a.order].sort(), Array.from({ length: n }, (_, i) => i));
-    for (const options of a.options) assert.deepEqual([...options].sort(), Array.from({ length: n }, (_, i) => i));
+    assert.equal(new Set(a.practice.questions.map(q=>q.direction)).size,2);
+    assert.equal(new Set(a.practice.questions.map(q=>q.id)).size,n);
+    for(const q of a.practice.questions) assert.ok(q.options.every(id=>b.practice.entry(id).courseId===id.split('/')[0] && b.practice.entry(id).script===id[0]));
     const restored = harness(b.stored); restored.render(`#study/${id}`);
     assert.deepEqual(clone(restored.state.courses[id].active.order), clone(a.order));
-    assert.deepEqual(clone(restored.state.courses[id].active.options), clone(a.options));
+    assert.deepEqual(clone(restored.state.courses[id].active.practice), clone(a.practice));
   }
 });
 
 test('wrong first answer survives reload and retry; completion records once with displayed question numbers', () => {
   const b = harness(); startQuiz(b, 'h-a');
   const a = b.state.courses['h-a'].active;
-  a.order = [4, 0, 1, 2, 3]; // Deliberately non-identity; displayed question 1 is source item 5.
-  const q = a.order[0];
-  const wrong = (q + 1) % 5;
+  const selected=a.practice.questions.findIndex(q=>q.id.endsWith('u304a'));
+  [a.practice.questions[0],a.practice.questions[selected]]=[a.practice.questions[selected],a.practice.questions[0]];
+  const q=4, question=a.practice.questions[0],wrong=(question.options.indexOf(question.id)+1)%question.options.length;
   b.action('answer', { choice: String(wrong) });
   assert.equal(a.first[q], false);
   assert.match(b.feedback.textContent, /正確答案/);
-  b.action('next'); assert.equal(a.cursor, 0);
+  b.action('next'); assert.equal(a.cursor, 1);
   const restored = harness(b.stored); restored.render('#study/h-a');
   finishQuiz(restored, 'h-a');
   assert.equal(restored.records.length, 1);
@@ -138,17 +144,17 @@ test('wrong first answer survives reload and retry; completion records once with
   assert.equal(done.records.length, 0);
 });
 
-test('resume preserves card and quiz progress; replay alternates direction without changing prior snapshot', () => {
+test('resume preserves card and quiz progress; replay remains mixed without changing prior snapshot', () => {
   const b = harness(); b.action('open', { course: 'h-wa' }); b.action('next');
   const paused = harness(b.stored); paused.render('#study/h-wa');
   assert.equal(paused.state.courses['h-wa'].active.cursor, 1);
   paused.action('next'); paused.action('next'); finishQuiz(paused, 'h-wa');
   const savedResult = clone(paused.state.courses['h-wa'].lastResult);
   paused.action('restart');
-  assert.equal(paused.study.currentAttempt('h-wa').direction, 'reading');
+  assert.equal(new Set(paused.study.currentAttempt('h-wa').practice.questions.map(q=>q.direction)).size,2);
   assert.deepEqual(clone(paused.state.courses['h-wa'].lastResult), savedResult);
   for (let i = 0; i < 3; i++) paused.action('next');
-  assert.match(paused.html, /這個讀音，對應哪個字/);
+  assert.match(paused.html, /這個讀音，對應哪個字|這個字，讀音是哪一個/);
   assert.equal((paused.html.match(/data-action="study-answer"/g) || []).length, 3);
   finishQuiz(paused, 'h-wa');
   assert.equal(paused.records.length, 2);
@@ -158,7 +164,7 @@ test('resume preserves card and quiz progress; replay alternates direction witho
 test('reviewing cards mid-quiz retains original answers and resumes at first incomplete item', () => {
   const b = harness(); startQuiz(b, 'h-ya');
   const active = b.state.courses['h-ya'].active;
-  b.action('answer', { choice: String(active.order[0]) }); b.action('next');
+  b.action('answer', { choice: String(chooseCurrent(b,'h-ya')) }); b.action('next');
   b.action('review');
   for (let i = 0; i < 3; i++) b.action('next');
   assert.equal(active.cursor, 1);
@@ -177,21 +183,15 @@ test('all grammar courses complete their content-defined cards and questions wit
   }
 });
 
-test('sanitization rejects malformed attempts, clamps indices, and prevents skipping unsolved questions', () => {
-  const b = harness(); startQuiz(b, 'h-a');
-  const stored = clone(b.stored);
-  stored.courses['h-a'].active.cursor = 100;
-  stored.courses['h-a'].active.first['<script>'] = true;
-  stored.courses['h-a'].active.solved[0] = true;
-  stored.courses['unknown'] = { completedAt: '<img>' };
-  const clean = b.study.sanitize(stored);
-  assert.equal(clean.courses['h-a'].active.cursor, 0);
-  assert.equal(clean.courses['h-a'].active.solved[0], undefined);
-  assert.equal(clean.courses['h-a'].active.first['<script>'], undefined);
-  assert.equal(clean.courses.unknown, undefined);
-  stored.courses['h-a'].active.order = [0,0,0,0,0];
-  assert.equal(b.study.sanitize(stored).courses['h-a'].active, null);
-  assert.deepEqual(clone(b.study.sanitize(null)), { script: 'h', courses: {} });
+test('sanitization rejects malformed kana sessions, old versions and skipped unanswered questions', () => {
+  const b=harness();startQuiz(b,'h-a');const saved=clone(b.stored);
+  saved.courses['h-a'].active.practice.cursor=4;
+  assert.equal(b.study.sanitize(saved).courses['h-a'].active,null);
+  const legacy=clone(b.stored);delete legacy.courses['h-a'].active.practiceVersion;
+  legacy.courses['h-a'].completedAt='2026-01-01T00:00:00Z';legacy.courses['h-a'].lastResult={firstCorrect:3,total:5};
+  const clean=b.study.sanitize(legacy).courses['h-a'];assert.equal(clean.active,null);assert.equal(clean.lastResult.firstCorrect,3);assert.ok(clean.completedAt);
+  const invalid=clone(b.stored);invalid.courses['h-a'].active.practice.questions[0].options[0]='unknown';assert.equal(b.study.sanitize(invalid).courses['h-a'].active,null);
+  assert.deepEqual(clone(b.study.sanitize(null)),{script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null});
 });
 
 test('an unavailable Japanese voice shows visible fallback and never speaks English', () => {
@@ -352,13 +352,13 @@ test('speech engine exceptions use visible fallback and never break navigation',
   }
 });
 
-test('answer updates retain options and live region, mark wrong in text and focus next only after success', () => {
-  const b=harness(); startQuiz(b,'h-a'); const a=b.state.courses['h-a'].active, q=a.order[0];
+test('kana answers retain options and live region, mark wrong in text and allow the next question', () => {
+  const b=harness(); startQuiz(b,'h-a'); const a=b.state.courses['h-a'].active;
   const nodes=b.answers, feedback=b.feedback, renders=b.renders;
-  b.action('answer',{choice:String((q+1)%5)});
+  b.action('answer',{choice:String(chooseCurrent(b,'h-a',true))});
   assert.equal(b.renders,renders); assert.equal(b.answers,nodes); assert.equal(b.feedback,feedback);
-  assert.ok(nodes.some(n=>n.mark.textContent.includes('再試一次'))); assert.match(feedback.textContent,/正確答案/);
-  b.action('answer',{choice:String(q)}); assert.equal(b.renders,renders); assert.equal(b.next.disabled,false); assert.equal(b.focused,'[data-action="study-next"]'); assert.ok(b.scrolls>=1);
+  assert.ok(nodes.some(n=>n.mark.textContent.includes('稍後再考'))); assert.match(feedback.textContent,/正確答案/);
+  assert.equal(b.next.disabled,false); assert.equal(b.renders,renders); assert.equal(b.next.disabled,false); assert.equal(b.focused,'[data-action="study-next"]'); assert.ok(b.scrolls>=1);
   assert.match(b.html,/study-quiz/); assert.match(b.html,/kana-options/);
   const g=harness(); startQuiz(g,'g-identity'); assert.doesNotMatch(g.html,/kana-options/);
 });
@@ -398,16 +398,15 @@ test('malformed or unrelated historical question IDs never become current kana r
 });
 
 
-test('kana feedback gives one concise mapping in either direction; grammar keeps explanation', () => {
-  for (const direction of ['character','reading']) {
-    const b=harness(); startQuiz(b,'h-a'); const a=b.state.courses['h-a'].active; a.direction=direction; a.order=[1,0,2,3,4]; b.render('#study/h-a');
-    b.action('answer',{choice:'0'}); assert.equal(b.feedback.textContent,'正確答案：い＝i');
-    assert.match(b.render('#study/h-a'), /正確答案：い＝i/);
-    b.action('answer',{choice:'1'}); assert.equal(b.feedback.textContent,'答對了：い＝i');
-  }
-  const b=harness(); startQuiz(b,'g-identity'); const q=b.state.courses['g-identity'].active.order[0], question=b.content.courses['g-identity'].questions[q];
-  b.action('answer',{choice:String((question.answer+1)%question.options.length)});
-  assert.ok(b.feedback.textContent.includes(question.explanation));
+test('kana feedback gives one mapping then delays retry without revealing it; grammar keeps explanation', () => {
+  const b=harness();startQuiz(b,'h-a');const a=b.state.courses['h-a'].active,q=b.practice.current(a.practice),item=b.practice.entry(q.id);
+  b.action('answer',{choice:String(chooseCurrent(b,'h-a',true))});
+  assert.equal(b.feedback.textContent,`正確答案：${item.character}＝${item.reading}`);
+  b.action('next');while(a.practice.round==='first'){b.action('answer',{choice:String(chooseCurrent(b,'h-a'))});b.action('next');}
+  assert.equal(a.practice.round,'retry');assert.doesNotMatch(b.html,/正確答案：/);assert.doesNotMatch(b.html,/記憶提示|播放讀音/);
+  b.action('answer',{choice:String(chooseCurrent(b,'h-a',true))});assert.doesNotMatch(b.feedback.textContent,/＝|正確答案/);b.action('next');assert.equal(a.phase,'done');assert.equal(b.records[0].firstCorrect,4);
+  const g=harness();startQuiz(g,'g-identity');const question=g.content.courses['g-identity'].questions[g.state.courses['g-identity'].active.order[0]];
+  g.action('answer',{choice:String((question.answer+1)%question.options.length)});assert.ok(g.feedback.textContent.includes(question.explanation));
 });
 
 test('bind primes Japanese voices and voice events without auto-playing or changing lesson state', () => {
@@ -436,7 +435,7 @@ test('opening and reading a first card stays a private draft even when another c
   assert.equal(reloaded.study.currentAttempt('h-ka'),null); assert.equal(reloaded.study.currentAttempt('unknown'),null);
 });
 
-test('sanitization infers legacy learning evidence but discards persisted untouched drafts', () => {
+test('sanitization preserves touched kana cards and discards persisted untouched drafts', () => {
   const b=harness(); b.render('#study/h-a'); const draft=b.study.currentAttempt('h-a');
   for(const explicit of [true,false]) {
     const saved={script:'h',courses:{'h-a':{active:{...draft,touched:false}}}};
@@ -445,14 +444,14 @@ test('sanitization infers legacy learning evidence but discards persisted untouc
   }
   b.action('next'); b.action('prev'); const touched=clone(b.stored); assert.equal(harness(touched).study.hasProgress('h-a'),true);
   delete touched.courses['h-a'].active.touched; touched.courses['h-a'].active.cursor=1; assert.equal(harness(touched).study.hasProgress('h-a'),true);
-  touched.courses['h-a'].active.cursor=0; touched.courses['h-a'].active.first={0:false}; assert.equal(harness(touched).study.hasProgress('h-a'),true);
+  touched.courses['h-a'].active.cursor=0; touched.courses['h-a'].active.touched=true; assert.equal(harness(touched).study.hasProgress('h-a'),true);
 });
 
 test('completed group stays completed until a replay draft is actually advanced', () => {
   const b=harness(); startQuiz(b,'h-a'); finishQuiz(b,'h-a'); const count=b.records.length, saved=clone(b.stored);
-  b.action('restart'); assert.equal(b.study.currentAttempt('h-a').touched,false); assert.equal(b.study.currentAttempt('h-a').direction,'reading');
+  b.action('restart'); assert.equal(b.study.currentAttempt('h-a').touched,false); assert.equal(new Set(b.study.currentAttempt('h-a').practice.questions.map(q=>q.direction)).size,2);
   assert.deepEqual(b.stored,saved); assert.match(b.render('#kana'),/已完成・可再練/);
-  b.render('#study/h-a'); b.action('next'); assert.equal(b.state.courses['h-a'].active.touched,true); assert.equal(b.state.courses['h-a'].active.direction,'reading');
+  b.render('#study/h-a'); b.action('next'); assert.equal(b.state.courses['h-a'].active.touched,true); assert.equal(new Set(b.state.courses['h-a'].active.practice.questions.map(q=>q.direction)).size,2);
   assert.equal(b.records.length,count); assert.equal(b.study.nextCourse('h-a'),'h-ka');
 });
 
@@ -461,4 +460,38 @@ test('draft preview, first-card back, and hidden quiz audio do not create learni
  const b=harness(null,[{name:'Kyoko',lang:'ja-JP',localService:true}]); b.render('#study/h-a');
  b.action('prev'); b.action('audio',{index:'0'}); assert.equal(b.stored,null); assert.equal(b.study.hasProgress('h-a'),false);
  for(let i=0;i<5;i++)b.action('next'); const count=b.utterances.length; b.action('audio',{index:'0'}); assert.equal(b.utterances.length,count);
+});
+
+
+test('short review persists retries without creating course completions or history, and can restart immediately', () => {
+ const b=harness();startQuiz(b,'h-ya');const active=b.state.courses['h-ya'].active;const id=b.practice.current(active.practice).id;
+ b.action('answer',{choice:String(chooseCurrent(b,'h-ya',true))});
+ assert.equal(b.study.reviewSummary().availableCount,1);assert.equal(b.study.reviewSummary().wrongCount,1);
+ b.render('#kana');assert.match(b.html,/複習 1 個字/);b.render('#kana-review');assert.match(b.html,/開始複習/);
+ const before=clone(b.state.courses);b.action('review-start');assert.equal(b.state.reviewSession.questions.length,1);
+ let session=b.state.reviewSession,q=b.practice.current(session);b.action('answer',{choice:String((q.options.indexOf(q.id)+1)%q.options.length)});b.action('next');assert.equal(session.round,'retry');
+ const reloaded=harness(b.stored);reloaded.render('#kana-review');assert.equal(reloaded.state.reviewSession.round,'retry');assert.doesNotMatch(reloaded.html,/正確答案/);
+ session=reloaded.state.reviewSession;q=reloaded.practice.current(session);reloaded.action('answer',{choice:String((q.options.indexOf(q.id)+1)%q.options.length)});reloaded.action('next');
+ assert.equal(session.round,'done');assert.equal(reloaded.study.reviewSummary().wrongCount,1);assert.equal(reloaded.records.length,0);assert.deepEqual(clone(reloaded.state.courses),before);
+ assert.match(reloaded.html,/再複習 1 個字/);reloaded.action('review-start');assert.equal(reloaded.state.reviewSession.round,'first');assert.equal(reloaded.state.reviewSession.questions[0].id,id);
+});
+
+test('delayed success stays removed after completion and reload with the newer history timestamp', () => {
+ const b=harness();startQuiz(b,'h-a');const id=b.practice.current(b.state.courses['h-a'].active.practice).id;finishQuiz(b,'h-a',true);
+ assert.equal(b.state.kanaReview[id].wrong,false);const history=clone(b.records);history[0].date=new Date(Date.now()+1000).toISOString();
+ const restored=harness(b.stored,[],history);assert.equal(restored.study.reviewSummary().wrongCount,0);assert.equal(restored.state.kanaReview[id].wrong,false);
+ assert.equal(history[0].firstCorrect,4);assert.deepEqual(history[0].retryQuestions,[1]);
+});
+
+test('memory hints switch without persisting, speaking, or appearing on a question', () => {
+ const b=harness(null,[{lang:'ja-JP'}]);b.loadHints();b.action('open',{course:'h-a'});assert.match(b.html,/記憶提示/);const before=b.html,attempt=b.study.currentAttempt('h-a'),cancels=b.cancels;
+ b.action('hint');assert.notEqual(b.html,before);assert.equal(b.stored,null);assert.equal(b.utterances.length,0);assert.equal(b.cancels,cancels);assert.deepEqual(clone(b.study.currentAttempt('h-a')),clone(attempt));
+ for(let i=0;i<5;i++)b.action('next');assert.doesNotMatch(b.html,/記憶提示|換個記法/);
+});
+
+test('grammar still requires a correct retry and preserves its live region and first score', () => {
+ const b=harness();startQuiz(b,'g-identity');const active=b.state.courses['g-identity'].active,renders=b.renders,nodes=b.answers,feedback=b.feedback;
+ b.action('answer',{choice:String(chooseCurrent(b,'g-identity',true))});assert.equal(b.next.disabled,true);b.action('next');assert.equal(active.cursor,0);
+ b.action('answer',{choice:String(chooseCurrent(b,'g-identity'))});assert.equal(b.renders,renders);assert.equal(b.answers,nodes);assert.equal(b.feedback,feedback);assert.equal(b.next.disabled,false);assert.equal(b.focused,'[data-action="study-next"]');
+ finishQuiz(b,'g-identity');assert.equal(b.records[0].firstCorrect,b.content.courses['g-identity'].questions.length-1);
 });
