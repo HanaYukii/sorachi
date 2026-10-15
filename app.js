@@ -52,7 +52,7 @@ const footer = () =>
 const warningMessage = () =>
   canStore
     ? ""
-    : dataStore.isConflict() ? '<p class="storage-warning" role="status">另一個分頁已更新或清除資料。這個分頁已停止儲存，請重新載入後再繼續。<button class="text-button" data-action="reload">重新載入</button></p>'
+    : dataStore.isConflict() ? '<p class="storage-warning storage-conflict" role="status">另一個分頁已更新或清除資料。這個分頁已停止儲存，請重新載入後再繼續。<button class="text-button" data-action="reload">重新載入</button></p>'
     : dataStore.isProtected() ? '<p class="storage-warning" role="status">已保留瀏覽器中的原始資料，但目前版本無法讀取；這次練習不會覆寫原有紀錄。</p>'
     : '<p class="storage-warning" role="status">目前瀏覽器無法儲存進度；這次仍可正常上課，關閉後可能需要重新開始。</p>';
 

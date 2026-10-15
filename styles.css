@@ -845,6 +845,16 @@ button svg {
   font-size: 12px;
   color: #8c5a3b;
 }
+/* A stale tab stops saving; keep that notice and its reload button on screen. */
+#storage-status:has(.storage-conflict) {
+  position: sticky;
+  bottom: 8px;
+  z-index: 5;
+}
+.storage-conflict {
+  border: 1px solid #e4b393;
+  box-shadow: 0 6px 18px rgba(80, 60, 100, 0.12);
+}
 .focus-heading:focus {
   outline: none;
 }
