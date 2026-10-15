@@ -1121,3 +1121,49 @@ button svg {
     scroll-behavior: auto !important;
   }
 }
+
+/* Quiet secondary tools keep the lesson as the primary path. */
+.quiet-links { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.footer .text-button { font-size: 12px; min-height: 44px; }
+.lesson-utilities { display: flex; justify-content: center; margin-top: 24px; }
+.lesson-utilities .text-button { font-size: 12px; color: var(--muted); min-height: 44px; }
+.utility-main { max-width: 650px; margin: 38px auto 60px; }
+.utility-main h1 { font-size: 32px; margin: 12px 0; letter-spacing: -.6px; }
+.utility-intro { color: var(--muted); line-height: 1.9; margin-bottom: 26px; font-size: 14px; }
+.record-note { font-size: 12px; color: var(--muted); line-height: 1.9; margin: 14px 0; }
+.history-list { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 14px; }
+.history-list li { background: white; border: 1px solid var(--line); border-radius: 20px; padding: 23px 25px; }
+.record-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 7px 16px; font-size: 12px; color: var(--muted); }
+.history-list h2 { font-size: 16px; font-weight: 500; margin: 16px 0 7px; }
+.history-list h2 strong { color: var(--purple-deep); font-size: 23px; padding: 0 3px; }
+.history-list li > p { font-size: 13px; color: var(--aqua-ink); line-height: 1.8; }
+.empty-record { border-radius: 24px; padding: 30px; background: var(--lilac); margin: 24px 0; }
+.empty-record h2 { font-size: 19px; margin: 14px 0 10px; }
+.empty-record p { font-size: 14px; line-height: 1.9; margin-bottom: 24px; }
+.result-card { border-radius: 20px; background: var(--aqua); text-align: left; max-width: 480px; margin: 24px auto; padding: 20px 25px; }
+.result-card > span { font-size: 11px; color: var(--aqua-ink); }
+.result-card > strong { display: block; font-size: 18px; margin: 8px 0; }
+.result-card p { font-size: 13px; line-height: 1.9; color: var(--aqua-ink); }
+.result-card .text-button { font-size: 12px; margin-top: 5px; min-height: 44px; }
+.clear-button { font-size: 12px; color: var(--muted); margin-top: 14px; min-height: 44px; }
+.clear-confirm { background: var(--yellow); padding: 18px 22px; border-radius: 16px; margin-top: 25px; font-size: 13px; line-height: 1.9; }
+.clear-confirm .text-button { min-height: 44px; }
+.feedback-form { background: white; border: 1px solid var(--line); border-radius: 24px; padding: 28px; }
+.feedback-form label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 10px; }
+.feedback-form select, .feedback-form textarea { display: block; width: 100%; color: var(--ink); background: var(--paper); border: 1px solid #c3b5d2; border-radius: 12px; font: inherit; font-size: 16px; padding: 12px 14px; }
+.feedback-form textarea { resize: vertical; min-height: 145px; line-height: 1.8; }
+.feedback-form select { margin-bottom: 24px; }
+.feedback-form :is(select,textarea):focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; }
+.feedback-form textarea::placeholder { color: var(--muted); }
+.feedback-privacy { margin: 20px 0 24px; background: var(--aqua); color: var(--aqua-ink); padding: 15px 17px; border-radius: 12px; font-size: 12px; line-height: 1.9; }
+#feedback-ready:not(:empty) { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 20px; font-size: 13px; line-height: 1.8; }
+#feedback-ready a { min-height: 44px; }
+@media (max-width: 500px) {
+  .utility-main { margin-top: 26px; }
+  .utility-main h1 { font-size: 28px; }
+  .feedback-form { padding: 20px; }
+  .history-list li { padding: 20px; }
+  .empty-record { padding: 24px; }
+  .result-card { padding: 19px; }
+  .quiet-links { gap: 18px; }
+}

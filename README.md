@@ -12,6 +12,15 @@
 
 這是首頁與第一課的互動雛形，尚未包含完整五十音、N5/N4 課程或題庫。後續以新手學習為主，題庫作為練習補充；適合的 Jabiko 內容需逐題檢查程度與說明後再沿用。
 
+## Simplified Jabiko features
+
+- **Learning records:** each completed lesson keeps its date, first-response score, and which questions needed a retry. Local storage retains the latest 30 completions. Retrying never overwrites the first response. Existing progress is preserved; legacy attempts without first-response data are left unscored.
+- **Feedback:** a small footer entry and an in-lesson report entry collect a category, up to 600 UTF-16 code units of text, and the originating lesson step. Preparing a report creates a GitHub issue draft link for this repository. It does not submit automatically. GitHub sign-in is required and submitted issues are public. Draft text is kept only in page memory and is lost on reload; scores and contact details are not attached.
+- **Deletion:** records can be cleared after confirmation without resetting lesson progress or earned completion. Failed storage writes do not report a successful deletion.
+- The app borrows Jabiko's local-first tracking and feedback patterns, not its React/Supabase implementation. Anonymous submissions, accounts, and cloud synchronization are not included.
+
+Recommended next additions: a small review of initially missed questions; kana practice limited to characters already taught; reading/audio support when vocabulary lessons arrive. Full mock exams, streaks, and detailed statistics can wait until the course has enough content.
+
 ## 後續題庫的沿用原則
 
 - 假名：先教完一小組字與讀音，再出題；干擾選項也限於已學的字。

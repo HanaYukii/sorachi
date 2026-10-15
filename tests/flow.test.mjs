@@ -86,6 +86,8 @@ function browser({
         focused = selector;
       },
       scrollIntoView() {},
+      setCustomValidity(value) { this.validationMessage = value; },
+      reportValidity() { return !this.validationMessage; },
       setAttribute(name, value) {
         attributes[name] = String(value);
       },
@@ -209,6 +211,7 @@ function browser({
       pending.push(fn);
     },
     console,
+    URL,
   });
   const flush = () => {
     while (pending.length) pending.shift()();
@@ -239,6 +242,17 @@ function browser({
   }
   return {
     click,
+    blockStorage() { storageBlocked = true; },
+    submitFeedback(category, message) {
+      querySelector('#feedback-category').value = category;
+      querySelector('#feedback-message').value = message;
+      dispatch(app._listeners, 'submit', {target:{id:'feedback-form'}, preventDefault() {}});
+    },
+    inputFeedback(category, message) {
+      querySelector('#feedback-category').value = category;
+      querySelector('#feedback-message').value = message;
+      dispatch(app._listeners, 'input', {});
+    },
     node: querySelector,
     get renderCount() {
       return renderCount;
@@ -420,4 +434,131 @@ test("start button begins at the first step when a stale attempt is no longer ac
   b.action("start");
   assert.equal(b.state.step, 0);
   assert.equal(b.state.inProgress, true);
+});
+
+test("first response is retained through retries and reload and recorded once", () => {
+  const b = browser();
+  reachQuiz(b);
+  b.answer(2);
+  const resumed = browser({ raw: b.stored, hash: '#lesson' });
+  resumed.answer(0);
+  resumed.action('next');
+  resumed.answer(1);
+  resumed.action('next');
+  assert.equal(resumed.state.history.length, 1);
+  assert.equal(resumed.state.history[0].firstCorrect, 1);
+  assert.deepEqual(resumed.state.history[0].retryQuestions, [4]);
+  const done = browser({ raw: resumed.stored, hash: '#done' });
+  assert.equal(done.state.history.length, 1);
+  done.action('home');
+  complete(done);
+  assert.equal(done.state.history.length, 2);
+  assert.equal(done.state.history[1].firstCorrect, 2);
+});
+
+test("legacy completions do not invent a score and history clear preserves learning progress", () => {
+  const b = browser({ saved: { step: 5, completed: true, answers: {4:true,5:true} }, hash:'#history' });
+  assert.match(b.html, /尚未留下成績/);
+  assert.equal(b.state.history.length, 0);
+  b.action('home');
+  complete(b);
+  b.action('history');
+  b.action('clear-history');
+  assert.equal(b.state.history.length, 1, 'Clearing needs a second deliberate action');
+  b.action('confirm-clear');
+  assert.equal(b.state.history.length, 0);
+  assert.equal(b.state.completed, true);
+});
+
+test("direct lesson revisit after completion starts a new attempt", () => {
+  const b = browser();
+  complete(b);
+  const revisit = browser({ raw:b.stored, hash:'#lesson' });
+  assert.equal(revisit.state.step, 0);
+  assert.deepEqual(revisit.state.firstAnswers, {});
+  assert.equal(revisit.state.history.length, 1);
+});
+
+test("invalid history entries are discarded, valid scores stay bounded", () => {
+  const b = browser({ saved: {history: [null, {date:'<img>', firstCorrect:2}, {date:'2026-10-15T10:00:00.000Z',firstCorrect:9,retryQuestions:[]}]}, hash:'#history' });
+  assert.equal(b.state.history.length, 0);
+  assert.doesNotMatch(b.html, /<img>/);
+});
+
+
+test("feedback creates a correctly encoded draft link without publishing or leaking scores", () => {
+  const b = browser();
+  reachQuiz(b);
+  b.action('feedback');
+  assert.match(b.html, /小練習 1/);
+  b.submitFeedback('問題回報', '  ');
+  assert.equal(b.node('#feedback-message').validationMessage, '請先寫下一點內容。');
+  assert.equal(b.node('#feedback-ready').children.length, 0);
+  const message = '<script>alert("hello")</script> & # + 日本語';
+  b.submitFeedback('問題回報', message);
+  const ready = b.node('#feedback-ready');
+  assert.equal(ready.children.length, 2);
+  const url = new URL(ready.children[1].href);
+  assert.equal(url.origin, 'https://github.com');
+  assert.equal(url.pathname, '/HanaYukii/sorachi/issues/new');
+  assert.match(url.searchParams.get('body'), /<script>alert/);
+  assert.match(url.searchParams.get('body'), /小練習 1/);
+  assert.doesNotMatch(url.searchParams.get('body'), /firstAnswers|history/);
+  b.inputFeedback('學習建議', message);
+  assert.equal(ready.children.length, 0, 'Edits must invalidate the prepared link');
+  b.action('feedback-back');
+  assert.equal(b.state.step, 4);
+  b.action('feedback');
+  assert.match(b.html, /&lt;script&gt;/);
+  assert.doesNotMatch(b.html, /<script>alert/);
+});
+
+test("history keeps the last thirty completions and legacy partial attempts remain unscored", () => {
+  const history = Array.from({length:35}, (_,i) => ({date:new Date(2026,0,i+1).toISOString(),firstCorrect:2,retryQuestions:[]}));
+  const b = browser({saved:{step:5,inProgress:true,answers:{4:true},history}, hash:'#lesson'});
+  assert.equal(b.state.history.length, 30);
+  b.answer(1);
+  b.action('next');
+  assert.equal(b.state.history.length, 30);
+  assert.equal(b.state.history[29].firstCorrect, null);
+});
+
+
+test("failed deletion does not falsely show an empty history", () => {
+  const b = browser();
+  complete(b);
+  b.action('history');
+  b.blockStorage();
+  b.action('clear-history');
+  b.action('confirm-clear');
+  assert.equal(b.state.history.length, 1);
+  assert.match(b.node('.storage-warning').textContent, /尚未清除/);
+});
+
+
+test("feedback rejects overlong input and its maximum CJK draft stays below 8 KB", () => {
+  const b = browser({ hash:'#feedback' });
+  b.submitFeedback('問題回報', '字'.repeat(601));
+  assert.equal(b.node('#feedback-ready').children.length, 0);
+  assert.match(b.node('#feedback-message').validationMessage, /600/);
+  b.submitFeedback('問題回報', '字'.repeat(600));
+  const url = b.node('#feedback-ready').children[1].href;
+  assert.ok(url.length < 8000);
+  assert.ok(new URL(url).searchParams.get('body').startsWith('字'.repeat(600)));
+});
+
+test("an old completion route cannot show an unfinished replay as completed", () => {
+  const b = browser();
+  complete(b);
+  b.action('restart');
+  for (let i = 0; i < 4; i++) b.action('next');
+  b.answer(0);
+  b.action('next');
+  b.answer(0);
+  const revisit = browser({ raw:b.stored, hash:'#done' });
+  assert.equal(revisit.hash, '#lesson');
+  assert.equal(revisit.state.inProgress, true);
+  assert.equal(revisit.state.history.length, 1);
+  assert.equal(revisit.state.history[0].firstCorrect, 2);
+  assert.doesNotMatch(revisit.html, /兩題都完成了/);
 });
