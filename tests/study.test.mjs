@@ -239,7 +239,7 @@ test('unknown route/course cannot inject markup and unrelated actions pass throu
 test('travel section is separate; each situation shows keywords and playable phrases without a quiz', () => {
   const b = harness(null, [{lang: 'ja-JP'}]);
   b.render('#travel');
-  assert.equal((b.html.match(/href="#travel\//g) || []).length, 8);
+  assert.equal((b.html.match(/href="#travel\//g) || []).length, 9);
   assert.doesNotMatch(b.html, /data-action="study-open"/);
   assert.doesNotMatch(b.html, /data-course="g-identity"/);
   assert.equal(b.study.context('#travel'), '旅遊常用語列表');

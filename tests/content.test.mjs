@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '573d5f43008c37d5582b2dcf67443cd5f5f77c996da08da6cca8be5ebb71e9fb');
+  assert.equal(createHash('sha256').update(original).digest('hex'), 'c4a456798a2302e18b5cf6105b7b7db51e3e4e4d0b5277d95574e835b5b6598b');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -222,4 +222,22 @@ test('four travel cards say what staff may ask, and party size is answered by ge
   assert.match(card('shopping', 'receipt').body, /領収書/);
   assert.match(card('t-order', 'drink-temperature').extra.body, /ハイボール/);
   assert.match(errors(d => { d.phrasebook[2].steps[1].staffAsks = { example: 'English', reading: 'x', meaning: '中文' }; }), /staffAsks\.example/);
+});
+
+test('transit phrases pair the concepts, keep the question context, and hedge ticket rules', () => {
+  const transit = Content.phrasebook.find(c => c.id === 'transit');
+  const card = (tail) => transit.steps.find(s => s.id === `phrase/transit/${tail}`);
+  assert.deepEqual(plain(card('ticket').keywords.slice(1).map(k => k[1])), ['katamichi', 'oufuku']);
+  assert.deepEqual(plain(card('seat').keywords.map(k => k[2])), ['對號座', '自由座']);
+  assert.match(card('seat').body, /不保證有位子/);
+  assert.match(card('seat').body, /以車站說明為準/);
+  assert.match(card('day-pass').body, /區域和路線不同/);
+  assert.match(card('direction').example, /この電車.*京都/);
+  assert.match(card('transfer').polite, /京都まで行きたいです。どこで乗り換えますか？/);
+  assert.match(card('get-off').example, /降りればいい/);
+  assert.match(card('platform').body, /終點站/);
+  assert.equal(card('day-pass').staffAsks.example, '何枚ですか？');
+  for (const step of transit.steps) assert.ok(step.keywords.length <= 3, step.id);
+  const at = Content.phrasebook.findIndex(c => c.id === 'transit');
+  assert.equal(Content.phrasebook[at - 1].id, 't-charge', 'Transport stays next to IC top-ups');
 });
