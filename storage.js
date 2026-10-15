@@ -110,6 +110,8 @@ const DataStore = (() => {
       readProgress: () => clone({...snapshot.learning.intro,study:snapshot.learning.study,history:snapshot.attempts}),
       readSnapshot: () => clone(snapshot), canPersist: () => writable, isProtected: () => protectedData,
       isConflict: () => conflict, checkForUpdates,
+      // After an intentional clear, the v1 copy must not be migrated back if v2 later disappears.
+      forgetLegacy() { if (!writable || !checkForUpdates()) return false; try { storage.removeItem(LEGACY_KEY); return true; } catch { return false; } },
       writeProgress(flat) {
         const nextLearning = learning(flat);
         if (supported) {

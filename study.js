@@ -167,7 +167,8 @@ const Study = (() => {
   }
   function reviewSummary() {
     const data = state();
-    const wrong = KanaPractice.entries.filter(item => data.kanaReview[item.id]?.wrong).sort((a,b)=>data.kanaReview[b.id].lastSeen.localeCompare(data.kanaReview[a.id].lastSeen)||a.id.localeCompare(b.id));
+    // Same order as KanaPractice.selectReview, so the listed characters are the ones the next round practices.
+    const wrong = KanaPractice.entries.filter(item => data.kanaReview[item.id]?.wrong).sort((a,b)=>data.kanaReview[a.id].lastSeen.localeCompare(data.kanaReview[b.id].lastSeen)||a.id.localeCompare(b.id));
     const availableCount = KanaPractice.entries.filter(item => data.kanaReview[item.id] || data.courses[item.courseId]?.completedAt).length;
     return {wrongCount:wrong.length,availableCount,wrongLabels:wrong.slice(0,5).map(item=>`${item.character}（${item.reading}）`),canResume:Boolean(data.reviewSession && data.reviewSession.round!=='done'),hasData:Object.keys(data.kanaReview).length>0 || Boolean(data.reviewSession)};
   }
@@ -183,9 +184,10 @@ const Study = (() => {
     const q=KanaPractice.current(session);
     return q?{courseId:KanaPractice.entry(q.id).courseId,questionId:q.id,direction:q.direction,round:session.round,practiceVersion:KanaPractice.VERSION}:null;
   }
+  const wrongLine = summary => `答錯的字：${summary.wrongLabels.map(escape).join('、')}${summary.wrongCount>summary.wrongLabels.length?`（共 ${summary.wrongCount} 個）`:''}`;
   function reviewEntry() {
     const summary=reviewSummary();
-    return summary.availableCount ? `<section class="study-review-entry"><h2>${summary.canResume?'還有一輪沒練完':'複習學過的字'}</h2>${summary.wrongLabels.length?`<p class="study-note">最近答錯：${summary.wrongLabels.map(escape).join('、')}</p>`:''}<a class="text-button" href="#kana-review">${summary.canResume?'繼續複習':`複習 ${Math.min(5,summary.availableCount)} 個字`}</a></section>`:'';
+    return summary.availableCount ? `<section class="study-review-entry"><h2>${summary.canResume?'還有一輪沒練完':'複習學過的字'}</h2>${summary.wrongLabels.length?`<p class="study-note">${wrongLine(summary)}</p>`:''}<a class="text-button" href="#kana-review">${summary.canResume?'繼續複習':`複習 ${Math.min(5,summary.availableCount)} 個字`}</a></section>`:'';
   }
   function kanaPage() {
     const script = state().script;
@@ -211,7 +213,7 @@ const Study = (() => {
     const hints=typeof KanaHints!=='undefined'?KanaHints.get(course.letters[index]):[];
     if(!hints?.length)return '';
     const key=`${course.id}:${index}`, selected=(hintChoices.get(key)||0)%hints.length, hint=hints[selected];
-    return `<aside class="kana-hint"><p class="reading-label">記憶提示 · ${escape(hint.label)}</p><p>${escape(hint.text)}</p>${hints.length>1?'<button class="text-button" data-action="study-hint">換個記法</button>':''}${KanaHints.notice?`<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>`:''}</aside>`;
+    return `<aside class="kana-hint"><div aria-live="polite" aria-atomic="true"><p class="reading-label hint-label">記憶提示 · ${escape(hint.label)}</p><p class="hint-text">${escape(hint.text)}</p></div>${hints.length>1?'<button class="text-button" data-action="study-hint">換個記法</button>':''}${KanaHints.notice?`<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>`:''}</aside>`;
   }
   function card(course, active) {
     const i = active.cursor;
@@ -239,7 +241,7 @@ const Study = (() => {
     if(!KanaPractice.answered(session))return '';
     const q=KanaPractice.current(session), answers=session.round==='retry'?session.retryAnswers:session.answers;
     const correct=q.options[answers[session.cursor]]===q.id, item=KanaPractice.entry(q.id);
-    if(session.round==='retry')return correct?'答對了，這個字已移出最近答錯。':'這個字還要再練，完成後可以再複習。';
+    if(session.round==='retry')return correct?'答對了，這個字已從答錯的字移出。':'這個字還要再練，完成後可以再複習。';
     return `${correct?'答對了':'正確答案'}：${item.character}＝${item.reading}`;
   }
   function practiceQuiz(session, review=false) {
@@ -267,7 +269,7 @@ const Study = (() => {
       const remaining=session.questions.filter(q=>state().kanaReview[q.id]?.wrong).map(q=>KanaPractice.entry(q.id));
       body=`<h2>複習完成</h2><p>這次練了 ${session.questions.length} 個字。</p>${remaining.length?`<p>還可以再練：${remaining.map(item=>escape(`${item.character}（${item.reading}）`)).join('、')}</p>`:'<p>這次的字都答對了。</p>'}<button class="primary" data-action="study-review-start">再複習 ${Math.min(5,summary.availableCount)} 個字</button>`;
     }else if(session)body=practiceQuiz(session,true);
-    else body=`<p>先練最近答錯的字，再複習較久沒練的字，最多 5 個。</p>${summary.wrongLabels.length?`<p>最近答錯：${summary.wrongLabels.map(escape).join('、')}</p>`:''}${summary.availableCount?'<button class="primary" data-action="study-review-start">開始複習</button>':'<p>先完成一組五十音練習，就可以在這裡複習。</p>'}`;
+    else body=`<p>先練答錯的字，較早答錯的先練；再複習較久沒練的字，最多 5 個。</p>${summary.wrongLabels.length?`<p>${wrongLine(summary)}</p>`:''}${summary.availableCount?'<button class="primary" data-action="study-review-start">開始複習</button>':'<p>先完成一組五十音練習，就可以在這裡複習。</p>'}`;
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音複習</h1>${body}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`,'#kana','回五十音');
   }
   function answerFeedback(course, active) {
@@ -469,6 +471,7 @@ const Study = (() => {
       return true;
     }
     if (action === 'study-review-start') {
+      if(state().reviewSession&&state().reviewSession.round!=='done'){api.go('#kana-review');return true;}
       const ids=KanaPractice.selectReview(state().kanaReview,state().courses);
       if(ids.length){state().reviewSession=KanaPractice.create(ids,{completedIds:completedKanaIds(),mode:'review'});save();api.go('#kana-review');}
       return true;
@@ -505,7 +508,12 @@ const Study = (() => {
       return true;
     }
     if(action==='study-hint'&&course.type==='kana'&&active.phase==='cards'){
-      const key=`${course.id}:${active.cursor}`;hintChoices.set(key,(hintChoices.get(key)||0)+1);redraw('[data-action="study-hint"]');return true;
+      const key=`${course.id}:${active.cursor}`;hintChoices.set(key,(hintChoices.get(key)||0)+1);
+      // Update in place so the live region announces the new hint and focus stays on the button.
+      const hints=KanaHints.get(course.letters[active.cursor]),hint=hints[hintChoices.get(key)%hints.length];
+      const label=document.querySelector('.hint-label'),text=document.querySelector('.hint-text');
+      if(hint&&label&&text){label.textContent=`記憶提示 · ${hint.label}`;text.textContent=hint.text;}else redraw('[data-action="study-hint"]');
+      return true;
     }
     if(course.type==='kana'&&active.phase==='quiz'){
       if(action==='study-answer'){

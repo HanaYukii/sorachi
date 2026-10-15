@@ -7,7 +7,9 @@ const KanaPractice = (() => {
   const registry = new Map(entries.map(item => [item.id,item]));
   const entry = id => registry.get(id) || null;
   const iso = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
-  const groups = ['ぬめ','ねれわ','はほ','るろ','あお','さき','シツ','ソン','クケ','ウワ','スヌ','チテ','フワ'];
+  // Common confusions outrank looser look-alikes when only one learned row may contribute.
+  const groups = ['ぬめ','ねれわ','はほ','るろ','あお','さき','さち','いり','うつ','シツ','ソン','クケ','クタ','ウワ','スヌ','チテ','フワ','コユ','ナメ'];
+  const looseGroups = ['はま','きち','シン','ツソ','ウフ','フラ','コロ'];
   const shuffled = list => {
     const result = [...list];
     for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]];}
@@ -15,8 +17,9 @@ const KanaPractice = (() => {
   };
   function question(id,direction,pool) {
     const target=entry(id), seen=new Set([target.reading]);
-    const similar=candidate=>groups.some(group=>group.includes(target.character)&&group.includes(entry(candidate).character));
-    const peers=shuffled(pool.filter(candidate=>candidate!==id && entry(candidate).script===target.script)).sort((a,b)=>Number(similar(b))-Number(similar(a)));
+    const shares=(list,candidate)=>list.some(group=>group.includes(target.character)&&group.includes(entry(candidate).character));
+    const similar=candidate=>shares(groups,candidate)?2:shares(looseGroups,candidate)?1:0;
+    const peers=shuffled(pool.filter(candidate=>candidate!==id && entry(candidate).script===target.script)).sort((a,b)=>similar(b)-similar(a));
     const sameRow=peers.filter(candidate=>entry(candidate).courseId===target.courseId), otherRows=peers.filter(candidate=>entry(candidate).courseId!==target.courseId);
     const options=[id];
     const add=candidate=>{if(options.length>=4||options.includes(candidate)||seen.has(entry(candidate).reading))return false;options.push(candidate);seen.add(entry(candidate).reading);return true;};
@@ -103,7 +106,8 @@ const KanaPractice = (() => {
   function selectReview(review,courses,limit=5) {
     const candidates=entries.filter(item=>review[item.id] || iso(courses[item.courseId]?.completedAt));
     const date=item=>review[item.id]?.lastSeen || iso(courses[item.courseId]?.completedAt);
-    candidates.sort((a,b)=>Number(review[b.id]?.wrong===true)-Number(review[a.id]?.wrong===true) || (review[a.id]?.wrong ? date(b).localeCompare(date(a)) : date(a).localeCompare(date(b))) || a.id.localeCompare(b.id));
+    // Missed characters come first, longest-waiting first, so a miss repeated in review rotates behind the others.
+    candidates.sort((a,b)=>Number(review[b.id]?.wrong===true)-Number(review[a.id]?.wrong===true) || date(a).localeCompare(date(b)) || a.id.localeCompare(b.id));
     return candidates.slice(0,Math.max(0,Math.min(5,limit))).map(item=>item.id);
   }
   return {VERSION,entries,entry,create,sanitize,current,answered,answer,next,firstCorrect,sanitizeReview,seedReview,selectReview};

@@ -328,6 +328,7 @@ app.addEventListener("click", (event) => {
       Study.clearReview();
       save();
       if (!canStore) { progress.history = previous; progress.study = previousStudy; }
+      else dataStore.forgetLegacy();
       historyPage();
       if (!canStore) {
         const warning = app.querySelector(".storage-warning");

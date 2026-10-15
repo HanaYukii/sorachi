@@ -1324,7 +1324,7 @@ button svg {
 .study-nav > .primary:only-child { margin-left: auto; }
 .kana-hint { text-align: left; padding: 16px 18px; margin: 16px 0 0; border-radius: 16px; background: var(--paper); }
 .kana-hint .reading-label { margin: 0 0 8px; text-align: left; letter-spacing: 0; font-size: 12px; color: var(--purple-deep); }
-.kana-hint > p:not(.reading-label) { margin: 0; }
+.kana-hint .hint-text { margin: 0; }
 .kana-hint .text-button { min-height: 44px; font-size: 13px; margin: 4px 0; }
 .kana-hint details { display: inline-block; vertical-align: middle; margin-left: 18px; }
 .kana-hint details[open] { display: block; margin-left: 0; }
