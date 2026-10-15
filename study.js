@@ -16,11 +16,11 @@ const Study = (() => {
   ];
   const GRAMMAR = [
     {
-      id: "g-identity", type: "grammar", title: "先說一句：我是學生", subtitle: "A は B です · 一句自我介紹",
+      id: "g-identity", type: "grammar", title: "A 是 B：は・です", subtitle: "名詞句的基本結構",
       steps: [
-        { title: "先認識兩個詞", example: "わたし ／ がくせい", reading: "watashi / gakusei", meaning: "我 ／ 學生", body: "本課用這兩個詞，練習自我介紹。" },
-        { title: "把兩個詞連成一句話", example: "わたしは がくせいです。", reading: "watashi wa gakusei desu", meaning: "我是學生。", body: "「わたし」是我，「がくせい」是學生。在這種「A 是 B」的句子裡，用「は」接起來，再以「です」結尾；這是比較禮貌的說法。" },
-        { title: "這個「は」，要念 wa", example: "わたし は がくせい です。", reading: "watashi wa gakusei desu", meaning: "說到我：我是學生。", body: "這裡的「は」標出我們正在說誰，要讀成 wa。雖然念 wa，寫的仍是「は」，不是「わ」。" },
+        { title: "本課單字", example: "わたし ／ がくせい", reading: "watashi / gakusei", meaning: "我 ／ 學生", body: "本課用這兩個詞，練習自我介紹。" },
+        { title: "句型：A は B です", example: "わたしは がくせいです。", reading: "watashi wa gakusei desu", meaning: "我是學生。", body: "「わたし」是我，「がくせい」是學生。在這種「A 是 B」的句子裡，用「は」接起來，再以「です」結尾；這是比較禮貌的說法。" },
+        { title: "助詞 は 的讀音", example: "わたし は がくせい です。", reading: "watashi wa gakusei desu", meaning: "說到我：我是學生。", body: "這裡的「は」標出我們正在說誰，要讀成 wa。雖然念 wa，寫的仍是「は」，不是「わ」。" },
       ],
       questions: [
         { prompt: "想說「我是學生。」：わたしは がくせい＿＿。最後應放哪一個？", options: ["です", "は", "わたし"], answer: 0, explanation: "句尾放「です」，就是「わたしは がくせいです。」——我是學生。" },
@@ -28,11 +28,11 @@ const Study = (() => {
       ],
     },
     {
-      id: "g-question", type: "grammar", title: "加一個「か」，問問看", subtitle: "ですか · 從說明變成問題",
+      id: "g-question", type: "grammar", title: "疑問句：〜ですか", subtitle: "用「か」表示疑問",
       steps: [
-        { title: "先回想熟悉的句尾", example: "がくせいです。", reading: "gakusei desu", meaning: "是學生。", body: "「がくせい」是學生，「です」讓這個名詞句以比較禮貌的方式結尾。這句話是在說明，不是在發問。" },
-        { title: "想發問，就在句尾加「か」", example: "がくせいですか？", reading: "gakusei desu ka", meaning: "是學生嗎？", body: "在剛才的「です」後面加上「か」，就能把說明變成問題。「か」讀作 ka。" },
-        { title: "知道在問誰，就可以省略", example: "がくせいですか？", reading: "gakusei desu ka", meaning: "你是學生嗎？", body: "例如正面對一個人、詢問他的身分時，這句就是「你是學生嗎？」。日文常把情境裡已經清楚的人省略，不必每句都加上「你」。" },
+        { title: "敘述句：〜です", example: "がくせいです。", reading: "gakusei desu", meaning: "是學生。", body: "「がくせい」是學生，「です」讓這個名詞句以比較禮貌的方式結尾。這句話是在說明，不是在發問。" },
+        { title: "疑問句：〜ですか", example: "がくせいですか？", reading: "gakusei desu ka", meaning: "是學生嗎？", body: "在剛才的「です」後面加上「か」，就能把說明變成問題。「か」讀作 ka。" },
+        { title: "情境清楚時，可省略人稱", example: "がくせいですか？", reading: "gakusei desu ka", meaning: "你是學生嗎？", body: "例如正面對一個人、詢問他的身分時，這句就是「你是學生嗎？」。日文常把情境裡已經清楚的人省略，不必每句都加上「你」。" },
       ],
       questions: [
         { prompt: "正面對一個人，詢問他的身分。「がくせいですか？」在問什麼？", options: ["你是學生嗎？", "我是學生。", "我是老師。"], answer: 0, explanation: "句尾有「か」，是在發問。這個情境下，意思是「你是學生嗎？」。" },
@@ -40,7 +40,7 @@ const Study = (() => {
       ],
     },
     {
-      id: "g-demo", type: "grammar", title: "這個、那個，要用哪一個？", subtitle: "これ・それ・あれ · 指眼前的物品",
+      id: "g-demo", type: "grammar", title: "指示詞：これ・それ・あれ", subtitle: "依物品的位置選擇指示詞",
       steps: [
         { title: "靠近我：これ", example: "これは パンです。", reading: "kore wa pan desu", meaning: "這是麵包。", body: "先認識「パン」：麵包。說眼前的物品時，靠近說話者自己的東西用「これ」。例如你拿在手上的麵包。" },
         { title: "靠近對方：それ", example: "それは パンです。", reading: "sore wa pan desu", meaning: "那是麵包。（靠近對方）", body: "物品靠近你正在說話的對象、離你較遠時，用「それ」。例如朋友在幾步外，拿著一個麵包。" },
@@ -161,13 +161,20 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">每課介紹一個句型，再用兩題練習確認理解。例句附中文意思與讀音。</p><div class="course-list">${GRAMMAR.map(row).join("")}</div>`);
   }
   function audioButton(course, index) {
-    return `<button class="text-button" data-action="study-audio" data-course="${course.id}" data-index="${index}" aria-label="播放 ${escape(course.letters[index])} 的日文讀音">聽聽讀音 ♪</button><span class="reading-label">裝置合成語音</span><p class="study-audio-status study-note" role="status" aria-live="polite"></p>`;
+    return `<button class="text-button" data-action="study-audio" data-course="${course.id}" data-index="${index}" aria-label="播放 ${escape(course.letters[index])} 的日文讀音">播放讀音</button><span class="reading-label">裝置合成語音</span><p class="study-audio-status study-note" role="status" aria-live="polite"></p>`;
   }
   function card(course, active) {
     const i = active.cursor;
     let body;
     if (course.type === "kana") {
-      const special = course.readings[i] === "n" ? "ん 是鼻音，先聽聲音、認得字形就好。" : course.spoken[i] === "を" ? "を 通常用作助詞，讀作 o；這裡先認識字形。" : course.spoken[i] === "は" ? "這個假名的基本讀音是 ha；當助詞時會讀 wa，之後再學。" : course.spoken[i] === "へ" ? "這個假名的基本讀音是 he；當助詞時會讀 e，之後再學。" : "記住字形和讀音，再進行辨認練習。";
+      const letter = course.letters[i];
+      const special = course.script === "k" && ["n", "o", "ha", "he"].includes(course.readings[i])
+        ? `${letter} 讀作 ${course.readings[i]}，對應平假名「${course.spoken[i]}」。`
+        : course.readings[i] === "n" ? "ん 是鼻音，羅馬字寫作 n。"
+        : course.spoken[i] === "を" ? "を 通常用作助詞，讀作 o。"
+        : course.spoken[i] === "は" ? "は 的基本讀音是 ha；作助詞時讀 wa。"
+        : course.spoken[i] === "へ" ? "へ 的基本讀音是 he；作助詞時讀 e。"
+        : "記住字形和讀音，再進行辨認練習。";
       body = `<div class="kana-character" lang="ja">${course.letters[i]}</div><div class="reading-label">讀音 <strong>${course.readings[i]}</strong></div>${audioButton(course, i)}<p class="study-note">${special}</p>`;
     } else {
       const step = course.steps[i];
