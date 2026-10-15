@@ -106,9 +106,9 @@ function home() {
   const kanaAction = activeKana && activeKana.phase !== "done" ? "接著練五十音" : progress.study.courses[nextKana]?.completedAt ? "再練一次五十音" : "開始學五十音";
   app.innerHTML = `<div class="shell">
     <header class="site-header"><a class="brand" href="#home" aria-label="SoraChi 首頁">${friend()}<span class="brand-word">SoraChi<span class="brand-dot">.</span></span></a><span class="header-note">日文入門練習</span><span class="prototype">初學者版</span></header>
-    <main id="main" tabindex="-1" class="home"><section class="welcome"><h1 class="focus-heading" tabindex="-1">日文入門</h1><p>先練五十音，再學基本句型。<br>選擇一組開始，進度會自動保留。</p></section>
+    <main id="main" tabindex="-1" class="home"><section class="welcome"><h1 class="focus-heading" tabindex="-1">日文入門</h1><p>認識五十音、學基本句型，也練習旅遊用語。<br>選擇一組開始，進度會自動保留。</p></section>
     <section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">五十音</span><span>認字・發音</span></div><h2 id="course-title">認識 ${Study.total(nextKana)} 個字及讀音</h2><p class="hero-description">看字與讀音，再做選擇題。<br>完成後可重練，或換下一組。</p><div class="meta"><span>${icons.clock} 每組約 3–5 分鐘</span><span>${icons.leaf} 這組 ${Study.total(nextKana)} 個字</span></div><button class="primary" data-action="study-open" data-course="${nextKana}">${kanaAction}${icons.arrow}</button><div><button class="text-button course-map-link" data-action="kana">查看全部五十音分組</button></div></div><div class="hero-art" aria-hidden="true"><span class="spark">✦</span><span class="small-spark">✧</span><span class="orbit"></span>${friend()}</div></section>
-    <section class="learning-path" aria-label="新手學習路線"><h2 class="section-kicker">其他課程</h2><div class="path-cards"><div class="path-card"><span class="path-number aqua-label">入門句型</span><h3>基礎句型</h3><p>「我是學生」「是學生嗎？」「這是麵包」<br>三個句型，一次學一個。</p><button class="text-button" data-action="grammar">開始看簡單句型${icons.arrow}</button></div><div class="path-card"><span class="path-number">小補充</span><h3>日文的三種文字</h3><p>用「貓」「麵包」「山」的例子，<br>認識平假名、片假名和漢字。</p><button class="text-button" data-action="start">${action}${icons.arrow}</button>${begun ? `<span class="path-progress">上次學到第 ${progress.step + 1} 步</span>` : progress.completed ? '<span class="path-progress">已完成</span>' : ''}</div></div></section>
+    <section class="learning-path" aria-label="新手學習路線"><h2 class="section-kicker">其他課程</h2><div class="path-cards"><div class="path-card"><span class="path-number aqua-label">句型・用語</span><h3>基礎句型與旅遊用語</h3><p>基本文法，或問路、點餐、結帳時<br>用得上的關鍵字與短語。</p><button class="text-button" data-action="grammar">選擇句型或旅遊用語${icons.arrow}</button></div><div class="path-card"><span class="path-number">小補充</span><h3>日文的三種文字</h3><p>用「貓」「麵包」「山」的例子，<br>認識平假名、片假名和漢字。</p><button class="text-button" data-action="start">${action}${icons.arrow}</button>${begun ? `<span class="path-progress">上次學到第 ${progress.step + 1} 步</span>` : progress.completed ? '<span class="path-progress">已完成</span>' : ''}</div></div></section>
     <aside class="gentle-note">${icons.book}<span>每組練習會記錄初答成績，重試不會覆蓋原本的答案。</span></aside>${warning()}</main>${footer()}</div>`;
 }
 
@@ -299,7 +299,7 @@ function route() {
   window.scrollTo({ top: 0, behavior: "instant" });
   const studyPage = Study.render(location.hash);
   if (studyPage !== null) {
-    document.title = `${location.hash === "#kana" ? "五十音練習" : location.hash === "#grammar" ? "入門句型" : Study.title(location.hash.slice(7)) || "學習路線"}｜SoraChi`;
+    document.title = `${location.hash === "#kana" ? "五十音練習" : location.hash === "#travel" ? "旅遊常用語" : location.hash === "#grammar" ? "基礎句型" : Study.title(location.hash.slice(7)) || "學習路線"}｜SoraChi`;
     app.innerHTML = studyPage;
     focusHeading();
     return;

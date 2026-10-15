@@ -1251,3 +1251,22 @@ button svg {
 .word-examples .character { font-size: clamp(26px, 5vw, 44px); letter-spacing: 0; line-height: 1.8; }
 .word-examples .script-cell strong { font-size: 14px; font-weight: 500; }
 .word-examples .script-cell p { font-size: 11px; margin-top: 10px; }
+
+/* Travel lessons keep the useful words visible before the longer phrasing. */
+.course-sections a { flex: 1; padding: 12px 8px; border-radius: 12px; font-size: 14px; min-height: 46px; text-align: center; text-decoration: none; color: inherit; }
+.course-sections a[aria-current="page"] { background: white; color: var(--purple-deep); font-weight: 600; }
+.course-section-heading { font-size: 18px; }
+.keyword-box { background: var(--aqua); border-radius: 16px; padding: 18px; margin: 16px 0 24px; }
+.keyword-box h3, .phrase-label { font-size: 12px; color: var(--aqua-ink); margin: 0 0 12px; }
+.keyword-box dl { margin: 0; }
+.keyword-box dl > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(72px, .7fr); gap: 12px; align-items: center; }
+.keyword-box dl > div + div { border-top: 1px solid #b9d9df; margin-top: 12px; padding-top: 12px; }
+.keyword-box dt strong { display: block; font-size: 18px; line-height: 1.7; }
+.keyword-box dt span { display: block; color: var(--aqua-ink); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.keyword-box dd { margin: 0; font-size: 14px; line-height: 1.8; }
+.phrase-label + .grammar-example { margin-top: 8px; }
+.phrase-more { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 16px; }
+.phrase-more summary { cursor: pointer; color: var(--purple-deep); font-size: 14px; padding: 8px 0; min-height: 44px; }
+.phrase-more p[lang="ja"] { font-size: 19px; color: var(--purple-deep); margin-top: 10px; }
+.phrase-more .reading-label { font-size: 12px; text-align: left; letter-spacing: 0; margin: 4px 0; overflow-wrap: anywhere; }
+@media (max-width: 400px) { .keyword-box { padding: 14px; } .keyword-box dt strong { font-size: 16px; } }

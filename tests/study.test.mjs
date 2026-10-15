@@ -226,3 +226,44 @@ test('unknown route/course cannot inject markup and unrelated actions pass throu
   assert.equal(b.study.total('__proto__'), 0);
   assert.equal(b.study.context('#kana'), '五十音學習路線');
 });
+
+test('travel section is separate, and each lesson teaches keywords before two comprehension questions', () => {
+  const answers = { 't-place': [0, 1], 't-order': [1, 2], 't-pay': [0, 1], 't-charge': [2, 0] };
+  const b = harness(null, [{lang: 'ja-JP'}]);
+  b.render('#travel');
+  assert.equal((b.html.match(/data-action="study-open"/g) || []).length, 4);
+  assert.match(b.html, /href="#travel" aria-current="page"/);
+  assert.doesNotMatch(b.html, /data-course="g-identity"/);
+  assert.equal(b.study.context('#travel'), '旅遊常用語列表');
+  for (const [id, correct] of Object.entries(answers)) {
+    b.action('open', {course: id});
+    assert.match(b.html, /關鍵字/);
+    assert.match(b.html, /可以這樣說/);
+    assert.match(b.html, /href="#travel"/);
+    b.action('audio', {index: '0'});
+    assert.ok(b.utterances.at(-1).text.length > 0);
+    b.action('next');
+    const reloaded = harness(b.stored);
+    reloaded.render(`#study/${id}`);
+    assert.equal(reloaded.state.courses[id].active.cursor, 1);
+    reloaded.action('next');
+    const a = reloaded.state.courses[id].active;
+    assert.equal(a.phase, 'quiz');
+    const q = a.order[0];
+    reloaded.action('answer', {choice: String((correct[q]+1)%3)});
+    reloaded.action('next');
+    assert.equal(a.cursor, 0);
+    while (a.phase === 'quiz') {
+      reloaded.action('answer', {choice: String(correct[a.order[a.cursor]])});
+      reloaded.action('next');
+    }
+    assert.equal(reloaded.records.length, 1);
+    assert.equal(reloaded.records[0].firstCorrect, 1);
+    assert.deepEqual(reloaded.records[0].retryQuestions, [1]);
+    assert.match(reloaded.html, /href="#travel"/);
+    const done = harness(reloaded.stored);
+    done.render(`#study/${id}`);
+    assert.equal(done.records.length, 0);
+    assert.equal(done.state.courses[id].active.phase, 'done');
+  }
+});

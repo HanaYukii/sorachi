@@ -1,12 +1,12 @@
 # SoraChi
 
-日文初學者的五十音與基礎句型練習。
+以日文新手學習為主，逐步銜接 N5／N4 準備，也提供旅遊前可練習的簡單用語。
 
 **線上雛形：** https://hanayukii.github.io/sorachi/
 
 ## 這一版
 
-首頁以五十音為主要入口，文字介紹作為補充，三堂入門句型作為下一步。每次只學一小組字或一個句型。進度保存在目前瀏覽器，可中途離開、接著學或完成後重練。
+首頁以五十音為主要入口，文字介紹作為補充，三堂入門句型與四組旅遊常用語分區呈現。每次只學一小組字或一個句型。進度保存在目前瀏覽器，可中途離開、接著學或完成後重練。
 
 視覺使用原創雲朵精靈，淡紫為主、水色輔助、杏橘色作為主要操作。白色留白與單一學習路徑優先於功能數量。
 
@@ -17,6 +17,7 @@
 - Kana: 20 groups (10 per script), each with 3–5 cards followed by a shuffled recognition quiz. Distractors stay within the taught group. Repeated completed attempts alternate character-to-reading and reading-to-character. The UI records practice rather than claiming long-term mastery, and encourages revisiting groups on a later day.
 - Pronunciation: device speech synthesis explicitly selects an available Japanese voice. A missing Japanese voice or failed playback produces a visible fallback message. Audio quality and availability depend on the device; these are not reviewed human recordings. Isolated は/へ are synthesized as ハ/ヘ to avoid particle readings; を is synthesized as お while preserving its displayed spelling.
 - Grammar: three micro-lessons cover noun sentences with は／です, questions with ですか, and spatial これ／それ／あれ. Each contains three explanation cards and two questions. Examples include romaji support and Chinese meanings; no kana completion gate is imposed.
+- Travel: four independent two-card lessons cover finding places, ordering, checkout, and transport IC card top-ups. Keyword panels show Japanese, romaji, and Chinese; cards explain when a fragment can convey a request and when context is needed. Longer expressions are optional disclosures. Each course has two comprehension questions, shared history/feedback, and device speech for the main phrase. No grammar or kana completion gate is imposed. Top-up context checked against [JR East Suica charging guidance](https://www.jreast.co.jp/es/suica/chrg/index.html/); examples are original.
 - Progress and first responses survive reload. All courses use the same history and contextual feedback entry points. A completed round is recorded once; clearing history preserves active course progress and completed-course status.
 - Reference checks: [Japan Foundation kana chart](https://www.irodori.jpf.go.jp/assets/data/Kana_all.pdf), [Tokyo University of Foreign Studies spatial demonstratives](https://www.coelang.tufs.ac.jp/mt/ja/gmod/contents/explanation/011.html), and [MDN device voice availability](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/getVoices). Lesson examples and questions were authored for this prototype.
 

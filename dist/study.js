@@ -52,8 +52,54 @@ const Study = (() => {
       ],
     },
   ];
+  const TRAVEL = [
+    {
+      id: "t-place", type: "grammar", group: "travel", title: "問位置：廁所、車站", subtitle: "トイレ・駅・どこ",
+      steps: [
+        { title: "找廁所", keywords: [["トイレ", "toire", "廁所"], ["どこ", "doko", "哪裡"]], example: "トイレ？", reading: "toire?", meaning: "廁所？", body: "向店員詢問時，說「トイレ？」並用疑問語氣，對方可能就知道你在找廁所。加上「どこ」會更明確；單說「どこ？」則需要對方已知道你在找什麼。", polite: "トイレはどこですか？", politeReading: "toire wa doko desu ka", politeMeaning: "廁所在哪裡？" },
+        { title: "找車站", keywords: [["駅（えき）", "eki", "車站"], ["どこ", "doko", "哪裡"]], example: "駅、どこですか？", reading: "eki, doko desu ka", meaning: "車站，在哪裡？", body: "需要問路時，可以搭配地圖指向你要去的車站。這裡把「トイレ」換成「駅」，就能問車站的位置。只說「駅」還不一定能讓對方知道你要問路。", polite: "駅はどこですか？", politeReading: "eki wa doko desu ka", politeMeaning: "車站在哪裡？" },
+      ],
+      questions: [
+        { prompt: "你想找廁所，先對店員說哪個關鍵字？", options: ["トイレ", "駅", "どこ"], answer: 0, explanation: "「トイレ」是廁所。用疑問語氣說，對方可能就知道你在找廁所；「どこ」則是問哪裡。" },
+        { prompt: "「駅、どこですか？」中的「どこ」，是在問什麼？", options: ["要一個", "在哪裡", "要結帳"], answer: 1, explanation: "「どこ」是「哪裡」。把地點名稱放在前面，就能表達你想找哪個地方。" },
+      ],
+    },
+    {
+      id: "t-order", type: "grammar", group: "travel", title: "點餐：這個、一個", subtitle: "これ・ひとつ",
+      steps: [
+        { title: "指著菜單選餐點", keywords: [["これ", "kore", "這個"], ["お願いします", "onegaishimasu", "麻煩你／請幫我"]], example: "これ、お願いします。", reading: "kore, onegaishimasu", meaning: "我要這個，麻煩你。", body: "指著菜單上的餐點說「これ」，店員通常就能知道你選哪一道。加上「お願いします」更有禮貌；只說「これ」時，要讓對方看得見你指的東西。" },
+        { title: "告訴店員要一個", keywords: [["ひとつ", "hitotsu", "一個／一份"], ["これ", "kore", "這個"]], example: "ひとつ。", reading: "hitotsu", meaning: "一個／一份。", body: "已經指好餐點，或店員在確認數量時，說「ひとつ」通常就能表達要一份。它只說明數量，不能單獨表示你想點哪一道。", polite: "これ、ひとつお願いします。", politeReading: "kore, hitotsu onegaishimasu", politeMeaning: "這個請給我一份。" },
+      ],
+      questions: [
+        { prompt: "你指著菜單上一道餐點說「これ」，是什麼意思？", options: ["一份", "這個", "結帳"], answer: 1, explanation: "「これ」是「這個」。指著品項，店員才知道你要的是哪一個。" },
+        { prompt: "店員已知道你要哪道餐點。你說「ひとつ」，是要幾份？", options: ["兩份", "三份", "一份"], answer: 2, explanation: "「ひとつ」表達一個或一份；品項清楚時，只說數量也能溝通。" },
+      ],
+    },
+    {
+      id: "t-pay", type: "grammar", group: "travel", title: "結帳：請店員算錢", subtitle: "お会計・お願いします",
+      steps: [
+        { title: "吃完後要結帳", keywords: [["お会計（おかいけい）", "okaikei", "結帳"]], example: "お会計。", reading: "okaikei", meaning: "結帳。", body: "在餐廳吃完、向店員表達要結帳時，「お会計」就是主要關鍵字。對方通常能理解，再加上「お願いします」會更有禮貌。", polite: "お会計、お願いします。", politeReading: "okaikei, onegaishimasu", politeMeaning: "麻煩幫我結帳。" },
+        { title: "在需求後加上禮貌用語", keywords: [["お願いします", "onegaishimasu", "麻煩你／請幫我"], ["お会計（おかいけい）", "okaikei", "結帳"]], example: "お会計、お願いします。", reading: "okaikei, onegaishimasu", meaning: "麻煩幫我結帳。", body: "「お会計」說明需求，「お願いします」讓請求更有禮貌。還沒說需求、也沒指東西時，單說「お願いします」無法讓店員知道你要什麼。" },
+      ],
+      questions: [
+        { prompt: "吃完飯對店員說「お会計」，是在表達什麼需求？", options: ["想結帳", "想加點餐點", "想找廁所"], answer: 0, explanation: "「お会計」是結帳。可以說「お会計、お願いします」。" },
+        { prompt: "在「お会計、お願いします」中，「お願いします」有什麼作用？", options: ["告訴店員要一份", "讓請求更有禮貌", "詢問廁所的位置"], answer: 1, explanation: "需求是「お会計」，「お願いします」則是「麻煩你／請幫我」。" },
+      ],
+    },
+    {
+      id: "t-charge", type: "grammar", group: "travel", title: "交通卡加值", subtitle: "チャージ・1000 円",
+      steps: [
+        { title: "請店員幫交通卡加值", keywords: [["チャージ", "chaaji", "加值"], ["お願いします", "onegaishimasu", "麻煩你／請幫我"]], example: "チャージ、お願いします。", reading: "chaaji, onegaishimasu", meaning: "麻煩幫我加值。", body: "在支援交通卡加值的超商櫃檯，出示交通卡說「チャージ」，店員通常就能理解。這個情境的意思是加值，不是幫手機充電；金額還需要另外確認。「aa」表示把 a 的聲音拉長。" },
+        { title: "告訴店員加值金額", keywords: [["1000 円（せんえん）", "sen en", "一千日圓"], ["チャージ", "chaaji", "加值"]], example: "1000 円、お願いします。", reading: "sen en, onegaishimasu", meaning: "一千日圓，麻煩你。", body: "店員已經知道你要加值時，說出金額即可。還沒說明用途時，只說「1000 円」不一定能表達要加值。", polite: "1000 円、チャージお願いします。", politeReading: "sen en, chaaji onegaishimasu", politeMeaning: "麻煩加值一千日圓。" },
+      ],
+      questions: [
+        { prompt: "在支援加值的超商櫃檯，出示交通卡說「チャージ」，是什麼意思？", options: ["替手機充電", "買一張車票", "替交通卡加值"], answer: 2, explanation: "在交通卡的情境裡，「チャージ」是加值；還要告訴店員金額。" },
+        { prompt: "店員已知道你要加值。你說「1000 円」，是在告訴他什麼？", options: ["加值一千日圓", "要一千張卡", "問車站的位置"], answer: 0, explanation: "「1000 円」讀 sen en，是一千日圓。這裡用來說明加值金額。" },
+      ],
+    },
+  ];
   const courses = Object.create(null);
-  for (const course of GRAMMAR) courses[course.id] = course;
+  for (const course of [...GRAMMAR, ...TRAVEL]) courses[course.id] = course;
   for (const script of ["h", "k"]) {
     for (const [key, row, hiragana, katakana, readings] of ROWS) {
       const id = `${script}-${key}`;
@@ -132,7 +178,7 @@ const Study = (() => {
   const courseState = (id) => state().courses[id] ||= blankCourse();
   const save = () => api.save();
   const currentId = () => location.hash.startsWith("#study/") ? location.hash.slice(7) : null;
-  const backHash = (course) => course.type === "kana" ? "#kana" : "#grammar";
+  const backHash = (course) => course.type === "kana" ? "#kana" : course.group === "travel" ? "#travel" : "#grammar";
   const footer = () => api.footer ? api.footer() : "";
   const warning = () => api.warning ? api.warning() : "";
   const wasEarlierDay = (date) => date && new Date(date).toDateString() !== new Date().toDateString();
@@ -157,11 +203,11 @@ const Study = (() => {
     const learnedBefore = Object.values(state().courses).some((c) => wasEarlierDay(c.completedAt));
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音練習</h1><p class="study-note">每組 3–5 個字，包含認字、讀音與選擇題。羅馬字只作讀音提示，不是照英文拼字唸。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div>${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${Object.values(courses).filter((c) => c.type === "kana" && c.script === script).map(row).join("")}</div><p class="study-note">先練平假名、片假名各 46 個基本字；濁音、半濁音、拗音、促音與長音之後再學。</p>`);
   }
-  function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">每課介紹一個句型，再用兩題練習確認理解。例句附中文意思與讀音。</p><div class="course-list">${GRAMMAR.map(row).join("")}</div>`);
+  function grammarPage(travel = false) {
+    return wrap(`<h1 class="focus-heading" tabindex="-1">句型與旅遊用語</h1><nav class="script-tabs course-sections" aria-label="課程分區"><a href="#grammar"${!travel ? ' aria-current="page"' : ""}>基礎句型</a><a href="#travel"${travel ? ' aria-current="page"' : ""}>旅遊常用語</a></nav><h2 class="course-section-heading">${travel ? "旅遊常用語" : "基礎句型"}</h2><p class="study-note">${travel ? "先認識關鍵字，再看怎麼說。搭配指物、出示交通卡等情境，短語也能表達需求；每組附兩題練習。" : "每課介紹一個句型，再用兩題練習確認理解。例句附中文意思與讀音。"}</p><div class="course-list">${(travel ? TRAVEL : GRAMMAR).map(row).join("")}</div>`);
   }
   function audioButton(course, index) {
-    return `<button class="text-button" data-action="study-audio" data-course="${course.id}" data-index="${index}" aria-label="播放 ${escape(course.letters[index])} 的日文讀音">播放讀音</button><span class="reading-label">裝置合成語音</span><p class="study-audio-status study-note" role="status" aria-live="polite"></p>`;
+    return `<button class="text-button" data-action="study-audio" data-course="${course.id}" data-index="${index}" aria-label="播放 ${escape(course.type === "kana" ? course.letters[index] : course.steps[index].example)} 的日文讀音">播放讀音</button><span class="reading-label">裝置合成語音</span><p class="study-audio-status study-note" role="status" aria-live="polite"></p>`;
   }
   function card(course, active) {
     const i = active.cursor;
@@ -178,9 +224,10 @@ const Study = (() => {
       body = `<div class="kana-character" lang="ja">${course.letters[i]}</div><div class="reading-label">讀音 <strong>${course.readings[i]}</strong></div>${audioButton(course, i)}<p class="study-note">${special}</p>`;
     } else {
       const step = course.steps[i];
-      body = `<h2>${escape(step.title)}</h2><p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="reading-label">${escape(step.reading)}</p>` : ""}<p>${escape(step.meaning)}</p><p class="study-note">${escape(step.body)}</p>`;
+      const keywords = step.keywords ? `<section class="keyword-box" aria-label="關鍵字"><h3>關鍵字</h3><dl>${step.keywords.map(([word, reading, meaning]) => `<div><dt><strong lang="ja">${escape(word)}</strong><span>${escape(reading)}</span></dt><dd>${escape(meaning)}</dd></div>`).join("")}</dl></section>` : "";
+      body = `<h2>${escape(step.title)}</h2>${keywords}${step.keywords ? '<h3 class="phrase-label">可以這樣說</h3>' : ""}<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="reading-label">${escape(step.reading)}</p>` : ""}<p>${escape(step.meaning)}</p>${step.keywords ? audioButton(course, i) : ""}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>較完整的說法</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p></details>` : ""}`;
     }
-    return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button><button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button></div>`;
+    return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : course.group === "travel" ? "旅遊用語" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button><button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button></div>`;
   }
   function quiz(course, active) {
     const q = active.order[active.cursor];
@@ -195,7 +242,7 @@ const Study = (() => {
   }
   function result(course, saved) {
     const score = saved.lastResult;
-    return `<section class="study-card study-result"><h2>${score?.firstCorrect === size(course) ? "全部答對" : "練習完成"}</h2>${score ? `<p>第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}<p class="study-note">${course.type === "kana" ? "可重練本組，或返回選擇其他組。" : "可重練本課，或返回選擇其他句型。"}</p><p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><div class="study-nav"><a class="text-button" href="${backHash(course)}">回到${course.type === "kana" ? "五十音" : "句型列表"}</a><button class="primary" data-action="study-restart">重新練習</button></div></section>`;
+    return `<section class="study-card study-result"><h2>${score?.firstCorrect === size(course) ? "全部答對" : "練習完成"}</h2>${score ? `<p>第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}<p class="study-note">${course.type === "kana" ? "可重練本組，或返回選擇其他組。" : course.group === "travel" ? "可重練本組，或返回選擇其他情境。" : "可重練本課，或返回選擇其他句型。"}</p><p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><div class="study-nav"><a class="text-button" href="${backHash(course)}">回到${course.type === "kana" ? "五十音" : course.group === "travel" ? "旅遊用語" : "句型列表"}</a><button class="primary" data-action="study-restart">重新練習</button></div></section>`;
   }
   function coursePage(course) {
     const saved = courseState(course.id);
@@ -204,11 +251,12 @@ const Study = (() => {
       save();
     }
     const active = saved.active;
-    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(course.title)}</h1>${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, backHash(course), course.type === "kana" ? "回五十音" : "回句型列表");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(course.title)}</h1>${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, backHash(course), course.type === "kana" ? "回五十音" : course.group === "travel" ? "回旅遊用語" : "回句型列表");
   }
   function render(hash) {
     if (hash === "#kana") return kanaPage();
     if (hash === "#grammar") return grammarPage();
+    if (hash === "#travel") return grammarPage(true);
     if (hash.startsWith("#study/")) {
       const course = courses[hash.slice(7)];
       return course ? coursePage(course) : wrap('<h1 class="focus-heading" tabindex="-1">找不到這堂課</h1><p class="study-note">請返回課程列表重新選擇。</p><a class="primary" href="#kana">看看五十音</a>');
@@ -247,7 +295,7 @@ const Study = (() => {
       }
       return;
     }
-    const spoken = { "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index];
+    const spoken = course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : course.steps[index].example;
     const utterance = new SpeechSynthesisUtterance(spoken);
     utterance.voice = voice;
     utterance.lang = "ja-JP";
@@ -291,7 +339,7 @@ const Study = (() => {
     if (!active) return true;
     if (action === "study-audio") {
       const index = Number(button.dataset.index);
-      if (course.type === "kana" && Number.isInteger(index) && index >= 0 && index < cards(course)) speak(course, index);
+      if ((course.type === "kana" || course.group === "travel") && Number.isInteger(index) && index >= 0 && index < cards(course)) speak(course, index);
       return true;
     }
     stopAudio();
@@ -328,6 +376,7 @@ const Study = (() => {
   function context(hash) {
     if (hash === "#kana") return "五十音學習路線";
     if (hash === "#grammar") return "基礎句型學習路線";
+    if (hash === "#travel") return "旅遊常用語列表";
     const course = courses[hash.slice(7)];
     if (!hash.startsWith("#study/") || !course) return null;
     const active = state().courses[course.id]?.active;

@@ -618,3 +618,28 @@ test("home explains the task and sends beginners directly to the first kana grou
   assert.equal(b.hash, '#study/h-a');
   assert.equal(b.state.study.courses['h-a'].active.cursor, 0);
 });
+
+test('travel routes preserve feedback context and completion in shared history', () => {
+  const list = browser({hash:'#travel'});
+  assert.equal(list.title, '旅遊常用語｜SoraChi');
+  list.action('feedback');
+  assert.match(list.html, /旅遊常用語列表/);
+  list.action('feedback-back');
+  assert.equal(list.hash, '#travel');
+  list.study('study-open', {course:'t-pay'});
+  list.study('study-next');
+  list.action('feedback');
+  assert.match(list.html, /結帳：請店員算錢・認識第 2 步/);
+  list.action('feedback-back');
+  assert.equal(list.hash, '#study/t-pay');
+  list.study('study-next');
+  for(let i=0;i<2;i++) {
+    const active = list.state.study.courses['t-pay'].active;
+    list.study('study-answer', {choice:[0,1][active.order[active.cursor]]});
+    list.study('study-next');
+  }
+  const reloaded = browser({raw:list.stored,hash:'#history'});
+  assert.match(reloaded.html, /結帳：請店員算錢/);
+  assert.match(reloaded.html, /2 \/ 2/);
+  assert.equal(reloaded.state.history[0].courseId, 't-pay');
+});
