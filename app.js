@@ -245,7 +245,7 @@ app.addEventListener("click", (event) => {
       go("#home");
       break;
     case "start":
-      if (progress.completed && !progress.inProgress) restart();
+      if (!progress.inProgress) restart();
       else {
         progress.inProgress = true;
         save();
