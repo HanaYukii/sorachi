@@ -20,7 +20,9 @@ function browser({
   hash = "#home",
   storageBlocked = false,
 } = {}) {
-  const storage = new Map([[key, raw ?? JSON.stringify(saved)]]);
+  let initialKey = key;
+  try { if (JSON.parse(raw)?.schemaVersion) initialKey = "sorachi:data:v2"; } catch {}
+  const storage = new Map([[initialKey, raw ?? JSON.stringify(saved)]]);
   const windowListeners = new Map();
   const documentListeners = new Map();
   const pending = [];
@@ -216,6 +218,7 @@ function browser({
   const flush = () => {
     while (pending.length) pending.shift()();
   };
+  for (const file of ["content.js", "storage.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
   vm.runInContext(source, context, { filename: "dist/app.js" });
   flush();
@@ -283,7 +286,7 @@ function browser({
       return focused;
     },
     get stored() {
-      return storage.get(key);
+      return storage.get("sorachi:data:v2") ?? storage.get(key);
     },
     get nextDisabled() {
       return querySelector('[data-action="next"]')?.disabled;
@@ -339,7 +342,7 @@ test("malformed saved JSON recovers to a usable, persistable fresh lesson", () =
   assert.doesNotMatch(b.html, /目前瀏覽器無法儲存進度/);
   b.action("start");
   b.action("next");
-  assert.equal(JSON.parse(b.stored).step, 1);
+  assert.equal(JSON.parse(b.stored).learning.intro.step, 1);
   assert.doesNotMatch(b.html, /目前瀏覽器無法儲存進度/);
 });
 

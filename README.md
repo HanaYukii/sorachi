@@ -49,11 +49,12 @@ python3 -m http.server 4173 --bind 127.0.0.1 --directory dist
 
 ## 檢查
 
-需要 Node.js 18 或更新版本，不需要 npm 套件：
+需要 Node.js 22 或更新版本，不需要 npm 套件：
 
 ```sh
 node --check dist/app.js
 node --check dist/study.js
+node scripts/check-content.mjs
 node --test tests/*.test.mjs
 ```
 
@@ -63,7 +64,13 @@ node --test tests/*.test.mjs
 
 `main` 保存程式與測試；`gh-pages` 只發佈 `dist/`。GitHub Pages 的來源設定為 `gh-pages` 分支根目錄。
 
-CSS 或 JavaScript 變更後，請更新 `index.html` 中對應資源的 `?v=` 版本值，避免瀏覽器繼續沿用舊快取。
+CSS、JavaScript 或任何發佈資源變更後，先執行：
+
+```sh
+node scripts/prepare-release.mjs
+```
+
+它會依檔案內容自動更新 `index.html` 的 JS/CSS `?v=`，並產生 `dist/release.json`（build ID、檔案 SHA-256、大小及 MIME）。版本不依賴提交 SHA，重跑結果相同。請一併提交產生的檔案；CI 以 `--check` 模式檢查，不會偷偷改檔。
 
 先提交變更並推送 `main`，再執行：
 
@@ -71,16 +78,40 @@ CSS 或 JavaScript 變更後，請更新 `index.html` 中對應資源的 `?v=` �
 ./scripts/publish.sh
 ```
 
-發佈後仍需等候 GitHub Pages 建置完成，確認線上首頁與資源載入成功。
+發佈腳本要求乾淨的 `main`，本機 HEAD 與 `origin/main` 一致，並等候**同一提交**的 push CI 成功；等待後再次檢查狀態，才推送 `gh-pages`。CI 包含語法、內容驗證、全部回歸測試及 release manifest 檢查。
+
+發佈後等候 GitHub Pages 建置完成，再執行：
+
+```sh
+node scripts/verify-deploy.mjs --attempts 12
+```
+
+部署驗證會檢查網站入口、全部 manifest 資源與 release.json 的 HTTP 狀態、MIME、長度及完整雜湊，並確認不存在的資源回傳 404。`#travel` 等 hash 路由不會送到伺服器；頁面操作、版型與語音仍須另做瀏覽器 QA。
 
 ## 檔案
 
 - `dist/index.html`：頁面入口與網站資訊。
 - `dist/styles.css`：桌機與手機版型、配色與互動狀態。
 - `dist/app.js`：首頁、文字介紹、共用成績紀錄、回報與本機進度。
-- `dist/study.js`：五十音與入門句型、打散測驗、日文合成語音與課程狀態。
+- `dist/study.js`：課程畫面、打散測驗、日文合成語音與課程狀態。
+- `dist/content.js`：獨立教材、穩定課程／題目／卡片 ID、內容版本與驗證。
+- `dist/storage.js`：版本化本機資料、舊版遷移、成績合併與備份 primitives。
+- `dist/release.json`：自動產生的發佈內容清單。
+- `tests/content.test.mjs`、`storage.test.mjs`、`revision.test.mjs`、`deploy.test.mjs`：教材、資料、教材改版與發佈保護測試。
 - `dist/assets/cloud-friend.png`、`cloud-complete.png`：本專案使用的原創 AI 生成角色與抱書完成姿勢。
 - `tests/flow.test.mjs`：跨頁互動流程回歸檢查。
 - `tests/study.test.mjs`：五十音、文法、重試、題序與語音狀態測試。
 
 進度只存在目前瀏覽器，沒有帳號或跨裝置同步；清除網站資料也會移除紀錄。網站未加入分析追蹤。字型使用 Google Fonts，無法取得時會使用裝置的字型。
+
+## 基礎 infra 實作順序與完成條件
+
+- [x] **1. 教材獨立與內容檢查。** 五十音、文法、旅遊常用語、文字介紹均集中於 `content.js`；驗證穩定 ID、必要文字、讀音、中文、答案及干擾選項。調整內容時更新 snapshot 測試；不得為了讓測試通過而重設舊版遷移基準。
+- [x] **2. 資料版本與舊進度相容。** `sorachi:data:v2` 以單一原子寫入保存 `learning`、`attempts`、`favorites`、`preferences` 與 guest identity。首次遷移從 `sorachi:first-lesson:v1` 讀取，保留舊 key 原文作備份，不再寫回它。成績保留當時題數、課名、內容版本及題目 ID；題庫改變不會重算舊成績。只有題目內容版本一致的進行中練習才會接續；不相容時重新開始該輪，保留完成狀態及歷史結果。
+- [x] **3. CI 與可驗證的發佈。** main／PR 自動檢查、資源版本自動更新、同一提交 CI 成功才可發佈、線上逐檔比對。
+
+儲存失敗不會宣稱已成功保存；讀取失敗、損壞或較新版本的主要資料會鎖住寫入，避免覆寫未知資料。修復瀏覽器存取權限後重新載入再試。history 仍只保留最近 30 次，不是永久完整紀錄。現階段多個分頁同時學習仍以最後成功寫入為準。
+
+`DataStore` 提供可測試的本機 JSON 匯出／匯入介面：以穩定 attempt ID 合併紀錄，保留目前瀏覽器已有的進度及 guest identity、補上尚無進度的課程。重複匯入不重複增加同一紀錄；無效備份拒絕匯入。尚未提供使用者備份按鈕，也未接雲端。`favorites`／`preferences` 目前是資料預留欄位，沒有新增收藏或設定介面。
+
+後續依序處理：備份／移轉操作介面 → 正式網域設定與舊站資料移轉 → 選定登入與資料服務 → 訪客紀錄認領、跨裝置合併、登出後隔離與刪除流程。更換網域會改變 localStorage 的來源，資料不會自動跟過去；需在切換前完成備份／移轉介面。這一批沒有建立帳號服務、資料庫或購買網域。Jabiko 的 Supabase auth、全站 Service Worker／快取清除機制不直接搬入 GitHub Pages 共用來源。

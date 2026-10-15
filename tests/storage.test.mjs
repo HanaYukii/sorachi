@@ -1,0 +1,147 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const source = readFileSync(new URL('../dist/storage.js', import.meta.url),'utf8');
+function setup(initial={}, options={}) {
+  const map=new Map(Object.entries(initial)); let blocked=false;
+  const storage={getItem:k=>map.get(k)??null,setItem(k,v){if(blocked) throw Error('quota'); map.set(k,v);}};
+  const ctx=vm.createContext({console}); vm.runInContext(source+'\nglobalThis.api=DataStore;',ctx);
+  const api=ctx.api;
+  const config={storage, metadata:id=>id==='g-old'?{title:'Old course',legacyRevision:'old-revision'}:null,...options};
+  return {api,map,store:api.create(config), config, block(){blocked=true;}};
+}
+const legacyKey='sorachi:first-lesson:v1', key='sorachi:data:v2';
+const old={step:4,completed:true,inProgress:true,answers:{4:true},firstAnswers:{4:false},study:{script:'k',courses:{}},history:[{courseId:'g-old',date:'2026-10-15T00:00:00Z',total:2,firstCorrect:1,retryQuestions:[1]}]};
+
+test('legacy migration is repeatable, preserves source and separates progress from records',()=>{
+ const raw=JSON.stringify(old); const b=setup({[legacyKey]:raw});
+ assert.equal(b.map.get(legacyKey),raw);
+ const snapshot=JSON.parse(b.map.get(key));
+ assert.equal(snapshot.schemaVersion,2);
+ assert.equal(snapshot.learning.intro.step,4);
+ assert.equal(snapshot.learning.study.script,'k');
+ assert.equal(snapshot.attempts[0].total,2);
+ assert.equal(snapshot.attempts[0].courseRevision,'old-revision');
+ assert.equal(snapshot.attempts[0].courseTitle,'Old course');
+ assert.ok(snapshot.attempts[0].id);
+ assert.deepEqual(snapshot.favorites,[]); assert.deepEqual(snapshot.preferences,{});
+ const second=b.api.create(b.config);
+ assert.equal(second.readProgress().history[0].id,snapshot.attempts[0].id);
+ assert.equal(second.readSnapshot().owner.id,snapshot.owner.id);
+});
+
+test('history retains original denominators and retired courses instead of matching today’s bank',()=>{
+ const b=setup();
+ const entries=b.api.normalizeAttempts([
+  {id:'old-1',courseId:'g-retired',courseTitle:'Retired',date:'2026-10-15',total:2,firstCorrect:2,retryQuestions:[]},
+  {id:'new-1',courseId:'g-old',date:'2026-10-16',total:4,firstCorrect:3,retryQuestions:[2]},
+  {courseId:'g-old',date:'2026-10-16',total:2,firstCorrect:3,retryQuestions:[]},
+ ]);
+ assert.equal(entries.length,2); assert.equal(entries[0].total,2); assert.equal(entries[1].total,4);
+ assert.equal(entries[0].courseTitle,'Retired');
+});
+
+test('writing progress leaves favorites, preferences and guest identity intact',()=>{
+ const b=setup();
+ assert.equal(b.store.saveFavorites(['phrase-one','phrase-one','phrase-two']),true);
+ assert.equal(b.store.savePreferences({ttsRate:0.8}),true);
+ const owner=b.store.readSnapshot().owner.id;
+ assert.equal(b.store.writeProgress(old),true);
+ const data=b.store.readSnapshot();
+ assert.equal(data.owner.id,owner);
+ assert.deepEqual(JSON.parse(JSON.stringify(data.favorites)),['phrase-one','phrase-two']);
+ assert.equal(data.preferences.ttsRate,0.8);
+ assert.equal(b.store.readProgress().history[0].total,2);
+});
+
+test('migration storage failure retains legacy source and permits retry',()=>{
+ const raw=JSON.stringify(old); const map=new Map([[legacyKey,raw]]); let blocked=true;
+ const b=setup({}, {storage:{getItem:k=>map.get(k)??null,setItem(k,v){if(blocked)throw Error('quota');map.set(k,v);}}});
+ assert.equal(map.has(key),false); assert.equal(map.get(legacyKey),raw);
+ assert.equal(b.store.readProgress().step,4); assert.equal(b.store.canPersist(),false);
+ blocked=false; assert.equal(b.store.writeProgress(b.store.readProgress()),true);
+ assert.ok(map.has(key)); assert.equal(map.get(legacyKey),raw);
+});
+
+test('future or malformed primary data is never overwritten by the older app',()=>{
+ for(const raw of ['broken-json',JSON.stringify({schemaVersion:99,important:'keep'})]) {
+  const b=setup({[key]:raw,[legacyKey]:JSON.stringify(old)});
+  assert.equal(b.store.writeProgress(old),false);
+  assert.equal(b.map.get(key),raw);
+  assert.equal(b.store.canPersist(),false);
+ }
+});
+
+test('failed persistent writes do not replace the last committed snapshot',()=>{
+ const b=setup(); assert.equal(b.store.writeProgress(old),true); const before=b.map.get(key);
+ b.block(); assert.equal(b.store.writeProgress({...old,history:[]}),false);
+ assert.equal(b.map.get(key),before); assert.equal(b.store.readSnapshot().attempts.length,1);
+});
+
+test('record merge deduplicates identities and keeps independent same-course attempts',()=>{
+ const b=setup(); const a=b.api.makeAttempt(old.history[0]); const c=b.api.makeAttempt(old.history[0]);
+ assert.notEqual(a.id,c.id);
+ const merged=b.api.mergeAttempts([a],[a,c]); assert.equal(merged.length,2);
+ assert.equal(b.api.mergeAttempts(merged,[a,c]).length,2);
+});
+
+test('portable snapshot round trip is validated and keeps new-origin guest progress',()=>{
+ const a=setup(); a.store.writeProgress(old); a.store.saveFavorites(['phrase-one']);
+ const portable=a.store.exportBackup();
+ const b=setup();
+ assert.equal(b.store.importBackup(portable),true);
+ assert.equal(b.store.readProgress().history[0].total,2);
+ assert.equal(b.store.readSnapshot().favorites[0],'phrase-one');
+ const before=b.map.get(key);
+ assert.equal(b.store.importBackup('{"schemaVersion":999}'),false);
+ assert.equal(b.map.get(key),before);
+});
+
+test('unknown read failure cannot overwrite data after writes become available',()=>{
+ const raw=JSON.stringify({schemaVersion:99,important:'keep'});
+ const map=new Map([[key,raw]]); let readBlocked=true;
+ const b=setup({}, {storage:{getItem(k){if(readBlocked) throw Error('denied');return map.get(k)??null;},setItem(k,v){map.set(k,v);}}});
+ readBlocked=false;
+ assert.equal(b.store.writeProgress(old),false); assert.equal(map.get(key),raw);
+ assert.throws(()=>b.store.exportBackup(),/unavailable/i);
+});
+
+test('protected data is never presented as a successful empty backup',()=>{
+ for(const raw of ['invalid',JSON.stringify({schemaVersion:99})]) {
+  const b=setup({[key]:raw}); assert.throws(()=>b.store.exportBackup(),/unavailable/i);
+ }
+});
+
+test('backup import refuses invalid records instead of silently losing them',()=>{
+ const b=setup(); const incoming=JSON.parse(b.store.exportBackup());
+ incoming.attempts=[{...old.history[0],firstCorrect:7}];
+ const before=b.map.get(key);
+ assert.equal(b.store.importBackup(JSON.stringify(incoming)),false);
+ assert.equal(b.map.get(key),before);
+});
+
+test('backup import merges idempotently and preserves existing progress and records',()=>{
+ const a=setup(); a.store.writeProgress(old); a.store.saveFavorites(['phrase-a']);
+ const b=setup(); const own={...old,step:2,history:[{...old.history[0],id:'own',date:'2026-10-16'}]};
+ b.store.writeProgress(own); b.store.saveFavorites(['phrase-b']);
+ const owner=b.store.readSnapshot().owner.id;
+ assert.equal(b.store.importBackup(a.store.exportBackup()),true);
+ assert.equal(b.store.importBackup(a.store.exportBackup()),true);
+ const progress=b.store.readProgress(); assert.equal(progress.step,2); assert.equal(progress.history.length,2);
+ assert.equal(b.store.readSnapshot().owner.id,owner);
+ assert.deepEqual([...b.store.readSnapshot().favorites].sort(),['phrase-a','phrase-b']);
+});
+
+test('legacy storage read failure is distinct from malformed JSON and locks writes',()=>{
+ const map=new Map([[legacyKey,JSON.stringify(old)]]);
+ const b=setup({}, {storage:{getItem(k){if(k===legacyKey)throw Error('denied');return null;},setItem(k,v){map.set(k,v);}}});
+ assert.equal(b.store.writeProgress(old),false); assert.equal(map.has(key),false);
+ assert.equal(map.get(legacyKey),JSON.stringify(old));
+});
+
+test('import into an unused browser restores the selected kana script',()=>{
+ const a=setup(); a.store.writeProgress(old);
+ const b=setup(); assert.equal(b.store.importBackup(a.store.exportBackup()),true);
+ assert.equal(b.store.readProgress().study.script,'k');
+});

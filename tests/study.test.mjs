@@ -24,6 +24,7 @@ function harness(saved, voices = []) {
     addEventListener(name, callback) { speechEvents[name] = callback; },
   };
   const context = vm.createContext({ document, location, window: { speechSynthesis }, SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } }, console });
+  vm.runInContext(readFileSync(new URL("../dist/content.js", import.meta.url), "utf8"), context);
   vm.runInContext(`${source}\nglobalThis.moduleStudy = Study;`, context);
   const study = context.moduleStudy;
   currentState = study.sanitize(saved);
