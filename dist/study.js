@@ -117,8 +117,9 @@ const Study = (() => {
       phrase("再來一杯或一碗", [["おかわり", "okawari", "續杯／再一碗"]], "指著杯子或碗說，讓店員知道你想再來一份。是否能續、是否收費要依店家確認。", "おかわりをお願いします。", "okawari o onegaishimasu", "麻煩再給我一份。"),
       phrase("回答不需要", [["いりません", "irimasen", "不需要"]], "店員問要不要袋子、收據等物品時，可以用這句回答。", "袋はいりません。", "fukuro wa irimasen", "我不需要袋子。"),
     ] },
-    { ...TRAVEL.find(c => c.id === "t-pay"), title: "結帳與付款", subtitle: "会計・刷卡・現金", steps: [...TRAVEL.find(c => c.id === "t-pay").steps,
-      phrase("刷卡或付現金", [["カード", "kaado", "卡片／刷卡"], ["現金（げんきん）", "genkin", "現金"]], "店員問付款方式時，回答「カード」或「現金」。不確定能不能刷卡時，可以展開下面的問法。", "カードは使えますか？", "kaado wa tsukaemasu ka", "可以刷卡嗎？"),
+    { ...TRAVEL.find(c => c.id === "t-pay"), title: "結帳與付款", subtitle: "刷卡・Suica・現金", steps: [TRAVEL.find(c => c.id === "t-pay").steps[0],
+      phrase("刷卡或付現金", [["カード", "kaado", "信用卡／刷卡"], ["現金（げんきん）", "genkin", "現金"]], "店員問付款方式時，可以回答「カード」或「現金」。要明確指定信用卡，也可以說「クレジットカード」。", "クレジットカードは使えますか？", "kurejitto kaado wa tsukaemasu ka", "可以刷卡嗎？"),
+      phrase("用西瓜卡付款", [["Suica（スイカ）", "suika", "西瓜卡／交通 IC 卡"]], "想用西瓜卡付款時，直接說「Suica」，讓店員知道是哪一種卡。不確定店家是否接受時，可以先問能不能使用。", "Suica は使えますか？", "suika wa tsukaemasu ka", "可以用西瓜卡付款嗎？"),
     ] },
     { id: "shopping", title: "買東西", subtitle: "價格・袋子・收據・試穿", steps: [
       phrase("問價格", [["いくら", "ikura", "多少錢"]], "指著想買的商品詢問，對方才知道你在問哪一樣。", "これはいくらですか？", "kore wa ikura desu ka", "這個多少錢？"),

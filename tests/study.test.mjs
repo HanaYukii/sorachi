@@ -298,6 +298,10 @@ test('phrasebook freely shows keywords without changing learning progress, and a
     assert.deepEqual(clone(b.state), before);
     assert.equal(b.records.length, 0);
   }
+  b.render('#travel/t-pay');
+  assert.match(b.html, /カード/); assert.match(b.html, /現金/);
+  assert.match(b.html, /Suica（スイカ）/);
+  assert.match(b.html, /suika wa tsukaemasu ka/);
   b.render('#travel/t-order');
   assert.match(b.html, /ひとつ/); assert.match(b.html, /並盛/);
   b.action('travel-audio', {course:'t-order',index:'2'});
