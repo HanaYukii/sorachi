@@ -102,7 +102,7 @@ node scripts/verify-deploy.mjs --attempts 12
 - `dist/storage.js`：版本化本機資料、舊版遷移、成績合併與備份 primitives。
 - `dist/release.json`：自動產生的發佈內容清單。
 - `tests/content.test.mjs`、`storage.test.mjs`、`revision.test.mjs`、`deploy.test.mjs`：教材、資料、教材改版與發佈保護測試。
-- `dist/assets/cloud-friend.png`、`cloud-complete.png`：本專案使用的原創 AI 生成角色與抱書完成姿勢。
+- `art/cloud-friend.png`、`art/cloud-complete.png`：本專案使用的原創 AI 生成角色與抱書完成姿勢（原圖，不發佈）。`dist/assets/` 只放由原圖轉出的 WebP 尺寸、32px favicon 與 180px apple-touch-icon。
 - `tests/flow.test.mjs`：跨頁互動流程回歸檢查。
 - `tests/study.test.mjs`：五十音、文法、重試、題序與語音狀態測試。
 

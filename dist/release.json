@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "a69756f0a8cb81f830590bfc8fe246942e8cf0f522069d85c1e4883a2eabd6ad",
+  "buildId": "18f1505b9ec51ebf7472fad7e41cabaa33e0a36632eeb01ba5aa3b26953b238f",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,20 +10,56 @@
     },
     {
       "path": "app.js",
-      "sha256": "dab2bd49bf009e25a84818b97470f64ced7f8aa88122aebd8382aae36258f932",
-      "bytes": 34749,
+      "sha256": "4252b605fb0b9cf63e4c0802adbc59bbb6ed8a36eebe139003f709520ff1e64d",
+      "bytes": 35356,
       "mime": "text/javascript"
     },
     {
-      "path": "assets/cloud-complete.png",
-      "sha256": "2a8a78cd9ae520eae08cf689fb36df9c57a5af2639b8e0c4a33d4026efcdddb9",
-      "bytes": 778023,
+      "path": "assets/apple-touch-icon.png",
+      "sha256": "7566ee538e9e1cc95f63780f1366b549a0e0f7d1049d6f954824578a86048627",
+      "bytes": 15739,
       "mime": "image/png"
     },
     {
-      "path": "assets/cloud-friend.png",
-      "sha256": "3ab3491c01c5d761ed175cda545cb2b90a90c0d91c947c7b551f843747408301",
-      "bytes": 745162,
+      "path": "assets/cloud-complete-256.webp",
+      "sha256": "28db17b4e8835fe29ea2b3db2ff0a92581888af789ca59fe0afe810bf3d50a5e",
+      "bytes": 10630,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-complete-512.webp",
+      "sha256": "97d03350bf2cd754c2dd958f9a11aaf7ab5f185455910014a8d62b93938e8f63",
+      "bytes": 23138,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-friend-128.webp",
+      "sha256": "d5efb15cc182b5e82a7362a356a6a56a83a2ee8bccc13a0bb93d1f57aa8fefe2",
+      "bytes": 4716,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-friend-256.webp",
+      "sha256": "713530edcb16e78cfb7d8e2f6377138c55ce5f06669e84f112e27bd9d974d153",
+      "bytes": 9918,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-friend-512.webp",
+      "sha256": "dd9543b057e22bacad5fbe62d0e17a270119ce0e3c5fc029e7f3993931f4a732",
+      "bytes": 21286,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-friend-768.webp",
+      "sha256": "1f12ed90ca969000675a468cb479fe5377fdf065eb0f54b758a94fd38277c5f3",
+      "bytes": 34672,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/favicon-32.png",
+      "sha256": "2bc76a6ccd2aa0bad5dfdaee8119a13a1252570e286b0d1d9a399a5fe1e72a4f",
+      "bytes": 1849,
       "mime": "image/png"
     },
     {
@@ -40,8 +76,8 @@
     },
     {
       "path": "index.html",
-      "sha256": "f5b45afec14b1a494493a80612c0c38d9127f698763bfecbba2ab0b3ec64a453",
-      "bytes": 1335,
+      "sha256": "a493c6ab336362f0bfba620b1b853912a03254ada054101ef9dbf9f7491bf787",
+      "bytes": 1730,
       "mime": "text/html"
     },
     {
@@ -70,8 +106,8 @@
     },
     {
       "path": "styles.css",
-      "sha256": "8044f51346591aa725067a0cde51a4916b5b598aa7b2c340f1dacc12c6d51029",
-      "bytes": 36281,
+      "sha256": "2f4e396e9b1db1074731f71c5577331eb2a75ec03b6d224197e55afa8b272e2e",
+      "bytes": 36127,
       "mime": "text/css"
     }
   ]
