@@ -1358,3 +1358,19 @@ button svg {
   .footer { align-items: flex-start; flex-direction: column; gap: 8px; }
   .footer .quiet-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; column-gap: 16px; row-gap: 4px; justify-items: start; }
 }
+
+/* Accessibility floor (#15): readable sizes, 44px targets, contrast, clear disabled states. */
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.exit, .brand, .author-credit { min-height: 44px; display: inline-flex; align-items: center; }
+.lesson-name, .prototype, .path-number, .path-progress, .author-credit, .step-count, .footer span, .study-card > span.reading-label, .script-cell p, .word-examples .script-cell p, .storage-note, .step-hint, .question-tag, .result-card > span, .word-type { font-size: 12px; }
+.course-state, .course-row .course-state { font-size: 12px; }
+.storage-warning, .feedback-privacy, .study-feedback, .phrase-more .reading-label, .travel-categories .reading-label, .study-card > p.reading-label, .study-result .reading-label { font-size: 14px; }
+.feedback { font-size: 14px; }
+.course-subtitle { display: block; font-size: 13px; color: var(--muted); margin-top: 6px; line-height: 1.7; }
+.answer .letter { color: var(--muted); }
+.example-orange .word-type { color: #8c5a3b; }
+.feedback-form select, .feedback-form textarea { border-color: var(--purple); }
+button.text-button:disabled { color: var(--muted); opacity: .55; text-decoration: none; cursor: default; }
+.study-main .primary:disabled { opacity: 1; }
+summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; border-radius: 6px; }
+.path-card h2 { font-size: 17px; margin: 14px 0 8px; }
