@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "8c4c2fcf44ae7d39e8688feac7a93d15ace5762b6d9dedd707888018071bd764",
+  "buildId": "f5e7c2644dddf445aa02ee6331d83baae6ae8374517dc08f7a5c96ec5a20741c",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app.js",
-      "sha256": "be107ef41fb5d4cc9df9159589c2bf977f5e085ea7d73f3676d5007836dc159e",
-      "bytes": 49211,
+      "sha256": "f49d1b63e1caef27f92ba02224bb21c48f6c0e76dcb9b4267856312e23e8af62",
+      "bytes": 49277,
       "mime": "text/javascript"
     },
     {
@@ -106,7 +106,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "d41a9642bc78c3831ed1920eff275681b32befd125c904ad9b052b290ce1fe73",
+      "sha256": "8f2f66bbfd9712e33014308acf0efc9577dec943c222f3b945e56cda297e6f85",
       "bytes": 1804,
       "mime": "text/html"
     },
@@ -130,8 +130,8 @@
     },
     {
       "path": "study.js",
-      "sha256": "d254831ade2ad2486475d4c61baf043706ec4e0417a5bd67b10d03a5c56980f7",
-      "bytes": 72699,
+      "sha256": "9ec0ac406e88f230aaf07aa58198164d7f614447088972028d3e24874dbbbe47",
+      "bytes": 73406,
       "mime": "text/javascript"
     },
     {

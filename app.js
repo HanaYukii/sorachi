@@ -491,8 +491,9 @@ app.addEventListener("click", (event) => {
     case "confirm-clear": {
       const previous = progress.history;
       const previousStudy = JSON.parse(JSON.stringify(progress.study));
-      progress.history = [];
+      // Before the records go, so the clear is dated after them.
       Study.clearReview();
+      progress.history = [];
       save();
       if (!canStore) { progress.history = previous; progress.study = previousStudy; }
       else dataStore.forgetLegacy();
