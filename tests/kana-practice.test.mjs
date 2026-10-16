@@ -114,3 +114,22 @@ test('voiced rows contrast with their learned base row and long review pools sti
  assert.ok(s.pool.length>92);
  assert.ok(P.sanitize(clone(s)));
 });
+
+test('every kana course with any learned rows yields legal options: one answer, distinct readings, same script, 2–5 choices',()=>{
+ const kana=Object.values(C.courses).filter(c=>c.type==='kana');
+ for(const course of kana){
+  const sameScript=kana.filter(c=>c.script===course.script&&c.id!==course.id).map(c=>c.id);
+  for(let run=0;run<6;run++){
+   const learned=sameScript.filter(()=>Math.random()<0.4);
+   const s=P.create(ids(course.id),{completedIds:learned});
+   for(const q of [...s.questions,...s.questions.map(x=>({...x}))]){
+    assert.ok(q.options.length>=2&&q.options.length<=5,course.id);
+    assert.equal(q.options.filter(id=>id===q.id).length,1,course.id);
+    assert.equal(new Set(q.options).size,q.options.length,course.id);
+    assert.equal(new Set(q.options.map(id=>P.entry(id).reading)).size,q.options.length,course.id);
+    assert.ok(q.options.every(id=>P.entry(id).script===course.script),course.id);
+    assert.ok(q.options.every(id=>[course.id,...learned].includes(P.entry(id).courseId)),course.id);
+   }
+  }
+ }
+});

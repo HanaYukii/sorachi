@@ -62,3 +62,20 @@ test('memory aid notice distinguishes invention from writing instruction', () =>
   assert.match(hints.notice, /不是字源或筆順/);
   assert.match(hints.notice, /不用背/);
 });
+
+test('a memory-hint anchor word never means something else on a travel card', () => {
+  const phrasebook = new Map();
+  for (const category of content.phrasebook) for (const step of category.steps) for (const [word, , meaning] of step.keywords) {
+    phrasebook.set(word.replace(/（.*?）/u, ''), meaning);
+  }
+  let parsed = 0;
+  for (const letter of letters) {
+    const anchor = hints.get(letter)[1].text.match(/^「(.+?)」（(.+?)）/u);
+    if (!anchor) continue;
+    parsed++;
+    // e.g. アイス once meant 冰淇淋 here but 冰的 on the drink card.
+    if (phrasebook.has(anchor[1])) assert.equal(anchor[2], phrasebook.get(anchor[1]), `${letter}: ${anchor[1]}`);
+  }
+  assert.ok(parsed >= 80, 'Anchors must parse, or the check would silently pass');
+  assert.ok(phrasebook.size >= 60);
+});
