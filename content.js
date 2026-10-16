@@ -3917,6 +3917,151 @@ const Content = (() => {
           "id": "g-te-sequence/question/order"
         }
       ]
+    },
+    {
+      "id": "g-te-iru",
+      "type": "grammar",
+      "title": "て形（四）：〜ています",
+      "subtitle": "正在做，或做了以後的狀態",
+      "steps": [
+        {
+          "title": "正在做：〜て います",
+          "example": "いま、コーヒーを のんで います。",
+          "reading": "ima, koohii o nonde imasu",
+          "meaning": "現在正在喝咖啡。",
+          "body": "て形後面接「います」，可以表示動作正在進行，像中文的「正在…」。這裡的「います」要和前面的て形一起看，不是「（人）在、有」的意思。",
+          "id": "g-te-iru/card/now"
+        },
+        {
+          "title": "和〜ます、〜ました比較",
+          "example": "たべます ／ たべました ／ たべて います",
+          "reading": "tabemasu / tabemashita / tabete imasu",
+          "meaning": "平常吃、等一下要吃 ／ 吃了 ／ 正在吃",
+          "body": "「たべます」這類動作的〜ます，說平常會做或等一下要做的事；「いま たべます」是現在就要吃，還沒開始吃。〜ました 說過去做了的事。〜て います 可以說正在做的事，下一張卡還有另一種意思。",
+          "id": "g-te-iru/card/compare"
+        },
+        {
+          "title": "不一定是「正在」：よやくして います",
+          "example": "よやくして います。",
+          "reading": "yoyaku shite imasu",
+          "meaning": "我有預約。",
+          "body": "「よやく」是預約，加上「します」就是動詞「よやくします」，て形是「よやくして」。「よやくして います」是之前已經預約好，現在是有預約的狀態，意思是「我有預約」，不是「正在預約」。〜て います 有時說的是做完以後留下的狀態，要看動詞和情境。旅遊常用語的「予約しています」就是這一句。",
+          "id": "g-te-iru/card/state"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「いま、パンを たべて います。」是什麼意思？",
+          "options": [
+            "現在正在吃麵包。",
+            "現在就要吃麵包。",
+            "現在有麵包。"
+          ],
+          "answer": 0,
+          "explanation": "「たべて います」是正在吃：現在正在吃麵包。「現在就要吃（還沒開始）」是 いま たべます；這裡的「います」和て形一起用，不是「有、在」的意思。",
+          "id": "g-te-iru/question/meaning"
+        },
+        {
+          "prompt": "朋友問你在哪裡。你人在車站等他，回答：えきで＿＿。",
+          "options": [
+            "まって います",
+            "まって ください",
+            "まちました"
+          ],
+          "readings": [
+            "matte imasu",
+            "matte kudasai",
+            "machimashita"
+          ],
+          "answer": 0,
+          "explanation": "你現在還在等，用「まって います」（正在等）。「まって ください」是請對方等；「まちました」是過去等了，現在沒在等。",
+          "id": "g-te-iru/question/matte"
+        },
+        {
+          "prompt": "在飯店櫃檯說「よやくして います」，意思最接近哪一個？",
+          "options": [
+            "我有預約。",
+            "我正在預約。",
+            "請幫我預約。"
+          ],
+          "answer": 0,
+          "explanation": "這裡的〜て います 是之前預約好、現在有預約的狀態：我有預約。不是正在預約；請對方幫忙預約要用「よやくして ください」。",
+          "id": "g-te-iru/question/state"
+        }
+      ]
+    },
+    {
+      "id": "g-te-mo-ii",
+      "type": "grammar",
+      "title": "て形（五）：〜てもいいですか",
+      "subtitle": "問對方：我可以…嗎？",
+      "steps": [
+        {
+          "title": "可以…嗎？：〜ても いいですか",
+          "example": "ここで まっても いいですか。",
+          "reading": "koko de matte mo ii desu ka",
+          "meaning": "可以在這裡等嗎？",
+          "body": "て形加上「も いいですか」，是客氣地問對方「我可以…嗎？」。「いい」是好、可以，和「いいえ」（不是）不一樣。旅遊常用語的「試着してもいいですか」（可以試穿嗎）也是這個句型。",
+          "id": "g-te-mo-ii/card/ask"
+        },
+        {
+          "title": "和〜てください不一樣",
+          "example": "まって ください。 ／ まっても いいですか。",
+          "reading": "matte kudasai / matte mo ii desu ka",
+          "meaning": "請（你）等一下。／ 我可以等嗎？",
+          "body": "〜て ください 是請對方做；〜ても いいですか 是問對方「我可以…嗎？」，做的人是自己。「のんでも いいですか」（可以喝嗎）的「でも」是て形「のんで」加上「も」，不是「但是」的 でも。",
+          "id": "g-te-mo-ii/card/compare"
+        },
+        {
+          "title": "對方怎麼回答",
+          "example": "はい、どうぞ。 ／ すみません、ちょっと…。",
+          "reading": "hai, douzo / sumimasen, chotto…",
+          "meaning": "好的，請便。／ 不好意思，有點不方便……",
+          "body": "可以的話常聽到「はい、どうぞ」（好的，請便）。對方只說「すみません、ちょっと…」、話沒說完，通常是委婉地表示不行。這裡的「ちょっと」不是「一下」，是「有點…」，後面的「不方便」沒說出來。",
+          "speech": "はい、どうぞ。 ／ すみません、ちょっと。",
+          "id": "g-te-mo-ii/card/answer"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「これ、たべても いいですか。」是什麼意思？",
+          "options": [
+            "我可以吃這個嗎？",
+            "請吃這個。",
+            "你正在吃這個嗎？"
+          ],
+          "answer": 0,
+          "explanation": "〜ても いいですか 是問對方「我可以…嗎？」：我可以吃這個嗎？請對方吃是「たべて ください」；問對方是不是正在吃是「たべて いますか」。",
+          "id": "g-te-mo-ii/question/meaning"
+        },
+        {
+          "prompt": "你想在這裡等，先問店員可不可以：",
+          "options": [
+            "ここで まっても いいですか。",
+            "ここで まって ください。",
+            "ここで まちましたか。"
+          ],
+          "readings": [
+            "koko de matte mo ii desu ka",
+            "koko de matte kudasai",
+            "koko de machimashita ka"
+          ],
+          "answer": 0,
+          "explanation": "問對方「我可以…嗎？」用〜ても いいですか。「まって ください」是請對方在這裡等；「まちましたか」是問對方之前有沒有在這裡等。",
+          "id": "g-te-mo-ii/question/ask"
+        },
+        {
+          "prompt": "你問店員可不可以試穿，店員說「すみません、ちょっと…」，話沒說完。意思最接近哪一個？",
+          "options": [
+            "委婉地說不行。",
+            "說可以，請便。",
+            "請你等一下。"
+          ],
+          "answer": 0,
+          "explanation": "話只說到「ちょっと…」就停住，通常是委婉地拒絕。可以的話會說「はい、どうぞ」；請你等一下是「ちょっと まって ください」，後面會把話說完。",
+          "id": "g-te-mo-ii/question/answer"
+        }
+      ]
     }
   ];
   // Grammar lessons are taught in array order and grouped into units on the grammar page. The plan lists what each lesson introduces and needs
@@ -4808,6 +4953,44 @@ const Content = (() => {
         "g-te-sequence/question/meaning": "g-te-sequence/card/tekara",
         "g-te-sequence/question/katte": "g-te-sequence/card/te",
         "g-te-sequence/question/order": "g-te-sequence/card/tekara"
+      }
+    },
+    "g-te-iru": {
+      "unit": "動詞原形與て形",
+      "requires": [
+        "g-te-sequence",
+        "g-arimasu"
+      ],
+      "words": [
+        "よやく"
+      ],
+      "grammar": [
+        "ています"
+      ],
+      "review": {
+        "g-te-iru/question/meaning": "g-te-iru/card/compare",
+        "g-te-iru/question/matte": "g-te-iru/card/compare",
+        "g-te-iru/question/state": "g-te-iru/card/state"
+      }
+    },
+    "g-te-mo-ii": {
+      "unit": "動詞原形與て形",
+      "requires": [
+        "g-te-iru",
+        "g-te-kudasai"
+      ],
+      "words": [
+        "いい",
+        "はい",
+        "どうぞ"
+      ],
+      "grammar": [
+        "てもいいですか"
+      ],
+      "review": {
+        "g-te-mo-ii/question/meaning": "g-te-mo-ii/card/ask",
+        "g-te-mo-ii/question/ask": "g-te-mo-ii/card/compare",
+        "g-te-mo-ii/question/answer": "g-te-mo-ii/card/answer"
       }
     }
   };
