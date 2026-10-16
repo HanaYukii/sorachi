@@ -2489,6 +2489,706 @@ const Content = (() => {
           "id": "g-position/question/tonari"
         }
       ]
+    },
+    {
+      "id": "g-adj-i",
+      "type": "grammar",
+      "title": "形容詞（一）：おおきい・たかい",
+      "subtitle": "大小、貴和便宜",
+      "steps": [
+        {
+          "title": "大、小",
+          "example": "おおきい ／ ちいさい",
+          "reading": "ookii / chiisai",
+          "meaning": "大 ／ 小",
+          "body": "「おおきい」是大，「ちいさい」是小。這類用「い」結尾的形容詞叫い形容詞。不過最後是「い」的不一定都是い形容詞，例如之後會學的「きれい」。",
+          "id": "g-adj-i/card/size"
+        },
+        {
+          "title": "放在句尾",
+          "example": "この パンは おおきいです。",
+          "reading": "kono pan wa ookii desu",
+          "meaning": "這個麵包很大。",
+          "body": "い形容詞放在句尾時，後面直接接「です」。",
+          "id": "g-adj-i/card/desu"
+        },
+        {
+          "title": "貴、便宜",
+          "example": "たかい ／ やすい",
+          "reading": "takai / yasui",
+          "meaning": "貴（也有「高」的意思）／ 便宜",
+          "body": "「たかい」說價錢時是貴，說山或大樓時是高，要看前後文。「やすい」是便宜。",
+          "id": "g-adj-i/card/takai"
+        },
+        {
+          "title": "放在名詞前面",
+          "example": "おおきい パン ／ やすい コーヒー",
+          "reading": "ookii pan / yasui koohii",
+          "meaning": "大的麵包 ／ 便宜的咖啡",
+          "body": "い形容詞直接放在名詞前面，中間不加「の」。",
+          "id": "g-adj-i/card/before-noun"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「この コーヒーは たかいです。」最自然的意思是？",
+          "options": [
+            "這杯咖啡很貴。",
+            "這杯咖啡很高。",
+            "這杯咖啡很便宜。"
+          ],
+          "answer": 0,
+          "explanation": "說咖啡時，「たかい」是價錢貴；說山或大樓時才是高。便宜是「やすい」。",
+          "id": "g-adj-i/question/takai"
+        },
+        {
+          "prompt": "想說「便宜的麵包」：＿＿ パン",
+          "options": [
+            "やすい",
+            "たかい",
+            "おおきい"
+          ],
+          "readings": [
+            "yasui",
+            "takai",
+            "ookii"
+          ],
+          "answer": 0,
+          "explanation": "便宜是「やすい」，直接放在名詞前面：やすい パン。「たかい」是貴，「おおきい」是大。",
+          "id": "g-adj-i/question/yasui"
+        },
+        {
+          "prompt": "想說「小的麵包」，哪一個正確？",
+          "options": [
+            "ちいさい パン",
+            "ちいさいの パン",
+            "ちいさです パン"
+          ],
+          "readings": [
+            "chiisai pan",
+            "chiisai no pan",
+            "chiisa desu pan"
+          ],
+          "answer": 0,
+          "explanation": "い形容詞直接放在名詞前面：ちいさい パン。中間不加「の」，「です」只放在句尾。",
+          "id": "g-adj-i/question/no"
+        }
+      ]
+    },
+    {
+      "id": "g-adj-neg",
+      "type": "grammar",
+      "title": "形容詞（二）：〜くないです、冷和暖",
+      "subtitle": "不貴、冰的、冷的、溫暖的",
+      "steps": [
+        {
+          "title": "不…：くないです",
+          "example": "たかくないです。",
+          "reading": "takaku nai desu",
+          "meaning": "不貴。",
+          "body": "い形容詞的否定：把最後的「い」換成「くないです」，たかい → たかくないです。「いい」（好）不照這個規則，之後再學。",
+          "id": "g-adj-neg/card/kunai"
+        },
+        {
+          "title": "放進句子裡",
+          "example": "この パンは おおきくないです。",
+          "reading": "kono pan wa ookiku nai desu",
+          "meaning": "這個麵包不大。",
+          "body": "おおきい → おおきくないです。名詞句的「じゃないです」不能接在い形容詞後面，不說「おおきいじゃないです」。",
+          "id": "g-adj-neg/card/sentence"
+        },
+        {
+          "title": "冰的、溫暖的、天氣冷",
+          "example": "つめたい みず ／ あたたかい コーヒー ／ きょうは さむいです。",
+          "reading": "tsumetai mizu / atatakai koohii / kyou wa samui desu",
+          "meaning": "冰水 ／ 熱咖啡 ／ 今天很冷。",
+          "body": "東西摸起來、喝起來冰用「つめたい」，天氣冷用「さむい」，兩個不要混用。「あたたかい」是溫暖，東西和天氣都能用；說飲料、食物時就是熱的（相對於冰的）。天氣很熱另有說法，之後再學。",
+          "id": "g-adj-neg/card/cold"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「不貴」，哪一個正確？",
+          "options": [
+            "たかくないです",
+            "たかいじゃないです",
+            "たかいません"
+          ],
+          "readings": [
+            "takaku nai desu",
+            "takai ja nai desu",
+            "takai masen"
+          ],
+          "answer": 0,
+          "explanation": "把「い」換成「くないです」：たかくないです。「じゃないです」是名詞句的否定，「ません」是動詞的否定。",
+          "id": "g-adj-neg/question/kunai"
+        },
+        {
+          "prompt": "「つめたい みず」是什麼意思？",
+          "options": [
+            "冰水",
+            "溫水",
+            "很多水"
+          ],
+          "answer": 0,
+          "explanation": "「つめたい」是摸起來冰：冰水。溫的、暖的是「あたたかい」；「很多水」和冷熱無關。",
+          "id": "g-adj-neg/question/tsumetai"
+        },
+        {
+          "prompt": "冬天戶外很冷，說天氣冷要用哪個詞？",
+          "options": [
+            "さむい",
+            "つめたい",
+            "あたたかい"
+          ],
+          "readings": [
+            "samui",
+            "tsumetai",
+            "atatakai"
+          ],
+          "answer": 0,
+          "explanation": "天氣冷用「さむい」。「つめたい」是東西摸起來冰，「あたたかい」是溫暖。",
+          "id": "g-adj-neg/question/samui"
+        }
+      ]
+    },
+    {
+      "id": "g-adj-na",
+      "type": "grammar",
+      "title": "形容詞（三）：しずか・べんり・きれい",
+      "subtitle": "接名詞時加な的形容詞",
+      "steps": [
+        {
+          "title": "句尾和名詞一樣",
+          "example": "この へやは しずかです。",
+          "reading": "kono heya wa shizuka desu",
+          "meaning": "這個房間很安靜。",
+          "body": "「しずか」（安靜）、「べんり」（方便）這類形容詞，句尾和名詞一樣接「です」。「へや」是房間。",
+          "id": "g-adj-na/card/desu"
+        },
+        {
+          "title": "放在名詞前面加な",
+          "example": "しずかな へや ／ べんりな えき",
+          "reading": "shizuka na heya / benri na eki",
+          "meaning": "安靜的房間 ／ 方便的車站",
+          "body": "放在名詞前面時要加「な」，所以叫な形容詞。",
+          "id": "g-adj-na/card/na"
+        },
+        {
+          "title": "否定：じゃないです",
+          "example": "きれいじゃないです。",
+          "reading": "kirei ja nai desu",
+          "meaning": "不漂亮／不乾淨。",
+          "body": "「きれい」是漂亮、乾淨。な形容詞的否定和名詞句一樣用「じゃないです」。「きれい」最後雖然是「い」，但它是な形容詞，不說 きれくないです。",
+          "id": "g-adj-na/card/kirei"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「安靜的房間」：しずか＿＿へや",
+          "options": [
+            "な",
+            "の",
+            "い"
+          ],
+          "readings": [
+            "na",
+            "no",
+            "i"
+          ],
+          "answer": 0,
+          "explanation": "な形容詞放在名詞前面要加「な」：しずかな へや。「の」用來連接兩個名詞；「しずかい」不是日文。",
+          "id": "g-adj-na/question/na"
+        },
+        {
+          "prompt": "「きれい」的否定是哪一個？",
+          "options": [
+            "きれいじゃないです",
+            "きれくないです",
+            "きれいくないです"
+          ],
+          "readings": [
+            "kirei ja nai desu",
+            "kirekunai desu",
+            "kireikunai desu"
+          ],
+          "answer": 0,
+          "explanation": "「きれい」是な形容詞，否定用「じゃないです」。不能照「たかい → たかくない」那樣改。",
+          "id": "g-adj-na/question/kirei"
+        },
+        {
+          "prompt": "「べんりな えき」是什麼意思？",
+          "options": [
+            "方便的車站",
+            "安靜的車站",
+            "漂亮的車站"
+          ],
+          "answer": 0,
+          "explanation": "「べんり」是方便：方便的車站。安靜是「しずか」，漂亮是「きれい」。",
+          "id": "g-adj-na/question/meaning"
+        }
+      ]
+    },
+    {
+      "id": "g-who-2",
+      "type": "grammar",
+      "title": "疑問詞（二）：どう與問法整理",
+      "subtitle": "問怎麼樣，分清楚各種問法",
+      "steps": [
+        {
+          "title": "問感覺：どう",
+          "example": "この パンは どうですか。 ／ おいしいです。",
+          "reading": "kono pan wa dou desu ka / oishii desu",
+          "meaning": "這個麵包怎麼樣？／ 很好吃。",
+          "body": "「どう」問感覺或狀態（怎麼樣），回答常用形容詞。「おいしい」是好吃。",
+          "id": "g-who-2/card/dou"
+        },
+        {
+          "title": "怎麼樣、怎麼去",
+          "example": "どうですか。 ／ どうやって いきますか。",
+          "reading": "dou desu ka / dou yatte ikimasu ka",
+          "meaning": "怎麼樣？／ 怎麼去？",
+          "body": "問方法（怎麼去）要說「どうやって」，和問感覺的「どう」不一樣。這裡先認得，之後再練。",
+          "id": "g-who-2/card/dou-yatte"
+        },
+        {
+          "title": "整理：問什麼用哪個",
+          "example": "いつ ／ どこ ／ だれ ／ なん ／ いくら ／ いくつ ／ どう",
+          "reading": "itsu / doko / dare / nan / ikura / ikutsu / dou",
+          "meaning": "什麼時候 ／ 哪裡 ／ 誰 ／ 什麼 ／ 多少錢 ／ 幾個 ／ 怎麼樣",
+          "body": "先想想對方會怎麼回答：回答時間用「いつ」，地點用「どこ」，價錢用「いくら」，數量用「いくつ」。「いくら」和「いくつ」只差最後一個音，要分清楚。",
+          "id": "g-who-2/card/review"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "對方回答「あしたです」。你剛才問的是：やすみは＿＿ですか。",
+          "options": [
+            "いつ",
+            "いくら",
+            "どこ"
+          ],
+          "readings": [
+            "itsu",
+            "ikura",
+            "doko"
+          ],
+          "answer": 0,
+          "explanation": "回答是時間（明天），問的就是「いつ」。「いくら」問價錢，「どこ」問地點。",
+          "id": "g-who-2/question/itsu"
+        },
+        {
+          "prompt": "朋友回答「おいしいです」。你剛才問的是：この パンは＿＿ですか。",
+          "options": [
+            "どう",
+            "どこ",
+            "いくつ"
+          ],
+          "readings": [
+            "dou",
+            "doko",
+            "ikutsu"
+          ],
+          "answer": 0,
+          "explanation": "回答是感覺（好吃），問的就是「どう」（怎麼樣）。「どこ」問地點，「いくつ」問幾個。",
+          "id": "g-who-2/question/dou"
+        },
+        {
+          "prompt": "店員回答「ひゃくえんです」。你剛才問的是：これは＿＿ですか。",
+          "options": [
+            "いくら",
+            "いくつ",
+            "どう"
+          ],
+          "readings": [
+            "ikura",
+            "ikutsu",
+            "dou"
+          ],
+          "answer": 0,
+          "explanation": "回答是價錢（100 日圓），問的就是「いくら」。「いくつ」問幾個，回答會是 ひとつ、ふたつ 這類數量；「どう」問感覺。",
+          "id": "g-who-2/question/ikura"
+        }
+      ]
+    },
+    {
+      "id": "g-soshite-demo",
+      "type": "grammar",
+      "title": "連接句子：そして・でも",
+      "subtitle": "而且、但是",
+      "steps": [
+        {
+          "title": "而且：そして",
+          "example": "この パンは やすいです。 そして、おいしいです。",
+          "reading": "kono pan wa yasui desu. soshite, oishii desu.",
+          "meaning": "這個麵包很便宜。而且很好吃。",
+          "body": "「そして」放在第二個句子的開頭，表示再加上一件同方向的事（例如兩個優點），像中文的「而且」。",
+          "id": "g-soshite-demo/card/soshite"
+        },
+        {
+          "title": "但是：でも",
+          "example": "この パンは おいしいです。 でも、たかいです。",
+          "reading": "kono pan wa oishii desu. demo, takai desu.",
+          "meaning": "這個麵包很好吃。但是很貴。",
+          "body": "「でも」表示前後相反，像中文的「但是」。「でも」還有其他用法，這裡先學「但是」。",
+          "id": "g-soshite-demo/card/demo"
+        },
+        {
+          "title": "動作的先後",
+          "example": "きのう コーヒーを のみました。 そして、パンを たべました。",
+          "reading": "kinou koohii o nomimashita. soshite, pan o tabemashita.",
+          "meaning": "昨天喝了咖啡，然後吃了麵包。",
+          "body": "「そして」也可以表示「然後」，把做過的事依序說出來。",
+          "id": "g-soshite-demo/card/order"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "安靜是優點，小是缺點：この へやは しずかです。＿＿、ちいさいです。",
+          "options": [
+            "でも",
+            "そして"
+          ],
+          "readings": [
+            "demo",
+            "soshite"
+          ],
+          "answer": 0,
+          "explanation": "一個優點接一個缺點，前後相反，用「でも」（但是）。「そして」是再加上同方向的事，例如兩個優點。",
+          "id": "g-soshite-demo/question/demo"
+        },
+        {
+          "prompt": "方便和乾淨都是優點：この えきは べんりです。＿＿、きれいです。",
+          "options": [
+            "そして",
+            "でも"
+          ],
+          "readings": [
+            "soshite",
+            "demo"
+          ],
+          "answer": 0,
+          "explanation": "兩個都是優點，是再加上同方向的事，用「そして」。「でも」用在前後相反，例如一個優點接一個缺點。",
+          "id": "g-soshite-demo/question/soshite"
+        },
+        {
+          "prompt": "「おいしいです。でも、たかいです。」裡的「でも」最接近哪個意思？",
+          "options": [
+            "但是",
+            "而且",
+            "所以"
+          ],
+          "answer": 0,
+          "explanation": "前後相反（好吃／貴），「でも」是但是。「而且」是「そして」；「所以」是因果，好吃和貴之間沒有因果。",
+          "id": "g-soshite-demo/question/meaning"
+        }
+      ]
+    },
+    {
+      "id": "g-kara-reason",
+      "type": "grammar",
+      "title": "原因：〜から",
+      "subtitle": "因為…所以…",
+      "steps": [
+        {
+          "title": "因為…所以…",
+          "example": "たかいですから、かいません。",
+          "reading": "takai desu kara, kaimasen",
+          "meaning": "因為很貴，所以不買。",
+          "body": "完整的句子後面接「から」，表示原因：「…から、…」＝因為…，所以…。",
+          "id": "g-kara-reason/card/reason"
+        },
+        {
+          "title": "再一個例子",
+          "example": "きょうは やすみですから、うちに います。",
+          "reading": "kyou wa yasumi desu kara, uchi ni imasu",
+          "meaning": "今天休假，所以在家。",
+          "body": "「うち」是家。原因放前面，結果放後面。",
+          "id": "g-kara-reason/card/example"
+        },
+        {
+          "title": "兩種から",
+          "example": "えきから ／ たかいですから",
+          "reading": "eki kara / takai desu kara",
+          "meaning": "從車站 ／ 因為很貴",
+          "body": "名詞後面直接接「から」是起點（從…）；完整的句子（〜です、〜ます）後面接「から」才是原因。",
+          "id": "g-kara-reason/card/compare"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「たかいですから、かいません。」是什麼意思？",
+          "options": [
+            "因為很貴，所以不買。",
+            "從很貴的地方開始買。",
+            "很貴，但是買了。"
+          ],
+          "answer": 0,
+          "explanation": "句子後面的「から」是原因：因為很貴，所以不買。「從…」是名詞後面的「から」；「但是」是「でも」。",
+          "id": "g-kara-reason/question/meaning"
+        },
+        {
+          "prompt": "「とうきょうから」的「から」是什麼意思？",
+          "options": [
+            "從",
+            "因為",
+            "到"
+          ],
+          "answer": 0,
+          "explanation": "名詞後面直接接「から」是起點：從東京。「因為」要接在完整的句子後面（〜ですから）；「到」是「まで」。",
+          "id": "g-kara-reason/question/start"
+        },
+        {
+          "prompt": "想說「今天休假，所以在家」：きょうは やすみです＿＿、うちに います。",
+          "options": [
+            "から",
+            "まで",
+            "でも"
+          ],
+          "readings": [
+            "kara",
+            "made",
+            "demo"
+          ],
+          "answer": 0,
+          "explanation": "原因用「から」：やすみですから。「でも」是但是，「まで」是到。",
+          "id": "g-kara-reason/question/fill"
+        }
+      ]
+    },
+    {
+      "id": "g-te-forms",
+      "type": "grammar",
+      "title": "て形（一）：動詞怎麼變",
+      "subtitle": "不一定是把ます直接換成て",
+      "steps": [
+        {
+          "title": "直接換成て",
+          "example": "たべます → たべて ／ みます → みて",
+          "reading": "tabemasu → tabete / mimasu → mite",
+          "meaning": "吃 ／ 看",
+          "body": "て形是動詞的另一種形，後面接「ください」可以請別人做事，也能把動作接起來（接下來兩課會學）。「ます」前面那個字讀音是 e 結尾（例如 たべます 的「べ」be），一定是把「ます」換成「て」。「みます」（看）的「み」是 i 結尾，也是直接換成「て」，要個別記。",
+          "speech": "たべます、たべて。みます、みて。",
+          "id": "g-te-forms/card/simple"
+        },
+        {
+          "title": "會變音的",
+          "example": "かいます → かって ／ のみます → のんで ／ まちます → まって",
+          "reading": "kaimasu → katte / nomimasu → nonde / machimasu → matte",
+          "meaning": "買 ／ 喝 ／ 等",
+          "body": "多數「ます」前面是 い、ち、り 的動詞變成「って」，是 み、び、に 的變成「んで」。也有例外，像 みます → みて、います → いて，要個別記。",
+          "speech": "かいます、かって。のみます、のんで。まちます、まって。",
+          "id": "g-te-forms/card/sound"
+        },
+        {
+          "title": "要另外記的",
+          "example": "きます → きて ／ します → して ／ いきます → いって",
+          "reading": "kimasu → kite / shimasu → shite / ikimasu → itte",
+          "meaning": "來 ／ 做 ／ 去",
+          "body": "「きます」（來）、「します」（做）變成 きて、して；「いきます」（去）也是例外，變成 いって。",
+          "speech": "きます、きて。します、して。いきます、いって。",
+          "id": "g-te-forms/card/irregular"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「たべます」的て形是哪一個？",
+          "options": [
+            "たべて",
+            "たべって",
+            "たべんで"
+          ],
+          "readings": [
+            "tabete",
+            "tabette",
+            "tabende"
+          ],
+          "answer": 0,
+          "explanation": "「たべます」的「べ」讀音是 e 結尾，直接把「ます」換成「て」：たべて。「って」「んで」是其他動詞的變法。",
+          "id": "g-te-forms/question/tabete"
+        },
+        {
+          "prompt": "「のみます」的て形是哪一個？",
+          "options": [
+            "のんで",
+            "のみて",
+            "のって"
+          ],
+          "readings": [
+            "nonde",
+            "nomite",
+            "notte"
+          ],
+          "answer": 0,
+          "explanation": "「ます」前面是「み」，照規則變成「んで」：のんで。「みます → みて」是要個別記的例外，不能套到「のみます」；「のって」是別的動詞的て形。",
+          "id": "g-te-forms/question/nonde"
+        },
+        {
+          "prompt": "「いきます」（去）的て形是哪一個？",
+          "options": [
+            "いって",
+            "いきて",
+            "いいて"
+          ],
+          "readings": [
+            "itte",
+            "ikite",
+            "iite"
+          ],
+          "answer": 0,
+          "explanation": "「いきます」（去）要另外記，て形是「いって」。「いきて」是直接把「ます」換成「て」，「去」不能這樣變；「いいて」不是日文。",
+          "id": "g-te-forms/question/itte"
+        }
+      ]
+    },
+    {
+      "id": "g-te-kudasai",
+      "type": "grammar",
+      "title": "て形（二）：〜てください",
+      "subtitle": "請對方做某件事",
+      "steps": [
+        {
+          "title": "請等一下",
+          "example": "ちょっと まって ください。",
+          "reading": "chotto matte kudasai",
+          "meaning": "請等一下。",
+          "body": "て形加上「ください」＝請（你）做…：まちます（等）→ まって ください。「ちょっと」是一下、稍微。",
+          "id": "g-te-kudasai/card/matte"
+        },
+        {
+          "title": "請說慢一點",
+          "example": "ゆっくり はなして ください。",
+          "reading": "yukkuri hanashite kudasai",
+          "meaning": "請說慢一點。",
+          "body": "「はなします」（說）的「し」不變音，直接把「ます」換成「て」：はなして。「ゆっくり」是慢慢地。旅遊常用語裡的「ゆっくり話してください」就是這一句。",
+          "id": "g-te-kudasai/card/hanashite"
+        },
+        {
+          "title": "請看這個",
+          "example": "これを みて ください。",
+          "reading": "kore o mite kudasai",
+          "meaning": "請看這個。",
+          "body": "指著手機畫面請對方看時可以這樣說。",
+          "id": "g-te-kudasai/card/mite"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "請對方等一下：ちょっと＿＿ ください。",
+          "options": [
+            "まって",
+            "まちて",
+            "まんで"
+          ],
+          "readings": [
+            "matte",
+            "machite",
+            "mande"
+          ],
+          "answer": 0,
+          "explanation": "「まちます」的「ち」變成「って」：まって，後面接「ください」。「まちて」是直接把「ます」換成「て」；「んで」是 み、び、に 那一組的變法。",
+          "id": "g-te-kudasai/question/matte"
+        },
+        {
+          "prompt": "「これを みて ください。」是什麼意思？",
+          "options": [
+            "請看這個。",
+            "請等這個。",
+            "請說這個。"
+          ],
+          "answer": 0,
+          "explanation": "「みて」是「みます」（看）的て形：請看這個。等是「まって」，說是「はなして」。",
+          "id": "g-te-kudasai/question/meaning"
+        },
+        {
+          "prompt": "想請對方說慢一點：ゆっくり＿＿ ください。",
+          "options": [
+            "はなして",
+            "はなしって",
+            "はなします"
+          ],
+          "readings": [
+            "hanashite",
+            "hanashitte",
+            "hanashimasu"
+          ],
+          "answer": 0,
+          "explanation": "「はなします」的「し」不變音，て形是「はなして」，不會變成「しって」。「ください」前面要用て形，不用「ます」。",
+          "id": "g-te-kudasai/question/hanashite"
+        }
+      ]
+    },
+    {
+      "id": "g-te-sequence",
+      "type": "grammar",
+      "title": "て形（三）：先做…再…、〜てから",
+      "subtitle": "動作的順序",
+      "steps": [
+        {
+          "title": "先…然後…",
+          "example": "パンを かって、うちに かえります。",
+          "reading": "pan o katte, uchi ni kaerimasu",
+          "meaning": "買麵包，然後回家。",
+          "body": "用て形把動作接起來，照順序說：先買麵包，再回家。這裡的て形是「然後」，不是中文的「和」。「かって」是「かいます」的て形（い → って），「かえります」是回去。",
+          "id": "g-te-sequence/card/te"
+        },
+        {
+          "title": "做完…之後再…：てから",
+          "example": "ごはんを たべてから、コーヒーを のみます。",
+          "reading": "gohan o tabete kara, koohii o nomimasu",
+          "meaning": "吃完飯之後再喝咖啡。",
+          "body": "「〜てから」強調前一個動作做完，才做後一個。「ごはん」是飯。",
+          "id": "g-te-sequence/card/tekara"
+        },
+        {
+          "title": "三種から",
+          "example": "えきから ／ たかいですから ／ たべてから",
+          "reading": "eki kara / takai desu kara / tabete kara",
+          "meaning": "從車站 ／ 因為很貴 ／ 吃完之後",
+          "body": "名詞後面是起點，完整的句子後面是原因，て形後面是「…之後」。",
+          "id": "g-te-sequence/card/three-kara"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「たべてから」是什麼意思？",
+          "options": [
+            "吃完之後",
+            "因為吃了",
+            "從吃開始"
+          ],
+          "answer": 0,
+          "explanation": "て形後面的「から」是「…之後」：吃完之後。完整的句子後面的「から」才是因為，名詞後面的「から」才是從。",
+          "id": "g-te-sequence/question/meaning"
+        },
+        {
+          "prompt": "想說「買了麵包，然後回家」：パンを＿＿、うちに かえります。",
+          "options": [
+            "かって",
+            "かいて",
+            "かいます"
+          ],
+          "readings": [
+            "katte",
+            "kaite",
+            "kaimasu"
+          ],
+          "answer": 0,
+          "explanation": "「かいます」（買）的「い」變成「って」：かって。「かいて」是另一個動詞（かきます，寫）的て形，之後再學；句子中間還要接下一個動作，要用て形，不用「かいます」。",
+          "id": "g-te-sequence/question/katte"
+        },
+        {
+          "prompt": "「ごはんを たべてから、コーヒーを のみます。」先做哪件事？",
+          "options": [
+            "先吃飯",
+            "先喝咖啡",
+            "兩件同時做"
+          ],
+          "answer": 0,
+          "explanation": "「たべてから」＝吃完之後，所以先吃飯，再喝咖啡。",
+          "id": "g-te-sequence/question/order"
+        }
+      ]
     }
   ];
   // Grammar lessons are taught in array order and grouped into units on the grammar page. The plan lists what each lesson introduces and needs
@@ -3020,6 +3720,195 @@ const Content = (() => {
         "g-position/question/ue": "g-position/card/three",
         "g-position/question/chikaku": "g-position/card/four",
         "g-position/question/tonari": "g-position/card/four"
+      }
+    },
+    "g-adj-i": {
+      "unit": "形容詞與連接",
+      "requires": [
+        "g-kono",
+        "g-masen"
+      ],
+      "words": [
+        "おおきい",
+        "ちいさい",
+        "たかい",
+        "やすい"
+      ],
+      "grammar": [],
+      "review": {
+        "g-adj-i/question/takai": "g-adj-i/card/takai",
+        "g-adj-i/question/yasui": "g-adj-i/card/takai",
+        "g-adj-i/question/no": "g-adj-i/card/before-noun"
+      }
+    },
+    "g-adj-neg": {
+      "unit": "形容詞與連接",
+      "requires": [
+        "g-adj-i",
+        "g-days",
+        "g-to"
+      ],
+      "words": [
+        "たかく",
+        "おおきく",
+        "つめたい",
+        "あたたかい",
+        "さむい"
+      ],
+      "grammar": [
+        "ないです"
+      ],
+      "review": {
+        "g-adj-neg/question/kunai": "g-adj-neg/card/kunai",
+        "g-adj-neg/question/tsumetai": "g-adj-neg/card/cold",
+        "g-adj-neg/question/samui": "g-adj-neg/card/cold"
+      }
+    },
+    "g-adj-na": {
+      "unit": "形容詞與連接",
+      "requires": [
+        "g-adj-neg",
+        "g-negative",
+        "g-place"
+      ],
+      "words": [
+        "しずか",
+        "べんり",
+        "きれい",
+        "へや"
+      ],
+      "grammar": [
+        "な"
+      ],
+      "review": {
+        "g-adj-na/question/na": "g-adj-na/card/na",
+        "g-adj-na/question/kirei": "g-adj-na/card/kirei",
+        "g-adj-na/question/meaning": "g-adj-na/card/na"
+      }
+    },
+    "g-who-2": {
+      "unit": "形容詞與連接",
+      "requires": [
+        "g-who",
+        "g-counting",
+        "g-adj-i",
+        "g-days"
+      ],
+      "words": [
+        "どう",
+        "どうやって",
+        "おいしい"
+      ],
+      "grammar": [],
+      "review": {
+        "g-who-2/question/itsu": "g-who-2/card/review",
+        "g-who-2/question/dou": "g-who-2/card/dou",
+        "g-who-2/question/ikura": "g-who-2/card/review"
+      }
+    },
+    "g-soshite-demo": {
+      "unit": "形容詞與連接",
+      "requires": [
+        "g-adj-na",
+        "g-who-2",
+        "g-mashita"
+      ],
+      "words": [
+        "そして",
+        "でも"
+      ],
+      "grammar": [],
+      "review": {
+        "g-soshite-demo/question/demo": "g-soshite-demo/card/demo",
+        "g-soshite-demo/question/soshite": "g-soshite-demo/card/soshite",
+        "g-soshite-demo/question/meaning": "g-soshite-demo/card/demo"
+      }
+    },
+    "g-kara-reason": {
+      "unit": "形容詞與連接",
+      "requires": [
+        "g-soshite-demo",
+        "g-kara-made",
+        "g-arimasu"
+      ],
+      "words": [
+        "うち"
+      ],
+      "grammar": [],
+      "review": {
+        "g-kara-reason/question/meaning": "g-kara-reason/card/reason",
+        "g-kara-reason/question/start": "g-kara-reason/card/compare",
+        "g-kara-reason/question/fill": "g-kara-reason/card/example"
+      }
+    },
+    "g-te-forms": {
+      "unit": "て形",
+      "requires": [
+        "g-mashita",
+        "g-arimasu"
+      ],
+      "words": [
+        "みます",
+        "まちます",
+        "きます",
+        "します",
+        "いきます",
+        "たべて",
+        "みて",
+        "かって",
+        "のんで",
+        "まって",
+        "きて",
+        "して",
+        "いって"
+      ],
+      "grammar": [
+        "て形"
+      ],
+      "review": {
+        "g-te-forms/question/tabete": "g-te-forms/card/simple",
+        "g-te-forms/question/nonde": "g-te-forms/card/sound",
+        "g-te-forms/question/itte": "g-te-forms/card/irregular"
+      }
+    },
+    "g-te-kudasai": {
+      "unit": "て形",
+      "requires": [
+        "g-te-forms",
+        "g-demo"
+      ],
+      "words": [
+        "ちょっと",
+        "ください",
+        "ゆっくり",
+        "はなします",
+        "はなして"
+      ],
+      "grammar": [],
+      "review": {
+        "g-te-kudasai/question/matte": "g-te-kudasai/card/matte",
+        "g-te-kudasai/question/meaning": "g-te-kudasai/card/mite",
+        "g-te-kudasai/question/hanashite": "g-te-kudasai/card/hanashite"
+      }
+    },
+    "g-te-sequence": {
+      "unit": "て形",
+      "requires": [
+        "g-te-kudasai",
+        "g-kara-reason",
+        "g-ni-de"
+      ],
+      "words": [
+        "かえり",
+        "ごはん"
+      ],
+      "grammar": [
+        "から"
+      ],
+      "review": {
+        "g-te-sequence/question/meaning": "g-te-sequence/card/tekara",
+        "g-te-sequence/question/katte": "g-te-sequence/card/te",
+        "g-te-sequence/question/order": "g-te-sequence/card/tekara"
       }
     }
   };
