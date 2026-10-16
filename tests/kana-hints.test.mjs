@@ -46,7 +46,7 @@ test('kanji origins come from the dictionaries, and kana whose origin is open ha
     'あ': '由漢字「安」草寫變來。', 'へ': '由漢字「部」右邊的「阝」草寫變來。', 'ね': '由漢字「祢」（禰）草寫變來。', 'を': '由漢字「遠」草寫變來。',
     'ア': '取自漢字「阿」左邊的「阝」。', 'ウ': '取自漢字「宇」上面的「宀」。', 'オ': '取自漢字「於」的左半邊。', 'ケ': '取自漢字「介」的前三筆。',
     'タ': '取自漢字「多」上面的「夕」。', 'ニ': '由漢字「二」變來。', 'ハ': '一般認為由漢字「八」變來。', 'メ': '由漢字「女」變來。',
-    'ル': '一般認為取自漢字「流」的最後兩筆。', 'ヲ': '取自漢字「乎」的前三筆。',
+    'ル': '一般認為取自漢字「流」的最後兩筆。', 'ヲ': '由漢字「乎」的前三筆變形而來。', 'ヘ': '由漢字「部」右邊的「阝」草寫變來。', 'レ': '取自漢字「礼」的最後一筆。',
   };
   for (const [letter, text] of Object.entries(expected)) assert.equal(entry(letter, '字源').text, text, letter);
 });
@@ -59,13 +59,15 @@ test('a comparison names another basic kana and says where they differ', () => {
     count++;
     assert.ok([...item.text].some((ch) => basic.includes(ch) && ch !== letter), `${letter}: ${item.text}`);
     assert.ok(item.text.includes(letter) || /同音的平假名/u.test(item.text), `${letter}: ${item.text}`);
+    // Says where they differ, unless the two are the same shape.
+    assert.match(item.text, /；|少了|幾乎一樣/u, `${letter}: ${item.text}`);
   }
   assert.ok(count >= 40, 'Confusable pairs are covered');
   // The pairs beginners mix up most say where the dots sit and which way the long stroke goes.
   assert.match(entry('シ', '比一比').text, /シ 的兩點在左邊，長的一筆往右上挑/u);
   assert.match(entry('ツ', '比一比').text, /ツ 的兩點在上面，長的一筆往左下撇/u);
-  assert.match(entry('ソ', '比一比').text, /ソ 往左下撇/u);
-  assert.match(entry('ン', '比一比').text, /ン 往右上挑/u);
+  assert.match(entry('ソ', '比一比').text, /ソ 比較直，往左下撇/u);
+  assert.match(entry('ン', '比一比').text, /ン 比較平，往右上挑/u);
 });
 
 test('an example word holds its kana, spells romaji the way the lessons do, and is never needed to learn the kana', () => {
@@ -140,6 +142,15 @@ test('hints and unknown results are immutable and do not resolve inherited prope
   for (const value of ['', 'あい', 'ゔ', 'ゃ', 'A', '__proto__', 'constructor', null, undefined, 1, {}]) {
     assert.equal(hints.get(value).length, 0);
     assert.ok(Object.isFrozen(hints.get(value)));
+  }
+});
+
+test('the review document lists what each card shows', () => {
+  const doc = readFileSync(new URL('../docs/kana-hints-review.md', import.meta.url), 'utf8');
+  for (const letter of basic) {
+    const row = doc.split('\n').find((line) => line.startsWith(`| ${letter} |`));
+    assert.ok(row, letter);
+    for (const label of ['字源', '比一比', '例子']) assert.ok(row.includes(entry(letter, label)?.text ?? '—'), `${letter} ${label}`);
   }
 });
 

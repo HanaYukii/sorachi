@@ -571,7 +571,14 @@ test('the hint box shows origin, comparison and example together, plays the exam
  assert.equal(b.stored,null);assert.deepEqual(clone(b.study.currentAttempt('h-a')),clone(attempt));
  b.action('word-audio',{letter:'い'});assert.equal(b.utterances.length,1,'Only the word on the card on screen plays');
  b.action('hint');assert.equal(b.stored,null,'The old switch does nothing');
+ assert.match(b.html,/<dt>比一比<\/dt><dd><span lang="ja">お<\/span> 右上多一個點；<span lang="ja">あ<\/span> 沒有。<\/dd>/,'Kana in the Chinese is marked Japanese');
+ assert.match(b.html,/關於記憶提示/);
  for(let i=0;i<5;i++)b.action('next');assert.doesNotMatch(b.html,/記憶提示|hint-word/);
+ // Every copy of the kana in the example is marked; a card without an origin or an example has no note about them.
+ const m=harness(null,[{lang:'ja-JP'}]);m.loadHints();m.action('open',{course:'h-ma'});m.action('next');
+ assert.match(m.html,/<span class="hint-word" lang="ja"><mark>み<\/mark><mark>み<\/mark><\/span>/);
+ m.action('open',{course:'h-ga'});
+ assert.match(m.html,/<dt>濁點<\/dt>/);assert.doesNotMatch(m.html,/關於記憶提示/);
 });
 
 test('grammar still requires a correct retry and preserves its live region and first score', () => {
