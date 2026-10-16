@@ -84,8 +84,8 @@ const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
 // lesson or review (the next group), or after feedback, keeps the earlier source; anything else, such as a direct
 // link, has none. An entry gets its source once, when it is first shown, so going back to it never changes it.
 const exits = ["#home", "#kana", "#grammar"];
-const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|feedback$)/.test(page || "");
-let cameFrom = null, shown = null;
+const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|kana-random$|grammar-random$|feedback$)/.test(page || "");
+let cameFrom = null, shown = null, shownHash = null;
 function arrive() {
   if (window.history.state?.from === undefined) window.history.replaceState({ from: exits.includes(shown) ? shown : passesOn(shown) ? cameFrom : null }, "");
   route();
@@ -184,7 +184,7 @@ function homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review
     grammarNext?.resume ? grammarRow : "",
     kanaNext?.open ? "" : kanaRow,
     grammarNext?.resume ? "" : grammarRow,
-    review.availableCount ? row('data-action="study-review-start"', "五十音小複習", review.wrongCount ? `先練上次答錯的 ${review.wrongCount} 個字` : "從學過的字挑幾個混在一起練", review.canResume ? "繼續" : `${Math.min(5, review.availableCount)} 個字`) : "",
+    review.availableCount ? row('data-action="study-review-start"', "五十音複習", review.wrongCount ? `先練上次答錯的 ${review.wrongCount} 個字` : "從學過的字挑幾個混在一起練", review.canResume ? "繼續" : `${Math.min(5, review.availableCount)} 個字`) : "",
     grammarReviewSize ? row('data-action="study-grammar-review"', "句型小複習", "從完成的課裡挑幾題混在一起練", grammarReviewResume ? "繼續" : `${grammarReviewSize} 題`) : "",
     saved ? row("#travel/favorites", "我的常用語", "收藏的旅遊用語", `${saved} 張`) : "",
     introNext ? intro : "",
@@ -198,7 +198,7 @@ function homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review
   return `<div class="home-dashboard">
     ${next ? `<section class="dash-next" aria-labelledby="dash-next-title"><h2 id="dash-next-title">接著做</h2><ul class="dash-list">${next}</ul></section>` : ""}
     <section class="dash-progress" aria-labelledby="dash-progress-title"><h2 id="dash-progress-title">你的進度</h2>${progressPanel}</section>
-    <section class="dash-all" aria-labelledby="dash-all-title"><h2 id="dash-all-title">全部內容</h2><ul class="dash-list">${row("#kana", "五十音", "平假名、片假名，濁音、拗音、促音與長音", `各 ${kanaIds("h").length} 組`)}${row("#grammar", "基礎句型", "從句子架構開始，每課只用前面教過的詞", `${Content.grammar.length} 課`)}${row('data-action="study-grammar-random"', "句型隨機練習", "入門句型，不用先學過", "5 題")}${row("#travel", "旅遊常用語", "依情境查關鍵字，可以收藏", `${Content.phrasebook.length} 種情境`)}${introNext ? "" : intro}${row("#history", "學習紀錄", "完成時間與第一次作答的成績", records)}</ul></section>
+    <section class="dash-all" aria-labelledby="dash-all-title"><h2 id="dash-all-title">全部內容</h2><ul class="dash-list">${row("#kana", "五十音", "平假名、片假名，濁音、拗音、促音與長音", `各 ${kanaIds("h").length} 組`)}${row('data-action="study-kana-random"', "五十音隨機練習", "基本平假名，不用先學過", "5 題")}${row("#grammar", "基礎句型", "從句子架構開始，每課只用前面教過的詞", `${Content.grammar.length} 課`)}${row('data-action="study-grammar-random"', "句型隨機練習", "入門句型，不用先學過", "5 題")}${row("#travel", "旅遊常用語", "依情境查關鍵字，可以收藏", `${Content.phrasebook.length} 種情境`)}${introNext ? "" : intro}${row("#history", "學習紀錄", "完成時間與第一次作答的成績", records)}</ul></section>
   </div>`;
 }
 
@@ -420,6 +420,7 @@ function route() {
   const studyPage = Study.render(location.hash);
   // Pages without a route of their own show home.
   shown = studyPage !== null || ["#lesson", "#history", "#feedback", "#about"].includes(location.hash) || location.hash === "#done" && progress.completed ? location.hash : "#home";
+  shownHash = location.hash;
   if (studyPage !== null) {
     document.title = `${location.hash === "#kana-review" ? "五十音複習" : location.hash === "#kana-random" ? "五十音隨機練習" : location.hash === "#grammar-random" ? "句型隨機練習" : location.hash === "#kana" ? "五十音表" : location.hash === "#travel" ? "旅遊常用語" : location.hash === "#grammar" ? "基礎句型" : location.hash === "#grammar-review" ? "句型小複習" : location.hash === "#settings" ? "學習設定" : (location.hash.startsWith("#travel/") ? Study.travelTitle(location.hash.slice(8)) : Study.title(location.hash.slice(7))) || "找不到頁面"}｜SoraChi`;
     app.innerHTML = studyPage;
@@ -444,7 +445,14 @@ function route() {
     lesson();
   } else if (location.hash === "#done" && progress.completed) finish();
   else if (location.hash === "#history") historyPage();
-  else if (location.hash === "#feedback") feedbackPage();
+  else if (location.hash === "#feedback") {
+    // A feedback page keeps its way back, context and report in its history entry, so going back to an older one
+    // returns where that one came from.
+    const saved = window.history.state?.feedback;
+    if (saved) ({ back: feedbackReturn, context: feedbackContext, diagnostics: feedbackDiagnostics } = saved);
+    else window.history.replaceState({ ...window.history.state, feedback: { back: feedbackReturn, context: feedbackContext, diagnostics: feedbackDiagnostics } }, "");
+    feedbackPage();
+  }
   else if (location.hash === "#about") aboutPage();
   else {
     home();
@@ -472,6 +480,8 @@ function restart() {
 app.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button || button.disabled || restarting) return;
+  // The second click of a double click never answers: after 再練 or 下一題 a new option can sit under the pointer.
+  if (event.detail > 1 && button.dataset.action === "study-answer") return;
   if (Study.handle(button)) return;
   if (button.dataset.answer !== undefined) {
     const answer = Number(button.dataset.answer);
@@ -604,6 +614,10 @@ window.addEventListener("storage", (event) => {
   updateStorageWarning();
 });
 window.addEventListener("hashchange", arrive);
+// Back or forward between two entries with the same address fires no hashchange, but their sources can differ.
+window.addEventListener("popstate", () => {
+  if (location.hash === shownHash && (exits.includes(window.history.state?.from) ? window.history.state.from : null) !== cameFrom) route();
+});
 // The page opened first has no source; marking it keeps a later visit back from giving it one.
 if (window.history.state?.from === undefined) window.history.replaceState({ from: null }, "");
 route();
