@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '0b61f6f56c86a16a6512cb1ae07da94a5d10e568da1783309b992c17161da2e7');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '06ac8109195cf617c827267a37dc96b91a7f727e50ff74049e56574c6f10ae74');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -233,7 +233,8 @@ test('transit phrases pair the concepts, keep the question context, and hedge ti
   assert.deepEqual(plain(card('seat').keywords.map(k => k[2])), ['對號座', '自由座']);
   assert.match(card('seat').body, /不保證有位子/);
   assert.match(card('seat').body, /以車站說明為準/);
-  assert.match(card('day-pass').body, /區域和路線不同/);
+  assert.match(card('day-pass').body, /能搭的範圍各家不同/);
+  assert.match(card('day-pass').body, /24時間券/);
   assert.match(card('direction').example, /この電車.*京都/);
   assert.match(card('transfer').polite, /京都まで行きたいです。どこで乗り換えますか？/);
   assert.match(card('get-off').example, /降りればいい/);
@@ -286,6 +287,11 @@ test('travel additions fill existing situations and keep events optional', () =>
   // #29 lockers, #31 size and choosing.
   assert.equal(phrase('t-place', 'locker').keywords[0][0], 'ロッカー');
   assert.match(phrase('t-place', 'locker-stuck').example, /開きません/);
+  // #29 will it fit: sizes differ by locker; 入ります is read from kana so it cannot become いります.
+  assert.equal(phrase('t-place', 'locker-size').keywords[0][0], '入ります（はいります）');
+  assert.equal(phrase('t-place', 'locker-size').speech, 'これ、はいりますか？');
+  // #25 JR stopped selling round-trip tickets in March 2026; the card must not offer 往復 as the JR choice.
+  assert.match(phrase('transit', 'ticket').body, /JR 從 2026 年 3 月 14 日起不賣來回票/);
   assert.match(phrase('shopping', 'size').polite, /大きいサイズ/);
   assert.equal(phrase('shopping', 'this-one').example, 'これ、ください。');
   // #30 + #33 in one situation; photos do not imply video.
