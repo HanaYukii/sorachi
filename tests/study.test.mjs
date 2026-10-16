@@ -7,7 +7,7 @@ const source = readFileSync(new URL('../dist/study.js', import.meta.url), 'utf8'
 const clone = (value) => JSON.parse(JSON.stringify(value));
 function harness(saved, voices = [], history = [], options = {}) {
   let prefs = clone(options.preferences || {}), favorites = clone(options.favorites || []), localWriteBlocked = false;
-  let html = '', focused = null, stored = null, currentState;
+  let html = '', focused = null, stored = null, currentState, pressed = null;
   const records = [], utterances = [], speechEvents = {};
   const status = { textContent: '' };
   let renders = 0, scrolls = 0, saves = 0;
@@ -58,7 +58,9 @@ function harness(saved, voices = [], history = [], options = {}) {
     study, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, slot, speechSynthesis,
     get preferences() { return clone(prefs); }, get favorites() { return clone(favorites); }, blockLocalWrites() { localWriteBlocked = true; },
     get answers() { return answerNodes; }, get renders() { return renders; }, get saves() { return saves; }, get scrolls() { return scrolls; }, flushTimers() { const jobs = [...timers.values()]; timers.clear(); jobs.forEach(fn => fn()); },
-    action(action, data = {}) { return study.handle({ dataset: { action: `study-${action}`, ...data }, disabled: false }); },
+    // The pressed button keeps its classes, so a test can see the speaker that is playing.
+    action(action, data = {}) { const classes = new Set(); pressed = { dataset: { action: `study-${action}`, ...data }, disabled: false, classes, classList: { toggle(name, force) { if (force) classes.add(name); else classes.delete(name); } } }; return study.handle(pressed); },
+    get pressed() { return pressed; },
     get state() { return currentState; }, set state(value) { currentState = value; }, get html() { return html; }, get stored() { return stored; }, get focused() { return focused; }, get cancels() { return cancels; },
     get voiceReads() { return voiceReads; }, voicesReady() { for (const callback of [...(speechEvents.voiceschanged || [])]) callback(); },
   };
@@ -228,11 +230,22 @@ test('an unavailable Japanese voice shows visible fallback and never speaks Engl
   const b = harness(null, voices); b.action('open', { course: 'h-a' });
   b.action('audio', { index: '0' });
   assert.equal(b.utterances.length, 0);
-  assert.match(b.status.textContent, /沒有日文語音/);
+  assert.equal(b.status.textContent, '目前無法播放日文讀音，可以先看讀音。');
   voices.push({ lang: 'ja-JP', name: 'Japanese' }); b.voicesReady();
-  assert.match(b.status.textContent, /已準備好/);
+  assert.equal(b.status.textContent, '日文讀音準備好了，可以再按一次。');
   b.action('audio', { index: '0' });
   assert.equal(b.utterances.length, 1);
+  // Playing normally writes nothing: the hint goes, and the pressed speaker shows it is playing until the end.
+  assert.equal(b.status.textContent, '');
+  assert.ok(b.pressed.classes.has('playing'));
+  const playing = b.pressed;
+  b.utterances[0].onend();
+  assert.ok(!playing.classes.has('playing'));
+  b.action('audio', { index: '0' });
+  const again = b.pressed;
+  assert.ok(again.classes.has('playing'));
+  b.action('audio', { index: '1' });
+  assert.ok(!again.classes.has('playing') && b.pressed.classes.has('playing'), 'Only the speaker pressed last shows playing');
   assert.equal(b.utterances[0].lang, 'ja-JP');
   assert.equal(b.utterances[0].rate, 0.8);
   assert.equal(b.utterances[0].voice.lang, 'ja-JP');
@@ -307,7 +320,8 @@ test('phrasebook freely shows keywords without changing learning progress, and a
   assert.match(b.html, /ひとつ/); assert.match(b.html, /並盛/);
   b.action('travel-audio', {course:'t-order',index:'2'});
   assert.equal(b.utterances.at(-1).text, 'アイスでお願いします。');
-  assert.match(b.status.textContent, /正在播放/);
+  assert.equal(b.status.textContent, '', 'Normal playback adds no text');
+  assert.ok(b.pressed.classes.has('playing'));
   b.action('travel-audio', {course:'t-order',index:'2',full:'0'});
   assert.equal(b.utterances.at(-1).text, 'アイス。', 'The short phrase plays on its own');
   b.render('#travel/t-place');
@@ -403,7 +417,7 @@ test('kana feedback gives one mapping then delays retry without revealing it; gr
   b.action('answer',{choice:String(chooseCurrent(b,'h-a',true))});
   assert.equal(b.feedback.textContent,`正確答案：${item.character}＝${item.reading}`);
   b.action('next');while(a.practice.round==='first'){b.action('answer',{choice:String(chooseCurrent(b,'h-a'))});b.action('next');}
-  assert.equal(a.practice.round,'retry');assert.doesNotMatch(b.html,/正確答案：/);assert.doesNotMatch(b.html,/記憶提示|播放讀音/);
+  assert.equal(a.practice.round,'retry');assert.doesNotMatch(b.html,/正確答案：/);assert.doesNotMatch(b.html,/記憶提示|audio-button/);
   b.action('answer',{choice:String(chooseCurrent(b,'h-a',true))});assert.doesNotMatch(b.feedback.textContent,/＝|正確答案/);b.action('next');assert.equal(a.phase,'done');assert.equal(b.records[0].firstCorrect,4);
   const g=harness();startQuiz(g,'g-identity');const question=g.content.courses['g-identity'].questions[g.state.courses['g-identity'].active.order[0]];
   g.action('answer',{choice:String((question.answer+1)%question.options.length)});assert.ok(g.feedback.textContent.includes(question.explanation));
@@ -549,7 +563,15 @@ test('audio buttons say what is visible, keyword boxes are not repeated landmark
   const b = harness(null, [{ lang: 'ja-JP' }]);
   b.render('#travel/t-order');
   assert.doesNotMatch(b.html, /aria-label="播放/);
-  assert.match(b.html, />播放讀音<span class="visually-hidden">：<span lang="ja">/);
+  // One speaker per phrase: an icon hidden from screen readers, named by the Japanese it plays; no engine notes.
+  const names = [...b.html.matchAll(/<button class="audio-button"[^>]*><svg[^>]*aria-hidden="true">[\s\S]*?<\/svg><span class="visually-hidden">播放「<span lang="ja">([^<]+)<\/span>」的讀音<\/span><\/button>/g)].map((m) => m[1]);
+  const order = b.content.phrasebook.find((c) => c.id === 't-order');
+  for (const step of order.steps) {
+    assert.ok(names.includes(step.example.replace(/&/g, '&amp;')), step.example);
+    if (step.polite) assert.ok(names.includes(step.polite.replace(/&/g, '&amp;')), step.polite);
+  }
+  assert.equal(names.length, (b.html.match(/class="audio-button"/g) || []).length, 'Every speaker has a name');
+  assert.doesNotMatch(b.html, /裝置合成語音|>播放讀音</);
   assert.doesNotMatch(b.html, /<section class="keyword-box"|aria-label="關鍵字"/);
   b.render('#kana');
   assert.match(b.html, /<strong lang="ja">あ行<\/strong>/);

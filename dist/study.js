@@ -9,6 +9,7 @@ const Study = (() => {
   let audioGeneration = 0;
   let voiceListener = null;
   let audioTimer = null;
+  let playingButton = null;
   let warmVoiceListener = null;
   const drafts = new Map();
   let draftState = null;
@@ -250,7 +251,7 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">學習設定</h1><section class="study-card"><h2>播放語速</h2><p class="study-note">五十音、句型與旅遊用語都會使用這個速度。</p><div class="script-tabs" role="group" aria-label="播放語速">${[[0.65,"慢速"],[0.8,"一般"],[1,"原速"]].map(([rate,label]) => `<button data-action="study-rate" data-rate="${rate}" aria-pressed="${speechRate() === rate}">${label}</button>`).join("")}</div><p class="study-note">設定存在這個瀏覽器。假名字卡的「換個記法」也會記住你的選擇。</p></section>`);
   }
   function readingHelp() {
-    return `<details class="phrase-more reading-help"><summary>日文下方的英文字母怎麼看？</summary><p class="study-note">這是「羅馬字」，用英文字母提示日文讀音，不是照英文單字念。不確定時可以按「播放讀音」。</p><p class="study-note">aa、ii、uu、ee、oo 表示把音拉長。ou、ei 也常念成長音，例如 gakusei（學生）的最後念成 see：ga-ku-see。五十音區的「長音」課有更多例子。</p></details>`;
+    return `<details class="phrase-more reading-help"><summary>日文下方的英文字母怎麼看？</summary><p class="study-note">這是「羅馬字」，用英文字母提示日文讀音，不是照英文單字念。不確定時可以按喇叭聽讀音。</p><p class="study-note">aa、ii、uu、ee、oo 表示把音拉長。ou、ei 也常念成長音，例如 gakusei（學生）的最後念成 see：ga-ku-see。五十音區的「長音」課有更多例子。</p></details>`;
   }
   function grammarNext() {
     const unfinished = c => state().courses[c.id]?.active?.touched && state().courses[c.id].active.phase !== "done";
@@ -262,7 +263,7 @@ const Study = (() => {
     return next ? `<section class="study-review-entry"><h2>${next.resume ? "接著學" : "下一課"}</h2><button class="text-button" data-action="study-open" data-course="${next.courseId}">${escape(next.title)} →</button></section>` : "";
   }
   function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按「播放讀音」跟著念。</p>${readingHelp()}${grammarNextEntry()}${grammarReviewEntry()}${grammarUnits().map(unit => `<h2 class="course-list-heading">${escape(unit.title)}</h2><div class="course-list">${unit.lessons.map(row).join("")}</div>`).join("")}`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按喇叭跟著念。</p>${readingHelp()}${grammarNextEntry()}${grammarReviewEntry()}${grammarUnits().map(unit => `<h2 class="course-list-heading">${escape(unit.title)}</h2><div class="course-list">${unit.lessons.map(row).join("")}</div>`).join("")}`);
   }
   // Consecutive lessons with the same unit share one heading, in teaching order.
   function grammarUnits() {
@@ -368,10 +369,12 @@ const Study = (() => {
   const genericWords = new Set(["お願いします", "どこ"]);
   const travelKeywords = (item) => [...new Set(item.steps.flatMap((step) => step.keywords.map(([word]) => word.replace(/（.*?）/u, "")).filter((word) => !genericWords.has(word) && !/^[0-9０-９]/.test(word)).slice(0, 2)))].slice(0, 6).join("・");
   // Travel cards have a short phrase and, sometimes, a fuller form; each gets its own button and status.
+  // A speaker button whose name says which Japanese it plays (#78); the status line stays empty unless audio cannot play.
+  const speaker = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
   function audioButton(course, index, travel = false, full = false) {
     const step = course.steps?.[index];
     const text = course.type === "kana" ? course.letters[index] : full ? step.polite : step.example;
-    return `<button class="text-button" data-action="${travel ? "study-travel-audio" : "study-audio"}" data-course="${course.id}" data-index="${index}"${travel ? ` data-full="${full ? 1 : 0}"` : ""}>播放讀音<span class="visually-hidden">：<span lang="ja">${escape(text)}</span></span></button><span class="reading-label">裝置合成語音</span><p class="study-audio-status study-note"${travel ? ` data-audio-for="${course.id}-${index}${full ? "-full" : ""}"` : ""} role="status" aria-live="polite"></p>`;
+    return `<button class="audio-button" data-action="${travel ? "study-travel-audio" : "study-audio"}" data-course="${course.id}" data-index="${index}"${travel ? ` data-full="${full ? 1 : 0}"` : ""}>${speaker}<span class="visually-hidden">播放「<span lang="ja">${escape(text)}</span>」的讀音</span></button><p class="study-audio-status study-note"${travel ? ` data-audio-for="${course.id}-${index}${full ? "-full" : ""}"` : ""} role="status" aria-live="polite"></p>`;
   }
   function keywordBox(keywords) {
     // The kana reading in （） stays on one line so narrow screens do not split it.
@@ -586,8 +589,14 @@ const Study = (() => {
     };
     return japanese.sort((a,b) => rank(a) - rank(b))[0] || null;
   }
+  // The speaker being played shows a ring; nothing is written while audio plays normally.
+  function stopPlaying() {
+    playingButton?.classList?.toggle?.("playing", false);
+    playingButton = null;
+  }
   function clearAudioRequest() {
     audioGeneration++;
+    stopPlaying();
     if (audioTimer !== null) { clearTimeout(audioTimer); audioTimer = null; }
     if (voiceListener) {
       try { voiceListener.synth.removeEventListener?.('voiceschanged', voiceListener.callback); } catch { /* Generation guards stale callbacks. */ }
@@ -601,7 +610,7 @@ const Study = (() => {
       if (synth && (synth.speaking || synth.pending)) synth.cancel();
     } catch { /* Navigation must remain usable when the speech engine fails. */ }
   }
-  function speak(course, index, selector = ".study-audio-status", full = false) {
+  function speak(course, index, selector = ".study-audio-status", full = false, button = null) {
     const waiting = audioTimer !== null;
     clearAudioRequest();
     const generation = audioGeneration;
@@ -610,17 +619,17 @@ const Study = (() => {
       const node = document.querySelector(selector);
       if (node) node.textContent = text;
     };
-    const failed = () => status("這次沒有播放成功，可以再試一次，或先看讀音練習。");
+    const failed = () => status("這次沒有播放成功，可以再按一次，或先看讀音。");
     try {
       const synth = window.speechSynthesis;
       const voice = synth ? pickVoice(synth.getVoices()) : null;
       if (!synth || typeof SpeechSynthesisUtterance === "undefined" || !voice) {
-        status("這個瀏覽器目前沒有日文語音，先看讀音練習也可以。");
+        status("目前無法播放日文讀音，可以先看讀音。");
         if (synth?.addEventListener) {
           const callback = () => {
             if (generation !== audioGeneration) return;
             voiceListener = null;
-            try { if (pickVoice(synth.getVoices())) status("日文語音已準備好，可以再按一次播放。"); } catch { failed(); }
+            try { if (pickVoice(synth.getVoices())) status("日文讀音準備好了，可以再按一次。"); } catch { failed(); }
           };
           voiceListener = { synth, callback }; synth.addEventListener('voiceschanged', callback, { once: true });
         }
@@ -629,9 +638,11 @@ const Study = (() => {
       const spoken = course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : (full && course.steps[index].polite ? course.steps[index].politeSpeech || course.steps[index].polite : course.steps[index].speech || course.steps[index].example).replace(/\s*／\s*/g, "、");
       const utterance = new SpeechSynthesisUtterance(spoken);
       utterance.voice = voice; utterance.lang = "ja-JP"; utterance.rate = speechRate();
-      utterance.onstart = () => status("正在播放日文讀音…");
-      utterance.onend = () => status("播放完了，也可以再聽一次。");
-      utterance.onerror = failed;
+      // An earlier hint goes as soon as audio can play.
+      status("");
+      utterance.onstart = () => { if (generation !== audioGeneration) return; playingButton = button; button?.classList?.toggle?.("playing", true); };
+      utterance.onend = () => { if (generation === audioGeneration) stopPlaying(); };
+      utterance.onerror = () => { if (generation === audioGeneration) stopPlaying(); failed(); };
       const play = () => {
         if (generation !== audioGeneration) return;
         audioTimer = null;
@@ -639,7 +650,7 @@ const Study = (() => {
       };
       if (waiting || synth.speaking || synth.pending) {
         if (synth.speaking || synth.pending) synth.cancel();
-        status("準備播放日文讀音…"); audioTimer = setTimeout(play, 130);
+        audioTimer = setTimeout(play, 130);
       } else play();
     } catch { failed(); }
   }
@@ -678,7 +689,7 @@ const Study = (() => {
       const item = location.hash === "#travel/favorites" ? travelItem(button.dataset.course) : location.hash.startsWith("#travel/") ? travelItem(location.hash.slice(8)) : null;
       const index = Number(button.dataset.index);
       const full = button.dataset.full !== "0" && Boolean(item?.steps?.[index]?.polite);
-      if (item && item.id === button.dataset.course && Number.isInteger(index) && index >= 0 && index < item.steps.length) speak(item, index, `[data-audio-for="${item.id}-${index}${full ? "-full" : ""}"]`, full);
+      if (item && item.id === button.dataset.course && Number.isInteger(index) && index >= 0 && index < item.steps.length) speak(item, index, `[data-audio-for="${item.id}-${index}${full ? "-full" : ""}"]`, full, button);
       return true;
     }
     if (action === 'study-review-start') {
@@ -743,7 +754,7 @@ const Study = (() => {
     if (!active) return true;
     if (action === "study-audio") {
       const index = Number(button.dataset.index);
-      if (active.phase === "cards" && (course.type === "kana" || course.type === "grammar") && Number.isInteger(index) && index >= 0 && index < cards(course)) speak(course, index);
+      if (active.phase === "cards" && (course.type === "kana" || course.type === "grammar") && Number.isInteger(index) && index >= 0 && index < cards(course)) speak(course, index, ".study-audio-status", false, button);
       return true;
     }
     if(action==='study-hint'&&course.type==='kana'&&active.phase==='cards'){
