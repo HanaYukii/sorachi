@@ -641,7 +641,8 @@ const Study = (() => {
       const spoken = course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : (full && course.steps[index].polite ? course.steps[index].politeSpeech || course.steps[index].polite : course.steps[index].speech || course.steps[index].example).replace(/\s*／\s*/g, "、");
       const utterance = new SpeechSynthesisUtterance(spoken);
       utterance.voice = voice; utterance.lang = "ja-JP"; utterance.rate = speechRate();
-      // An earlier hint goes as soon as audio can play.
+      // Hints under any speaker go as soon as audio can play.
+      for (const node of document.querySelectorAll(".study-audio-status")) node.textContent = "";
       status("");
       utterance.onstart = () => { if (generation !== audioGeneration) return; playingButton = button; button?.classList?.toggle?.("playing", true); };
       utterance.onend = () => { if (generation === audioGeneration) stopPlaying(); };
@@ -683,7 +684,8 @@ const Study = (() => {
       if (!location.hash.startsWith("#travel/") || !PHRASEBOOK.some(item => item.steps.some(step => step.id === id))) return true;
       const wasSaved = favoriteIds().includes(id), next = wasSaved ? favoriteIds().filter(value => value !== id) : [...favoriteIds(),id];
       if (api.saveFavorites?.(next)) {
-        if (location.hash === "#travel/favorites") redraw();
+        // The list is drawn again, so a phrase playing from it stops instead of losing its speaker.
+        if (location.hash === "#travel/favorites") { stopAudio(); redraw(); }
         else { button.textContent = wasSaved ? "收藏" : "已收藏"; button.setAttribute?.("aria-pressed",String(!wasSaved)); }
       }
       return true;
