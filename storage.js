@@ -79,7 +79,12 @@ const DataStore = (() => {
     const reviewSession = clearWinner === "local" ? local.reviewSession ?? null
       : clearWinner === "incoming" ? incoming.reviewSession ?? null
       : local.reviewSession ?? incoming.reviewSession ?? null;
-    return {...incoming,...local,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,reviewSession,
+    const grammarReview = {};
+    for (const source of [incoming.grammarReview, local.grammarReview]) for (const [id,item] of Object.entries(object(source) ? source : {})) if (fresh(item) && later(item?.lastSeen, grammarReview[id]?.lastSeen) === item?.lastSeen) grammarReview[id] = item;
+    const grammarReviewSession = clearWinner === "local" ? local.grammarReviewSession ?? null
+      : clearWinner === "incoming" ? incoming.grammarReviewSession ?? null
+      : local.grammarReviewSession ?? incoming.grammarReviewSession ?? null;
+    return {...incoming,...local,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,reviewSession,grammarReview,grammarReviewSession,lastGrammarId:local.lastGrammarId ?? incoming.lastGrammarId ?? null,
       ...(clearedAt ? {reviewClearedAt:clearedAt} : {})};
   }
   const emptyIntro = () => ({step:0,completed:false,inProgress:false,answers:{},firstAnswers:{}});
@@ -97,10 +102,30 @@ const DataStore = (() => {
     return {intro, study: object(flat?.study) ? clone(flat.study) : {script:"h",courses:{}}};
   }
   const favorites = (v) => Array.isArray(v) ? [...new Set(v.filter(text))] : [];
+  function favoriteChanges(v) {
+    if (!object(v)) return {};
+    return Object.fromEntries(Object.entries(v).filter(([id,item]) => text(id) && object(item) && typeof item.saved === "boolean" && time(item.updatedAt) !== null).map(([id,item]) => [id,{saved:item.saved,updatedAt:new Date(item.updatedAt).toISOString()}]));
+  }
+  function mergeFavorites(local,incoming) {
+    const changes = favoriteChanges(incoming.favoriteChanges);
+    for (const [id,item] of Object.entries(favoriteChanges(local.favoriteChanges))) {
+      const old = changes[id];
+      if (!old || time(item.updatedAt) > time(old.updatedAt) || time(item.updatedAt) === time(old.updatedAt) && !item.saved) changes[id] = item;
+    }
+    // Explicit removals beat legacy backup lists that have no per-item change information.
+    const ids = favorites([...local.favorites,...incoming.favorites,...Object.keys(changes)]).filter(id => changes[id] ? changes[id].saved : true);
+    return {favorites:ids,favoriteChanges:changes};
+  }
   function preferences(v) {
     const result = {};
     if (object(v) && typeof v.ttsRate === "number" && v.ttsRate >= 0.5 && v.ttsRate <= 1.5) result.ttsRate = v.ttsRate;
+    if (object(v?.kanaHints)) result.kanaHints = Object.fromEntries(Object.entries(v.kanaHints).filter(([key,value]) => /^[ぁ-ゖァ-ヺ]{1,3}$/u.test(key) && Number.isInteger(value) && value >= 0 && value <= 1));
     return result;
+  }
+  function mergePreferences(local,incoming) {
+    const result = {...incoming,...local};
+    if (local.kanaHints || incoming.kanaHints) result.kanaHints = {...incoming.kanaHints,...local.kanaHints};
+    return preferences(result);
   }
   function validSnapshot(v) {
     return object(v) && v.schemaVersion === 2 && object(v.owner) && v.owner.kind === "guest" && text(v.owner.id) && object(v.learning) && object(v.learning.intro) && object(v.learning.study) && Array.isArray(v.attempts) && Array.isArray(v.favorites) && object(v.preferences);
@@ -153,10 +178,10 @@ const DataStore = (() => {
       const introStarted = current.intro.completed || current.intro.inProgress || current.intro.step > 0;
       const intro = introStarted ? {...current.intro,completed:current.intro.completed || incoming.learning.intro.completed} : incoming.learning.intro;
       const study = mergeStudy(current.study,incoming.learning.study);
-      const ok = commit({...snapshot,learning:{intro,study},attempts,favorites:favorites([...snapshot.favorites,...incoming.favorites]),preferences:{...incoming.preferences,...snapshot.preferences}});
+      const ok = commit({...snapshot,learning:{intro,study},attempts,...mergeFavorites(snapshot,incoming),preferences:mergePreferences(snapshot.preferences,incoming.preferences)});
       return ok ? {ok,...report} : {ok,reason:"write"};
     }
-    function clean(v) { return {...v,learning:learning({...v.learning.intro,study:v.learning.study}),attempts:normalizeAttempts(v.attempts,metadata).slice(-MAX_ATTEMPTS),favorites:favorites(v.favorites),preferences:preferences(v.preferences)}; }
+    function clean(v) { return {...v,learning:learning({...v.learning.intro,study:v.learning.study}),attempts:normalizeAttempts(v.attempts,metadata).slice(-MAX_ATTEMPTS),favorites:favorites(v.favorites).filter(id => favoriteChanges(v.favoriteChanges)[id]?.saved !== false),...(v.favoriteChanges ? {favoriteChanges:favoriteChanges(v.favoriteChanges)} : {}),preferences:preferences(v.preferences)}; }
     try {
       const raw = storage?.getItem(KEY) ?? null;
       baselineRaw = raw;
@@ -212,7 +237,11 @@ const DataStore = (() => {
         }
         return commit({...snapshot,learning:nextLearning,attempts:normalizeAttempts(flat.history,metadata).slice(-MAX_ATTEMPTS)});
       },
-      saveFavorites: (ids) => commit({...snapshot,favorites:favorites(ids)}),
+      saveFavorites(ids) {
+        const next = favorites(ids), changes = favoriteChanges(snapshot.favoriteChanges);
+        for (const id of new Set([...snapshot.favorites,...next])) if (snapshot.favorites.includes(id) !== next.includes(id)) changes[id] = {saved:next.includes(id),updatedAt:new Date(Math.max(Date.now(),(time(changes[id]?.updatedAt) ?? -1)+1)).toISOString()};
+        return commit({...snapshot,favorites:next,favoriteChanges:changes});
+      },
       savePreferences: (value) => commit({...snapshot,preferences:preferences(value)}),
       exportBackup() {
         if (!checkForUpdates()) throw Error("Backup unavailable: stored data changed or could not be read safely; reload before exporting.");
