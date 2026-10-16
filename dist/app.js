@@ -364,7 +364,11 @@ app.addEventListener("input", (event) => {
   feedbackDraft = {category: app.querySelector("#feedback-category").value, message: app.querySelector("#feedback-message").value};
   app.querySelector("#feedback-ready").replaceChildren();
 });
-// A word finished with an input method searches once, when it is done.
+// A word finished with an input method searches once, when it is done. Enter in the search box closes a phone
+// keyboard: the results are already there.
+app.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.isComposing && event.target?.id === "travel-search") { event.preventDefault(); event.target.blur?.(); }
+});
 app.addEventListener("compositionend", (event) => {
   if (event.target?.id === "travel-search") Study.searchTravel(event.target.value);
 });
@@ -433,9 +437,9 @@ function route() {
     // Back on the kana table or the grammar list from a lesson, that lesson's row is in view and has focus.
     const row = (location.hash === "#kana" || location.hash === "#grammar") && left ? app.querySelector(`[data-course="${left}"]`) : null;
     if (row) { const unit = row.closest?.("details"); if (unit) unit.open = true; row.focus({ preventScroll: true }); row.scrollIntoView?.({ block: "center" }); }
-    // A travel card opened from a search result.
-    const found = app.querySelector(".travel-found");
-    if (found) { found.focus({ preventScroll: true }); found.scrollIntoView?.({ block: "start" }); }
+    // A travel card opened from a search result, or back on the search, the result that was opened.
+    const found = app.querySelector(".travel-found") || app.querySelector(".return-focus");
+    if (found) { found.focus({ preventScroll: true }); found.scrollIntoView?.({ block: found.matches?.(".return-focus") ? "center" : "start" }); }
     return;
   }
   if (location.hash === "#lesson") {

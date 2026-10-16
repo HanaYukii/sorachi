@@ -332,6 +332,13 @@ function browser({
       dispatch(app._listeners, 'compositionend', { target: { id: 'travel-search', value } });
       flush();
     },
+    // A key pressed in a field; `target` stands for the field.
+    keydown(key, target, composing = false) {
+      const event = { key, target, isComposing: composing, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+      dispatch(app._listeners, 'keydown', event);
+      flush();
+      return event;
+    },
     inputFeedback(category, message) {
       querySelector('#feedback-category').value = category;
       querySelector('#feedback-message').value = message;
@@ -2226,21 +2233,41 @@ test('random rounds: reports name the question, a double click never answers, re
 test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, opens the card, and keeps nothing', () => {
   const b = browser({ hash: '#travel' });
   const before = b.stored;
-  assert.match(b.html, /<label for="travel-search">找詞或情境<\/label><input id="travel-search" type="search"/);
+  assert.match(b.html, /<label for="travel-search">找詞或情境<\/label><input id="travel-search" type="search"[^>]*><p id="travel-status" class="visually-hidden" role="status" aria-live="polite"><\/p><\/div><div id="travel-results">/);
   const found = (query) => {
     b.typeSearch(query);
-    return [...b.node('#travel-results').innerHTML.matchAll(/data-step="([^"]+)"/g)].map((m) => m[1]);
+    return [...b.node('#travel-results').innerHTML.matchAll(/data-step="phrase\/([^"]+)"/g)].map((m) => m[1]);
   };
-  // What the issue lists, with spaces, case, width and kana type ignored.
+  // Exactly these cards: what the issue lists, with spaces, case, width, kana type and long romaji vowels ignored.
+  for (const [query, steps] of [
+    ['結帳', ['t-pay/bill']], ['kaikei', ['t-pay/bill']], ['お会計', ['t-pay/bill']], ['okaikei onegaishimasu', ['t-pay/bill']],
+    ['Suica', ['t-pay/suica']], ['  SUICA ', ['t-pay/suica']], ['西瓜卡', ['t-pay/suica']], ['すいか', ['t-pay/suica']], ['ＳＵＩＣＡ', ['t-pay/suica']],
+    ['寄放行李', ['hotel/luggage']], ['月台', ['transit/platform']], ['ほーむ', ['transit/platform']], ['homu', ['transit/platform']], ['hoomu', ['transit/platform']],
+    ['刷卡', ['t-pay/credit-cash']], ['kaado', ['t-pay/credit-cash']], ['kado', ['t-pay/credit-cash']], ['erebeta', ['t-place/facilities']],
+    // What staff may ask and an extra part are found too.
+    ['お召し上がり', ['dining/takeout']], ['ロック', ['t-order/drink-temperature']],
+  ]) assert.deepEqual(found(query), steps, query);
+  // Every alias leads to the card it stands for.
   for (const [query, step] of [
-    ['結帳', 'phrase/t-pay/bill'], ['kaikei', 'phrase/t-pay/bill'], ['お会計', 'phrase/t-pay/bill'],
-    ['Suica', 'phrase/t-pay/suica'], ['  SUICA ', 'phrase/t-pay/suica'], ['西瓜卡', 'phrase/t-pay/suica'], ['すいか', 'phrase/t-pay/suica'], ['ＳＵＩＣＡ', 'phrase/t-pay/suica'],
-    ['寄放行李', 'phrase/hotel/luggage'], ['寄物', 'phrase/hotel/luggage'], ['月台', 'phrase/transit/platform'], ['ほーむ', 'phrase/transit/platform'],
-    ['洗手間', 'phrase/t-place/toilet'], ['刷卡', 'phrase/t-pay/credit-cash'], ['買單', 'phrase/t-pay/bill'],
+    ['寄物櫃', 't-place/locker'], ['寄物', 'hotel/luggage'], ['寄行李', 'hotel/luggage'], ['行李寄放', 'hotel/luggage'], ['洗手間', 't-place/toilet'], ['化妝室', 't-place/toilet'],
+    ['買單', 't-pay/bill'], ['埋單', 't-pay/bill'], ['會計', 't-pay/bill'], ['付款', 't-pay/credit-cash'], ['打包', 'dining/takeout'], ['儲值', 't-charge/top-up'],
+    ['交通卡', 't-pay/suica'], ['icoca', 't-pay/suica'], ['pasmo', 't-pay/suica'], ['發票', 'shopping/receipt'], ['不用', 'dining/decline'], ['不要', 'dining/decline'],
+    ['來回票', 'transit/ticket'], ['月臺', 'transit/platform'],
   ]) assert.ok(found(query).includes(step), `${query} → ${step}`);
-  assert.match(b.node('#travel-results').innerHTML, /找到 \d+ 張卡/);
-  // Nothing found: a clear message and a way to clear the box.
+  // A situation's name lists its cards when none of them matches by itself; several words rank cards by how many match.
+  assert.deepEqual(found('點餐'), ['t-order/menu-item', 't-order/quantity', 't-order/drink-temperature', 't-order/noodle-temperature', 't-order/portion']);
+  assert.ok(found('交通').includes('transit/platform'));
+  assert.deepEqual(found('Suica 加值').slice(0, 1), ['t-pay/suica']);
+  assert.ok(found('Suica 加值').includes('t-charge/top-up'));
+  assert.ok(['hotel/check-out', 'hotel/luggage'].every((step) => found('退房 行李').includes(step)));
+  // Words never match across two romaji words or two fields (rokkaa doko).
+  assert.ok(!found('kaado').includes('t-place/locker'));
+  // Only the count is announced; nothing found shows a clear message and a way to clear the box.
+  found('suica');
+  assert.equal(b.node('#travel-status').textContent, '找到 1 張卡');
+  assert.match(b.node('#travel-results').innerHTML, /<h2>找到 1 張卡<\/h2><button class="text-button" data-action="study-travel-clear">清除搜尋<\/button>/);
   assert.deepEqual(found('zzzz'), []);
+  assert.equal(b.node('#travel-status').textContent, '找不到符合的卡');
   assert.match(b.node('#travel-results').innerHTML, /找不到「zzzz」[\s\S]*data-action="study-travel-clear"/);
   // While an input method is still composing, the results wait for the word to be finished.
   b.typeSearch('');
@@ -2248,16 +2275,39 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   assert.equal(b.node('#travel-results').innerHTML, '');
   b.endComposition('お会計');
   assert.match(b.node('#travel-results').innerHTML, /data-step="phrase\/t-pay\/bill"/);
-  // A result opens its situation with that card focused; back returns to the same search.
+  // Enter closes a phone keyboard instead of doing nothing; the Enter that finishes an input method's word does not.
+  let blurred = false;
+  const field = { id: 'travel-search', blur() { blurred = true; } };
+  assert.equal(b.keydown('Enter', field, true).defaultPrevented, false);
+  assert.equal(blurred, false);
+  assert.equal(b.keydown('Enter', field).defaultPrevented, true);
+  assert.ok(blurred);
+  // A result opens its situation with that card focused; back returns to the same search with that result focused.
   b.study('study-travel-open', { situation: 't-pay', step: 'phrase/t-pay/bill' });
   assert.equal(b.hash, '#travel/t-pay');
   assert.equal(b.focused, '.travel-found');
   assert.match(b.html, /<section class="study-card travel-card travel-found" tabindex="-1">[\s\S]*?吃完後要結帳/);
+  // A card found by search is saved like any other.
+  b.study('study-favorite', { phrase: 'phrase/t-pay/bill' });
   b.back();
   assert.equal(b.hash, '#travel');
   assert.match(b.html, /value="お会計"/);
-  assert.match(b.html, /<div id="travel-results" aria-live="polite"><section class="travel-results"><h2>找到/);
+  assert.match(b.html, /<div id="travel-results"><section class="travel-results"><div class="travel-results-head"><h2>找到/);
+  assert.equal(b.focused, '.return-focus');
+  assert.match(b.html, /class="dash-row return-focus" data-action="study-travel-open" data-situation="t-pay" data-step="phrase\/t-pay\/bill"/);
+  // A later visit keeps the search but starts at the heading again.
+  b.study('study-travel-open', { situation: 't-pay', step: 'phrase/t-pay/bill' });
+  b.navigate('#home');
+  b.navigate('#travel');
+  assert.match(b.html, /value="お会計"/);
+  assert.doesNotMatch(b.html, /return-focus/);
+  assert.equal(b.focused, '.focus-heading');
   b.study('study-travel-clear');
   assert.doesNotMatch(b.html, /class="travel-results"/);
-  assert.equal(b.stored, before, 'Searching saves nothing');
+  b.navigate('#travel/favorites');
+  assert.match(b.html, /吃完後要結帳/);
+  assert.deepEqual(JSON.parse(b.stored).favorites, ['phrase/t-pay/bill']);
+  const saved = JSON.parse(b.stored); delete saved.favorites; delete saved.favoriteChanges; delete saved.updatedAt;
+  const original = JSON.parse(before); delete original.favorites; delete original.favoriteChanges; delete original.updatedAt;
+  assert.deepEqual(saved, original, 'Searching saves nothing besides the favourite');
 });
