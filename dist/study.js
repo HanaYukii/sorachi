@@ -2,7 +2,7 @@
 
 // Beginner courses share one small, browser-local state. No account is required.
 const Study = (() => {
-  const ROWS = Content.rows, GRAMMAR = Content.grammar;
+  const GRAMMAR = Content.grammar;
   const PHRASEBOOK = Content.phrasebook, courses = Content.courses;
   const travelItem = (id) => PHRASEBOOK.find(item => item.id === id);
   let api;

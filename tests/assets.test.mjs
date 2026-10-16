@@ -31,8 +31,8 @@ test('images and icons are small WebP/PNG files that exist and are referenced wi
 test('shared-origin rules: no service worker or blanket clears, every storage key is namespaced', () => {
   const sources = readdirSync(new URL('../dist/', import.meta.url)).filter((file) => file.endsWith('.js')).map(read).join('\n');
   assert.doesNotMatch(sources, /serviceWorker|caches\./);
-  // Only Map/Set clears are allowed; no storage object may be cleared or used outside get/set/removeItem.
-  for (const [call] of sources.matchAll(/(\w+)\.clear\(\)/g)) assert.match(call, /^(drafts|hintChoices)\.clear\(\)$/, call);
+  // Only the drafts Map may be cleared; no storage object may be cleared or used outside get/set/removeItem.
+  for (const [call] of sources.matchAll(/(\w+)\.clear\(\)/g)) assert.match(call, /^drafts\.clear\(\)$/, call);
   assert.doesNotMatch(sources, /(?:local|session)Storage\s*(?:\[|\.(?!getItem|setItem|removeItem))/);
   // Every storage call names its key through a constant (or ${KEY}-prefixed template) defined as sorachi:...
   const constants = Object.fromEntries([...sources.matchAll(/\b([A-Z_]+) = ["']([^"']+)["']/g)].map(([, name, value]) => [name, value]));
