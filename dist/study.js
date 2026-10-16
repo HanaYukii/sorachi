@@ -269,8 +269,25 @@ const Study = (() => {
     const next = grammarNext();
     return next ? `<section class="study-review-entry"><h2>${next.resume ? "接著學" : "下一課"}</h2><button class="text-button" data-action="study-open" data-course="${next.courseId}">${escape(next.title)} →</button></section>` : "";
   }
+  // The lessons in their units (#76), each a section that opens, with a plain line of what it teaches and how far the
+  // learner is. The unit with the next lesson starts open (the first one on a first visit), so nobody has to scan all
+  // the lessons; every lesson stays one click away.
+  const UNIT_GOALS = {
+    "基本句子": "用「AはBです」說是什麼、問是不是，指著東西說這個、那個、這裡。",
+    "時間與數字": "今天、明天、星期幾，數字、價錢、人數，幾點幾分和日期。",
+    "動作與地點": "吃、喝、去等動作，去哪裡、在哪裡做、搭什麼車，有沒有、在哪裡。",
+    "形容詞與連接": "大、貴、冷、方便，用「而且、可是、因為」把句子接起來。",
+    "動詞原形與て形": "動詞原形和て形，說「請…」「先…再…」「正在…」「可以…嗎」。",
+  };
+  function grammarUnitList() {
+    const open = Content.lessonPlan[grammarNext()?.courseId]?.unit;
+    return grammarUnits().map((unit) => {
+      const done = unit.lessons.filter((course) => state().courses[course.id]?.completedAt).length;
+      return `<details class="unit-section"${unit.title === open ? " open" : ""}><summary><span class="unit-title">${escape(unit.title)}</span><span class="unit-goal">${escape(UNIT_GOALS[unit.title] || "")}</span><span class="unit-count">已完成 ${done} / ${unit.lessons.length} 課</span></summary><div class="course-list">${unit.lessons.map(row).join("")}</div></details>`;
+    }).join("");
+  }
   function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按喇叭跟著念。</p>${readingHelp()}${grammarNextEntry()}${grammarReviewEntry()}<section class="study-review-entry"><h2>句型隨機練習</h2><p class="study-note">入門句型・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-grammar-random">練 5 題 →</button></section>${grammarUnits().map(unit => `<h2 class="course-list-heading">${escape(unit.title)}</h2><div class="course-list">${unit.lessons.map(row).join("")}</div>`).join("")}`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按喇叭跟著念。</p>${readingHelp()}${grammarNextEntry()}${grammarReviewEntry()}<section class="study-review-entry"><h2>句型隨機練習</h2><p class="study-note">入門句型・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-grammar-random">練 5 題 →</button></section>${grammarUnitList()}`);
   }
   // Consecutive lessons with the same unit share one heading, in teaching order.
   function grammarUnits() {
