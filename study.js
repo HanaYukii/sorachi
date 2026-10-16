@@ -460,12 +460,14 @@ const Study = (() => {
   }
   // One box with everything a kana has (#35): its kanji origin, how it differs from a kana easy to mix up, and an
   // example word to hear with the kana marked. Nothing to switch between; words are examples and never tested.
-  const markKana = (word, letter) => { const at = word.indexOf(letter); return at < 0 ? escape(word) : `${escape(word.slice(0, at))}<mark>${escape(letter)}</mark>${escape(word.slice(at + letter.length))}`; };
+  // Every copy of the kana in the example is marked (みみ, バナナ); kana inside the Chinese is tagged Japanese for screen readers.
+  const markKana = (word, letter) => word.split(letter).map(escape).join(`<mark>${escape(letter)}</mark>`);
+  const japaneseRuns = (text) => escape(text).replace(/[ぁ-ゖァ-ヺー]+/gu, (run) => `<span lang="ja">${run}</span>`);
   function hintCard(course, index) {
     const letter = course.letters[index], hints = typeof KanaHints !== "undefined" ? KanaHints.get(letter) : [];
     if (!hints?.length) return "";
-    const item = (hint) => `<div><dt>${escape(hint.label)}</dt><dd>${hint.word ? `<span class="hint-word" lang="ja">${markKana(hint.word, letter)}</span><span class="hint-roman">${escape(hint.romaji)}</span><span>${escape(hint.meaning)}</span><button class="audio-button" data-action="study-word-audio" data-letter="${escape(letter)}">${speaker}<span class="visually-hidden">播放「<span lang="ja">${escape(hint.word)}</span>」的讀音</span></button>` : escape(hint.text)}</dd></div>`;
-    return `<aside class="kana-hint"><p class="hint-title">記憶提示</p><dl class="hint-list">${hints.map(item).join("")}</dl>${hints.some((hint) => hint.word) ? '<p class="study-audio-status study-note" data-audio-for="hint-word" role="status" aria-live="polite"></p>' : ""}${KanaHints.notice ? `<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>` : ""}</aside>`;
+    const item = (hint) => `<div><dt>${escape(hint.label)}</dt><dd>${hint.word ? `<span class="hint-word" lang="ja">${markKana(hint.word, letter)}</span><span class="hint-roman">${escape(hint.romaji)}</span><span>${escape(hint.meaning)}</span><button class="audio-button" data-action="study-word-audio" data-letter="${escape(letter)}">${speaker}<span class="visually-hidden">播放「<span lang="ja">${escape(hint.word)}</span>」的讀音</span></button>` : japaneseRuns(hint.text)}</dd></div>`;
+    return `<aside class="kana-hint"><p class="hint-title">記憶提示</p><dl class="hint-list">${hints.map(item).join("")}</dl>${hints.some((hint) => hint.word) ? '<p class="study-audio-status study-note" data-audio-for="hint-word" role="status" aria-live="polite"></p>' : ""}${KanaHints.notice && hints.some((hint) => hint.label === "字源" || hint.word) ? `<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>` : ""}</aside>`;
   }
   const sameSoundNote = { "ぢ": "ぢ 和 じ 同音，都讀 ji；一般多寫 じ。", "づ": "づ 和 ず 同音，都讀 zu；一般多寫 ず。", "ヂ": "ヂ 和 ジ 同音，都讀 ji；一般多寫 ジ。", "ヅ": "ヅ 和 ズ 同音，都讀 zu；一般多寫 ズ。" };
   function card(course, active) {
