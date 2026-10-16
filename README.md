@@ -142,7 +142,7 @@ CI 失敗時，log 會印出子程序的完整輸出（含失敗的測試名稱�
 - `dist/storage.js`：版本化本機資料、舊版遷移、成績合併與備份 primitives。
 - `dist/release.json`：自動產生的發佈內容清單。
 - `tests/content.test.mjs`、`storage.test.mjs`、`revision.test.mjs`、`deploy.test.mjs`：教材、資料、教材改版與發佈保護測試。
-- `art/cloud-friend.png`、`art/cloud-complete.png`：本專案使用的原創 AI 生成角色與抱書完成姿勢（原圖，不發佈）。`dist/assets/` 放由原圖轉出的 WebP 尺寸、32px favicon、180px apple-touch-icon，以及首頁手繪 SVG 風格的筆記本與旅行箱插圖。
+- `art/cloud-friend.png`、`art/cloud-complete.png`：本專案使用的原創 AI 生成角色與抱書完成姿勢（原圖，不發佈）。`dist/assets/` 放由原圖轉出的 WebP 尺寸、32px favicon、180px apple-touch-icon，首頁三區分別使用拿假名字卡、抱書與帶旅行箱的雲朵角色，新增原圖在 `art/cloud-kana.png` 與 `art/cloud-travel.png`，生成提示保存在 `art/mascot-prompts.json`。
 - `tests/flow.test.mjs`：跨頁互動流程回歸檢查。
 - `tests/study.test.mjs`：五十音、文法、重試、題序與語音狀態測試。
 

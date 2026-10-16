@@ -1,0 +1,17 @@
+{
+  "tool": "Built-in image_gen",
+  "reference": "art/cloud-friend.png",
+  "transparentBackground": true,
+  "assets": [
+    {
+      "file": "art/cloud-kana.png",
+      "prompt": "Use case: identity-preserve. Asset: transparent illustration for the SoraChi beginner Japanese website. Edit the supplied original mascot into a kana-learning pose. Preserve exactly its white three-lobed cloud head, one lavender leaf on top, deep muted purple rounded outlines, oval purple eyes, tiny smiling mouth, lilac cheek blush, tiny white body and feet, pale yellow scarf, and simple flat soft Japanese illustration style. The SAME character happily holds one large pale aqua flashcard in front of its lower body with both small hands. On the card put exactly one large clearly legible dark purple hiragana character: 「あ」. This is a kana flashcard, no book, no other text. Keep face completely visible, full body and leaf inside frame. Character fills about 85% of square canvas; centered, transparent surroundings. Sparse details, readable at 112px. No background, no shadow, no decoration, no outline sticker border, no watermarks."
+    },
+    {
+      "file": "art/cloud-travel.png",
+      "prompt": "Use case: identity-preserve. Asset: transparent illustration for the SoraChi beginner Japanese website. Edit the supplied original mascot into a travel pose. Preserve exactly its white three-lobed cloud head, one lavender leaf on top, deep muted purple rounded outlines, oval purple eyes, tiny smiling mouth, lilac cheek blush, tiny white body and feet, pale yellow scarf, and simple flat soft Japanese illustration style. The SAME character happily stands with one hand holding the short handle of a small rounded apricot-orange rolling suitcase beside its feet, suitcase has one simple aqua luggage tag. No hats or changes to the recognizable face. Suitcase only accessory, one hand on handle and other hand waving. Full body and leaf inside frame. Character and suitcase fill about 85% of square canvas; centered, transparent surroundings. Sparse details, readable at 100px. No background, no shadow, no decoration, no text, no outline sticker border, no watermarks."
+    }
+  ],
+  "reusedGrammarAsset": "art/cloud-complete.png",
+  "kanaCleanup": "Use case: precise-object-edit. Clean up the supplied SoraChi kana mascot illustration. There is an unwanted gray blurry smudge in the center of the white forehead, above the eyes. Remove ONLY that gray smudge and restore the same clean, opaque white fill as the surrounding face. The face must be opaque white, not a translucent hole. Preserve everything else exactly: face, proportions, purple leaf and outlines, cheeks, hands, yellow scarf, aqua flashcard with the correctly written あ, full-body framing, and genuine transparent background. Do not add shadows or gradients to the face."
+}
