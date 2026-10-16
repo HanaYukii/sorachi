@@ -213,12 +213,14 @@ function browser({
       }
     },
   });
+  // Like a browser: popstate on every move through history, hashchange only when the address changes.
   function traverse(step) {
     if (!entries[at + step]) return;
-    const oldURL = url(currentHash);
+    const oldHash = currentHash;
     at += step;
     currentHash = entries[at].hash;
-    dispatch(windowListeners, "hashchange", { oldURL, newURL: url(currentHash) });
+    dispatch(windowListeners, "popstate", { state: entries[at].state });
+    if (currentHash !== oldHash) dispatch(windowListeners, "hashchange", { oldURL: url(oldHash), newURL: url(currentHash) });
     flush();
   }
   const context = vm.createContext({
@@ -297,9 +299,10 @@ function browser({
   return {
     click,
     navigate(hash) { location.hash = hash; flush(); },
-    // The browser's back and forward buttons.
+    // The browser's back and forward buttons, and a jump from their history menu.
     back() { traverse(-1); },
     forward() { traverse(1); },
+    go(step) { traverse(step); },
     get historyState() { return JSON.parse(JSON.stringify(entries[at].state)); },
     blockStorage() { storageBlocked = true; },
     // A full quota: only setItem throws, so reads and the other-tab check keep working.
@@ -329,9 +332,10 @@ function browser({
     get renderCount() {
       return renderCount;
     },
-    study(action, extra = {}) {
+    // `detail` is the click count: 2 is the second click of a double click.
+    study(action, extra = {}, detail = 1) {
       const markup = `<button data-action="${action}" ${Object.entries(extra).map(([key,value]) => `data-${key}="${value}"`).join(' ')}>`;
-      dispatch(app._listeners, 'click', {target:element('button', markup)});
+      dispatch(app._listeners, 'click', {target:element('button', markup), detail});
       flush();
     },
     get title() { return document.title; },
@@ -889,7 +893,7 @@ test('short review is reachable from home, clears a recent mistake, and leaves f
   assert.equal(b.state.history[0].firstCorrect,4);
   assert.equal(b.state.study.kanaReview[missedId].wrong,true);
   const resumed=browser({raw:b.stored});
-  assert.match(resumed.html,/五十音小複習<\/strong><span>先練上次答錯的 1 個字/);
+  assert.match(resumed.html,/五十音複習<\/strong><span>先練上次答錯的 1 個字/);
   assert.match(resumed.html,/data-action="study-review-start"/);
   resumed.action('study-review-start');
   assert.equal(resumed.title,'五十音複習｜SoraChi');
@@ -1212,7 +1216,7 @@ test('the home shortcut resumes the same review after reload and leaves the next
   for (let i = 0; i < 5; i++) b.study('study-next');
   finishKanaRound(b);
   b.navigate('#home');
-  assert.match(b.html, /data-action="study-review-start"[\s\S]*?五十音小複習[\s\S]*?5 個字/);
+  assert.match(b.html, /data-action="study-review-start"[\s\S]*?五十音複習[\s\S]*?5 個字/);
   b.action('study-review-start');
   const question = b.state.study.reviewSession.questions[0];
   b.study('study-answer', {choice: question.options.indexOf(question.id)});
@@ -1220,7 +1224,7 @@ test('the home shortcut resumes the same review after reload and leaves the next
   const session = JSON.stringify(b.state.study.reviewSession);
   const courses = JSON.stringify(b.state.study.courses);
   const reloaded = browser({raw: b.stored});
-  assert.match(reloaded.html, /data-action="study-review-start"[\s\S]*?五十音小複習[\s\S]*?繼續/);
+  assert.match(reloaded.html, /data-action="study-review-start"[\s\S]*?五十音複習[\s\S]*?繼續/);
   assert.match(reloaded.html, /data-course="h-ka"/);
   reloaded.action('study-review-start');
   assert.equal(reloaded.hash, '#kana-review');
@@ -1874,7 +1878,7 @@ test('home resumes the 促音 and 長音 lessons where they stopped and offers t
   for (const row of JSON.parse(vm.runInContext('JSON.stringify(Object.values(Content.rowGroups).flat())', contentContext))) for (const script of ['h', 'k']) data.learning.study.courses[`${script}-${row}`] = { completedAt: '2026-10-01T00:00:00.000Z' };
   const groups = browser({ raw: JSON.stringify(data) });
   assert.match(section(groups, 'dash-next'), /data-course="s-sokuon"[\s\S]*?下一課：促音：小的 っ 停一拍/);
-  assert.match(section(groups, 'dash-next'), /data-action="study-review-start"[\s\S]*?五十音小複習/, 'The review of learned kana stays on home');
+  assert.match(section(groups, 'dash-next'), /data-action="study-review-start"[\s\S]*?五十音複習/, 'The review of learned kana stays on home');
   assert.match(groups.html, /<dt>平假名<\/dt><dd><strong>104<\/strong> \/ 104 字/);
   assert.match(groups.html, /<dt>促音・長音<\/dt><dd><strong>0<\/strong> \/ 2 課/);
   // An unfinished grammar lesson comes before the 促音 lesson not yet begun, as in the welcome line.
@@ -1938,7 +1942,7 @@ test('回 leads back to where a lesson or review was opened, through the next gr
   // Grammar works the same way: home leads home, the list leads to the list.
   const g = browser({ hash: '#grammar' });
   g.study('study-open', { course: 'g-identity' });
-  assert.deepEqual(exit(g), ['#grammar', '回句型列表']);
+  assert.deepEqual(exit(g), ['#grammar', '回基礎句型']);
   g.navigate('#home'); g.study('study-open', { course: 'g-identity' });
   assert.deepEqual(exit(g), ['#home', '回首頁']);
   // Back on a list, the lesson just left has focus.
@@ -1958,7 +1962,7 @@ test('the grammar review leads back by source, and odd or missing history state 
   g.navigate('#home'); g.study('study-grammar-review');
   assert.deepEqual(exit(g), ['#home', '回首頁']);
   g.navigate('#grammar'); g.navigate('#grammar-review');
-  assert.deepEqual(exit(g), ['#grammar', '回句型列表']);
+  assert.deepEqual(exit(g), ['#grammar', '回基礎句型']);
   // Saved state from elsewhere or from older versions falls back to the list; it never becomes a link.
   for (const historyState of [{ from: 'https://example.com/' }, { from: '#travel' }, { from: 42 }, { from: ['#home'] }, 'junk', null]) {
     assert.deepEqual(exit(browser({ hash: '#study/h-ka', historyState })), ['#kana', '回五十音表'], JSON.stringify(historyState));
@@ -1999,7 +2003,7 @@ test('the kana card stays the same whatever the progress: 學五十音 and 五�
   finishKanaRound(learned);
   learned.navigate('#home');
   assert.equal(card(learned), card(fresh));
-  assert.match(learned.html, /<section class="dash-next"[\s\S]*?data-action="study-review-start"[\s\S]*?五十音小複習[\s\S]*?5 個字/);
+  assert.match(learned.html, /<section class="dash-next"[\s\S]*?data-action="study-review-start"[\s\S]*?五十音複習[\s\S]*?5 個字/);
 });
 
 test('五十音隨機練習: one click from home, five different basic hiragana, one answer each, nothing recorded', () => {
@@ -2081,7 +2085,7 @@ test('句型隨機練習: one click from home, five different questions from the
   assert.equal(b.hash, '#grammar-random');
   assert.equal(b.title, '句型隨機練習｜SoraChi');
   assert.match(b.html, /<a class="exit" href="#home">← 回首頁<\/a>/);
-  assert.match(b.html, /<a class="text-button" href="#grammar">看句型列表<\/a>/);
+  assert.match(b.html, /<a class="text-button" href="#grammar">看基礎句型<\/a>/);
   const asked = [];
   for (let n = 1; n <= 5; n++) {
     assert.match(b.html, new RegExp(`入門句型 · ${n} / 5 · `));
@@ -2104,9 +2108,86 @@ test('句型隨機練習: one click from home, five different questions from the
   b.navigate('#grammar');
   assert.match(b.html, /data-action="study-grammar-random">練 5 題/);
   b.study('study-grammar-random');
-  assert.match(b.html, /<a class="exit" href="#grammar">← 回句型列表<\/a>/);
-  assert.doesNotMatch(b.html, /看句型列表/);
+  assert.match(b.html, /<a class="exit" href="#grammar">← 回基礎句型<\/a>/);
+  assert.doesNotMatch(b.html, /看基礎句型/);
   const fresh = browser();
   assert.match(fresh.html, /<button class="text-button" data-action="grammar">學基礎句型[\s\S]*?<button class="text-button path-secondary" data-action="study-grammar-random">句型隨機練習/);
   assert.equal(fresh.run('Study.context("#grammar-random")'), '句型隨機練習');
+});
+
+test('回 follows the entry, not the address: same-address jumps, older feedback pages and redirects', () => {
+  const exit = (b) => b.html.match(/<a class="exit" href="([^"]+)">← ([^<]+)<\/a>/)?.slice(1);
+  // Two entries for か行, one opened from the table and one from home; jumping between them fires no hashchange.
+  const b = browser({ hash: '#kana' });
+  b.study('study-open', { course: 'h-ka' });
+  b.navigate('#travel'); b.navigate('#home');
+  b.study('study-open', { course: 'h-ka' });
+  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  b.go(-3);
+  assert.equal(b.hash, '#study/h-ka');
+  assert.deepEqual(exit(b), ['#kana', '回五十音表']);
+  b.go(3);
+  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  // An older feedback page returns where it was opened from, with that page's context.
+  const f = browser();
+  f.study('study-open', { course: 'h-ka' });
+  f.action('feedback'); f.action('feedback-back');
+  f.navigate('#kana'); f.study('study-open', { course: 'h-ra' });
+  f.action('feedback');
+  assert.match(f.html, /ら行/);
+  f.go(-4);
+  assert.equal(f.hash, '#feedback');
+  assert.match(f.html, /か行/);
+  assert.doesNotMatch(f.html, /ら行/);
+  f.action('feedback-back');
+  assert.equal(f.hash, '#study/h-ka');
+  assert.deepEqual(exit(f), ['#home', '回首頁']);
+  // A redirected entry is marked as having no source, so a later visit back cannot give it one.
+  const r = browser({ hash: '#study/t-pay' });
+  assert.equal(r.hash, '#travel/t-pay');
+  assert.deepEqual(r.historyState, { from: null });
+});
+
+test('random rounds: reports name the question, a double click never answers, readings differ, and learners past kana still find them', () => {
+  // The question on screen is in a report from either random page.
+  const k = browser();
+  k.study('study-kana-random');
+  k.action('feedback'); k.submitFeedback('問題回報', '這題怪怪的');
+  const kanaBody = new URL(k.node('#feedback-ready').children[1].href).searchParams.get('body');
+  assert.match(kanaBody, /questionId: h-[a-z]+\/question\/u30[0-9a-f]{2}/);
+  assert.match(kanaBody, /round: random/);
+  assert.match(kanaBody, /所在位置：五十音隨機練習・第 1 題/);
+  const g = browser();
+  g.study('study-grammar-random');
+  g.action('feedback'); g.submitFeedback('問題回報', '這題怪怪的');
+  assert.match(new URL(g.node('#feedback-ready').children[1].href).searchParams.get('body'), /questionId: g-[a-z-]+\/question\//);
+  // The second click of a double click (on 再練 or 下一題) does not answer the option that appears under it.
+  const d = browser();
+  d.study('study-kana-random');
+  d.study('study-answer', { choice: 0 }, 2);
+  assert.equal(d.node('[data-action="study-next"]').disabled, true, 'Still unanswered');
+  d.study('study-answer', { choice: 0 }, 1);
+  assert.equal(d.node('[data-action="study-next"]').disabled, false);
+  // Five different readings in every round, so the prompt "o" never comes twice.
+  for (let round = 0; round < 60; round++) {
+    d.navigate('#home'); d.study('study-kana-random');
+    const readings = [];
+    for (let n = 0; n < 5; n++) {
+      const prompt = d.html.match(/<div class="kana-character"[^>]*>([^<]+)<\/div>/)[1];
+      readings.push(/這個字，讀音是哪一個？/.test(d.html) ? d.run(`KanaPractice.entries.find(e => e.character === ${JSON.stringify(prompt)} && e.script === "h").reading`) : prompt);
+      d.study('study-answer', { choice: 0 }); d.study('study-next');
+    }
+    assert.equal(new Set(readings).size, 5, readings.join());
+  }
+  // A learner past kana, whose main card is grammar, finds kana practice in 全部內容 and on the table.
+  const data = JSON.parse(browser().stored);
+  for (const row of JSON.parse(vm.runInContext('JSON.stringify(Object.values(Content.rowGroups).flat())', contentContext))) for (const script of ['h', 'k']) data.learning.study.courses[`${script}-${row}`] = { completedAt: '2026-10-01T00:00:00.000Z' };
+  for (const id of ['s-sokuon', 's-long']) data.learning.study.courses[id] = { completedAt: '2026-10-01T00:00:00.000Z' };
+  const past = browser({ raw: JSON.stringify(data) });
+  assert.match(past.html, /<section class="lesson-hero"[\s\S]*?<span class="number">基礎句型<\/span>[\s\S]*?data-action="study-grammar-random"/);
+  assert.match(past.html, /<section class="dash-all"[\s\S]*?data-action="study-kana-random"[\s\S]*?五十音隨機練習/);
+  past.navigate('#kana');
+  assert.match(past.html, /data-action="study-kana-random">練 5 題/);
+  past.study('study-kana-random');
+  assert.match(past.html, /<a class="exit" href="#kana">← 回五十音表<\/a>/);
 });

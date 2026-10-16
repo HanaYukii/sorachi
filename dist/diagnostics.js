@@ -35,13 +35,13 @@ const Diagnostics = (() => {
   function capture({hash = "",progress = {},scripts,attempt,practice,review} = {}) {
     const result = loadedVersions(scripts === undefined && typeof document !== "undefined" ? document.scripts : scripts);
     const practiceCourse = course(practice?.courseId);
-    const reviewCourse = hash === "#grammar-review" ? course(review?.courseId) : null;
+    const reviewCourse = hash === "#grammar-review" || hash === "#grammar-random" ? course(review?.courseId) : null;
     if (reviewCourse?.type === "grammar" && reviewCourse.questions.some(question => question.id === review.questionId)) {
       return Object.freeze({...result,courseId:reviewCourse.id,courseRevision:Content.courseRevision(reviewCourse.id),questionId:review.questionId});
     }
-    if (practiceCourse?.type === "kana" && practice?.practiceVersion === 1 &&
-        ["first","retry"].includes(practice.round) && ["character","reading"].includes(practice.direction) &&
-        (hash === "#kana-review" || hash === `#study/${practiceCourse.id}`) &&
+    // A random round is reported like a lesson or review round, so a reported question can be found again.
+    if (practiceCourse?.type === "kana" && practice?.practiceVersion === 1 && ["character","reading"].includes(practice.direction) &&
+        (["first","retry"].includes(practice.round) && (hash === "#kana-review" || hash === `#study/${practiceCourse.id}`) || practice.round === "random" && hash === "#kana-random") &&
         practiceCourse.questions.some(question => question.id === practice.questionId)) {
       return Object.freeze({...result,courseId:practiceCourse.id,courseRevision:Content.courseRevision(practiceCourse.id),
         questionId:practice.questionId,direction:practice.direction,practiceVersion:1,round:practice.round});
@@ -102,7 +102,7 @@ const Diagnostics = (() => {
       if (id(snapshot.questionId) && questions.some(question => question.id === snapshot.questionId)) lines.push(`questionId: ${snapshot.questionId}`);
       if (id(snapshot.cardId) && cards.some(card => card.id === snapshot.cardId)) lines.push(`cardId: ${snapshot.cardId}`);
       if (current.type === "kana" && id(snapshot.questionId) && questions.some(question => question.id === snapshot.questionId) && ["character","reading"].includes(snapshot.direction)) lines.push(`direction: ${snapshot.direction}`);
-      if (current.type === "kana" && questions.some(question => question.id === snapshot.questionId) && snapshot.practiceVersion === 1 && ["first","retry"].includes(snapshot.round)) {
+      if (current.type === "kana" && questions.some(question => question.id === snapshot.questionId) && snapshot.practiceVersion === 1 && ["first","retry","random"].includes(snapshot.round)) {
         lines.push("practiceVersion: 1",`round: ${snapshot.round}`);
       }
     }

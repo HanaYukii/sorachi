@@ -592,6 +592,7 @@ test('the kana table pairs every character with its romaji from the lesson data,
       const cells = [...rowHtml.matchAll(/<span class="kana-cell"><span lang="ja">([^<]+)<\/span><span class="kana-roman">([^<]+)<\/span><\/span>/g)].map((m) => [m[1], m[2]]);
       assert.deepEqual(cells, [...course.letters].map((letter, i) => [letter, course.readings[i]]), id);
       if (course.row.endsWith('行')) assert.ok(rowHtml.includes(`<span class="row-roman">（${course.readings[0]}）</span>`), id);
+      else assert.doesNotMatch(rowHtml, /row-roman/, `${id}: わ・を・ん and contracted rows are named by their kana`);
     }
   }
   const pairs = (id) => Object.fromEntries(b.content.courses[id].letters.map((letter, i) => [letter, b.content.courses[id].readings[i]]));
