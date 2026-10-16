@@ -409,14 +409,14 @@ const Content = (() => {
       "id": "g-identity",
       "type": "grammar",
       "title": "名詞句：〜は〜です",
-      "subtitle": "名詞句的基本結構",
+      "subtitle": "說明「我是誰、這是什麼」",
       "steps": [
         {
           "title": "本課單字",
           "example": "わたし ／ がくせい",
           "reading": "watashi / gakusei",
           "meaning": "我 ／ 學生",
-          "body": "本課用這兩個詞，練習自我介紹。",
+          "body": "先記住「我」和「學生」。像「學生、麵包、車站」這些表示人、東西或地方名稱的詞，叫做「名詞」。這課會用「學生」練習自我介紹。",
           "id": "g-identity/card/nouns"
         },
         {
@@ -424,15 +424,15 @@ const Content = (() => {
           "example": "わたしは がくせいです。",
           "reading": "watashi wa gakusei desu",
           "meaning": "我是學生。",
-          "body": "「わたし」是我，「がくせい」是學生。「は」標出這句話的主題，也就是正在談的「我」；後面的「がくせいです」說明我是學生。「です」是較禮貌的句尾。",
+          "body": "A、B 是可以換成其他詞的位置。這句把 A 換成「わたし」（我），B 換成「がくせい」（學生）。「は」標出正在說誰，也就是句子的主題；後面的「がくせいです」說明我是學生。「です」讓說法比較有禮貌。",
           "id": "g-identity/card/noun-sentence"
         },
         {
-          "title": "助詞 は 的讀音",
+          "title": "這裡的 は 讀 wa",
           "example": "わたし は がくせい です。",
           "reading": "watashi wa gakusei desu",
           "meaning": "說到我：我是學生。",
-          "body": "這裡的「は」標出我們正在說誰，要讀成 wa。雖然念 wa，寫的仍是「は」，不是「わ」。",
+          "body": "「は」這種放在詞後面、幫忙說明它在句中作用的小詞，叫做「助詞」。這句的「は」讀 wa，寫的仍是「は」，不是「わ」。先記住這個用法就好。",
           "id": "g-identity/card/topic-reading"
         }
       ],
@@ -473,11 +473,11 @@ const Content = (() => {
       "subtitle": "用「か」表示疑問",
       "steps": [
         {
-          "title": "敘述句：〜です",
+          "title": "說明：是學生",
           "example": "がくせいです。",
           "reading": "gakusei desu",
           "meaning": "是學生。",
-          "body": "「がくせい」是學生，「です」讓這個名詞句以比較禮貌的方式結尾。這句話是在說明，不是在發問。",
+          "body": "「がくせい」是學生，後面加「です」，就是比較有禮貌地說「是學生」。這句沒有發問。",
           "id": "g-question/card/statement"
         },
         {
@@ -489,7 +489,7 @@ const Content = (() => {
           "id": "g-question/card/question-particle"
         },
         {
-          "title": "情境清楚時，可省略人稱",
+          "title": "知道在說誰，就可以不說「你」",
           "example": "がくせいですか。",
           "reading": "gakusei desu ka",
           "meaning": "你是學生嗎？",
@@ -531,7 +531,7 @@ const Content = (() => {
       "id": "g-demo",
       "type": "grammar",
       "title": "指示詞：これ・それ・あれ",
-      "subtitle": "依物品的位置選擇指示詞",
+      "subtitle": "這個、那個：看東西靠近誰",
       "steps": [
         {
           "title": "靠近我：これ",
@@ -695,14 +695,14 @@ const Content = (() => {
       "id": "g-kono",
       "type": "grammar",
       "title": "指示詞：この・その・あの・どの",
-      "subtitle": "後面接名詞的指示詞",
+      "subtitle": "這個麵包、那個麵包、哪個麵包",
       "steps": [
         {
           "title": "これ 和 この",
           "example": "これは パンです。 ／ この パンです。",
           "reading": "kore wa pan desu / kono pan desu",
           "meaning": "這是麵包。／ 是這個麵包。",
-          "body": "「これ」可以單獨用；「この」不能單獨用，要放在名詞前面，例如「この パン」。それ／その、あれ／あの 也一樣。",
+          "body": "「これ」自己就能表示「這個」；要直接接東西的名稱時，用「この」：この パン＝這個麵包。パン 是名詞。「これ パン」不能這樣直接接。",
           "id": "g-kono/card/kore-kono"
         },
         {
@@ -866,7 +866,7 @@ const Content = (() => {
           "example": "わたしは がくせいじゃないです。",
           "reading": "watashi wa gakusei ja nai desu",
           "meaning": "我不是學生。",
-          "body": "名詞後面接「じゃないです」就是「不是…」。這課只練名詞句；形容詞、動詞的否定方式不一定一樣，之後再學。",
+          "body": "把「がくせいです」（是學生）的「です」換成「じゃないです」，就變成「不是學生」。這課先用人或東西的名稱練習；其他詞的「不…」之後再學。",
           "id": "g-negative/card/ja-nai"
         },
         {
@@ -979,7 +979,7 @@ const Content = (() => {
             "e"
           ],
           "answer": 0,
-          "explanation": "「Ａの Ｂ」用「の」表示所屬，「わたしの かさ」＝我的傘。「は」標出主題，「わたしは かさです」變成「我是傘」，意思不通；「を」標動作的對象，句中沒有動作；「へ」表示方向，句中沒有移動。名詞接名詞表示所屬，只有「の」成立。",
+          "explanation": "「わたしの かさ」就是「我的傘」，所以選「の」。這題先記住「AのB＝A 的 B」，用「の」表示是誰的東西。",
           "id": "g-no/question/jabiko-no"
         },
         {
@@ -2020,7 +2020,7 @@ const Content = (() => {
           "example": "パンを たべます。",
           "reading": "pan o tabemasu",
           "meaning": "吃麵包。",
-          "body": "動作的對象放在「を」前面，後面接動詞。當助詞的「を」念 o，和「お」同音。",
+          "body": "「たべます」是吃。像吃、喝、買這些表示動作的詞，叫做「動詞」。日文先說吃的東西，再說動作：パンを たべます＝吃麵包。中間的「を」讀 o。",
           "id": "g-verbs/card/taberu"
         },
         {
@@ -2501,7 +2501,7 @@ const Content = (() => {
           "example": "おおきい ／ ちいさい",
           "reading": "ookii / chiisai",
           "meaning": "大 ／ 小",
-          "body": "「おおきい」是大，「ちいさい」是小。這類用「い」結尾的形容詞叫い形容詞。不過最後是「い」的不一定都是い形容詞，例如之後會學的「きれい」。",
+          "body": "描述大、小、貴、便宜這類樣子的詞，叫做「形容詞」。「おおきい」是大，「ちいさい」是小，這兩個屬於「い形容詞」。先記這兩個例子；不是所有以「い」結尾的詞都屬於這一類。",
           "id": "g-adj-i/card/size"
         },
         {
@@ -3196,7 +3196,7 @@ const Content = (() => {
   // and where a ported question came from.
   const lessonPlan = {
     "g-identity": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [],
       "words": [
         "わたし",
@@ -3212,7 +3212,7 @@ const Content = (() => {
       }
     },
     "g-question": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-identity"
       ],
@@ -3226,7 +3226,7 @@ const Content = (() => {
       }
     },
     "g-demo": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-identity"
       ],
@@ -3244,7 +3244,7 @@ const Content = (() => {
       }
     },
     "g-place": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-question",
         "g-demo"
@@ -3266,7 +3266,7 @@ const Content = (() => {
       }
     },
     "g-kono": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-demo",
         "g-question",
@@ -3287,7 +3287,7 @@ const Content = (() => {
       }
     },
     "g-who": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-place",
         "g-kono"
@@ -3310,7 +3310,7 @@ const Content = (() => {
       }
     },
     "g-negative": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-question",
         "g-demo"
@@ -3329,7 +3329,7 @@ const Content = (() => {
       }
     },
     "g-no": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-demo"
       ],
@@ -3351,7 +3351,7 @@ const Content = (() => {
       }
     },
     "g-mo": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-demo",
         "g-no",
@@ -3371,7 +3371,7 @@ const Content = (() => {
       }
     },
     "g-to": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-mo",
         "g-no"
@@ -3389,7 +3389,7 @@ const Content = (() => {
       }
     },
     "g-kara-made": {
-      "unit": "名詞句",
+      "unit": "基本句子",
       "requires": [
         "g-place",
         "g-no"
@@ -3926,7 +3926,7 @@ const Content = (() => {
           "example": "きっぷ",
           "reading": "kippu",
           "meaning": "車票",
-          "body": "小字的「っ」本身不發音，在下一個音之前停一拍。羅馬字把下一個子音寫兩次：ki-p-pu。",
+          "body": "把每一拍想成一次等長的拍手：き・っ・ぷ 共三拍，中間那拍先停住，不念 tsu。羅馬字寫成 kippu，中間的 pp 提醒你先停一下，再念 pu。",
           "id": "s-sokuon/card/kippu"
         },
         {
@@ -3955,7 +3955,7 @@ const Content = (() => {
             "kiipu"
           ],
           "answer": 0,
-          "explanation": "小的 っ 讓下一個子音寫兩次：kippu。kipu 少了停頓；kiipu 是把 き 拉長，那是長音。",
+          "explanation": "正確是 kippu，中間的 pp 表示先停一拍，再念 pu。kipu 少了停頓；kiipu 是把 ki 拉長，和停頓不同。",
           "id": "s-sokuon/question/kippu"
         },
         {
@@ -3990,11 +3990,11 @@ const Content = (() => {
       "subtitle": "おばあさん・コーヒー",
       "steps": [
         {
-          "title": "重複母音就是拉長",
+          "title": "把 ba 拉長成 baa",
           "example": "おばさん ／ おばあさん",
           "reading": "obasan / obaasan",
           "meaning": "阿姨 ／ 奶奶",
-          "body": "「おばあさん」在 ば 後面多一個 あ，把 ba 拉長成 baa，多一拍，意思就從阿姨變成奶奶。羅馬字把母音寫兩次：obaasan。",
+          "body": "「おばあさん」在 ば 後面多一個 あ，把 ba 拉長成 baa，多念一拍。中間不要停住，意思就從阿姨變成奶奶。羅馬字寫成 obaasan，aa 表示拉長。",
           "id": "s-long/card/obaasan"
         },
         {
@@ -4010,7 +4010,7 @@ const Content = (() => {
           "example": "コーヒー ／ ケーキ",
           "reading": "koohii / keeki",
           "meaning": "咖啡 ／ 蛋糕",
-          "body": "片假名用長音符號「ー」把前一個音拉長，羅馬字寫成兩個母音。",
+          "body": "看到「ー」，就把前一個音多念一拍。例如 コーヒー 寫成 koohii，ko 和 hi 都要拉長，中間不要停住。",
           "id": "s-long/card/katakana"
         }
       ],

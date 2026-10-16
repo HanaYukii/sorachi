@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), 'cbf49ad927f0845cc4705d5ccea7f69212a31731d60520bd3f394b0a93d09a4e');
+  assert.equal(createHash('sha256').update(original).digest('hex'), 'ef8d19c5411a5ba7ec19990393cbd20ef68d2c84f2e3a872cbfa91fd59f08e0f');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -324,7 +324,7 @@ test('grammar lessons follow a plan: earlier requirements, taught words only, a 
   assert.match(errors(d => { d.lessonPlan['g-kono'].requires = ['g-who']; }), /must be an earlier lesson/);
   assert.match(errors(d => { delete d.lessonPlan['g-mo'].review['g-mo/question/meaning']; }), /needs a card to revisit/);
   assert.match(errors(d => { delete d.lessonPlan['g-to']; }), /needs a plan entry/);
-  assert.deepEqual([...new Set(Content.grammar.map(lesson => Content.lessonPlan[lesson.id].unit))], ['名詞句', '時間與數字', '動作與地點', '形容詞與連接', 'て形']);
+  assert.deepEqual([...new Set(Content.grammar.map(lesson => Content.lessonPlan[lesson.id].unit))], ['基本句子', '時間與數字', '動作與地點', '形容詞與連接', 'て形']);
   assert.match(errors(d => { d.lessonPlan['g-to'].unit = '時間與數字'; }), /lessons in a unit must be next to each other/);
   assert.match(errors(d => { delete d.lessonPlan['g-days'].unit; }), /lessonPlan.g-days.unit: required nonempty text/);
   assert.match(errors(d => { d.lessonPlan['g-days'].unit = '時間與數字 '; }), /unit title has surrounding spaces/);

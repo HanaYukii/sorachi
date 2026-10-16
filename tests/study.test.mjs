@@ -177,7 +177,7 @@ test('reviewing cards mid-quiz retains original answers and resumes at first inc
 test('all grammar courses complete their content-defined cards and questions with stable score semantics', () => {
   const b = harness(); b.render('#grammar');
   assert.equal((b.html.match(/data-action="study-open"/g) || []).length, b.content.grammar.length);
-  assert.deepEqual([...b.html.matchAll(/<h2 class="course-list-heading">([^<]+)<\/h2>/g)].map(m => m[1]), ['名詞句', '時間與數字', '動作與地點', '形容詞與連接', 'て形'], 'One heading per unit, in teaching order');
+  assert.deepEqual([...b.html.matchAll(/<h2 class="course-list-heading">([^<]+)<\/h2>/g)].map(m => m[1]), ['基本句子', '時間與數字', '動作與地點', '形容詞與連接', 'て形'], 'One heading per unit, in teaching order');
   assert.deepEqual([...b.html.matchAll(/data-course="([^"]+)"/g)].map(m => m[1]), [...b.content.grammar.map(lesson => lesson.id)], 'Units keep the teaching order');
   for (const { id } of b.content.grammar) {
     assert.equal(b.study.total(id), b.content.courses[id].questions.length);
@@ -482,7 +482,8 @@ test('grammar examples can be played and Japanese quiz options show romaji', () 
   if (!/option-reading/.test(b.html)) { b.action('answer', { choice: '1' }); b.action('next'); }
   assert.match(b.html, /<span lang="ja">です<\/span><span class="option-reading">desu<\/span>/);
   b.render('#grammar');
-  assert.match(b.html, /ou、ei 和 aa、ii、uu、ee、oo 通常是拉長的音/);
+  assert.match(b.html, /<details class="phrase-more reading-help"><summary>日文下方的英文字母怎麼看？<\/summary>/);
+  assert.match(b.html, /ou、ei 也常念成長音/);
 });
 
 test('ぢ／づ cards say up front that they share a reading with じ／ず', () => {
