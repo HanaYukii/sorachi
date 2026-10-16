@@ -23,6 +23,7 @@ function browser({
   hash = "#home",
   storageBlocked = false,
   sharedStorage = null,
+  historyState = null,
 } = {}) {
   let initialKey = key;
   try { if (JSON.parse(raw)?.schemaVersion) initialKey = "sorachi:data:v2"; } catch {}
@@ -38,6 +39,10 @@ function browser({
   const created = [];
   let focused = null;
   let currentHash = hash;
+  // The tab's history: one entry per hash change, each with its own state; a reload keeps the current entry's state.
+  const entries = [{ hash, state: historyState }];
+  let at = 0;
+  const url = (value) => `http://localhost/${value}`;
   const elements = new Map();
   const add = (map, type, fn) => map.set(type, [...(map.get(type) || []), fn]);
   const dispatch = (map, type, event) =>
@@ -197,17 +202,34 @@ function browser({
     },
     set(value) {
       if (value !== currentHash) {
+        const oldURL = url(currentHash);
         currentHash = value;
-        pending.push(() => dispatch(windowListeners, "hashchange", {}));
+        entries.splice(at + 1, Infinity, { hash: value, state: null });
+        at++;
+        pending.push(() => dispatch(windowListeners, "hashchange", { oldURL, newURL: url(value) }));
       }
     },
   });
+  function traverse(step) {
+    if (!entries[at + step]) return;
+    const oldURL = url(currentHash);
+    at += step;
+    currentHash = entries[at].hash;
+    dispatch(windowListeners, "hashchange", { oldURL, newURL: url(currentHash) });
+    flush();
+  }
   const context = vm.createContext({
     document,
     location,
     window: {
       location,
-      history: {replaceState(_state, _title, hash) { currentHash = hash; }},
+      history: {
+        get state() { return entries[at].state; },
+        replaceState(state, _title, hash) {
+          entries[at] = { hash: hash ?? entries[at].hash, state: state ?? null };
+          currentHash = entries[at].hash;
+        },
+      },
       scrollTo() {},
       addEventListener(type, fn) {
         add(windowListeners, type, fn);
@@ -272,6 +294,10 @@ function browser({
   return {
     click,
     navigate(hash) { location.hash = hash; flush(); },
+    // The browser's back and forward buttons.
+    back() { traverse(-1); },
+    forward() { traverse(1); },
+    get historyState() { return JSON.parse(JSON.stringify(entries[at].state)); },
     blockStorage() { storageBlocked = true; },
     // A full quota: only setItem throws, so reads and the other-tab check keep working.
     failSetItem(fail = true) { setItemFails = fail; },
@@ -668,12 +694,17 @@ test("feedback returns to the current study card with its course title", () => {
 });
 
 
-test("home explains the task and sends beginners directly to the first kana group", () => {
+test("home explains the task: the kana card leads to the table, and a beginner can start あ行 straight away", () => {
   const b = browser();
   assert.match(b.html, /日文入門/);
-  assert.match(b.html, /入門必學，搭配各式技巧好好記熟/);
-  assert.match(b.html, /data-action="study-open" data-course="h-a"/);
+  assert.match(b.html, /看字表、聽讀音，選一行開始。/);
+  assert.match(b.html, /<button class="primary" data-action="kana">學五十音/);
+  assert.match(b.html, /data-action="study-open" data-course="h-a">先學あ行/);
+  assert.doesNotMatch(b.html, /data-action="study-review-start"/, 'Nothing to review yet');
   assert.doesNotMatch(b.html, /あ、ア、山/);
+  b.action('kana');
+  assert.equal(b.hash, '#kana');
+  b.navigate('#home');
   b.study('study-open', {course:'h-a'});
   assert.equal(b.hash, '#study/h-a');
   assert.match(b.html, /認字與讀音 · 1 \/ 5/);
@@ -788,7 +819,7 @@ test("viewing a later kana group does not hijack the home recommendation; flippi
   b.study('study-prev');
   b.navigate('#home');
   assert.match(b.html, /data-course="h-ka"/);
-  assert.match(b.html, /接著練五十音/);
+  assert.match(b.html, /接著學：平假名・か行/);
   const resumed = browser({raw:b.stored});
   assert.match(resumed.html, /data-course="h-ka"/);
 });
@@ -950,7 +981,7 @@ test('home goes on to voiced hiragana after the basic rows, but keeps katakana l
   const basicH = ['a','ka','sa','ta','na','ha','ma','ya','ra','wa'].map((row) => `h-${row}`);
   const hiragana = withCompleted(basicH);
   assert.match(hiragana.html, /data-action="study-open" data-course="h-ga"/);
-  assert.match(hiragana.html, /平假名已完成 10 \/ 26 組/);
+  assert.match(hiragana.html, /下一組：平假名・が行/);
   const katakana = withCompleted([...basicH, 'k-a', 'k-ka']);
   assert.match(katakana.html, /data-action="study-open" data-course="k-sa"/);
 });
@@ -1782,19 +1813,26 @@ test('home resumes the 促音 and 長音 lessons where they stopped and offers t
   const section = (b, name) => (b.html.match(new RegExp(`<section class="${name}"[\\s\\S]*?</section>`)) || [''])[0];
   const lesson = (id) => JSON.parse(vm.runInContext(`JSON.stringify(Content.courses[${JSON.stringify(id)}])`, contentContext));
   const offers = (b, id) => b.html.includes(`data-action="study-open" data-course="${id}"`);
-  // Opening the first card is not progress: home still starts at あ行.
+  // Opening the first card is not progress, for a new visitor or for someone who finished あ行.
   const peek = browser();
   peek.study('study-open', { course: 's-sokuon' });
   peek.navigate('#home');
   assert.ok(!offers(peek, 's-sokuon'));
-  assert.match(section(peek, 'lesson-hero'), /data-course="h-a"/);
+  const learner = browser({ hash: '#study/h-a' });
+  for (let i = 0; i < 5; i++) learner.study('study-next');
+  finishKanaRound(learner);
+  learner.study('study-open', { course: 's-sokuon' });
+  learner.navigate('#home');
+  assert.ok(!offers(learner, 's-sokuon'));
+  assert.match(section(learner, 'dash-next'), /data-course="h-ka"[\s\S]*?下一組：平假名・か行/);
   // Stopped on the second card: home leads back to it, also after reload.
   const cards = browser();
   cards.study('study-open', { course: 's-sokuon' }); cards.study('study-next');
   cards.navigate('#home');
   for (const page of [cards, browser({ raw: cards.stored })]) {
-    assert.ok(offers(page, 's-sokuon'), 'Home offers the unfinished 促音 lesson');
-    assert.doesNotMatch(section(page, 'lesson-hero'), /個字/, 'A sound lesson is not counted in characters');
+    assert.match(section(page, 'dash-next'), /data-course="s-sokuon"[\s\S]*?<strong>五十音<\/strong><span>接著學：促音：小的 っ 停一拍<\/span>/, 'Home offers the unfinished 促音 lesson');
+    assert.match(page.html, /接下來可以：接著學促音。/);
+    assert.doesNotMatch(section(page, 'dash-next'), /個字/, 'A sound lesson is not counted in characters');
     page.study('study-open', { course: 's-sokuon' });
     assert.equal(page.hash, '#study/s-sokuon');
     assert.equal(page.state.study.courses['s-sokuon'].active.cursor, 1);
@@ -1815,24 +1853,35 @@ test('home resumes the 促音 and 長音 lessons where they stopped and offers t
     assert.equal(active.phase, 'quiz');
     assert.equal(active.cursor, 1);
   }
-  // A kana group and a sound lesson both unfinished: the main card keeps the group, the lesson is still offered.
+  // A kana group and a sound lesson both unfinished: the group comes first, the lesson is still offered.
   const both = browser();
   both.study('study-open', { course: 's-long' }); both.study('study-next');
   both.study('study-open', { course: 'h-a' }); both.study('study-next');
   both.navigate('#home');
-  assert.match(section(both, 'lesson-hero'), /data-course="h-a"/);
-  assert.ok(offers(both, 's-long'), 'The unfinished 長音 lesson is not hidden behind the group');
+  assert.match(section(both, 'dash-next'), /data-course="h-a"[\s\S]*?接著學：平假名・あ行[\s\S]*?data-course="s-long"[\s\S]*?接著學「長音：把音拉長一拍」/);
+  // A katakana-first learner keeps the unfinished lesson too.
+  const katakana = browser({ hash: '#study/k-a' });
+  for (let i = 0; i < 5; i++) katakana.study('study-next');
+  playRound(katakana, 'k-a');
+  katakana.study('study-open', { course: 's-long' }); katakana.study('study-next');
+  katakana.navigate('#home');
+  assert.match(section(katakana, 'dash-next'), /data-course="s-long"[\s\S]*?接著學：長音：把音拉長一拍/);
   // All 52 groups done: 促音 and then 長音 come next, and the character counts stay 104.
   const data = JSON.parse(browser().stored);
   for (const row of JSON.parse(vm.runInContext('JSON.stringify(Object.values(Content.rowGroups).flat())', contentContext))) for (const script of ['h', 'k']) data.learning.study.courses[`${script}-${row}`] = { completedAt: '2026-10-01T00:00:00.000Z' };
   const groups = browser({ raw: JSON.stringify(data) });
-  assert.match(section(groups, 'lesson-hero'), /data-action="study-open" data-course="s-sokuon"/);
-  assert.match(section(groups, 'lesson-hero'), /促音・長音已完成 0 \/ 2 課/);
-  assert.match(groups.html, /data-action="study-review-start"/, 'The five-character review stays on home');
+  assert.match(section(groups, 'dash-next'), /data-course="s-sokuon"[\s\S]*?下一課：促音：小的 っ 停一拍/);
+  assert.match(section(groups, 'lesson-hero'), /data-action="study-review-start"/, 'The five-character review stays on the kana card');
   assert.match(groups.html, /<dt>平假名<\/dt><dd><strong>104<\/strong> \/ 104 字/);
   assert.match(groups.html, /<dt>促音・長音<\/dt><dd><strong>0<\/strong> \/ 2 課/);
+  // An unfinished grammar lesson comes before the 促音 lesson not yet begun, as in the welcome line.
+  const grammarFirst = browser({ raw: JSON.stringify(data) });
+  grammarFirst.study('study-open', { course: 'g-identity' }); grammarFirst.study('study-next');
+  grammarFirst.navigate('#home');
+  assert.match(section(grammarFirst, 'dash-next'), /data-course="g-identity"[\s\S]*?接著學：[\s\S]*?data-course="s-sokuon"[\s\S]*?下一課：促音/);
+  assert.match(grammarFirst.html, /接下來可以：把「[^」]+」學完，或學促音。/);
   data.learning.study.courses['s-sokuon'] = { completedAt: '2026-10-02T00:00:00.000Z' };
-  assert.match(section(browser({ raw: JSON.stringify(data) }), 'lesson-hero'), /data-course="s-long"/);
+  assert.match(section(browser({ raw: JSON.stringify(data) }), 'dash-next'), /data-course="s-long"[\s\S]*?下一課：長音/);
   data.learning.study.courses['s-long'] = { completedAt: '2026-10-02T00:00:00.000Z' };
   const done = browser({ raw: JSON.stringify(data) });
   assert.ok(!offers(done, 's-sokuon') && !offers(done, 's-long'), 'Finished lessons are not offered again');
@@ -1841,4 +1890,74 @@ test('home resumes the 促音 and 長音 lessons where they stopped and offers t
   done.study('study-open', { course: 's-sokuon' }); done.study('study-next');
   done.navigate('#home');
   assert.ok(offers(done, 's-sokuon'));
+});
+
+test('回 leads back to where a lesson or review was opened, through the next group, feedback, a reload and the back button', () => {
+  const exit = (b) => b.html.match(/<a class="exit" href="([^"]+)">← ([^<]+)<\/a>/)?.slice(1);
+  const reload = (b) => browser({ raw: b.stored, hash: b.hash, historyState: b.historyState });
+  // From home: the header and the done page lead home, and the done page puts that first.
+  const b = browser();
+  b.study('study-open', { course: 'h-a' });
+  assert.deepEqual(b.historyState, { from: '#home' });
+  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  for (let i = 0; i < 5; i++) b.study('study-next');
+  finishKanaRound(b);
+  const records = b.state.history.length;
+  assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-open" data-course="h-ka">下一組：か行<\/button><button class="text-button" data-action="study-restart">重新練習<\/button><\/div>/);
+  assert.equal(b.hash, '#study/h-a', 'Answers and the done page add no history entries');
+  b.back();
+  assert.equal(b.hash, '#home');
+  b.forward();
+  assert.equal(b.hash, '#study/h-a');
+  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  assert.equal(b.state.history.length, records, 'Going back and forth records nothing again');
+  // The next group, a feedback detour and a reload keep the first source.
+  b.study('study-open', { course: 'h-ka' });
+  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  b.action('feedback'); b.action('feedback-back');
+  assert.equal(b.hash, '#study/h-ka');
+  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  assert.deepEqual(exit(reload(b)), ['#home', '回首頁']);
+  // From the kana table: back to the table; a direct link has no source and leads there too.
+  const table = browser({ hash: '#kana' });
+  table.study('study-open', { course: 'h-ka' });
+  assert.deepEqual(exit(table), ['#kana', '回五十音表']);
+  assert.deepEqual(exit(browser({ hash: '#study/h-ka' })), ['#kana', '回五十音表']);
+  assert.deepEqual(exit(browser({ hash: '#study/s-sokuon' })), ['#kana', '回五十音表']);
+  // The short review: home leads home, the table leads to the table; its done page puts the way back first.
+  b.navigate('#home'); b.study('study-review-start');
+  assert.equal(b.hash, '#kana-review');
+  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  playRound(b, 'review');
+  assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-review-start">再複習 \d 個字<\/button><\/div>/);
+  b.navigate('#kana'); b.navigate('#kana-review');
+  assert.deepEqual(exit(b), ['#kana', '回五十音表']);
+  // Grammar works the same way: home leads home, the list leads to the list.
+  const g = browser({ hash: '#grammar' });
+  g.study('study-open', { course: 'g-identity' });
+  assert.deepEqual(exit(g), ['#grammar', '回句型列表']);
+  g.navigate('#home'); g.study('study-open', { course: 'g-identity' });
+  assert.deepEqual(exit(g), ['#home', '回首頁']);
+});
+
+test('the kana card always leads to the table: its other way in is あ行 before anything is learned, then the short review', () => {
+  const card = (b) => (b.html.match(/<section class="lesson-hero"[\s\S]*?<\/section>/) || [''])[0];
+  const fresh = browser();
+  assert.match(card(fresh), /<button class="primary" data-action="kana">學五十音/);
+  assert.match(card(fresh), /data-action="study-open" data-course="h-a">先學あ行/);
+  // Begun but nothing learned yet: the card stays the same, and carrying on is listed under 接著做.
+  const begun = browser();
+  begun.study('study-open', { course: 'h-a' }); begun.study('study-next');
+  begun.navigate('#home');
+  assert.equal(card(begun), card(fresh));
+  assert.match(begun.html, /<section class="dash-next"[\s\S]*?data-course="h-a"[\s\S]*?接著學：平假名・あ行/);
+  // Something learned: the short review replaces あ行; the card never opens a lesson itself.
+  const learned = browser({ hash: '#study/h-a' });
+  for (let i = 0; i < 5; i++) learned.study('study-next');
+  finishKanaRound(learned);
+  learned.navigate('#home');
+  const hero = learned.html.match(/<section class="lesson-hero"[\s\S]*?<\/section>\s*<\/section>/)[0];
+  assert.match(hero, /<button class="primary" data-action="kana">學五十音/);
+  assert.match(hero, /data-action="study-review-start">複習 5 個字/);
+  assert.doesNotMatch(hero, /data-action="study-open"/);
 });
