@@ -1262,15 +1262,10 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
   .path-number { padding: 5px 7px; }
 }
 
-/* About: the origin story and three recognizable mascot poses. */
+/* About: the origin story and original cloud mascot. */
 .info-section h2 + p { margin-top: 8px; }
 .info-section p + p { margin-top: 12px; }
-.mascot-poses { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
-.mascot-poses figure { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 12px; }
-.mascot-poses img { width: 100px; height: 104px; object-fit: contain; }
-.mascot-poses figcaption { font-size: 13px; color: var(--purple-deep); text-align: center; line-height: 1.6; }
+.about-mascot { display: block; width: 150px; height: auto; margin: 24px auto 0; }
 @media (max-width: 540px) {
-  .mascot-poses { gap: 8px; }
-  .mascot-poses img { width: 64px; height: 68px; }
-  .mascot-poses figcaption { font-size: 12px; }
+  .about-mascot { width: 120px; }
 }
