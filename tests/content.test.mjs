@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '9514b8e7059ccbe7b3cbf94efcdca1f0e45cb3b6fc9e9b0cb1023248fe34ca25');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '3007689a3d6f103c595cfb237bd81b5d3a6ba706f17698c3a3ec5af396d6ec49');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -102,9 +102,9 @@ test('intro distractors are balanced and travel phrases retain concise contextua
   assert.equal(reservation.keywords[0][0], '予約（よやく）');
 });
 
-test('registry includes 52 kana groups, forty-three grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
-  assert.equal(Object.keys(Content.courses).length, 97);
-  assert.equal(Content.grammar.length, 43);
+test('registry includes 52 kana groups, forty-five grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
+  assert.equal(Object.keys(Content.courses).length, 99);
+  assert.equal(Content.grammar.length, 45);
   for (const id of ['t-place', 't-order', 't-pay', 't-charge']) {
     assert.equal(Content.getCourse(id), null);
     assert.ok(Content.phrasebook.some(c => c.id === id));
@@ -316,7 +316,7 @@ test('speech text is kana only and fixes readings device voices may get wrong', 
 
 test('grammar lessons follow a plan: earlier requirements, taught words only, a card to revisit for every question', () => {
   const ids = Content.grammar.map(g => g.id);
-  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-kochira', 'g-who', 'g-negative', 'g-no', 'g-nouns', 'g-mo', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock', 'g-minutes', 'g-kara-made-time', 'g-dates', 'g-dates-2', 'g-dates-3', 'g-verbs', 'g-masen', 'g-mashita', 'g-ni-de', 'g-transport', 'g-arimasu', 'g-position', 'g-adj-i', 'g-adj-neg', 'g-adj-na', 'g-who-2', 'g-soshite-demo', 'g-kara-reason', 'g-verb-forms', 'g-te-forms', 'g-te-kudasai', 'g-te-sequence']);
+  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-kochira', 'g-who', 'g-negative', 'g-no', 'g-nouns', 'g-mo', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock', 'g-minutes', 'g-kara-made-time', 'g-dates', 'g-dates-2', 'g-dates-3', 'g-verbs', 'g-masen', 'g-mashita', 'g-ni-de', 'g-transport', 'g-arimasu', 'g-position', 'g-adj-i', 'g-adj-neg', 'g-adj-na', 'g-who-2', 'g-soshite-demo', 'g-kara-reason', 'g-verb-forms', 'g-te-forms', 'g-te-kudasai', 'g-te-sequence', 'g-te-iru', 'g-te-mo-ii']);
   for (const lesson of Content.grammar) {
     const plan = Content.lessonPlan[lesson.id];
     for (const req of plan.requires) assert.ok(ids.indexOf(req) < ids.indexOf(lesson.id), `${lesson.id} requires ${req}`);
@@ -375,4 +375,22 @@ test('minute and date readings follow their counter: ふん／ぷん, months 4�
   assert.deepEqual(plain(ids.slice(ids.indexOf('g-dates'), ids.indexOf('g-dates') + 3)), ['g-dates', 'g-dates-2', 'g-dates-3']);
   // はつか right after から is spoken from katakana so a device voice cannot split からは.
   assert.match(Content.grammar.flatMap(lesson => lesson.steps).find(step => step.id === 'g-dates-3/card/range').speech, /から ハツカ/);
+});
+
+test('〜ています keeps 予約しています as a state, and 〜てもいいですか asks for oneself', () => {
+  const lesson = id => Content.getCourse(id);
+  const question = (course, id) => lesson(course).questions.find(q => q.id === id);
+  const card = (course, id) => lesson(course).steps.find(s => s.id === id);
+  // The hotel phrase means "I have a reservation"; "making a reservation now" is the wrong option.
+  const state = question('g-te-iru', 'g-te-iru/question/state');
+  assert.equal(state.options[state.answer], '我有預約。');
+  assert.ok(state.options.includes('我正在預約。'));
+  assert.equal(card('g-te-iru', 'g-te-iru/card/state').meaning, '我有預約。');
+  assert.equal(Content.phrasebook.find(c => c.id === 'hotel').steps.find(s => s.id === 'phrase/hotel/reservation').meaning, '我有預約。');
+  assert.doesNotMatch(card('g-te-iru', 'g-te-iru/card/compare').body, /說現在正在做/, 'ています is not taught as always meaning "now doing"');
+  // てもいいですか is set against てください, and the trailing ellipsis is not read aloud.
+  const ask = question('g-te-mo-ii', 'g-te-mo-ii/question/ask');
+  assert.equal(ask.options[ask.answer], 'ここで まっても いいですか。');
+  assert.ok(ask.options.includes('ここで まって ください。'));
+  assert.doesNotMatch(card('g-te-mo-ii', 'g-te-mo-ii/card/answer').speech, /…/);
 });
