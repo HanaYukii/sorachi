@@ -1130,6 +1130,8 @@ html { line-break: strict; }
 .study-review-entry h2 { font-size: 18px; margin: 0; }
 .study-review-entry .study-note { margin: 8px 0; }
 .study-review-entry a { min-height: 44px; }
+.review-lessons { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 4px; }
+.review-lessons .text-button { text-align: left; white-space: normal; }
 .study-nav > .primary:only-child { margin-left: auto; }
 .kana-hint { text-align: left; padding: 16px 18px; margin: 16px 0 0; border-radius: 16px; background: var(--paper); }
 .kana-hint .reading-label { margin: 0 0 8px; text-align: left; letter-spacing: 0; font-size: 12px; color: var(--purple-deep); }

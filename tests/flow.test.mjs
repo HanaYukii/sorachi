@@ -1194,3 +1194,27 @@ test('home category controls open grammar and kana lists without starting a cour
   assert.equal(b.hash, '#kana');
   assert.equal(b.stored, initial);
 });
+test('grammar mini-review: feedback names the question on screen, like the kana review', () => {
+  const b = browser({ hash: '#grammar' });
+  const lesson = (id) => JSON.parse(vm.runInContext(`JSON.stringify(Content.courses[${JSON.stringify(id)}])`, contentContext));
+  for (const id of ['g-identity', 'g-question']) {
+    const course = lesson(id);
+    b.study('study-open', { course: id });
+    for (let i = 0; i < course.steps.length; i++) b.study('study-next');
+    for (let i = 0; i < course.questions.length; i++) {
+      const active = b.state.study.courses[id].active;
+      b.study('study-answer', { choice: course.questions[active.order[active.cursor]].answer });
+      b.study('study-next');
+    }
+  }
+  b.navigate('#grammar-review'); b.study('study-grammar-review');
+  assert.equal(b.title, '句型小複習｜SoraChi');
+  const title = b.html.match(/複習 · 1 \/ \d+ · ([^<]+)<\/p>/)[1], prompt = b.html.match(/study-quiz"><h2>([^<]*)</)[1];
+  const question = ['g-identity', 'g-question'].map(lesson).flatMap((c) => c.questions).find((q) => q.prompt === prompt);
+  b.action('feedback'); b.submitFeedback('問題回報', '解釋看不懂');
+  const body = new URL(b.node('#feedback-ready').children[1].href).searchParams.get('body');
+  assert.ok(body.includes(`questionId: ${question.id}`), body);
+  assert.ok(body.includes(`所在位置：句型小複習・第 1 題・${title}`), body);
+  b.action('feedback-back');
+  assert.match(b.html, /複習 · 1 \//, 'Coming back from feedback keeps the round');
+});

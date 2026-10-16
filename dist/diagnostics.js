@@ -32,9 +32,13 @@ const Diagnostics = (() => {
     return result;
   }
 
-  function capture({hash = "",progress = {},scripts,attempt,practice} = {}) {
+  function capture({hash = "",progress = {},scripts,attempt,practice,review} = {}) {
     const result = loadedVersions(scripts === undefined && typeof document !== "undefined" ? document.scripts : scripts);
     const practiceCourse = course(practice?.courseId);
+    const reviewCourse = hash === "#grammar-review" ? course(review?.courseId) : null;
+    if (reviewCourse?.type === "grammar" && reviewCourse.questions.some(question => question.id === review.questionId)) {
+      return Object.freeze({...result,courseId:reviewCourse.id,courseRevision:Content.courseRevision(reviewCourse.id),questionId:review.questionId});
+    }
     if (practiceCourse?.type === "kana" && practice?.practiceVersion === 1 &&
         ["first","retry"].includes(practice.round) && ["character","reading"].includes(practice.direction) &&
         (hash === "#kana-review" || hash === `#study/${practiceCourse.id}`) &&
