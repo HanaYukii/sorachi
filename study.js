@@ -13,6 +13,8 @@ const Study = (() => {
   const drafts = new Map();
   let draftState = null;
   const hintChoices = new Map();
+  // The grammar mini-review round lives in memory only: it never saves, records or changes lesson scores.
+  let reviewRound = null, reviewRoundState = null;
   const escape = (text) => String(text).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const size = (course) => course.type === "kana" ? course.letters.length : course.questions.length;
   const cards = (course) => course.type === "kana" ? course.letters.length : course.steps.length;
@@ -198,7 +200,7 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音練習</h1><p class="study-note">每組 3–5 個字，包含認字、讀音與選擇題。羅馬字只作讀音提示，不是照英文拼字唸。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div>${reviewEntry()}${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${kanaRows(script, "basic").map(row).join("")}</div><h2 class="course-list-heading">濁音・半濁音</h2><p class="study-note">在字的右上加兩點（濁點）或小圈（半濁點），讀音會改變，例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list">${kanaRows(script, "voiced").map(row).join("")}</div><h2 class="course-list-heading">促音・長音</h2><p class="study-note">小的 っ 表示停一拍；長音把音拉長一拍。這兩個不是新的字，各用一堂小課說明。</p><div class="course-list">${Content.sounds.map(row).join("")}</div><h2 class="course-list-heading">拗音</h2><p class="study-note">き、し、ち 這類 i 結尾的字，後面加上小的 ゃ、ゅ、ょ，合成一拍，例如 き＋ゃ → きゃ kya。</p><div class="course-list">${kanaRows(script, "youon").map(row).join("")}</div><p class="study-note">每種假名先練 46 個基本字，再練 25 個濁音・半濁音和 33 個拗音。</p>`);
   }
   function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">照順序學：每課介紹一個句型或一組常用詞，只用前面教過的詞，再用選擇題確認理解。例句附中文意思、羅馬字與語音。羅馬字裡的 ou、ei 和 aa、ii、uu、ee、oo 通常是拉長的音，例如 gakusei 唸成「ga-ku-see」。</p>${grammarUnits().map(unit => `<h2 class="course-list-heading">${escape(unit.title)}</h2><div class="course-list">${unit.lessons.map(row).join("")}</div>`).join("")}`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">照順序學：每課介紹一個句型或一組常用詞，只用前面教過的詞，再用選擇題確認理解。例句附中文意思、羅馬字與語音。羅馬字裡的 ou、ei 和 aa、ii、uu、ee、oo 通常是拉長的音，例如 gakusei 唸成「ga-ku-see」。</p>${grammarReviewEntry()}${grammarUnits().map(unit => `<h2 class="course-list-heading">${escape(unit.title)}</h2><div class="course-list">${unit.lessons.map(row).join("")}</div>`).join("")}`);
   }
   // Consecutive lessons with the same unit share one heading, in teaching order.
   function grammarUnits() {
@@ -209,6 +211,85 @@ const Study = (() => {
       units[units.length - 1].lessons.push(course);
     }
     return units;
+  }
+  // Grammar mini-review (#44): up to 5 questions from completed lessons. Questions answered wrong the first
+  // time in a lesson's latest record come first; at most 2 per lesson (3 with only two lessons) keeps it mixed.
+  const completedGrammar = () => GRAMMAR.filter(course => state().courses[course.id]?.completedAt);
+  const reviewCap = (done) => done.length >= 3 ? 2 : 3;
+  // The first two lessons have two questions each, so a round can be shorter than 5.
+  const reviewSize = () => { const done = completedGrammar(); return done.length < 2 ? 0 : Math.min(5, done.reduce((sum, course) => sum + Math.min(reviewCap(done), course.questions.length), 0)); };
+  function grammarRound() {
+    if (reviewRoundState !== state()) { reviewRound = null; reviewRoundState = state(); }
+    return reviewRound;
+  }
+  const reviewKey = (item) => `${item.courseId}:${item.q}`;
+  function selectGrammarReview(recent = new Set()) {
+    const done = completedGrammar();
+    if (done.length < 2) return [];
+    // History is in date order, so the last record of a lesson is its latest one.
+    const latestRecord = new Map(), wrong = [];
+    for (const entry of api.history?.() || []) if (entry?.courseId) latestRecord.set(entry.courseId, entry);
+    for (const course of done) {
+      const latest = latestRecord.get(course.id);
+      for (const number of Array.isArray(latest?.retryQuestions) ? latest.retryQuestions : []) {
+        const q = course.questions.findIndex(question => question.id === latest.questionIds?.[number - 1]);
+        if (q >= 0) wrong.push({ courseId: course.id, q });
+      }
+    }
+    const rest = done.flatMap(course => course.questions.map((_, q) => ({ courseId: course.id, q })));
+    const ordered = [...shuffle(wrong.length).map(i => wrong[i]), ...shuffle(rest.length).map(i => rest[i])];
+    const cap = reviewCap(done), count = {}, picked = [];
+    // Questions answered right the first time in the previous round go last, so 再複習 does not repeat the same set.
+    for (const item of [...ordered.filter(item => !recent.has(reviewKey(item))), ...ordered.filter(item => recent.has(reviewKey(item)))]) {
+      if (picked.length === 5) break;
+      if ((count[item.courseId] || 0) >= cap || picked.some(p => reviewKey(p) === reviewKey(item))) continue;
+      count[item.courseId] = (count[item.courseId] || 0) + 1;
+      picked.push(item);
+    }
+    return shuffle(picked.length).map(i => picked[i]);
+  }
+  function startGrammarRound() {
+    const last = grammarRound(), recent = new Set(last?.done ? last.items.filter((_, i) => last.first[i]).map(reviewKey) : []);
+    const items = selectGrammarReview(recent);
+    reviewRound = items.length ? { items: items.map(item => ({ ...item, options: shuffle(courses[item.courseId].questions[item.q].options.length) })), cursor: 0, first: {}, solved: {}, wrong: null, done: false } : null;
+    return reviewRound;
+  }
+  function grammarReviewEntry() {
+    if (completedGrammar().length < 2) return "";
+    const round = grammarRound();
+    return `<section class="study-review-entry"><h2>複習學過的句型</h2><p class="study-note">從完成的課裡挑 ${reviewSize()} 題混在一起練。</p><a class="text-button" href="#grammar-review">${round && !round.done ? "繼續複習" : `複習 ${reviewSize()} 題`}</a></section>`;
+  }
+  function currentReview() {
+    const round = location.hash === "#grammar-review" ? grammarRound() : null;
+    if (!round || round.done) return null;
+    const { course, question } = reviewItem(round);
+    return { courseId: course.id, questionId: question.id };
+  }
+  const reviewItem = (round) => { const item = round.items[round.cursor], course = courses[item.courseId]; return { item, course, question: course.questions[item.q] }; };
+  function grammarReviewFeedback(round) {
+    const { question } = reviewItem(round), solved = round.solved[round.cursor] === true;
+    if (!solved && round.wrong === null) return "";
+    return solved ? `答對了。${question.explanation}` : `正確答案：${question.options[question.answer]}。${question.explanation}`;
+  }
+  // After a wrong answer the explaining card opens in place, so the round never leaves this page.
+  function grammarReviewLook(round) {
+    const { course, question } = reviewItem(round);
+    const step = course.steps.find(card => card.id === Content.lessonPlan[course.id]?.review?.[question.id]);
+    if (!step || round.solved[round.cursor] || round.wrong === null) return "";
+    return `<details class="phrase-more"><summary>回看說明：${escape(step.title)}</summary><p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="reading-label">${escape(step.reading)}</p>` : ""}<p>${escape(step.meaning)}</p><p class="study-note">${escape(step.body)}</p></details>`;
+  }
+  function grammarReviewPage() {
+    const round = grammarRound();
+    let body;
+    if (round?.done) {
+      const firstCorrect = round.items.filter((_, i) => round.first[i] === true).length;
+      const missed = [...new Set(round.items.filter((_, i) => round.first[i] === false).map(item => item.courseId))];
+      body = `<section class="study-card study-result"><h2>複習完成</h2><p>第一次答對 <strong>${firstCorrect} / ${round.items.length}</strong> 題</p>${missed.length ? `<p class="study-note">可以回這幾課再看看：</p><ul class="review-lessons">${missed.map(id => `<li><button class="text-button" data-action="study-open" data-course="${id}">${escape(courses[id].title)}</button></li>`).join("")}</ul>` : '<p class="study-note">這次都答對了。</p>'}<div class="study-nav"><button class="primary" data-action="study-grammar-review">再複習 ${reviewSize()} 題</button><a class="text-button" href="#grammar">回句型列表</a></div></section>`;
+    } else if (round) {
+      const { item, course, question } = reviewItem(round), solved = round.solved[round.cursor] === true;
+      body = `<p class="reading-label">複習 · ${round.cursor + 1} / ${round.items.length} · ${escape(course.title)}</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map(choice => `<button class="answer${solved && choice === question.answer ? " correct" : round.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${solved && choice === question.answer ? " ✓ 答對了" : round.wrong === choice ? " ✕ 再試一次" : ""}</span></button>`).join("")}</div><p class="study-feedback${!solved && round.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarReviewFeedback(round))}</p><div class="look-back-slot">${grammarReviewLook(round)}</div></section><div class="study-nav"><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${round.cursor === round.items.length - 1 ? "完成複習" : "下一題 →"}</button></div>`;
+    } else body = reviewSize() ? `<p>從完成的句型課挑 ${reviewSize()} 題混在一起練，各課最近一次練習中第一次答錯的題目會優先出現。答錯時會顯示正確答案和說明，可以再選一次。</p><button class="primary" data-action="study-grammar-review">開始複習</button>` : '<p>先完成兩課句型，就可以在這裡複習。</p><a class="primary" href="#grammar">看句型列表</a>';
+    return wrap(`<h1 class="focus-heading" tabindex="-1">句型小複習</h1>${body}<p class="study-note">複習不會存檔，重新整理頁面就會重來；也不會改變各課的完成紀錄和成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#grammar", "回句型列表");
   }
   function travelPage(id) {
     if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">常用關鍵字、讀音與中文。依情境查看，需要時再展開完整說法。羅馬字裡的 aa、ii、uu、ee、oo 和 ou、ei 通常是拉長的音，例如 chaaji（チャージ）。</p><nav class="travel-categories" aria-label="旅遊情境">${PHRASEBOOK.map(item => `<a class="course-row" href="#travel/${item.id}"><span><strong>${escape(item.title)}</strong><span class="reading-label">${escape(item.subtitle)}</span><span class="travel-keywords" lang="ja">${escape(travelKeywords(item))}</span></span><span aria-hidden="true">→</span></a>`).join("")}</nav>`);
@@ -355,10 +436,12 @@ const Study = (() => {
     return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p>第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}${retries.length ? `<p class="study-note">第一次答錯：${retries.map(escape).join("、")}</p>` : ""}<p class="study-note">${course.type === "kana" ? "可重練本組，或返回選擇其他組。" : course.home === "kana" ? "可重練本課，或回五十音繼續。" : "可重練本課，或返回選擇其他句型。"}</p><p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><div class="study-nav">${next ? `<button class="primary" data-action="study-open" data-course="${next}">${courses[next].type === "kana" ? `下一組：${escape(courses[next].row)}` : `下一課：${escape(courses[next].title)}`}</button>` : ""}<button class="${next ? "text-button" : "primary"}" data-action="study-restart">重新練習</button><a class="text-button" href="${backHash(course)}">回到${kanaArea(course) ? "五十音" : "句型列表"}</a></div></section>`;
   }
   function updateAnswer(course, active) {
-    const q = active.order[active.cursor], solved = active.solved[q] === true;
-    const correct = course.type === "kana" ? q : course.questions[q].answer;
+    const q = active.order[active.cursor];
+    paintAnswer(course.type === "kana" ? q : course.questions[q].answer, active.solved[q] === true, active.wrong, answerFeedback(course, active), lookBack(course, active));
+  }
+  function paintAnswer(correct, solved, wrongChoice, feedbackText, lookHtml) {
     for (const node of document.querySelectorAll('[data-action="study-answer"]')) {
-      const choice = Number(node.dataset.choice), right = solved && choice === correct, wrong = !solved && choice === active.wrong;
+      const choice = Number(node.dataset.choice), right = solved && choice === correct, wrong = !solved && choice === wrongChoice;
       node.classList.toggle("correct", right); node.classList.toggle("wrong", wrong);
       node.setAttribute("aria-disabled", String(solved)); node.setAttribute("tabindex", solved ? "-1" : "0");
       const mark = node.querySelector('.answer-status');
@@ -366,13 +449,13 @@ const Study = (() => {
     }
     const feedback = document.querySelector('.study-feedback');
     if (feedback) {
-      feedback.textContent = answerFeedback(course, active);
+      feedback.textContent = feedbackText;
       feedback.classList.toggle('wrong', !solved);
       const bounds = feedback.getBoundingClientRect?.();
       if (!bounds || bounds.top < 0 || bounds.bottom > window.innerHeight) feedback.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     }
     const slot = document.querySelector('.look-back-slot');
-    if (slot) slot.innerHTML = lookBack(course, active);
+    if (slot && !(lookHtml && slot.firstElementChild)) slot.innerHTML = lookHtml;
     const next = document.querySelector('[data-action="study-next"]');
     if (next) { next.disabled = !solved; if (solved) next.focus({ preventScroll: true }); }
   }
@@ -385,6 +468,7 @@ const Study = (() => {
     if (hash === "#kana") return kanaPage();
     if (hash === "#kana-review") return reviewPage();
     if (hash === "#grammar") return grammarPage();
+    if (hash === "#grammar-review") return grammarReviewPage();
     if (hash === "#travel") return travelPage();
     if (hash.startsWith("#travel/")) return travelPage(hash.slice(8));
     if (hash.startsWith("#study/")) {
@@ -535,6 +619,28 @@ const Study = (() => {
       if (!active || active.phase === "done") draftAttempt(course, saved);
       api.go(`#study/${course.id}`); return true;
     }
+    if (action === "study-grammar-review") {
+      if (startGrammarRound()) { if (location.hash === "#grammar-review") redraw(); else api.go("#grammar-review"); }
+      return true;
+    }
+    if (location.hash === "#grammar-review") {
+      const round = grammarRound();
+      if (!round || round.done) return true;
+      const { item, question } = reviewItem(round);
+      if (action === "study-answer") {
+        const choice = Number(button.dataset.choice);
+        if (round.solved[round.cursor] || !item.options.includes(choice)) return true;
+        const correct = choice === question.answer;
+        if (round.first[round.cursor] === undefined) round.first[round.cursor] = correct;
+        if (correct) { round.solved[round.cursor] = true; round.wrong = null; } else round.wrong = choice;
+        paintAnswer(question.answer, correct, round.wrong, grammarReviewFeedback(round), grammarReviewLook(round));
+      } else if (action === "study-next" && round.solved[round.cursor]) {
+        if (round.cursor === round.items.length - 1) round.done = true;
+        else { round.cursor++; round.wrong = null; }
+        redraw();
+      }
+      return true;
+    }
     const course = courses[currentId()];
     if (!course) return true;
     const saved = courseState(course.id);
@@ -618,6 +724,7 @@ const Study = (() => {
     if (hash === "#kana") return "五十音學習路線";
     if (hash === "#kana-review") return state().reviewSession?.round==='done'?'五十音複習・完成頁':`五十音複習${state().reviewSession?`・${state().reviewSession.round==='retry'?'再試一次':'練習'}第 ${state().reviewSession.cursor+1} 步`:''}`;
     if (hash === "#grammar") return "基礎句型學習路線";
+    if (hash === "#grammar-review") { const round = grammarRound(); return round ? round.done ? "句型小複習・完成頁" : `句型小複習・第 ${round.cursor + 1} 題・${reviewItem(round).course.title}` : "句型小複習"; }
     if (hash === "#travel") return "旅遊常用語列表";
     if (hash.startsWith("#travel/")) return travelItem(hash.slice(8)) ? `旅遊常用語・${travelItem(hash.slice(8)).title}` : null;
     const course = courses[hash.slice(7)];
@@ -626,5 +733,5 @@ const Study = (() => {
     if(course.type==='kana'&&active?.phase==='quiz'&&active.practice.round==='retry')return `${course.title}・再試一次第 ${active.practice.cursor+1} 步`;
     return `${course.title}${active ? active.phase === "done" ? "・完成頁" : `・${active.phase === "cards" ? "認識" : "練習"}第 ${active.cursor + 1} 步` : ""}`;
   }
-  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse, hasProgress, currentAttempt, reviewSummary, clearReview, currentPractice };
+  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse, hasProgress, currentAttempt, reviewSummary, clearReview, currentPractice, currentReview };
 })();

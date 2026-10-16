@@ -252,7 +252,7 @@ function historyPage(confirmClear = false, confirmRestart = false) {
 }
 function captureFeedback(hash) {
   const id = hash.startsWith("#study/") ? hash.slice(7) : null;
-  return Diagnostics.capture({hash, progress, scripts: document.scripts, practice: Study.currentPractice(), ...(id ? {attempt: Study.currentAttempt(id)} : {})});
+  return Diagnostics.capture({hash, progress, scripts: document.scripts, practice: Study.currentPractice(), review: Study.currentReview(), ...(id ? {attempt: Study.currentAttempt(id)} : {})});
 }
 function feedbackPage() {
   feedbackDiagnostics ||= captureFeedback("#home");
@@ -331,7 +331,7 @@ function route() {
   window.scrollTo({ top: 0, behavior: "instant" });
   const studyPage = Study.render(location.hash);
   if (studyPage !== null) {
-    document.title = `${location.hash === "#kana-review" ? "五十音複習" : location.hash === "#kana" ? "五十音練習" : location.hash === "#travel" ? "旅遊常用語" : location.hash === "#grammar" ? "基礎句型" : (location.hash.startsWith("#travel/") ? Study.travelTitle(location.hash.slice(8)) : Study.title(location.hash.slice(7))) || "找不到頁面"}｜SoraChi`;
+    document.title = `${location.hash === "#kana-review" ? "五十音複習" : location.hash === "#kana" ? "五十音練習" : location.hash === "#travel" ? "旅遊常用語" : location.hash === "#grammar" ? "基礎句型" : location.hash === "#grammar-review" ? "句型小複習" : (location.hash.startsWith("#travel/") ? Study.travelTitle(location.hash.slice(8)) : Study.title(location.hash.slice(7))) || "找不到頁面"}｜SoraChi`;
     app.innerHTML = studyPage;
     focusHeading();
     return;
