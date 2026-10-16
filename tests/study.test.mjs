@@ -186,33 +186,67 @@ test('reviewing cards mid-quiz retains original answers and resumes at first inc
 });
 
 test('the grammar list opens the unit with the next lesson, says what each unit teaches and how far the learner is', () => {
-  const sections = (html) => [...html.matchAll(/<details class="unit-section"( open)?><summary><span class="unit-title">([^<]+)<\/span><span class="unit-goal">([^<]*)<\/span><span class="unit-count">已完成 (\d+) \/ (\d+) 課<\/span><\/summary>/g)]
+  const sections = (html) => [...html.matchAll(/<details class="unit-section"( open)?><summary><h2 class="unit-title">([^<]+)<\/h2><span class="unit-goal">([^<]*)<\/span><span class="unit-count">已完成 (\d+) \/ (\d+) 課<\/span><\/summary>/g)]
     .map(([, open, title, goal, done, total]) => ({ open: Boolean(open), title, goal, done: Number(done), total: Number(total) }));
-  // A first visit: only 基本句子 is open, and its first lesson leads the page; every unit says what it teaches.
+  const openUnits = (html) => sections(html).filter((unit) => unit.open).map((unit) => unit.title);
+  const done = (ids) => ({ courses: Object.fromEntries(ids.map((id) => [id, { completedAt: '2026-10-01T00:00:00.000Z', attempts: 1 }])) });
+  // A first visit: only 基本句子 is open; the next lesson and the units come before practice without a lesson, so a
+  // phone shows where to start. Each unit is a heading with the goal line kept on its first lesson in the plan.
   const b = harness();
   const first = sections(b.render('#grammar'));
   assert.equal(first.length, 5);
-  assert.deepEqual(first.filter((unit) => unit.open).map((unit) => unit.title), ['基本句子']);
-  for (const unit of first) assert.ok(unit.goal.length >= 10 && unit.done === 0, unit.title);
+  assert.deepEqual(openUnits(b.html), ['基本句子']);
+  const units = b.study.grammarUnits();
+  first.forEach((unit, i) => {
+    assert.equal(unit.goal, b.content.lessonPlan[units[i].lessons[0].id].unitGoal, unit.title);
+    assert.equal(unit.done, 0);
+  });
   assert.ok(b.html.indexOf('data-course="g-identity"') < b.html.indexOf('data-course="g-question"'));
+  assert.ok(b.html.indexOf('<h2>下一課</h2>') < b.html.indexOf('<details class="unit-section"'));
+  assert.ok(b.html.lastIndexOf('</details>') < b.html.indexOf('<h2>句型隨機練習</h2>'));
   assert.equal(first.reduce((sum, unit) => sum + unit.total, 0), b.content.grammar.length, 'Every lesson is in a unit');
+  // Partway through the first unit, it stays open and counts what is done.
+  const firstUnit = units[0].lessons.map((course) => course.id);
+  const partway = harness(done(firstUnit.slice(0, 3)));
+  assert.deepEqual(openUnits(partway.render('#grammar')), ['基本句子']);
+  assert.equal(sections(partway.html)[0].done, 3);
   // Past the first unit: 時間與數字 opens instead, and 基本句子 shows it is done.
-  const firstUnit = b.study.grammarUnits()[0].lessons.map((course) => course.id);
-  const saved = { courses: Object.fromEntries(firstUnit.map((id) => [id, { completedAt: '2026-10-01T00:00:00.000Z', attempts: 1 }])) };
-  const later = harness(saved);
+  const later = harness(done(firstUnit));
   const next = sections(later.render('#grammar'));
   assert.deepEqual(next.filter((unit) => unit.open).map((unit) => unit.title), ['時間與數字']);
   assert.equal(next[0].done, next[0].total);
+  // A lesson left unfinished in a later unit opens that unit, as 接著學 does.
+  const resume = harness(done(firstUnit.slice(0, 2)));
+  resume.action('open', { course: 'g-verbs' }); resume.action('next');
+  assert.equal(resume.study.grammarNext().courseId, 'g-verbs');
+  assert.deepEqual(openUnits(resume.render('#grammar')), ['動作與地點']);
+  assert.match(resume.html, /<h2>接著學<\/h2><button class="text-button" data-action="study-open" data-course="g-verbs">/);
   // Everything done: no unit needs to be open, and every lesson can still be opened again.
-  const all = harness({ courses: Object.fromEntries(b.content.grammar.map((course) => [course.id, { completedAt: '2026-10-01T00:00:00.000Z', attempts: 1 }])) });
-  assert.deepEqual(sections(all.render('#grammar')).filter((unit) => unit.open), []);
+  const all = harness(done(b.content.grammar.map((course) => course.id)));
+  assert.deepEqual(openUnits(all.render('#grammar')), []);
   assert.equal((all.html.match(/class="course-row" data-action="study-open"/g) || []).length, b.content.grammar.length);
+});
+
+test('unit goals live with the lesson plan: one per unit, in Chinese, on its first lesson only', () => {
+  const b = harness();
+  const plan = JSON.parse(JSON.stringify(b.content.lessonPlan));
+  const check = (mutate) => { const copy = JSON.parse(JSON.stringify({ rows: b.content.rows, grammar: b.content.grammar, lessonPlan: plan, sounds: b.content.sounds, phrasebook: b.content.phrasebook, intro: b.content.intro })); mutate(copy); return b.content.validate(copy).join('\n'); };
+  assert.equal(check(() => {}), '');
+  assert.match(check((copy) => { delete copy.lessonPlan['g-days'].unitGoal; }), /lessonPlan\.g-days\.unitGoal: required nonempty text/);
+  assert.match(check((copy) => { copy.lessonPlan['g-question'].unitGoal = '問是不是'; }), /lessonPlan\.g-question\.unitGoal: only the first lesson of a unit has the unit goal/);
+  assert.match(check((copy) => { copy.lessonPlan['g-identity'].unitGoal = 'AはBです'; }), /lessonPlan\.g-identity\.unitGoal: required Chinese text/);
+  // Goals give examples, not only grammar terms, and never start by repeating the unit's own name.
+  for (const unit of b.study.grammarUnits()) {
+    const goal = plan[unit.lessons[0].id].unitGoal;
+    assert.match(goal, /「|（|、/, unit.title);
+    assert.ok(!goal.startsWith(unit.title.slice(0, 2)), unit.title);
+  }
 });
 
 test('all grammar courses complete their content-defined cards and questions with stable score semantics', () => {
   const b = harness(); b.render('#grammar');
   assert.equal((b.html.match(/class="course-row" data-action="study-open"/g) || []).length, b.content.grammar.length);
-  assert.deepEqual([...b.html.matchAll(/<summary><span class="unit-title">([^<]+)<\/span>/g)].map(m => m[1]), ['基本句子', '時間與數字', '動作與地點', '形容詞與連接', '動詞原形與て形'], 'One section per unit, in teaching order');
+  assert.deepEqual([...b.html.matchAll(/<summary><h2 class="unit-title">([^<]+)<\/h2>/g)].map(m => m[1]), ['基本句子', '時間與數字', '動作與地點', '形容詞與連接', '動詞原形與て形'], 'One section per unit, in teaching order');
   assert.deepEqual([...b.html.matchAll(/class="course-row" data-action="study-open" data-course="([^"]+)"/g)].map(m => m[1]), [...b.content.grammar.map(lesson => lesson.id)], 'Units keep the teaching order');
   for (const { id } of b.content.grammar) {
     assert.equal(b.study.total(id), b.content.courses[id].questions.length);
@@ -778,11 +812,15 @@ test('the grammar result page offers the next lesson', () => {
 
 // Grammar mini-review (#44): read the current question from the page, as a learner would.
 const unescapeHTML = (text) => text.replace(/&(amp|lt|gt|quot|#39);/g, (_, name) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" })[name]);
+// The progress line names no lesson (that would give the answer away), so the question is the one a report would name,
+// checked against the prompt on the page.
 function reviewQuestion(b) {
-  const title = unescapeHTML(b.html.match(/複習 · \d+ \/ \d+ · ([^<]+)<\/p>/)[1]);
+  assert.match(b.html, /複習 · \d+ \/ \d+ · 選一個答案<\/p>/);
   const prompt = unescapeHTML(b.html.match(/<section class="study-card study-quiz"><h2>([^<]*)<\/h2>/)[1]);
-  const course = Object.values(b.content.courses).find((c) => c.title === title);
-  return { course, question: course.questions.find((q) => q.prompt === prompt) };
+  const { courseId, questionId } = b.study.currentReview();
+  const course = b.content.courses[courseId], question = course.questions.find((q) => q.id === questionId);
+  assert.equal(question.prompt, prompt);
+  return { course, question };
 }
 function playReview(b, wrongAt = []) {
   const seen = [];

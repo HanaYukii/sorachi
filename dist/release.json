@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "35fba6963a9e11b9f75a99cd87aac089152f7677b7fb729035694e16138492ed",
+  "buildId": "94bfdd6324d75b90be4133e638ae5e9d77804a0c831ad65fb1aba1f4b693b343",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app.js",
-      "sha256": "19731243ca37d4010f41babce8e5ec03a12761796e7c0db92d92622256c672c3",
-      "bytes": 55346,
+      "sha256": "2f3e973c98d0d7970863bc3e53fd32219adba2972880674de2d1c6d7d6c14c92",
+      "bytes": 55357,
       "mime": "text/javascript"
     },
     {
@@ -94,8 +94,8 @@
     },
     {
       "path": "content.js",
-      "sha256": "08067cacad888dc0bb84af81d09282a3bd9877f61788bf3454f60723a0f739d8",
-      "bytes": 267494,
+      "sha256": "d5ae6e16935ef2ba3a13ec261c8a0a522b14f9ca32fa996f6bf7300a100abe05",
+      "bytes": 268817,
       "mime": "text/javascript"
     },
     {
@@ -106,14 +106,14 @@
     },
     {
       "path": "index.html",
-      "sha256": "d8de7e0ed43ad5e4c9d4439e5feac0aac55a3cb9db59f04d689fb0edf6bbab7c",
+      "sha256": "19dbe6a1b19422c23bef2f93d11e516f014fae24f8439830cf28345fbfc146a1",
       "bytes": 1804,
       "mime": "text/html"
     },
     {
       "path": "kana-hints.js",
-      "sha256": "576196f0e2295bdd96de3c0578b1175da03eddcde089a0e37fd8984e9c0dac5d",
-      "bytes": 15343,
+      "sha256": "cf70ecc2ea27c093bc292cb28add1cad1fde08e09e7917a1731c52efa06193c4",
+      "bytes": 15358,
       "mime": "text/javascript"
     },
     {
@@ -130,14 +130,14 @@
     },
     {
       "path": "study.js",
-      "sha256": "e2a2cf10f50d4ac5f5b89adb4d3fac55654d2e102657bb4ce78dd9108d64ff2a",
-      "bytes": 101971,
+      "sha256": "f41373f423898b1eefb229728af45081469c235ae88746cc9e19f2e37bbad7f7",
+      "bytes": 101751,
       "mime": "text/javascript"
     },
     {
       "path": "styles.css",
-      "sha256": "b863b577c275ad1ad1b65387a689e6d4c69e5dfe8a2d5e88ee7216aa3ff818a7",
-      "bytes": 49922,
+      "sha256": "3477339dd18579b5ccb57928496b1cce8c0390e18ce1aa3c63906241d390323a",
+      "bytes": 50055,
       "mime": "text/css"
     }
   ]

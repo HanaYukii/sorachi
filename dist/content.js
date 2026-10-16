@@ -4288,12 +4288,14 @@ const Content = (() => {
       ]
     }
   ];
-  // Grammar lessons are taught in array order and grouped into units on the grammar page. The plan lists what each lesson introduces and needs
+  // Grammar lessons are taught in array order and grouped into units on the grammar page; a unit's first lesson has the
+  // unit's plain goal line, with examples rather than grammar terms. The plan lists what each lesson introduces and needs
   // (validate() checks examples only use taught words), which card to revisit after a wrong answer,
   // and where a ported question came from.
   const lessonPlan = {
     "g-identity": {
       "unit": "基本句子",
+      "unitGoal": "說「我是學生」「是嗎」「不是」；指這個、這裡、這邊，介紹別人；問誰、什麼、哪裡；說我的、也、和、從…到…。",
       "requires": [],
       "words": [
         "わたし",
@@ -4566,6 +4568,7 @@ const Content = (() => {
     },
     "g-days": {
       "unit": "時間與數字",
+      "unitGoal": "說今天、明天、早上、星期幾；數到十，說價錢、幾個、幾個人；說幾點幾分、從幾點到幾點、幾月幾號。",
       "requires": [
         "g-question",
         "g-who"
@@ -4848,6 +4851,7 @@ const Content = (() => {
     },
     "g-verbs": {
       "unit": "動作與地點",
+      "unitGoal": "說「吃飯」「不喝」「昨天去了」；說去哪裡、在哪裡做、搭什麼去；說有沒有，和東西在上面、前面、旁邊。",
       "requires": [
         "g-to"
       ],
@@ -4986,6 +4990,7 @@ const Content = (() => {
     },
     "g-adj-i": {
       "unit": "形容詞與連接",
+      "unitGoal": "說「很貴」「不貴」「很方便」，問「怎麼樣」；用而且、可是、因為、所以、但是把兩句接起來。",
       "requires": [
         "g-kono",
         "g-masen"
@@ -5137,6 +5142,7 @@ const Content = (() => {
     },
     "g-verb-forms": {
       "unit": "動詞原形與て形",
+      "unitGoal": "認得動詞的基本樣子（のむ、たべる），再說「請…」「先…再…」「正在…」「可以…嗎」。",
       "requires": [
         "g-mashita",
         "g-arimasu"
@@ -7026,6 +7032,10 @@ const Content = (() => {
       // A unit is one run of lessons; the grammar page shows one heading per unit.
       if (typeof entry.unit === 'string' && entry.unit !== entry.unit.trim()) fail(`${path}.unit`, 'unit title has surrounding spaces');
       if (text(entry.unit, `${path}.unit`, 'zh') && index > 0 && plan[lessonsInOrder[index - 1].id]?.unit !== entry.unit && lessonsInOrder.slice(0, index).some(item => plan[item.id]?.unit === entry.unit)) fail(`${path}.unit`, 'lessons in a unit must be next to each other');
+      // The unit's first lesson carries the plain line of what the unit teaches, so the line moves with the unit.
+      const firstInUnit = index === 0 || plan[lessonsInOrder[index - 1].id]?.unit !== entry.unit;
+      if (firstInUnit) text(entry.unitGoal, `${path}.unitGoal`, 'zh');
+      else if (entry.unitGoal !== undefined) fail(`${path}.unitGoal`, 'only the first lesson of a unit has the unit goal');
       for (const req of entry.requires || []) {
         const at = lessonsInOrder.findIndex(item => item.id === req);
         if (at < 0 || at >= index) fail(`${path}.requires`, `${req} must be an earlier lesson`);

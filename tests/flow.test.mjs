@@ -120,11 +120,22 @@ function browser({
         )
           return node;
         if (query === "a" && markup.startsWith("<a")) return node;
+        if (query === "details") return enclosingDetails(markup);
         return null;
       },
       _listeners: listeners,
     };
     return node;
+  }
+  // The <details> an element sits in; opening it adds `open` to the page, as a browser shows it.
+  function enclosingDetails(markup) {
+    const at = html.indexOf(markup), start = at < 0 ? -1 : html.lastIndexOf("<details", at);
+    if (start < 0 || html.lastIndexOf("</details>", at) > start) return null;
+    const tag = () => html.slice(start, html.indexOf(">", start) + 1);
+    return {
+      get open() { return /\sopen(?=[\s>])/.test(tag()); },
+      set open(value) { if (value && !this.open) { const old = tag(); html = html.slice(0, start) + old.replace(/>$/, " open>") + html.slice(start + old.length); } },
+    };
   }
   function querySelector(selector) {
     if (selector === "#app") return app;
@@ -139,9 +150,9 @@ function browser({
       match = html.match(
         new RegExp(`<button\\b[^>]*data-${name}="${value}"[^>]*>`),
       );
-    } else if (/^\[data-course=/.test(selector)) {
-      const [, value] = selector.match(/^\[data-course=["']([^"']+)["']\]$/) || [];
-      match = html.match(new RegExp(`<button\\b[^>]*data-course="${value}"[^>]*>`));
+    } else if (/^(\.[\w-]+)?\[data-course=/.test(selector)) {
+      const [, name, value] = selector.match(/^(?:\.([\w-]+))?\[data-course=["']([^"']+)["']\]$/) || [];
+      match = html.match(new RegExp(`<button\\b${name ? `[^>]*class="[^"]*\\b${name}\\b[^"]*"` : ""}[^>]*data-course="${value}"[^>]*>`));
     } else if (selector.startsWith("#"))
       match = (html + index).match(
         new RegExp(`<[^>]+id="${selector.slice(1)}"[^>]*>`),
@@ -349,6 +360,10 @@ function browser({
       dispatch(app._listeners, 'input', {});
     },
     node: querySelector,
+    // The answer buttons as the page has them now, including what was marked in place after an answer.
+    get answerButtons() {
+      return document.querySelectorAll('[data-action="study-answer"]').map((node) => ({ choice: Number(node.dataset.choice), classes: node.attributes.class || "", mark: node.querySelector(".answer-status").textContent }));
+    },
     get renderCount() {
       return renderCount;
     },
@@ -1278,12 +1293,15 @@ test('grammar mini-review: feedback names the question on screen, like the kana 
   }
   b.navigate('#grammar-review'); b.study('study-grammar-review');
   assert.equal(b.title, '句型小複習｜SoraChi');
-  const title = b.html.match(/複習 · 1 \/ \d+ · ([^<]+)<\/p>/)[1], prompt = b.html.match(/study-quiz"><h2>([^<]*)</)[1];
-  const question = ['g-identity', 'g-question'].map(lesson).flatMap((c) => c.questions).find((q) => q.prompt === prompt);
+  // The progress line names no lesson, which would give the answer away; the report still says which lesson it is.
+  assert.match(b.html, /複習 · 1 \/ \d+ · 選一個答案<\/p>/);
+  const prompt = b.html.match(/study-quiz"><h2>([^<]*)</)[1];
+  const course = ['g-identity', 'g-question'].map(lesson).find((c) => c.questions.some((q) => q.prompt === prompt));
+  const question = course.questions.find((q) => q.prompt === prompt);
   b.action('feedback'); b.submitFeedback('問題回報', '解釋看不懂');
   const body = new URL(b.node('#feedback-ready').children[1].href).searchParams.get('body');
   assert.ok(body.includes(`questionId: ${question.id}`), body);
-  assert.ok(body.includes(`所在位置：句型小複習・第 1 題・${title}`), body);
+  assert.ok(body.includes(`所在位置：句型小複習・第 1 題・${course.title}`), body);
   b.action('feedback-back');
   assert.match(b.html, /複習 · 1 \//, 'Coming back from feedback keeps the round');
 });
@@ -1968,12 +1986,21 @@ test('回 leads back to where a lesson or review was opened, through the next gr
   // Back on a list, the lesson just left has focus.
   table.click('.exit');
   assert.equal(table.hash, '#kana');
-  assert.equal(table.focused, '[data-course="h-ka"]');
+  assert.equal(table.focused, '.course-row[data-course="h-ka"]');
   const list = browser({ hash: '#grammar' });
   list.study('study-open', { course: 'g-question' });
   list.back();
   assert.equal(list.hash, '#grammar');
-  assert.equal(list.focused, '[data-course="g-question"]');
+  assert.equal(list.focused, '.course-row[data-course="g-question"]');
+  // The row, not the 下一課 box that names the same lesson; a lesson in a closed unit opens its unit again.
+  list.study('study-open', { course: 'g-identity' });
+  list.back();
+  assert.equal(list.focused, '.course-row[data-course="g-identity"]');
+  assert.doesNotMatch(list.html, /<details class="unit-section" open><summary><h2 class="unit-title">動作與地點/);
+  list.study('study-open', { course: 'g-verbs' });
+  list.back();
+  assert.equal(list.focused, '.course-row[data-course="g-verbs"]');
+  assert.match(list.html, /<details class="unit-section" open><summary><h2 class="unit-title">動作與地點<\/h2>/);
 });
 
 test('the grammar review leads back by source, and odd or missing history state never changes where 回 leads', () => {
@@ -2033,7 +2060,10 @@ test('五十音隨機練習: one click from home, five different basic hiragana,
   const question = (b) => {
     const html = b.html, toReading = /這個字，讀音是哪一個？/.test(html);
     const prompt = html.match(/<div class="kana-character"[^>]*>([^<]+)<\/div>/)[1];
-    const options = [...html.matchAll(/data-action="study-answer" data-choice="(\d+)"[^>]*>([^<]+)</g)].map((m) => m[2]);
+    // A kana option has its Japanese in a lang="ja" span, so 正確答案 beside it is not read in a Japanese voice.
+    const options = [...html.matchAll(/data-action="study-answer" data-choice="(\d+)"[^>]*>(?:<span lang="ja">)?([^<]+)</g)].map((m) => m[2]);
+    if (!toReading) assert.equal((html.match(/data-action="study-answer"[^>]*><span lang="ja">/g) || []).length, options.length);
+    assert.doesNotMatch(html, /<button[^>]*data-action="study-answer"[^>]*lang="ja"/);
     const right = options.map((option, i) => (toReading ? readingOf.get(prompt) === option : readingOf.get(option) === prompt) ? i : -1).filter((i) => i >= 0);
     return { prompt, options, right, letter: toReading ? prompt : options[right[0]] };
   };
@@ -2056,8 +2086,16 @@ test('五十音隨機練習: one click from home, five different basic hiragana,
     const wrong = n % 2 === 0, choice = wrong ? (q.right[0] + 1) % 4 : q.right[0];
     b.study('study-answer', { choice });
     assert.match(b.node('.study-feedback').textContent, wrong ? /^正確答案：/ : /^答對了：/);
+    // Marked in place at once: the choice and, after a miss, the right option beside it.
+    const marks = Object.fromEntries(b.answerButtons.map((button) => [button.choice, [button.classes, button.mark]]));
+    assert.deepEqual(marks[q.right[0]], ['answer correct', wrong ? ' ✓ 正確答案' : ' ✓ 答對了']);
+    if (wrong) assert.deepEqual(marks[choice], ['answer wrong', ' ✕ 答錯了']);
     b.study('study-answer', { choice: q.right[0] });
     assert.match(b.node('.study-feedback').textContent, wrong ? /^正確答案：/ : /^答對了：/, 'One answer per question');
+    if (wrong) {
+      b.back(); b.forward();
+      assert.match(b.html, new RegExp(`class="answer correct" data-action="study-answer" data-choice="${q.right[0]}"[^>]*>[\\s\\S]*?✓ 正確答案`), 'Drawn again, the marks stay');
+    }
     b.study('study-next');
   }
   assert.equal(new Set(asked).size, 5, 'No question twice in a round');
@@ -2078,7 +2116,7 @@ test('random kana rounds never offer two options with the same reading, so お a
   for (let round = 0; round < 40; round++) {
     b.navigate('#home'); b.study('study-kana-random');
     for (let n = 0; n < 5; n++) {
-      const options = [...b.html.matchAll(/data-action="study-answer" data-choice="\d+"[^>]*>([^<]+)</g)].map((m) => m[1]);
+      const options = [...b.html.matchAll(/data-action="study-answer" data-choice="\d+"[^>]*>(?:<span lang="ja">)?([^<]+)</g)].map((m) => m[1]);
       const readings = /這個字，讀音是哪一個？/.test(b.html) ? options : options.map((o) => b.run(`KanaPractice.entries.find(e => e.character === ${JSON.stringify(o)} && e.script === "h").reading`));
       assert.equal(new Set(readings).size, 4, options.join());
       b.study('study-answer', { choice: 0 }); b.study('study-next');
@@ -2087,10 +2125,19 @@ test('random kana rounds never offer two options with the same reading, so お a
 });
 
 test('句型隨機練習: one click from home, five different questions from a checked beginner pool, nothing recorded', () => {
-  // The pool, question by question: each gives its meaning or situation in Chinese and readings for Japanese options.
-  const pool = ['g-identity/question/topic-reading', 'g-question/question/question-ending', 'g-demo/question/held-item', 'g-demo/question/distant-item', 'g-demo/question/listener-item', 'g-negative/question/ja-nai', 'g-negative/question/answer', 'g-no/question/my-bread', 'g-mo/question/me-too', 'g-to/question/and', 'g-to/question/point'];
-  const questions = JSON.parse(vm.runInContext(`JSON.stringify(${JSON.stringify(pool)}.map(id => { const courseId = id.split("/")[0], q = Content.courses[courseId].questions.find(q => q.id === id); return { id, courseId, prompt: q.prompt, answer: q.answer, options: q.options, readings: q.readings, explanation: q.explanation }; }))`, contentContext));
-  assert.equal(questions.length, 11);
+  // The pool, question by question (g-to/question/point is left out: これと それです has no Chinese meaning).
+  const pool = ['g-identity/question/topic-reading', 'g-question/question/question-ending', 'g-demo/question/held-item', 'g-demo/question/distant-item', 'g-demo/question/listener-item', 'g-negative/question/ja-nai', 'g-negative/question/answer', 'g-no/question/my-bread', 'g-mo/question/me-too', 'g-to/question/and'];
+  const questions = JSON.parse(vm.runInContext(`JSON.stringify(${JSON.stringify(pool)}.map(id => { const courseId = id.split("/")[0], q = Content.courses[courseId].questions.find(q => q.id === id); return { id, courseId, unit: Content.lessonPlan[courseId].unit, prompt: q.prompt, answer: q.answer, options: q.options, readings: q.readings, explanation: q.explanation }; }))`, contentContext));
+  assert.equal(questions.length, 10);
+  // What makes a question fit a learner starting from zero: it comes from 基本句子, says in Chinese what to do,
+  // never asks what unread Japanese means, gives a reading for every Japanese option, and explains the answer.
+  for (const q of questions) {
+    assert.equal(q.unit, '基本句子', q.id);
+    assert.ok((q.prompt.replace(/「[^」]*[぀-ヿ][^」]*」|[぀-ヿ]+/gu, '').match(/[一-鿿]/gu) || []).length >= 6, `${q.id}: Chinese says what to do`);
+    assert.doesNotMatch(q.prompt, /意思/, `${q.id}: asks no meaning of unread Japanese`);
+    q.options.forEach((option, i) => { if (/[぀-ヿ]/u.test(option)) assert.match(q.readings?.[i] || '', /^[a-z ]+$/, `${q.id}: ${option} has a reading`); });
+    assert.ok(q.explanation.includes(q.options[q.answer]), `${q.id}: the explanation names the answer`);
+  }
   const plainText = (html) => html.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
   const current = (b) => {
     const prompt = plainText(b.html.match(/<section class="study-card study-quiz"><h2>([^<]*)<\/h2>/)[1]);
@@ -2120,6 +2167,10 @@ test('句型隨機練習: one click from home, five different questions from a c
     assert.equal(b.node('[data-action="study-next"]').disabled, true);
     const wrong = n % 2 === 1, choice = wrong ? (question.answer + 1) % question.options.length : question.answer;
     b.study('study-answer', { choice });
+    // Marked in place at once: the choice and, after a miss, the right option beside it.
+    const marks = Object.fromEntries(b.answerButtons.map((button) => [button.choice, [button.classes, button.mark]]));
+    assert.deepEqual(marks[question.answer], ['answer correct', wrong ? ' ✓ 正確答案' : ' ✓ 答對了']);
+    if (wrong) assert.deepEqual(marks[choice], ['answer wrong', ' ✕ 答錯了']);
     const reading = question.readings ? `（${question.readings[question.answer]}）` : '';
     assert.equal(b.node('.study-feedback').textContent, wrong ? `正確答案：${question.options[question.answer]}${reading}。${question.explanation}` : `答對了。${question.explanation}`);
     b.study('study-answer', { choice: question.answer });
@@ -2145,6 +2196,16 @@ test('句型隨機練習: one click from home, five different questions from a c
   b.study('study-grammar-random');
   assert.match(b.html, /<a class="exit" href="#grammar">← 回基礎句型<\/a>/);
   assert.doesNotMatch(b.html, /看基礎句型/);
+  // Over many rounds every question in the pool comes up, and nothing else does.
+  const seen = new Set();
+  for (let round = 0; round < 40; round++) {
+    b.navigate('#home'); b.study('study-grammar-random');
+    for (let n = 0; n < 5; n++) {
+      seen.add(JSON.parse(b.run('JSON.stringify(Study.currentReview())')).questionId);
+      b.study('study-answer', { choice: 0 }); b.study('study-next');
+    }
+  }
+  assert.deepEqual([...seen].sort(), [...pool].sort());
   const fresh = browser();
   assert.match(fresh.html, /<button class="text-button" data-action="grammar">學基礎句型[\s\S]*?<button class="text-button path-secondary" data-action="study-grammar-random">句型隨機練習/);
   assert.equal(fresh.run('Study.context("#grammar-random")'), '句型隨機練習');
@@ -2253,7 +2314,7 @@ test('random rounds: reports name the question, a double click never answers, re
   assert.match(past.html, /<section class="dash-all"[\s\S]*?data-action="study-kana-random"[\s\S]*?五十音隨機練習/);
   // Each round is offered once on home, whichever card leads.
   const count = (html, action) => (html.match(new RegExp(`data-action="${action}"`, 'g')) || []).length;
-  for (const home of [past, completedGrammarBrowser()]) {
+  for (const home of [browser(), past, completedGrammarBrowser()]) {
     home.navigate('#home');
     assert.equal(count(home.html, 'study-kana-random'), 1);
     assert.equal(count(home.html, 'study-grammar-random'), 1);

@@ -47,6 +47,8 @@ test('kanji origins come from the dictionaries, and kana whose origin is open ha
     'ア': '取自漢字「阿」左邊的「阝」。', 'ウ': '取自漢字「宇」上面的「宀」。', 'オ': '取自漢字「於」的左半邊。', 'ケ': '取自漢字「介」的前三筆。',
     'タ': '取自漢字「多」上面的「夕」。', 'ニ': '由漢字「二」變來。', 'ハ': '一般認為由漢字「八」變來。', 'メ': '由漢字「女」變來。',
     'ル': '一般認為取自漢字「流」的最後兩筆。', 'ヲ': '由漢字「乎」的前三筆變形而來。', 'ヘ': '由漢字「部」右邊的「阝」草寫變來。', 'レ': '取自漢字「礼」的最後一筆。',
+    // The dictionaries say 行書体 for ス, and ミ only names the kanji (they differ on how it was written).
+    'ス': '由漢字「須」最後三筆的行書寫法變來。', 'ミ': '由漢字「三」變來。',
   };
   for (const [letter, text] of Object.entries(expected)) assert.equal(entry(letter, '字源').text, text, letter);
 });
@@ -59,8 +61,10 @@ test('a comparison names another basic kana and says where they differ', () => {
     count++;
     assert.ok([...item.text].some((ch) => basic.includes(ch) && ch !== letter), `${letter}: ${item.text}`);
     assert.ok(item.text.includes(letter) || /同音的平假名/u.test(item.text), `${letter}: ${item.text}`);
-    // Says where they differ, unless the two are the same shape.
+    // Says where they differ, unless the two are the same shape: a stroke or its place, never "one more line" alone.
     assert.match(item.text, /；|少了|幾乎一樣/u, `${letter}: ${item.text}`);
+    if (!/幾乎一樣/u.test(item.text)) assert.match(item.text, /點|圈|筆|橫|直|斜|撇|挑|彎|豎|開|封|交叉|穿/u, `${letter}: ${item.text}`);
+    if (/多|少了/u.test(item.text)) assert.match(item.text, /上|下|左|右|中間|頂/u, `${letter}: ${item.text}`);
   }
   assert.ok(count >= 40, 'Confusable pairs are covered');
   // The pairs beginners mix up most say where the dots sit and which way the long stroke goes.
@@ -150,7 +154,11 @@ test('the review document lists what each card shows', () => {
   for (const letter of basic) {
     const row = doc.split('\n').find((line) => line.startsWith(`| ${letter} |`));
     assert.ok(row, letter);
-    for (const label of ['字源', '比一比', '例子']) assert.ok(row.includes(entry(letter, label)?.text ?? '—'), `${letter} ${label}`);
+    // Cell by cell: what the card shows (— when it shows nothing) and how the dictionaries agree.
+    const cells = row.split(' | ').map((cell) => cell.replace(/^\| |\s\|$/g, ''));
+    assert.equal(cells.length, 5, letter);
+    assert.deepEqual([cells[1], cells[3], cells[4]], ['字源', '比一比', '例子'].map((label) => (entry(letter, label)?.text ?? '—').replace(/\|/g, '／')), letter);
+    assert.match(cells[2], entry(letter, '字源') ? /^(三部一致|主說一致，.+|漢字一致，.+)$/u : /^未定，不寫$/u, letter);
   }
 });
 
