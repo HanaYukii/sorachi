@@ -1602,3 +1602,49 @@ test('with a clock that went backwards, a kana answer is still dated after the l
   const restored = await importAndReload(c, backup);
   assert.equal(restored.state.study.kanaReview[x].wrong, false, 'The older backup cannot bring the mistake back');
 });
+
+test('returning learners get a home dashboard of next steps, everything on offer and progress; new visitors do not', () => {
+  const b = browser();
+  assert.doesNotMatch(b.html, /home-dashboard/, 'A new visitor keeps the single way in');
+  const lesson = (id) => JSON.parse(vm.runInContext(`JSON.stringify(Content.courses[${JSON.stringify(id)}])`, contentContext));
+  const grammarCount = vm.runInContext('Content.grammar.length', contentContext);
+  b.study('study-open', { course: 'h-a' });
+  for (let i = 0; i < 5; i++) b.study('study-next');
+  finishKanaRound(b, { missFirst: true });
+  for (const id of ['g-identity', 'g-question']) {
+    const course = lesson(id);
+    b.study('study-open', { course: id });
+    for (let i = 0; i < course.steps.length; i++) b.study('study-next');
+    for (let i = 0; i < course.questions.length; i++) {
+      const active = b.state.study.courses[id].active;
+      b.study('study-answer', { choice: course.questions[active.order[active.cursor]].answer });
+      b.study('study-next');
+    }
+  }
+  b.navigate('#travel/hotel');
+  b.study('study-favorite', { phrase: 'phrase/hotel/check-in' });
+  b.navigate('#home');
+  const html = b.html, section = (name) => html.match(new RegExp(`<section class="${name}"[\\s\\S]*?</section>`))[0];
+  assert.match(html, /歡迎回來/);
+  const progress = section('dash-progress');
+  assert.match(progress, /<dt>平假名<\/dt><dd><strong>5<\/strong> \/ 104 字<\/dd>/);
+  assert.match(progress, new RegExp(`<dt>基礎句型</dt><dd><strong>2</strong> / ${grammarCount} 課</dd>`));
+  // h-a: 4 of 5 right the first time, plus 2 + 2 grammar questions right: 8 of 9.
+  assert.match(progress, /<dt>第一次答對<\/dt><dd><strong>89<\/strong>%<\/dd>/);
+  assert.match(progress, /<dt>完成練習<\/dt><dd><strong>3<\/strong> 次<\/dd>/);
+  assert.match(progress, /<span>平假名<\/span><span class="dash-count">1 \/ 26 組<\/span>/);
+  assert.match(progress, /<span>基本句子<\/span><span class="dash-count">2 \/ /);
+  assert.match(progress, /aria-hidden="true"><i style="width:/, 'Bars are decoration; the counts are text');
+  const next = section('dash-next');
+  assert.match(next, /data-action="study-open" data-course="g-demo"/);
+  assert.match(next, /下一課：指示詞：これ・それ・あれ/);
+  assert.match(next, /href="#grammar-review"/, 'Two finished lessons open the grammar review');
+  assert.match(next, /href="#travel\/favorites"[\s\S]*?1 張/);
+  const everything = section('dash-all');
+  for (const action of ['kana', 'grammar', 'travel', 'history']) assert.match(everything, new RegExp(`data-action="${action}"`), action);
+  assert.equal((html.match(/data-action="start"/g) || []).length, 1, 'One way into the writing-system introduction');
+  assert.ok(html.indexOf('dash-next') < html.indexOf('dash-progress'), 'What to do next comes first, also for keyboard and screen readers');
+  assert.match(html, /data-action="study-open" data-course="h-ka"/, 'The kana card still leads to the next group');
+  b.action('history');
+  assert.equal(b.hash, '#history');
+});
