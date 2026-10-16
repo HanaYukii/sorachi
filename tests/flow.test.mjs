@@ -781,10 +781,12 @@ test("viewing a later kana group does not hijack the home recommendation; flippi
   assert.match(resumed.html, /data-course="h-ka"/);
 });
 
-test("new visitors see one intro entry beside the main course; it moves after learning starts", () => {
+test("the writing-system introduction stays available after the main learning and travel entries", () => {
   const b = browser();
   assert.equal((b.html.match(/data-action="start"/g) || []).length, 1);
-  assert.ok(b.html.indexOf('intro-entry') < b.html.indexOf('learning-path'));
+  assert.ok(b.html.indexOf('intro-entry') > b.html.indexOf('learning-path'));
+  assert.ok(b.html.indexOf('data-action="grammar"') < b.html.indexOf('intro-entry'));
+  assert.ok(b.html.indexOf('data-action="travel"') < b.html.indexOf('intro-entry'));
   b.study('study-open', {course:'h-a'});
   b.study('study-next');
   b.navigate('#home');
@@ -843,8 +845,8 @@ test('short review is reachable from home, clears a recent mistake, and leaves f
   assert.equal(b.state.study.kanaReview[missedId].wrong,true);
   const resumed=browser({raw:b.stored});
   assert.match(resumed.html,/有 1 個字上次答錯/);
-  assert.match(resumed.html,/href="#kana-review"/);
-  resumed.navigate('#kana-review'); resumed.study('study-review-start');
+  assert.match(resumed.html,/data-action="study-review-start"/);
+  resumed.action('study-review-start');
   assert.equal(resumed.title,'五十音複習｜SoraChi');
   assert.ok(resumed.state.study.reviewSession.questions.some(q=>q.id===missedId));
   const first=resumed.state.study.reviewSession.questions[0];
@@ -1155,4 +1157,38 @@ test('a restore never revives practice that a newer clear ended, on either side'
   assert.ok(study.courses['h-a'].completedAt);
   assert.deepEqual(study.kanaReview, {});
   assert.equal(study.reviewClearedAt, clearedAt(other));
+});
+
+
+test('the home shortcut resumes the same review after reload and leaves the next course intact', () => {
+  const b = browser({hash: '#study/h-a'});
+  for (let i = 0; i < 5; i++) b.study('study-next');
+  finishKanaRound(b);
+  b.navigate('#home');
+  assert.match(b.html, /複習 5 個字/);
+  b.action('study-review-start');
+  const question = b.state.study.reviewSession.questions[0];
+  b.study('study-answer', {choice: question.options.indexOf(question.id)});
+  b.study('study-next');
+  const session = JSON.stringify(b.state.study.reviewSession);
+  const courses = JSON.stringify(b.state.study.courses);
+  const reloaded = browser({raw: b.stored});
+  assert.match(reloaded.html, /繼續複習/);
+  assert.match(reloaded.html, /data-course="h-ka"/);
+  reloaded.action('study-review-start');
+  assert.equal(reloaded.hash, '#kana-review');
+  assert.equal(JSON.stringify(reloaded.state.study.reviewSession), session);
+  assert.deepEqual(reloaded.state.study.courses, JSON.parse(courses));
+});
+
+test('home category controls open grammar and kana lists without starting a course', () => {
+  const b = browser();
+  const initial = b.stored;
+  b.action('grammar');
+  assert.equal(b.hash, '#grammar');
+  assert.equal(b.stored, initial);
+  b.navigate('#home');
+  b.action('kana');
+  assert.equal(b.hash, '#kana');
+  assert.equal(b.stored, initial);
 });

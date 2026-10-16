@@ -6,7 +6,7 @@
 
 ## 這一版
 
-首頁以五十音為主要學習入口，另設基礎句型與獨立的旅遊常用語入口。學習區逐組練習並儲存進度；旅遊區依九種情境自由查閱，直接看關鍵字、讀音與中文，需要時再展開完整說法，不需完成課程或測驗。文字介紹保留為簡單補充。
+首頁以五十音與雲朵角色為主要學習入口；下方以水色、杏橘色插圖卡並列基礎句型與旅遊常用語，手機版也保留並列入口。已有學習紀錄時可從首頁直接開始最多五字的複習，未完成的複習會接續原輪。學習區逐組練習並儲存進度；旅遊區依九種情境自由查閱，直接看關鍵字、讀音與中文，需要時再展開完整說法，不需完成課程或測驗。文字介紹保留為簡單補充。
 
 視覺使用原創雲朵精靈，淡紫為主、水色輔助、杏橘色作為主要操作。白色留白與單一學習路徑優先於功能數量。
 
@@ -142,7 +142,7 @@ CI 失敗時，log 會印出子程序的完整輸出（含失敗的測試名稱�
 - `dist/storage.js`：版本化本機資料、舊版遷移、成績合併與備份 primitives。
 - `dist/release.json`：自動產生的發佈內容清單。
 - `tests/content.test.mjs`、`storage.test.mjs`、`revision.test.mjs`、`deploy.test.mjs`：教材、資料、教材改版與發佈保護測試。
-- `art/cloud-friend.png`、`art/cloud-complete.png`：本專案使用的原創 AI 生成角色與抱書完成姿勢（原圖，不發佈）。`dist/assets/` 只放由原圖轉出的 WebP 尺寸、32px favicon 與 180px apple-touch-icon。
+- `art/cloud-friend.png`、`art/cloud-complete.png`：本專案使用的原創 AI 生成角色與抱書完成姿勢（原圖，不發佈）。`dist/assets/` 放由原圖轉出的 WebP 尺寸、32px favicon、180px apple-touch-icon，以及首頁手繪 SVG 風格的筆記本與旅行箱插圖。
 - `tests/flow.test.mjs`：跨頁互動流程回歸檢查。
 - `tests/study.test.mjs`：五十音、文法、重試、題序與語音狀態測試。
 
