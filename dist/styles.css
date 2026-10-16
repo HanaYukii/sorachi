@@ -1241,13 +1241,15 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .learning-path { margin: 18px 0; }
 .path-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 18px; }
 .path-card { position: relative; display: flex; align-items: center; gap: 20px; border: 1px solid #d1e7eb; border-radius: 24px; padding: 24px; background: #edf7f8; }
-.path-card .text-button::after { content: ""; position: absolute; inset: 0; border-radius: 24px; cursor: pointer; }
-.path-card:has(.text-button:focus-visible) { outline: 3px solid var(--purple); outline-offset: 4px; }
-.path-card .text-button:focus-visible { outline: none; }
+.path-card .text-button:not(.path-secondary)::after { content: ""; position: absolute; inset: 0; border-radius: 24px; cursor: pointer; }
+.path-card:has(.text-button:not(.path-secondary):focus-visible) { outline: 3px solid var(--purple); outline-offset: 4px; }
+.path-card .text-button:not(.path-secondary):focus-visible { outline: none; }
+/* A card's second action sits above the card-wide link of its first one, so each keeps its own click area. */
+.path-card .path-secondary { position: relative; z-index: 1; display: flex; font-weight: 600; }
 @media (hover: hover) {
   .path-card:hover { border-color: var(--aqua-ink); }
   .travel-entry:hover { border-color: var(--orange-ink); }
-  .path-card:hover .text-button { text-decoration: underline; }
+  .path-card:hover .text-button:not(.path-secondary) { text-decoration: underline; }
 }
 .path-art { width: 100px; height: auto; flex-shrink: 0; }
 .path-copy { min-width: 0; }

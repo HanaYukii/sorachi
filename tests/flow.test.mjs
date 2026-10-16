@@ -2061,3 +2061,52 @@ test('random kana rounds never offer two options with the same reading, so お a
     }
   }
 });
+
+test('句型隨機練習: one click from home, five different questions from the first noun-sentence lessons, nothing recorded', () => {
+  const pool = ['g-identity', 'g-question', 'g-demo', 'g-negative', 'g-no', 'g-mo', 'g-to'];
+  const questions = JSON.parse(vm.runInContext(`JSON.stringify(${JSON.stringify(pool)}.flatMap(id => Content.courses[id].questions.map(q => ({ id: q.id, courseId: id, prompt: q.prompt, answer: q.answer, options: q.options, explanation: q.explanation }))))`, contentContext));
+  const plainText = (html) => html.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  const current = (b) => {
+    const prompt = plainText(b.html.match(/<section class="study-card study-quiz"><h2>([^<]*)<\/h2>/)[1]);
+    const question = questions.find((q) => q.prompt === prompt);
+    assert.ok(question, `The question comes from the pool: ${prompt}`);
+    const choices = [...b.html.matchAll(/data-action="study-answer" data-choice="(\d+)"/g)].map((m) => Number(m[1]));
+    assert.deepEqual([...choices].sort(), question.options.map((_, i) => i), 'Every option once');
+    return question;
+  };
+  const b = completedGrammarBrowser();
+  b.navigate('#home');
+  const before = b.stored;
+  b.study('study-grammar-random');
+  assert.equal(b.hash, '#grammar-random');
+  assert.equal(b.title, '句型隨機練習｜SoraChi');
+  assert.match(b.html, /<a class="exit" href="#home">← 回首頁<\/a>/);
+  assert.match(b.html, /<a class="text-button" href="#grammar">看句型列表<\/a>/);
+  const asked = [];
+  for (let n = 1; n <= 5; n++) {
+    assert.match(b.html, new RegExp(`入門句型 · ${n} / 5 · `));
+    const question = current(b);
+    asked.push(question.id);
+    if (n === 1) assert.deepEqual(b.run('JSON.stringify(Study.currentReview())'), JSON.stringify({ courseId: question.courseId, questionId: question.id }), 'Reports name the question');
+    const wrong = n % 2 === 1, choice = wrong ? (question.answer + 1) % question.options.length : question.answer;
+    b.study('study-answer', { choice });
+    assert.equal(b.node('.study-feedback').textContent, wrong ? `正確答案：${question.options[question.answer]}。${question.explanation}` : `答對了。${question.explanation}`);
+    b.study('study-next');
+  }
+  assert.equal(new Set(asked).size, 5, 'No question twice in a round');
+  assert.match(b.html, /這輪答對 <strong>2 \/ 5<\/strong> 題/);
+  assert.match(b.html, /想多看說明，可以看這幾課：[\s\S]*data-action="study-open"/);
+  assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-grammar-random-again">再練一次<\/button><\/div>/);
+  assert.equal(b.stored, before, 'A random round records nothing: no completion, review round or mistake');
+  b.study('study-grammar-random-again');
+  assert.match(b.html, /入門句型 · 1 \/ 5/);
+  // From the grammar list, 回 leads back there; a new visitor's grammar card offers the same round.
+  b.navigate('#grammar');
+  assert.match(b.html, /data-action="study-grammar-random">練 5 題/);
+  b.study('study-grammar-random');
+  assert.match(b.html, /<a class="exit" href="#grammar">← 回句型列表<\/a>/);
+  assert.doesNotMatch(b.html, /看句型列表/);
+  const fresh = browser();
+  assert.match(fresh.html, /<button class="text-button" data-action="grammar">學基礎句型[\s\S]*?<button class="text-button path-secondary" data-action="study-grammar-random">句型隨機練習/);
+  assert.equal(fresh.run('Study.context("#grammar-random")'), '句型隨機練習');
+});
