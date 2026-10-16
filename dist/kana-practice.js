@@ -116,5 +116,5 @@ const KanaPractice = (() => {
     candidates.sort((a,b)=>Number(review[b.id]?.wrong===true)-Number(review[a.id]?.wrong===true) || date(a).localeCompare(date(b)) || a.id.localeCompare(b.id));
     return candidates.slice(0,Math.max(0,Math.min(5,limit))).map(item=>item.id);
   }
-  return {VERSION,entries,entry,create,sanitize,current,answered,answer,next,firstCorrect,sanitizeReview,seedReview,selectReview};
+  return {VERSION,iso,entries,entry,create,sanitize,current,answered,answer,next,firstCorrect,sanitizeReview,seedReview,selectReview};
 })();
