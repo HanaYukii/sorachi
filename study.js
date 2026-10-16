@@ -384,40 +384,65 @@ const Study = (() => {
       const saved = savedPhrases();
       return wrap(`<h1 class="focus-heading" tabindex="-1">我的常用語</h1><p class="study-note">收藏的詞存在這個瀏覽器，旅行時可以直接來這裡找。</p>${saved.length ? saved.map(({item,step,index}) => travelCard(item,step,index)).join("") : '<section class="study-card"><h2>還沒有收藏</h2><p>在旅遊用語卡上按「收藏」，就會出現在這裡。</p><a class="text-button" href="#travel">找旅遊常用語 →</a></section>'}`,"#travel","回旅遊常用語");
     }
-    if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<div class="travel-search" role="search"><label for="travel-search">找詞或情境</label><input id="travel-search" type="search" value="${escape(travelQuery)}" placeholder="例如：結帳、Suica、寄放行李" autocomplete="off" enterkeyhint="search"></div><div id="travel-results" aria-live="polite">${travelResults()}</div><a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span>${savedPhrases().length} 張收藏 →</span></a>${travelGroups()}`);
+    if (!id) {
+      const back = travelReturn;
+      travelReturn = null;
+      travelShown = travelResults(back);
+      return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<div class="travel-search" role="search"><label for="travel-search">找詞或情境</label><input id="travel-search" type="search" value="${escape(travelQuery)}" placeholder="例如：結帳、Suica、寄放行李" autocomplete="off" enterkeyhint="search"><p id="travel-status" class="visually-hidden" role="status" aria-live="polite"></p></div><div id="travel-results">${travelShown}</div><a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span>${savedPhrases().length} 張收藏 →</span></a>${travelGroups()}`);
+    }
     const item = travelItem(id), found = travelFound;
     travelFound = null;
     if (!item) return wrap('<h1 class="focus-heading" tabindex="-1">找不到這個情境</h1><a class="text-button" href="#travel">回旅遊常用語</a>');
     return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(item.title)}</h1><p class="study-note">先看關鍵字與意思，需要時再展開例句。</p>${item.steps.map((step, index) => travelCard(item,step,index,step.id === found)).join("")}<div class="study-nav"><a class="text-button" href="#travel">← 換個情境</a>${item.id === "basics" ? "" : '<a class="text-button" href="#travel/basics">需要幫忙時</a>'}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#travel", "回旅遊常用語");
   }
-  // Travel search (#75): every card with what a traveller might type, its title and situation, keywords with their
-  // readings and meanings, and the short and full phrases with romaji and meaning. Width, case, spaces, punctuation
-  // and katakana versus hiragana are ignored; a few everyday Chinese words lead to the ones the cards use. The query
-  // lives only in this page: nothing is saved or sent.
-  let travelQuery = "", travelFound = null, travelIndex = null;
-  const fold = (text) => String(text).normalize("NFKC").toLowerCase().replace(/[ァ-ヶ]/gu, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60)).replace(/[\s・、。，,.!?！？「」『』（）()〜~'’\-／/]/gu, "");
-  const TRAVEL_ALIASES = [["寄物櫃", "置物櫃"], ["寄物", "寄放"], ["洗手間", "廁所"], ["化妝室", "廁所"], ["買單", "結帳"], ["埋單", "結帳"], ["打包", "外帶"], ["儲值", "加值"], ["icoca", "交通ic卡"], ["pasmo", "交通ic卡"]];
-  // Cards whose own words match come first; only when none does, a match on a situation's name lists its cards.
+  // Travel search (#75): every card with what a traveller might type: its title, keywords with their readings and
+  // meanings, the short and full phrases, what staff may ask and any extra part, each with romaji and meaning. Width,
+  // case, spaces, punctuation, katakana versus hiragana, 臺／台 and long vowels in romaji (hoomu, homu, toukyou) are
+  // ignored, and a few everyday words lead to the ones the cards use. The query lives only in this page: nothing is
+  // saved or sent.
+  let travelQuery = "", travelFound = null, travelReturn = null, travelIndex = null, travelShown = null;
+  // Romaji words keep a boundary (rokkaa | doko), so a query never matches across two words or two fields.
+  const fold = (text) => String(text).normalize("NFKC").toLowerCase().replace(/\|/gu, "").replace(/臺/gu, "台").replace(/[ァ-ヶ]/gu, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60))
+    .replace(/([a-z])[\s,.!?'’\-/]+(?=[a-z])/gu, "$1|").replace(/[\s・、。，,.!?！？「」『』（）()〜~'’\-／/]/gu, "").replace(/ou/gu, "o").replace(/([aiueo])\1+/gu, "$1");
+  const TRAVEL_ALIASES = [["寄物櫃", "置物櫃"], ["寄物", "寄放"], ["寄行李", "寄放行李"], ["行李寄放", "寄放行李"], ["洗手間", "廁所"], ["化妝室", "廁所"], ["買單", "結帳"], ["埋單", "結帳"], ["會計", "会計"], ["付款", "付現", "結帳"], ["打包", "外帶"], ["儲值", "加值"], ["交通卡", "交通ic卡"], ["icoca", "交通ic卡"], ["pasmo", "交通ic卡"], ["發票", "收據"], ["不用", "不需要"], ["不要", "不需要"], ["來回票", "來回"]];
+  const fields = (part) => part ? [part.title, ...(part.keywords || []).flat(), part.example, part.reading, part.meaning, part.polite, part.politeReading, part.politeMeaning].filter(Boolean).map(fold) : [];
+  const variants = (q) => [q, ...TRAVEL_ALIASES.filter(([alias]) => q.includes(fold(alias))).flatMap(([alias, ...words]) => words.map((word) => q.replace(fold(alias), fold(word))))];
   function travelMatches(query) {
-    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: fold([step.title, ...step.keywords.flat(), step.example, step.reading, step.meaning, step.polite, step.politeReading, step.politeMeaning].filter(Boolean).join(" ")), situation: fold(`${item.title} ${item.subtitle}`) })));
+    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: [...fields(step), ...fields(step.staffAsks), ...fields(step.extra)].join("|"), situation: fold(item.title) })));
     const q = fold(query);
     if (!q) return [];
-    const terms = [q, ...TRAVEL_ALIASES.filter(([alias]) => q.includes(fold(alias))).map(([alias, word]) => q.replace(fold(alias), fold(word)))];
-    const own = travelIndex.filter((entry) => terms.some((term) => entry.own.includes(term)));
-    return own.length ? own : travelIndex.filter((entry) => terms.some((term) => entry.situation.includes(term)));
+    const inCard = (entry, word) => variants(word).some((term) => entry.own.includes(term));
+    const inSituation = (entry, word) => variants(word).some((term) => entry.situation.includes(term));
+    // Cards whose own words match; then every card of a situation whose name matches, when none of its own did.
+    const own = travelIndex.filter((entry) => inCard(entry, q));
+    const named = travelIndex.filter((entry) => !own.some((match) => match.item === entry.item) && inSituation(entry, q));
+    if (own.length || named.length) return [...own, ...named];
+    // Several words that never appear together: the cards matching more of them come first.
+    const words = String(query).trim().split(/\s+/u).map(fold).filter(Boolean);
+    if (words.length < 2) return [];
+    return travelIndex.map((entry) => ({ entry, score: words.filter((word) => inCard(entry, word) || inSituation(entry, word)).length }))
+      .filter(({ score }) => score).sort((a, b) => b.score - a.score).map(({ entry }) => entry);
   }
-  function travelResults() {
+  // The row of the card just looked at is marked, so coming back puts focus on it.
+  function travelResults(back = null) {
     if (!fold(travelQuery)) return "";
     const found = travelMatches(travelQuery);
     if (!found.length) return `<section class="travel-results"><h2>找不到「${escape(travelQuery.trim())}」</h2><p class="study-note">換個說法試試，或從下面的情境找。</p><button class="text-button" data-action="study-travel-clear">清除搜尋</button></section>`;
-    return `<section class="travel-results"><h2>找到 ${found.length} 張卡</h2><ul class="dash-list">${found.map(({ item, step }) => `<li><button class="dash-row" data-action="study-travel-open" data-situation="${item.id}" data-step="${escape(step.id)}"><span class="dash-row-main"><strong>${escape(step.title)}</strong><span><span lang="ja">${escape(step.example)}</span>　${escape(step.meaning)}</span></span><span class="dash-row-meta">${escape(item.title.split(/[：、（]/u)[0])}</span>${api.icons?.arrow || "→"}</button></li>`).join("")}</ul></section>`;
+    return `<section class="travel-results"><div class="travel-results-head"><h2>找到 ${found.length} 張卡</h2><button class="text-button" data-action="study-travel-clear">清除搜尋</button></div><ul class="dash-list">${found.map(({ item, step }) => `<li><button class="dash-row${step.id === back ? " return-focus" : ""}" data-action="study-travel-open" data-situation="${item.id}" data-step="${escape(step.id)}"><span class="dash-row-main"><strong>${escape(step.title)}</strong><span><span lang="ja">${escape(step.example)}</span>　${escape(step.meaning)}</span></span><span class="dash-row-meta">${escape(item.title.split("（")[0])}</span>${api.icons?.arrow || "→"}</button></li>`).join("")}</ul></section>`;
   }
-  // While a word is still being composed with an input method, the results wait, so the composition is not broken.
+  // Only the count is announced; the list itself is not a live region, so typing is not read out row by row.
+  const travelStatus = () => { if (!fold(travelQuery)) return ""; const n = travelMatches(travelQuery).length; return n ? `找到 ${n} 張卡` : "找不到符合的卡"; };
+  // While a word is still being composed with an input method the results wait, so the composition is not broken;
+  // a query that changes nothing redraws and announces nothing.
   function searchTravel(value, composing = false) {
     travelQuery = String(value || "");
     if (composing || location.hash !== "#travel") return;
-    const results = document.querySelector("#travel-results");
-    if (results) results.innerHTML = travelResults();
+    const html = travelResults();
+    if (html === travelShown) return;
+    travelShown = html;
+    const results = document.querySelector("#travel-results"), status = document.querySelector("#travel-status");
+    if (results) results.innerHTML = html;
+    if (status) status.textContent = travelStatus();
   }
   // The travel list in a few groups, each with a plain Chinese line, so a situation is found without reading Japanese
   // (#79). A situation missing here still shows, in a last group.
@@ -721,6 +746,8 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(course.title)}</h1>${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)));
   }
   function render(hash) {
+    // The opened search result gets focus only when coming back from the travel cards, not on a later visit.
+    if (!hash.startsWith("#travel")) travelReturn = null;
     if (hash === "#kana") return kanaPage();
     if (hash === "#kana-review") return reviewPage();
     if (hash === "#kana-random") return randomPage();
@@ -863,7 +890,7 @@ const Study = (() => {
     // A search result opens its situation with that card in view; clearing puts the cursor back in the box.
     if (action === "study-travel-open") {
       const item = travelItem(button.dataset.situation);
-      if (item?.steps.some((step) => step.id === button.dataset.step)) { travelFound = button.dataset.step; api.go(`#travel/${item.id}`); }
+      if (item?.steps.some((step) => step.id === button.dataset.step)) { travelFound = travelReturn = button.dataset.step; api.go(`#travel/${item.id}`); }
       return true;
     }
     if (action === "study-travel-clear") { travelQuery = ""; if (location.hash === "#travel") redraw("#travel-search"); return true; }
