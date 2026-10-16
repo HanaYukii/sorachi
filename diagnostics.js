@@ -11,7 +11,7 @@ const Diagnostics = (() => {
   const integer = (value, length) => Number.isInteger(value) && value >= 0 && value < length;
   const permutation = (value, length) => Array.isArray(value) && value.length === length && new Set(value).size === length && value.every(index => integer(index, length));
 
-  const assetVersions = {content:"contentVersion",app:"appVersion","kana-practice":"practiceAssetVersion","kana-hints":"hintsVersion"};
+  const assetVersions = {content:"contentVersion",app:"appVersion","kana-practice":"practiceAssetVersion","kana-hints":"hintsVersion",study:"studyVersion",storage:"storageVersion"};
   function loadedVersions(scripts) {
     const values = Object.fromEntries(Object.keys(assetVersions).map(name => [name,new Set()]));
     // document.scripts is live; copy only this small list of script sources.
@@ -19,7 +19,7 @@ const Diagnostics = (() => {
       try {
         const source = typeof script === "string" ? script : script?.src;
         if (typeof source !== "string" || source.length > 2048) continue;
-        const match = source.match(/(?:^|\/)(content|app|kana-practice|kana-hints)\.js\?([^#]*)(?:#.*)?$/);
+        const match = source.match(/(?:^|\/)(content|app|kana-practice|kana-hints|study|storage)\.js\?([^#]*)(?:#.*)?$/);
         if (!match) continue;
         const tokens = [...match[2].matchAll(/(?:^|&)v=([^&]*)/g)];
         if (tokens.length !== 1) continue;
