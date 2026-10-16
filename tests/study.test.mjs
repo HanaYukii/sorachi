@@ -633,9 +633,13 @@ test('audio buttons say what is visible, keyword boxes are not repeated landmark
 test('travel pages show staff questions and Japanese keywords; other pages link to travel phrases', () => {
   const b = harness();
   b.render('#travel');
-  assert.match(b.html, /<span class="travel-keywords" lang="ja">お会計・レジ・カード・現金・Suica<\/span>/);
-  assert.match(b.html, />何名様・店内・持ち帰り・お水・おかわり・いりません</);
-  assert.doesNotMatch(b.html, /travel-keywords[^>]*>[^<]*(お願いします|1000円)/);
+  // Situations come in a few groups; each card has at most three words, Chinese first, generic words and amounts left out.
+  assert.match(b.html, /<h2 id="travel-group-1">吃飯與購物<\/h2><p>點餐、內用外帶、結帳、買東西<\/p>/);
+  assert.match(b.html, /<span class="travel-words"><span class="travel-word">結帳<span lang="ja">お会計<\/span><\/span><span class="travel-word">信用卡<span lang="ja">カード<\/span><\/span><span class="travel-word">西瓜卡<span lang="ja">Suica<\/span><\/span><\/span>/);
+  assert.match(b.html, /<span class="travel-word">幾位<span lang="ja">何名様<\/span><\/span><span class="travel-word">內用<span lang="ja">店内<\/span><\/span><span class="travel-word">水<span lang="ja">お水<\/span><\/span><\/span>/);
+  assert.doesNotMatch(b.html, /<span lang="ja">(お願いします|1000円|これ|どこ)<\/span><\/span>/);
+  for (const item of b.content.phrasebook) assert.equal((b.html.match(new RegExp(`href="#travel/${item.id}"`, 'g')) || []).length, 1, `${item.id} appears once`);
+  for (const group of b.html.match(/<section class="travel-group[\s\S]*?<\/section>/g)) assert.ok((group.match(/class="travel-word"/g) || []).length <= 3 * (group.match(/class="course-row"/g) || []).length);
   b.render('#travel/dining');
   assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">店員可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
   b.render('#kana');
