@@ -2095,6 +2095,107 @@ const Content = (() => {
       ]
     },
     {
+      "id": "g-minutes",
+      "type": "grammar",
+      "title": "幾分：〜ふん・〜ぷん",
+      "subtitle": "幾分鐘、幾點幾分",
+      "steps": [
+        {
+          "title": "直接接 ふん：2、5、7、9",
+          "example": "にふん ／ ごふん ／ ななふん ／ きゅうふん",
+          "reading": "nifun / gofun / nanafun / kyuufun",
+          "meaning": "2 分 ／ 5 分 ／ 7 分 ／ 9 分",
+          "body": "數字後面加「ふん」（分），可以說幾分鐘，也可以說幾點幾分的「分」。2、5、7、9 照數字原本的念法，直接接 ふん。7 和 9 念 なな、きゅう，和幾點的 しちじ、くじ 不一樣。",
+          "id": "g-minutes/card/fun"
+        },
+        {
+          "title": "變成 ぷん：3、4",
+          "example": "さんぷん ／ よんぷん",
+          "reading": "sanpun / yonpun",
+          "meaning": "3 分 ／ 4 分",
+          "body": "3（さん）、4（よん）的最後是「ん」，後面的 ふん 要變成 ぷん。",
+          "id": "g-minutes/card/pun"
+        },
+        {
+          "title": "多一個小 っ：1、6、8、10",
+          "example": "いっぷん ／ ろっぷん ／ はっぷん ／ じゅっぷん",
+          "reading": "ippun / roppun / happun / juppun",
+          "meaning": "1 分 ／ 6 分 ／ 8 分 ／ 10 分",
+          "body": "1、6、8、10 的最後一個音變成小的 っ（停一拍），後面也是 ぷん，和 ろっぴゃく、はっぴゃく 的變法很像。10 分也可以念 じっぷん，8 分也常說 はちふん。",
+          "id": "g-minutes/card/ppun"
+        },
+        {
+          "title": "幾點幾分",
+          "example": "いま、なんじ なんぷんですか。 ／ くじ じゅっぷんです。",
+          "reading": "ima, nanji nanpun desu ka / kuji juppun desu",
+          "meaning": "現在幾點幾分？／ 9 點 10 分。",
+          "body": "先說幾點，再說幾分；問幾分用「なんぷん」。十幾分、二十幾分照最後一個數字變，例如 15 分是 じゅうごふん；20、30 分照 10 分變：にじゅっぷん、さんじゅっぷん。30 分也可以說「はん」（半）。",
+          "id": "g-minutes/card/time"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "3 分怎麼說？",
+          "options": [
+            "さんぷん",
+            "さんぶん",
+            "さっぷん"
+          ],
+          "readings": [
+            "sanpun",
+            "sanbun",
+            "sappun"
+          ],
+          "answer": 0,
+          "explanation": "3（さん）的最後是「ん」，後面的 ふん 變成 ぷん：さんぷん。さんぶん 是套用 さんびゃく 的變法（ひゃく→びゃく），分鐘在 ん 後面要變成 ぷん；さっぷん 多了小的 っ，那是 1、6、8、10 的變法。",
+          "id": "g-minutes/question/three"
+        },
+        {
+          "prompt": "5 分怎麼說？",
+          "options": [
+            "ごふん",
+            "ごぷん",
+            "ごっぷん"
+          ],
+          "readings": [
+            "gofun",
+            "gopun",
+            "goppun"
+          ],
+          "answer": 0,
+          "explanation": "5（ご）的最後不是「ん」，也不會變成小的 っ，直接接 ふん：ごふん。ごぷん、ごっぷん 是套用了其他數字的變法。",
+          "id": "g-minutes/question/five"
+        },
+        {
+          "prompt": "10 分怎麼說？",
+          "options": [
+            "じゅっぷん",
+            "じゅうふん",
+            "じゅうぷん"
+          ],
+          "readings": [
+            "juppun",
+            "juufun",
+            "juupun"
+          ],
+          "answer": 0,
+          "explanation": "10 的 じゅう 變成 じゅっ（停一拍），後面接 ぷん：じゅっぷん（也念 じっぷん）。じゅうふん、じゅうぷん 都少了變成小 っ 的這一步。",
+          "id": "g-minutes/question/ten"
+        },
+        {
+          "prompt": "朋友說「くじ じゅっぷんです」，是幾點幾分？",
+          "options": [
+            "9 點 10 分",
+            "10 點 9 分",
+            "9 點半"
+          ],
+          "answer": 0,
+          "explanation": "先說幾點，再說幾分：「くじ」是 9 點，「じゅっぷん」是 10 分。10 點 9 分是 じゅうじ きゅうふん；9 點半是 くじはん。",
+          "id": "g-minutes/question/clock"
+        }
+      ]
+    },
+    {
       "id": "g-kara-made-time",
       "type": "grammar",
       "title": "幾點到幾點：〜から〜まで",
@@ -2168,6 +2269,310 @@ const Content = (() => {
           "answer": 0,
           "explanation": "終點用「まで」：はちじまで（到 8 點）。「はちじから」是從 8 點開始，「はちじの」是「8 點的」。",
           "id": "g-kara-made-time/question/made"
+        }
+      ]
+    },
+    {
+      "id": "g-dates",
+      "type": "grammar",
+      "title": "日期（一）：〜がつ・〜にち",
+      "subtitle": "幾月幾號、問日期",
+      "steps": [
+        {
+          "title": "月份：〜がつ",
+          "example": "いちがつ ／ にがつ ／ じゅうにがつ",
+          "reading": "ichigatsu / nigatsu / juunigatsu",
+          "meaning": "1 月 ／ 2 月 ／ 12 月",
+          "body": "數字後面加「がつ」（月）就是幾月。",
+          "id": "g-dates/card/gatsu"
+        },
+        {
+          "title": "4、7、9 月",
+          "example": "しがつ ／ しちがつ ／ くがつ",
+          "reading": "shigatsu / shichigatsu / kugatsu",
+          "meaning": "4 月 ／ 7 月 ／ 9 月",
+          "body": "4 月念 しがつ，不念 よんがつ；7 月念 しちがつ，9 月念 くがつ。同一個數字，後面接的詞不同，念法也可能不同：4 點是 よじ，4 分是 よんぷん，4 月是 しがつ。",
+          "id": "g-dates/card/special"
+        },
+        {
+          "title": "幾號：〜にち",
+          "example": "じゅうがつ じゅうごにち",
+          "reading": "juugatsu juugonichi",
+          "meaning": "10 月 15 日",
+          "body": "月份放前面。日期大多是數字加「にち」（日），17 日、19 日念 じゅうしちにち、じゅうくにち。1 日到 10 日、14 日、20 日、24 日有特別的念法，接下來兩課學。",
+          "id": "g-dates/card/nichi"
+        },
+        {
+          "title": "問日期",
+          "example": "きょうは なんがつ なんにちですか。",
+          "reading": "kyou wa nangatsu nannichi desu ka",
+          "meaning": "今天是幾月幾號？",
+          "body": "問幾月用「なんがつ」，問幾號用「なんにち」。回答時換成日期，後面接「です」。",
+          "id": "g-dates/card/ask"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "4 月怎麼說？",
+          "options": [
+            "しがつ",
+            "よんがつ",
+            "よがつ"
+          ],
+          "readings": [
+            "shigatsu",
+            "yongatsu",
+            "yogatsu"
+          ],
+          "answer": 0,
+          "explanation": "4 月念「しがつ」。よんがつ 是照單獨數數的念法；よがつ 是套用 4 點（よじ）的念法，月份不這樣念。",
+          "id": "g-dates/question/april"
+        },
+        {
+          "prompt": "7 月怎麼說？",
+          "options": [
+            "しちがつ",
+            "しがつ",
+            "くがつ"
+          ],
+          "readings": [
+            "shichigatsu",
+            "shigatsu",
+            "kugatsu"
+          ],
+          "answer": 0,
+          "explanation": "7 月是「しちがつ」。「しがつ」是 4 月，只差一個 ち；「くがつ」是 9 月。",
+          "id": "g-dates/question/july"
+        },
+        {
+          "prompt": "「じゅうがつ じゅうごにち」是幾月幾號？",
+          "options": [
+            "10 月 15 日",
+            "10 月 5 日",
+            "5 月 10 日"
+          ],
+          "answer": 0,
+          "explanation": "「じゅうがつ」是 10 月，「じゅうごにち」是 15 日（じゅう＋ご＋にち）。5 日有特別的念法，下一課會學；5 月是 ごがつ。",
+          "id": "g-dates/question/read"
+        },
+        {
+          "prompt": "想問今天幾號：きょうは なんがつ＿＿ですか。",
+          "options": [
+            "なんにち",
+            "なんじ",
+            "なんにん"
+          ],
+          "readings": [
+            "nannichi",
+            "nanji",
+            "nannin"
+          ],
+          "answer": 0,
+          "explanation": "問幾號用「なんにち」。「なんじ」問幾點；「なんにん」問幾個人，和 なんにち 只差最後的音。",
+          "id": "g-dates/question/ask"
+        }
+      ]
+    },
+    {
+      "id": "g-dates-2",
+      "type": "grammar",
+      "title": "日期（二）：ついたち～いつか",
+      "subtitle": "1 號到 5 號，還有 14、24 號",
+      "steps": [
+        {
+          "title": "1 日：ついたち",
+          "example": "ついたち ／ しがつ ついたち",
+          "reading": "tsuitachi / shigatsu tsuitachi",
+          "meaning": "1 日 ／ 4 月 1 日",
+          "body": "每個月的 1 日念「ついたち」，和數字 いち 完全不同，要直接記。",
+          "id": "g-dates-2/card/tsuitachi"
+        },
+        {
+          "title": "2 日到 5 日",
+          "example": "ふつか ／ みっか ／ よっか ／ いつか",
+          "reading": "futsuka / mikka / yokka / itsuka",
+          "meaning": "2 日 ／ 3 日 ／ 4 日 ／ 5 日",
+          "body": "開頭和數東西的 ふたつ、みっつ、よっつ、いつつ 很像，結尾是「か」。2 日要注意：是 ふつか，不是 ふたか。這幾個詞也能表示「幾天」，例如 みっか 也是「三天」；這課先學日期。",
+          "id": "g-dates-2/card/two-five"
+        },
+        {
+          "title": "14 日、24 日",
+          "example": "じゅうよっか ／ にじゅうよっか",
+          "reading": "juuyokka / nijuuyokka",
+          "meaning": "14 日 ／ 24 日",
+          "body": "十幾號、二十幾號大多照「〜にち」念，但最後是 4 的 14 日、24 日，也用 よっか。",
+          "id": "g-dates-2/card/yokka"
+        },
+        {
+          "title": "問幾號",
+          "example": "きょうは なんにちですか。 ／ ふつかです。",
+          "reading": "kyou wa nannichi desu ka / futsuka desu",
+          "meaning": "今天幾號？／ 2 號。",
+          "body": "回答時直接說日期，後面接「です」。",
+          "id": "g-dates-2/card/ask"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "每個月的第一天（1 日）怎麼說？",
+          "options": [
+            "ついたち",
+            "ひとか",
+            "ひとつ"
+          ],
+          "readings": [
+            "tsuitachi",
+            "hitoka",
+            "hitotsu"
+          ],
+          "answer": 0,
+          "explanation": "每個月的 1 日要直接記：ついたち。「ひとか」是照 ふつか、みっか 硬套出來的，日文沒有這個說法；「ひとつ」是數東西的一個。",
+          "id": "g-dates-2/question/first"
+        },
+        {
+          "prompt": "3 日怎麼說？",
+          "options": [
+            "みっか",
+            "みっつ",
+            "さんにち"
+          ],
+          "readings": [
+            "mikka",
+            "mittsu",
+            "sannichi"
+          ],
+          "answer": 0,
+          "explanation": "3 日念「みっか」。「みっつ」是數東西的三個；「さんにち」是套用「〜にち」，但 3 日有特別的念法。",
+          "id": "g-dates-2/question/third"
+        },
+        {
+          "prompt": "想說 14 日：じゅう＿＿",
+          "options": [
+            "よっか",
+            "よんにち",
+            "よっつ"
+          ],
+          "readings": [
+            "yokka",
+            "yonnichi",
+            "yottsu"
+          ],
+          "answer": 0,
+          "explanation": "14 日也用 よっか：じゅうよっか。「よんにち」是套用「〜にち」，但 14 日、24 日都用 よっか；「よっつ」是數東西的四個。",
+          "id": "g-dates-2/question/fourteenth"
+        },
+        {
+          "prompt": "朋友問「きょうは なんにちですか」，今天是 2 號，怎麼回答？",
+          "options": [
+            "ふつかです。",
+            "ふたつです。",
+            "ふたりです。"
+          ],
+          "readings": [
+            "futsuka desu",
+            "futatsu desu",
+            "futari desu"
+          ],
+          "answer": 0,
+          "explanation": "2 號是「ふつか」：ふつかです。「ふたつ」是兩個東西，「ふたり」是兩個人。",
+          "id": "g-dates-2/question/answer"
+        }
+      ]
+    },
+    {
+      "id": "g-dates-3",
+      "type": "grammar",
+      "title": "日期（三）：むいか～とおか・はつか",
+      "subtitle": "6 號到 10 號，還有 20 號",
+      "steps": [
+        {
+          "title": "6 日到 8 日",
+          "example": "むいか ／ なのか ／ ようか",
+          "reading": "muika / nanoka / youka",
+          "meaning": "6 日 ／ 7 日 ／ 8 日",
+          "body": "8 日的「ようか」和 4 日的「よっか」很像：拉長音的 ようか 是 8 日，停一拍的 よっか 是 4 日。",
+          "id": "g-dates-3/card/six-eight"
+        },
+        {
+          "title": "9 日、10 日",
+          "example": "ここのか ／ とおか",
+          "reading": "kokonoka / tooka",
+          "meaning": "9 日 ／ 10 日",
+          "body": "「とおか」的 とお 要拉長。11 日以後大多回到「〜にち」，例如 じゅういちにち（11 日）；14、24 日用 よっか，20 日在下一張。",
+          "id": "g-dates-3/card/nine-ten"
+        },
+        {
+          "title": "20 日：はつか",
+          "example": "はつか",
+          "reading": "hatsuka",
+          "meaning": "20 日",
+          "body": "20 日念「はつか」，和 2 日的「ふつか」只差開頭。21 日以後照「〜にち」念，只有 24 日是 にじゅうよっか。",
+          "id": "g-dates-3/card/hatsuka"
+        },
+        {
+          "title": "幾號到幾號",
+          "example": "やすみは とおかから はつかまでです。",
+          "reading": "yasumi wa tooka kara hatsuka made desu",
+          "meaning": "休假是 10 號到 20 號。",
+          "body": "日期的起點、終點也用「から」「まで」，和時間、星期一樣。",
+          "speech": "やすみは とおかから ハツカまでです。",
+          "id": "g-dates-3/card/range"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "8 日怎麼說？",
+          "options": [
+            "ようか",
+            "よっか",
+            "はちにち"
+          ],
+          "readings": [
+            "youka",
+            "yokka",
+            "hachinichi"
+          ],
+          "answer": 0,
+          "explanation": "8 日念「ようか」，よう 要拉長。「よっか」是 4 日；「はちにち」是套用「〜にち」，但 8 日有特別的念法。",
+          "id": "g-dates-3/question/eighth"
+        },
+        {
+          "prompt": "「はつか」是幾號？",
+          "options": [
+            "20 日",
+            "2 日",
+            "8 日"
+          ],
+          "answer": 0,
+          "explanation": "「はつか」是 20 日。2 日是 ふつか，8 日是 ようか。",
+          "id": "g-dates-3/question/twentieth"
+        },
+        {
+          "prompt": "10 日怎麼說？",
+          "options": [
+            "とおか",
+            "じゅうにち",
+            "ここのか"
+          ],
+          "readings": [
+            "tooka",
+            "juunichi",
+            "kokonoka"
+          ],
+          "answer": 0,
+          "explanation": "10 日念「とおか」。「じゅうにち」是套用「〜にち」，但 10 日有特別的念法；「ここのか」是 9 日。",
+          "id": "g-dates-3/question/tenth"
+        },
+        {
+          "prompt": "朋友說生日是「しちがつ なのか」，是幾月幾號？",
+          "options": [
+            "7 月 7 日",
+            "7 月 6 日",
+            "4 月 7 日"
+          ],
+          "answer": 0,
+          "explanation": "「しちがつ」是 7 月，「なのか」是 7 日：7 月 7 日。6 日是 むいか；4 月是 しがつ，和 しちがつ 只差一個 ち。",
+          "id": "g-dates-3/question/read"
         }
       ]
     },
@@ -3946,6 +4351,29 @@ const Content = (() => {
         "g-clock/question/ask": "g-clock/card/ask"
       }
     },
+    "g-minutes": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-clock",
+        "g-prices"
+      ],
+      "words": [
+        "ふん",
+        "ぷん",
+        "いっぷん",
+        "ろっぷん",
+        "はっぷん",
+        "じゅっぷん",
+        "なんぷん"
+      ],
+      "grammar": [],
+      "review": {
+        "g-minutes/question/three": "g-minutes/card/pun",
+        "g-minutes/question/five": "g-minutes/card/fun",
+        "g-minutes/question/ten": "g-minutes/card/ppun",
+        "g-minutes/question/clock": "g-minutes/card/time"
+      }
+    },
     "g-kara-made-time": {
       "unit": "時間與數字",
       "requires": [
@@ -3962,6 +4390,72 @@ const Content = (() => {
         "g-kara-made-time/question/kara": "g-kara-made-time/card/hours",
         "g-kara-made-time/question/meaning": "g-kara-made-time/card/days",
         "g-kara-made-time/question/made": "g-kara-made-time/card/hours"
+      }
+    },
+    "g-dates": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-minutes",
+        "g-days"
+      ],
+      "words": [
+        "がつ",
+        "しがつ",
+        "しちがつ",
+        "くがつ",
+        "にち",
+        "なんがつ",
+        "なんにち"
+      ],
+      "grammar": [],
+      "review": {
+        "g-dates/question/april": "g-dates/card/special",
+        "g-dates/question/july": "g-dates/card/special",
+        "g-dates/question/read": "g-dates/card/nichi",
+        "g-dates/question/ask": "g-dates/card/ask"
+      }
+    },
+    "g-dates-2": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-dates",
+        "g-counting"
+      ],
+      "words": [
+        "ついたち",
+        "ふつか",
+        "みっか",
+        "よっか",
+        "いつか"
+      ],
+      "grammar": [],
+      "review": {
+        "g-dates-2/question/first": "g-dates-2/card/tsuitachi",
+        "g-dates-2/question/third": "g-dates-2/card/two-five",
+        "g-dates-2/question/fourteenth": "g-dates-2/card/yokka",
+        "g-dates-2/question/answer": "g-dates-2/card/ask"
+      }
+    },
+    "g-dates-3": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-dates-2",
+        "g-kara-made-time"
+      ],
+      "words": [
+        "むいか",
+        "なのか",
+        "ようか",
+        "ここのか",
+        "とおか",
+        "はつか"
+      ],
+      "grammar": [],
+      "review": {
+        "g-dates-3/question/eighth": "g-dates-3/card/six-eight",
+        "g-dates-3/question/twentieth": "g-dates-3/card/hatsuka",
+        "g-dates-3/question/tenth": "g-dates-3/card/nine-ten",
+        "g-dates-3/question/read": "g-dates-3/card/six-eight"
       }
     },
     "g-verbs": {

@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '06ac8109195cf617c827267a37dc96b91a7f727e50ff74049e56574c6f10ae74');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '9514b8e7059ccbe7b3cbf94efcdca1f0e45cb3b6fc9e9b0cb1023248fe34ca25');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -102,9 +102,9 @@ test('intro distractors are balanced and travel phrases retain concise contextua
   assert.equal(reservation.keywords[0][0], '予約（よやく）');
 });
 
-test('registry includes 52 kana groups, thirty-nine grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
-  assert.equal(Object.keys(Content.courses).length, 93);
-  assert.equal(Content.grammar.length, 39);
+test('registry includes 52 kana groups, forty-three grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
+  assert.equal(Object.keys(Content.courses).length, 97);
+  assert.equal(Content.grammar.length, 43);
   for (const id of ['t-place', 't-order', 't-pay', 't-charge']) {
     assert.equal(Content.getCourse(id), null);
     assert.ok(Content.phrasebook.some(c => c.id === id));
@@ -316,7 +316,7 @@ test('speech text is kana only and fixes readings device voices may get wrong', 
 
 test('grammar lessons follow a plan: earlier requirements, taught words only, a card to revisit for every question', () => {
   const ids = Content.grammar.map(g => g.id);
-  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-kochira', 'g-who', 'g-negative', 'g-no', 'g-nouns', 'g-mo', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock', 'g-kara-made-time', 'g-verbs', 'g-masen', 'g-mashita', 'g-ni-de', 'g-transport', 'g-arimasu', 'g-position', 'g-adj-i', 'g-adj-neg', 'g-adj-na', 'g-who-2', 'g-soshite-demo', 'g-kara-reason', 'g-verb-forms', 'g-te-forms', 'g-te-kudasai', 'g-te-sequence']);
+  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-kochira', 'g-who', 'g-negative', 'g-no', 'g-nouns', 'g-mo', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock', 'g-minutes', 'g-kara-made-time', 'g-dates', 'g-dates-2', 'g-dates-3', 'g-verbs', 'g-masen', 'g-mashita', 'g-ni-de', 'g-transport', 'g-arimasu', 'g-position', 'g-adj-i', 'g-adj-neg', 'g-adj-na', 'g-who-2', 'g-soshite-demo', 'g-kara-reason', 'g-verb-forms', 'g-te-forms', 'g-te-kudasai', 'g-te-sequence']);
   for (const lesson of Content.grammar) {
     const plan = Content.lessonPlan[lesson.id];
     for (const req of plan.requires) assert.ok(ids.indexOf(req) < ids.indexOf(lesson.id), `${lesson.id} requires ${req}`);
@@ -355,4 +355,24 @@ test('reviewed number readings stay fixed: 4 and 9 on the clock, four people, 30
   assert.equal(answer('g-prices/question/sanbyaku'), 'さんびゃくえん');
   // はん after a time is spoken from katakana so a device voice cannot read it as the particle は.
   for (const id of ['g-clock/card/han', 'g-clock/card/ask']) assert.match(Content.grammar.flatMap(lesson => lesson.steps).find(step => step.id === id).speech, /ハン/);
+});
+
+test('minute and date readings follow their counter: ふん／ぷん, months 4・7・9 and the special days', () => {
+  const answer = id => { const q = Content.grammar.flatMap(lesson => lesson.questions).find(item => item.id === id); return q.options[q.answer]; };
+  assert.equal(answer('g-minutes/question/three'), 'さんぷん');
+  assert.equal(answer('g-minutes/question/five'), 'ごふん');
+  assert.equal(answer('g-minutes/question/ten'), 'じゅっぷん');
+  assert.equal(answer('g-dates/question/april'), 'しがつ');
+  assert.equal(answer('g-dates/question/july'), 'しちがつ');
+  assert.equal(answer('g-dates-2/question/first'), 'ついたち');
+  assert.equal(answer('g-dates-2/question/third'), 'みっか');
+  assert.equal(answer('g-dates-2/question/fourteenth'), 'よっか');
+  assert.equal(answer('g-dates-3/question/eighth'), 'ようか');
+  assert.equal(answer('g-dates-3/question/tenth'), 'とおか');
+  // Minutes follow the clock lesson directly; the date lessons close the unit.
+  const ids = Content.grammar.map(lesson => lesson.id);
+  assert.equal(ids[ids.indexOf('g-clock') + 1], 'g-minutes');
+  assert.deepEqual(plain(ids.slice(ids.indexOf('g-dates'), ids.indexOf('g-dates') + 3)), ['g-dates', 'g-dates-2', 'g-dates-3']);
+  // はつか right after から is spoken from katakana so a device voice cannot split からは.
+  assert.match(Content.grammar.flatMap(lesson => lesson.steps).find(step => step.id === 'g-dates-3/card/range').speech, /から ハツカ/);
 });
