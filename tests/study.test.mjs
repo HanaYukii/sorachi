@@ -177,6 +177,8 @@ test('reviewing cards mid-quiz retains original answers and resumes at first inc
 test('all grammar courses complete their content-defined cards and questions with stable score semantics', () => {
   const b = harness(); b.render('#grammar');
   assert.equal((b.html.match(/data-action="study-open"/g) || []).length, b.content.grammar.length);
+  assert.deepEqual([...b.html.matchAll(/<h2 class="course-list-heading">([^<]+)<\/h2>/g)].map(m => m[1]), ['名詞句', '時間與數字'], 'One heading per unit, in teaching order');
+  assert.deepEqual([...b.html.matchAll(/data-course="([^"]+)"/g)].map(m => m[1]), [...b.content.grammar.map(lesson => lesson.id)], 'Units keep the teaching order');
   for (const { id } of b.content.grammar) {
     assert.equal(b.study.total(id), b.content.courses[id].questions.length);
     startQuiz(b, id); finishQuiz(b, id, true);
@@ -343,7 +345,7 @@ test('retry labels use question identity and revision, with safe historical and 
   assert.deepEqual([...b.study.retryLabels({...entry,courseRevision:'old'})],[q.character]);
   assert.deepEqual([...b.study.retryLabels({...entry,questionIds:undefined})],['第 1 題']);
   assert.match(b.html,/第一次答錯/); assert.match(b.html,/下一組/);
-  assert.equal(b.study.nextCourse('h-a'),'h-ka'); assert.equal(b.study.nextCourse('k-a'),'k-ka'); assert.equal(b.study.nextCourse('k-wa'),'k-ga'); assert.equal(b.study.nextCourse('h-pa'),'h-kya'); assert.equal(b.study.nextCourse('h-pya'),null); assert.equal(b.study.nextCourse('k-pya'),null); assert.equal(b.study.nextCourse('g-identity'),'g-question'); assert.equal(b.study.nextCourse('g-kara-made'),null); assert.equal(b.study.nextCourse('s-long'),null);
+  assert.equal(b.study.nextCourse('h-a'),'h-ka'); assert.equal(b.study.nextCourse('k-a'),'k-ka'); assert.equal(b.study.nextCourse('k-wa'),'k-ga'); assert.equal(b.study.nextCourse('h-pa'),'h-kya'); assert.equal(b.study.nextCourse('h-pya'),null); assert.equal(b.study.nextCourse('k-pya'),null); assert.equal(b.study.nextCourse('g-identity'),'g-question'); assert.equal(b.study.nextCourse('g-kara-made'),'g-days'); assert.equal(b.study.nextCourse(b.content.grammar[b.content.grammar.length-1].id),null); assert.equal(b.study.nextCourse('s-long'),null);
 });
 
 test('katakana special hints distinguish o from wo by character', () => {

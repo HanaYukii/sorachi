@@ -198,7 +198,17 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音練習</h1><p class="study-note">每組 3–5 個字，包含認字、讀音與選擇題。羅馬字只作讀音提示，不是照英文拼字唸。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div>${reviewEntry()}${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${kanaRows(script, "basic").map(row).join("")}</div><h2 class="course-list-heading">濁音・半濁音</h2><p class="study-note">在字的右上加兩點（濁點）或小圈（半濁點），讀音會改變，例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list">${kanaRows(script, "voiced").map(row).join("")}</div><h2 class="course-list-heading">促音・長音</h2><p class="study-note">小的 っ 表示停一拍；長音把音拉長一拍。這兩個不是新的字，各用一堂小課說明。</p><div class="course-list">${Content.sounds.map(row).join("")}</div><h2 class="course-list-heading">拗音</h2><p class="study-note">き、し、ち 這類 i 結尾的字，後面加上小的 ゃ、ゅ、ょ，合成一拍，例如 き＋ゃ → きゃ kya。</p><div class="course-list">${kanaRows(script, "youon").map(row).join("")}</div><p class="study-note">每種假名先練 46 個基本字，再練 25 個濁音・半濁音和 33 個拗音。</p>`);
   }
   function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">照順序學：每課介紹一個句型，只用前面教過的詞，再用選擇題確認理解。例句附中文意思、羅馬字與語音。羅馬字裡的 ou、ei 和 aa、ii、uu、ee、oo 通常是拉長的音，例如 gakusei 唸成「ga-ku-see」。</p><div class="course-list">${GRAMMAR.map(row).join("")}</div>`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">照順序學：每課介紹一個句型或一組常用詞，只用前面教過的詞，再用選擇題確認理解。例句附中文意思、羅馬字與語音。羅馬字裡的 ou、ei 和 aa、ii、uu、ee、oo 通常是拉長的音，例如 gakusei 唸成「ga-ku-see」。</p>${grammarUnits().map(unit => `<h2 class="course-list-heading">${escape(unit.title)}</h2><div class="course-list">${unit.lessons.map(row).join("")}</div>`).join("")}`);
+  }
+  // Consecutive lessons with the same unit share one heading, in teaching order.
+  function grammarUnits() {
+    const units = [];
+    for (const course of GRAMMAR) {
+      const title = Content.lessonPlan[course.id]?.unit || "其他";
+      if (!units.length || units[units.length - 1].title !== title) units.push({ title, lessons: [] });
+      units[units.length - 1].lessons.push(course);
+    }
+    return units;
   }
   function travelPage(id) {
     if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">常用關鍵字、讀音與中文。依情境查看，需要時再展開完整說法。羅馬字裡的 aa、ii、uu、ee、oo 和 ou、ei 通常是拉長的音，例如 chaaji（チャージ）。</p><nav class="travel-categories" aria-label="旅遊情境">${PHRASEBOOK.map(item => `<a class="course-row" href="#travel/${item.id}"><span><strong>${escape(item.title)}</strong><span class="reading-label">${escape(item.subtitle)}</span><span class="travel-keywords" lang="ja">${escape(travelKeywords(item))}</span></span><span aria-hidden="true">→</span></a>`).join("")}</nav>`);

@@ -1241,13 +1241,704 @@ const Content = (() => {
           "id": "g-kara-made/question/meaning"
         }
       ]
+    },
+    {
+      "id": "g-days",
+      "type": "grammar",
+      "title": "時間詞：きのう・きょう・あした",
+      "subtitle": "昨天、今天、明天、現在",
+      "steps": [
+        {
+          "title": "昨天、今天、明天",
+          "example": "きのう ／ きょう ／ あした",
+          "reading": "kinou / kyou / ashita",
+          "meaning": "昨天 ／ 今天 ／ 明天",
+          "body": "以今天為中心：前一天是 きのう，後一天是 あした。漢字寫成 昨日、今日、明日，先記讀音就好。",
+          "id": "g-days/card/three-days"
+        },
+        {
+          "title": "放進名詞句",
+          "example": "あしたは やすみです。",
+          "reading": "ashita wa yasumi desu",
+          "meaning": "明天休假。",
+          "body": "時間詞可以當句子的主題，後面照樣接「は」和「です」。「やすみ」是休假、休息；店家公休也用這個詞。說昨天的事，「です」要換成過去的說法，之後再學。",
+          "id": "g-days/card/sentence"
+        },
+        {
+          "title": "現在：いま",
+          "example": "いまは やすみです。",
+          "reading": "ima wa yasumi desu",
+          "meaning": "現在是休息時間。",
+          "body": "「いま」是現在這個時候。問「現在幾點」要用到數字，學過數字後再練。",
+          "id": "g-days/card/now"
+        },
+        {
+          "title": "問什麼時候：いつ",
+          "example": "やすみは いつですか。 ／ あしたです。",
+          "reading": "yasumi wa itsu desu ka / ashita desu",
+          "meaning": "什麼時候休假？／ 明天。",
+          "body": "「いつ」問什麼時候，回答時換成時間詞，後面接「です」。",
+          "id": "g-days/card/itsu"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "假設今天是 10 月 15 日。10 月 16 日要怎麼說？",
+          "options": [
+            "あした",
+            "きのう",
+            "きょう"
+          ],
+          "readings": [
+            "ashita",
+            "kinou",
+            "kyou"
+          ],
+          "answer": 0,
+          "explanation": "今天的後一天是「あした」（明天）。「きのう」是昨天，「きょう」是今天。",
+          "id": "g-days/question/tomorrow"
+        },
+        {
+          "prompt": "假設今天是 10 月 15 日。10 月 14 日要怎麼說？",
+          "options": [
+            "きのう",
+            "あした",
+            "いま"
+          ],
+          "readings": [
+            "kinou",
+            "ashita",
+            "ima"
+          ],
+          "answer": 0,
+          "explanation": "今天的前一天是「きのう」（昨天）。「あした」是明天，「いま」是現在，不是某一天。",
+          "id": "g-days/question/yesterday"
+        },
+        {
+          "prompt": "「あしたは やすみです。」是什麼意思？",
+          "options": [
+            "明天休假。",
+            "今天休假。",
+            "昨天休假。"
+          ],
+          "answer": 0,
+          "explanation": "「あした」是明天，「やすみ」是休假：明天休假。今天是「きょう」，昨天是「きのう」。",
+          "id": "g-days/question/meaning"
+        },
+        {
+          "prompt": "想問朋友什麼時候休假：やすみは＿＿ですか。",
+          "options": [
+            "いつ",
+            "いま",
+            "どこ"
+          ],
+          "readings": [
+            "itsu",
+            "ima",
+            "doko"
+          ],
+          "answer": 0,
+          "explanation": "問什麼時候用「いつ」：やすみは いつですか。「やすみは いまですか」是問「現在是休息時間嗎？」；「どこ」問地點。",
+          "id": "g-days/question/itsu"
+        }
+      ]
+    },
+    {
+      "id": "g-day-parts",
+      "type": "grammar",
+      "title": "時間詞：あさ・ひる・よる",
+      "subtitle": "早上、中午、晚上",
+      "steps": [
+        {
+          "title": "一天的三個時段",
+          "example": "あさ ／ ひる ／ よる",
+          "reading": "asa / hiru / yoru",
+          "meaning": "早上 ／ 中午 ／ 晚上",
+          "body": "「あさ」是早上，「ひる」是中午，也可以指白天，「よる」是晚上。",
+          "id": "g-day-parts/card/parts"
+        },
+        {
+          "title": "明天早上",
+          "example": "あしたの あさ",
+          "reading": "ashita no asa",
+          "meaning": "明天早上",
+          "body": "把「あした」和「あさ」用「の」連起來，就是「明天早上」。",
+          "id": "g-day-parts/card/with-no"
+        },
+        {
+          "title": "放進句子裡",
+          "example": "きょうの よるは やすみです。",
+          "reading": "kyou no yoru wa yasumi desu",
+          "meaning": "今天晚上休息。",
+          "body": "「きょうの よる」整個當作句子的主題，後面照樣接「は」和「です」。",
+          "id": "g-day-parts/card/sentence"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "晚上 8 點左右，是一天的哪個時段？",
+          "options": [
+            "よる",
+            "あさ",
+            "ひる"
+          ],
+          "readings": [
+            "yoru",
+            "asa",
+            "hiru"
+          ],
+          "answer": 0,
+          "explanation": "晚上是「よる」。「あさ」是早上，「ひる」是中午。",
+          "id": "g-day-parts/question/evening"
+        },
+        {
+          "prompt": "想說「明天早上」：あした＿＿あさ",
+          "options": [
+            "の",
+            "と",
+            "も"
+          ],
+          "readings": [
+            "no",
+            "to",
+            "mo"
+          ],
+          "answer": 0,
+          "explanation": "兩個名詞連起來，前面說明後面，用「の」：あしたの あさ。「と」是「和」，「も」是「也」。",
+          "id": "g-day-parts/question/no"
+        },
+        {
+          "prompt": "「きょうの よる」是什麼意思？",
+          "options": [
+            "今天晚上",
+            "今天早上",
+            "昨天晚上"
+          ],
+          "answer": 0,
+          "explanation": "「きょう」是今天，「よる」是晚上：今天晚上。早上是「あさ」，昨天是「きのう」。",
+          "id": "g-day-parts/question/meaning"
+        }
+      ]
+    },
+    {
+      "id": "g-weekdays",
+      "type": "grammar",
+      "title": "星期：げつようび～にちようび",
+      "subtitle": "星期幾、問星期幾",
+      "steps": [
+        {
+          "title": "星期一到星期五",
+          "example": "げつようび ／ かようび ／ すいようび ／ もくようび ／ きんようび",
+          "reading": "getsuyoubi / kayoubi / suiyoubi / mokuyoubi / kin'youbi",
+          "meaning": "星期一 ／ 星期二 ／ 星期三 ／ 星期四 ／ 星期五",
+          "body": "日文的星期依序用月、火、水、木、金、土、日，後面加「ようび」（曜日）。羅馬字 kin'youbi 的「'」表示 ん 和 よ 分開念，不是 にょ。",
+          "id": "g-weekdays/card/weekdays"
+        },
+        {
+          "title": "週末",
+          "example": "どようび ／ にちようび",
+          "reading": "doyoubi / nichiyoubi",
+          "meaning": "星期六 ／ 星期日",
+          "body": "星期六是 どようび（土），星期日是 にちようび（日）。",
+          "id": "g-weekdays/card/weekend"
+        },
+        {
+          "title": "問星期幾",
+          "example": "きょうは なんようびですか。",
+          "reading": "kyou wa nan'youbi desu ka",
+          "meaning": "今天星期幾？",
+          "body": "問星期幾用「なんようび」，回答時換成星期的說法，例如「もくようびです」。",
+          "id": "g-weekdays/card/ask"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "星期五怎麼說？",
+          "options": [
+            "きんようび",
+            "げつようび",
+            "もくようび"
+          ],
+          "readings": [
+            "kin'youbi",
+            "getsuyoubi",
+            "mokuyoubi"
+          ],
+          "answer": 0,
+          "explanation": "星期五用「金」：きんようび。げつようび 是星期一，もくようび 是星期四。",
+          "id": "g-weekdays/question/friday"
+        },
+        {
+          "prompt": "假設今天是星期一（げつようび）。明天是星期幾？",
+          "options": [
+            "かようび",
+            "すいようび",
+            "にちようび"
+          ],
+          "readings": [
+            "kayoubi",
+            "suiyoubi",
+            "nichiyoubi"
+          ],
+          "answer": 0,
+          "explanation": "星期一的下一天是星期二：かようび。すいようび 是星期三，にちようび 是星期日。",
+          "id": "g-weekdays/question/next-day"
+        },
+        {
+          "prompt": "想問今天星期幾：きょうは＿＿ですか。",
+          "options": [
+            "なんようび",
+            "どようび",
+            "なん"
+          ],
+          "readings": [
+            "nan'youbi",
+            "doyoubi",
+            "nan"
+          ],
+          "answer": 0,
+          "explanation": "問星期幾用「なんようび」：きょうは なんようびですか。「きょうは どようびですか」是問「今天是星期六嗎？」；只說「なん」是問「什麼」。",
+          "id": "g-weekdays/question/ask"
+        }
+      ]
+    },
+    {
+      "id": "g-numbers",
+      "type": "grammar",
+      "title": "數字：0～10",
+      "subtitle": "先會數到十",
+      "steps": [
+        {
+          "title": "1 到 5",
+          "example": "いち ／ に ／ さん ／ よん ／ ご",
+          "reading": "ichi / ni / san / yon / go",
+          "meaning": "一 ／ 二 ／ 三 ／ 四 ／ 五",
+          "body": "4 有 よん、し 兩種念法，單獨說數字時多用 よん。接在某些詞前面還會變成 よ（例如幾點、幾個人），之後再學。",
+          "id": "g-numbers/card/one-five"
+        },
+        {
+          "title": "6 到 10",
+          "example": "ろく ／ なな ／ はち ／ きゅう ／ じゅう",
+          "reading": "roku / nana / hachi / kyuu / juu",
+          "meaning": "六 ／ 七 ／ 八 ／ 九 ／ 十",
+          "body": "7 有 なな、しち，9 有 きゅう、く 兩種念法，單獨說數字時多用 なな、きゅう。說幾點時有特定的念法，之後學到再練。",
+          "id": "g-numbers/card/six-ten"
+        },
+        {
+          "title": "零",
+          "example": "ゼロ",
+          "reading": "zero",
+          "meaning": "零",
+          "body": "0 常說 ゼロ，也可以念 れい。",
+          "id": "g-numbers/card/zero"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「さん」是數字幾？",
+          "options": [
+            "3",
+            "4",
+            "8"
+          ],
+          "answer": 0,
+          "explanation": "「さん」是 3（接在名字後面的「さん」是另一個詞）。4 是 よん，8 是 はち。",
+          "id": "g-numbers/question/san"
+        },
+        {
+          "prompt": "數字 7 怎麼念？",
+          "options": [
+            "なな",
+            "はち",
+            "ろく"
+          ],
+          "readings": [
+            "nana",
+            "hachi",
+            "roku"
+          ],
+          "answer": 0,
+          "explanation": "7 念 なな，也可以念 しち。はち 是 8，ろく 是 6。",
+          "id": "g-numbers/question/seven"
+        },
+        {
+          "prompt": "「きゅう」是數字幾？",
+          "options": [
+            "9",
+            "5",
+            "1"
+          ],
+          "answer": 0,
+          "explanation": "「きゅう」是 9（也念 く）。5 是 ご，1 是 いち。",
+          "id": "g-numbers/question/kyuu"
+        }
+      ]
+    },
+    {
+      "id": "g-prices",
+      "type": "grammar",
+      "title": "數字：十、百、千與價錢",
+      "subtitle": "問多少錢、聽懂價格",
+      "steps": [
+        {
+          "title": "十、百、千",
+          "example": "じゅう ／ ひゃく ／ せん",
+          "reading": "juu / hyaku / sen",
+          "meaning": "十 ／ 一百 ／ 一千",
+          "body": "在 じゅう、ひゃく、せん 前面加上 2～9，就是幾十、幾百、幾千，例如 にじゅう（20）、ごひゃく（500）。100 和 1000 直接說 ひゃく、せん，前面不加 いち。300、600、800 的讀音會變，下一張說明；3000（さんぜん）、8000（はっせん）也會變，之後再學。",
+          "id": "g-prices/card/units"
+        },
+        {
+          "title": "讀音會變的百位",
+          "example": "さんびゃく ／ ろっぴゃく ／ はっぴゃく",
+          "reading": "sanbyaku / roppyaku / happyaku",
+          "meaning": "三百 ／ 六百 ／ 八百",
+          "body": "這三個的 ひゃく 會變成 びゃく 或 ぴゃく，6 和 8 還多了小的 っ。其他的百位照規則念，例如 よんひゃく（400）、ななひゃく（700）。",
+          "id": "g-prices/card/sound-change"
+        },
+        {
+          "title": "價格：〜えん",
+          "example": "ひゃくえん ／ せんえん",
+          "reading": "hyaku en / sen en",
+          "meaning": "100 日圓 ／ 1000 日圓",
+          "body": "日圓是「えん」（円），接在數字後面。價格常寫成 100円 或 ¥100。4 日圓念 よえん，不念 よんえん。",
+          "id": "g-prices/card/yen"
+        },
+        {
+          "title": "問價格：いくら",
+          "example": "これは いくらですか。 ／ ごひゃくえんです。",
+          "reading": "kore wa ikura desu ka / gohyaku en desu",
+          "meaning": "這個多少錢？／ 500 日圓。",
+          "body": "「いくら」問多少錢。這課先練 1000 日圓以內的價格；位數從大到小接著念，例如 350 日圓是 さんびゃく ごじゅうえん。",
+          "id": "g-prices/card/ikura"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「ひゃくえん」是多少錢？",
+          "options": [
+            "100 日圓",
+            "1000 日圓",
+            "10 日圓"
+          ],
+          "answer": 0,
+          "explanation": "「ひゃく」是 100，所以是 100 日圓。1000 是 せん，10 是 じゅう。",
+          "id": "g-prices/question/hyaku"
+        },
+        {
+          "prompt": "500 日圓怎麼說？",
+          "options": [
+            "ごひゃくえん",
+            "ごせんえん",
+            "ごじゅうえん"
+          ],
+          "readings": [
+            "gohyaku en",
+            "gosen en",
+            "gojuu en"
+          ],
+          "answer": 0,
+          "explanation": "5 個 100 是 ごひゃく：ごひゃくえん。ごせん 是 5000，ごじゅう 是 50。",
+          "id": "g-prices/question/gohyaku"
+        },
+        {
+          "prompt": "300 日圓怎麼說？",
+          "options": [
+            "さんびゃくえん",
+            "さんひゃくえん",
+            "さんじゅうえん"
+          ],
+          "readings": [
+            "sanbyaku en",
+            "sanhyaku en",
+            "sanjuu en"
+          ],
+          "answer": 0,
+          "explanation": "300 的 ひゃく 要變成 びゃく：さんびゃくえん，不說 さんひゃくえん。さんじゅう 是 30。",
+          "id": "g-prices/question/sanbyaku"
+        },
+        {
+          "prompt": "想問這個多少錢：これは＿＿ですか。",
+          "options": [
+            "いくら",
+            "なん",
+            "どこ"
+          ],
+          "readings": [
+            "ikura",
+            "nan",
+            "doko"
+          ],
+          "answer": 0,
+          "explanation": "問價格用「いくら」。「なん」問是什麼東西，「どこ」問地點。",
+          "id": "g-prices/question/ask"
+        }
+      ]
+    },
+    {
+      "id": "g-counting",
+      "type": "grammar",
+      "title": "數東西：ひとつ～いつつ",
+      "subtitle": "一個到五個、問幾個",
+      "steps": [
+        {
+          "title": "一個到五個",
+          "example": "ひとつ ／ ふたつ ／ みっつ ／ よっつ ／ いつつ",
+          "reading": "hitotsu / futatsu / mittsu / yottsu / itsutsu",
+          "meaning": "一個 ／ 兩個 ／ 三個 ／ 四個 ／ 五個",
+          "body": "數一般的東西用這一組，和 いち、に、さん 的念法不同。點餐、買東西時常用到。",
+          "id": "g-counting/card/tsu"
+        },
+        {
+          "title": "幾個？多少錢？",
+          "example": "いくつですか。 ／ いくらですか。",
+          "reading": "ikutsu desu ka / ikura desu ka",
+          "meaning": "幾個？／ 多少錢？",
+          "body": "「いくつ」問數量（幾個），「いくら」問價錢（多少錢）。兩個只差最後一個音，聽的時候要注意。",
+          "id": "g-counting/card/ikutsu"
+        },
+        {
+          "title": "和名詞一起說",
+          "example": "パンは いくつですか。 ／ みっつです。",
+          "reading": "pan wa ikutsu desu ka / mittsu desu",
+          "meaning": "麵包要幾個？／ 三個。",
+          "body": "先說東西，再問或回答數量。",
+          "id": "g-counting/card/thing"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「兩個」：＿＿です。",
+          "options": [
+            "ふたつ",
+            "ひとつ",
+            "みっつ"
+          ],
+          "readings": [
+            "futatsu",
+            "hitotsu",
+            "mittsu"
+          ],
+          "answer": 0,
+          "explanation": "兩個是「ふたつ」。ひとつ 是一個，みっつ 是三個。",
+          "id": "g-counting/question/two"
+        },
+        {
+          "prompt": "店員問「いくつですか」，是在問什麼？",
+          "options": [
+            "要幾個",
+            "多少錢",
+            "是什麼"
+          ],
+          "answer": 0,
+          "explanation": "「いくつ」問數量（幾個）。問多少錢是「いくら」，問是什麼是「なん」。",
+          "id": "g-counting/question/ikutsu"
+        },
+        {
+          "prompt": "「よっつ」是幾個？",
+          "options": [
+            "四個",
+            "三個",
+            "五個"
+          ],
+          "answer": 0,
+          "explanation": "「よっつ」是四個。みっつ 是三個，いつつ 是五個。",
+          "id": "g-counting/question/yottsu"
+        }
+      ]
+    },
+    {
+      "id": "g-people",
+      "type": "grammar",
+      "title": "人數：ひとり・ふたり・〜にん",
+      "subtitle": "幾個人",
+      "steps": [
+        {
+          "title": "一個人、兩個人",
+          "example": "ひとり ／ ふたり",
+          "reading": "hitori / futari",
+          "meaning": "一個人 ／ 兩個人",
+          "body": "一個人、兩個人的說法比較特別：ひとり、ふたり。",
+          "id": "g-people/card/one-two"
+        },
+        {
+          "title": "三個人以上：〜にん",
+          "example": "さんにん ／ よにん ／ ごにん",
+          "reading": "sannin / yonin / gonin",
+          "meaning": "三個人 ／ 四個人 ／ 五個人",
+          "body": "三個人以上用數字加「にん」（人）。四個人念 よにん，不念 よんにん。",
+          "id": "g-people/card/nin"
+        },
+        {
+          "title": "問幾個人",
+          "example": "なんにんですか。 ／ ふたりです。",
+          "reading": "nannin desu ka / futari desu",
+          "meaning": "幾個人？／ 兩個人。",
+          "body": "問人數用「なんにん」。餐廳店員常用更客氣的「なんめいさまですか」（何名様ですか），意思一樣，回答照樣說「ふたりです」。",
+          "id": "g-people/card/ask"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "三個人怎麼說？",
+          "options": [
+            "さんにん",
+            "みっつ",
+            "さん"
+          ],
+          "readings": [
+            "sannin",
+            "mittsu",
+            "san"
+          ],
+          "answer": 0,
+          "explanation": "三個人以上用「〜にん」：さんにん。「みっつ」是數東西的三個，「さん」只是數字 3。",
+          "id": "g-people/question/three"
+        },
+        {
+          "prompt": "店員問人數，你們是兩個人：＿＿です。",
+          "options": [
+            "ふたり",
+            "ふたつ",
+            "ににん"
+          ],
+          "readings": [
+            "futari",
+            "futatsu",
+            "ninin"
+          ],
+          "answer": 0,
+          "explanation": "兩個人是「ふたり」，是特別的說法，不說 ににん。「ふたつ」是數東西的兩個。",
+          "id": "g-people/question/two"
+        },
+        {
+          "prompt": "四個人怎麼說？",
+          "options": [
+            "よにん",
+            "よんにん",
+            "よっつ"
+          ],
+          "readings": [
+            "yonin",
+            "yonnin",
+            "yottsu"
+          ],
+          "answer": 0,
+          "explanation": "四個人固定念「よにん」，不念 よんにん。「よっつ」是數東西的四個。",
+          "id": "g-people/question/four"
+        }
+      ]
+    },
+    {
+      "id": "g-clock",
+      "type": "grammar",
+      "title": "幾點：〜じ・〜はん",
+      "subtitle": "整點、半點、問幾點",
+      "steps": [
+        {
+          "title": "整點：〜じ",
+          "example": "いちじ ／ にじ ／ さんじ",
+          "reading": "ichiji / niji / sanji",
+          "meaning": "1 點 ／ 2 點 ／ 3 點",
+          "body": "數字後面加「じ」（時）就是幾點。",
+          "id": "g-clock/card/ji"
+        },
+        {
+          "title": "要特別記的念法",
+          "example": "よじ ／ しちじ ／ くじ",
+          "reading": "yoji / shichiji / kuji",
+          "meaning": "4 點 ／ 7 點 ／ 9 點",
+          "body": "4 點念 よじ，7 點念 しちじ，9 點念 くじ。也有人把 7 點說成 ななじ。",
+          "id": "g-clock/card/special"
+        },
+        {
+          "title": "半點：〜はん",
+          "example": "にじはん",
+          "reading": "nijihan",
+          "meaning": "2 點半",
+          "body": "「はん」是半，接在幾點後面。",
+          "id": "g-clock/card/han",
+          "speech": "にじハン"
+        },
+        {
+          "title": "問幾點",
+          "example": "いま、なんじですか。 ／ さんじはんです。",
+          "reading": "ima, nanji desu ka / sanjihan desu",
+          "meaning": "現在幾點？／ 3 點半。",
+          "body": "問幾點用「なんじ」。回答時說幾點，後面接「です」。",
+          "id": "g-clock/card/ask",
+          "speech": "いま、なんじですか。 ／ さんじハンです。"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "4 點怎麼說？",
+          "options": [
+            "よじ",
+            "よんじ",
+            "しじ"
+          ],
+          "readings": [
+            "yoji",
+            "yonji",
+            "shiji"
+          ],
+          "answer": 0,
+          "explanation": "4 點固定念「よじ」，不念 よんじ 或 しじ。",
+          "id": "g-clock/question/four"
+        },
+        {
+          "prompt": "9 點怎麼說？",
+          "options": [
+            "くじ",
+            "きゅうじ",
+            "くじはん"
+          ],
+          "readings": [
+            "kuji",
+            "kyuuji",
+            "kujihan"
+          ],
+          "answer": 0,
+          "explanation": "9 點固定念「くじ」，不念 きゅうじ。くじはん 是 9 點半。",
+          "id": "g-clock/question/nine"
+        },
+        {
+          "prompt": "「にじはん」是幾點？",
+          "options": [
+            "2 點半",
+            "2 點",
+            "3 點半"
+          ],
+          "answer": 0,
+          "explanation": "「にじ」是 2 點，「はん」是半：2 點半。只說「にじ」是 2 點整；3 點半是 さんじはん。",
+          "id": "g-clock/question/han"
+        },
+        {
+          "prompt": "想問現在幾點：いま、＿＿ですか。",
+          "options": [
+            "なんじ",
+            "なんようび",
+            "なんにん"
+          ],
+          "readings": [
+            "nanji",
+            "nan'youbi",
+            "nannin"
+          ],
+          "answer": 0,
+          "explanation": "問幾點用「なんじ」。なんようび 問星期幾，なんにん 問幾個人。",
+          "id": "g-clock/question/ask"
+        }
+      ]
     }
   ];
-  // Grammar lessons are taught in array order. The plan lists what each lesson introduces and needs
+  // Grammar lessons are taught in array order and grouped into units on the grammar page. The plan lists what each lesson introduces and needs
   // (validate() checks examples only use taught words), which card to revisit after a wrong answer,
   // and where a ported question came from.
   const lessonPlan = {
     "g-identity": {
+      "unit": "名詞句",
       "requires": [],
       "words": [
         "わたし",
@@ -1263,6 +1954,7 @@ const Content = (() => {
       }
     },
     "g-question": {
+      "unit": "名詞句",
       "requires": [
         "g-identity"
       ],
@@ -1276,6 +1968,7 @@ const Content = (() => {
       }
     },
     "g-demo": {
+      "unit": "名詞句",
       "requires": [
         "g-identity"
       ],
@@ -1293,6 +1986,7 @@ const Content = (() => {
       }
     },
     "g-place": {
+      "unit": "名詞句",
       "requires": [
         "g-question",
         "g-demo"
@@ -1314,6 +2008,7 @@ const Content = (() => {
       }
     },
     "g-kono": {
+      "unit": "名詞句",
       "requires": [
         "g-demo",
         "g-question",
@@ -1334,6 +2029,7 @@ const Content = (() => {
       }
     },
     "g-who": {
+      "unit": "名詞句",
       "requires": [
         "g-place",
         "g-kono"
@@ -1356,6 +2052,7 @@ const Content = (() => {
       }
     },
     "g-negative": {
+      "unit": "名詞句",
       "requires": [
         "g-question",
         "g-demo"
@@ -1374,6 +2071,7 @@ const Content = (() => {
       }
     },
     "g-no": {
+      "unit": "名詞句",
       "requires": [
         "g-demo"
       ],
@@ -1395,6 +2093,7 @@ const Content = (() => {
       }
     },
     "g-mo": {
+      "unit": "名詞句",
       "requires": [
         "g-demo",
         "g-no",
@@ -1414,6 +2113,7 @@ const Content = (() => {
       }
     },
     "g-to": {
+      "unit": "名詞句",
       "requires": [
         "g-mo",
         "g-no"
@@ -1431,6 +2131,7 @@ const Content = (() => {
       }
     },
     "g-kara-made": {
+      "unit": "名詞句",
       "requires": [
         "g-place",
         "g-no"
@@ -1447,6 +2148,181 @@ const Content = (() => {
         "g-kara-made/question/kara": "g-kara-made/card/kara",
         "g-kara-made/question/made": "g-kara-made/card/made",
         "g-kara-made/question/meaning": "g-kara-made/card/both"
+      }
+    },
+    "g-days": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-question",
+        "g-who"
+      ],
+      "words": [
+        "きのう",
+        "きょう",
+        "あした",
+        "いま",
+        "やすみ"
+      ],
+      "grammar": [],
+      "review": {
+        "g-days/question/tomorrow": "g-days/card/three-days",
+        "g-days/question/yesterday": "g-days/card/three-days",
+        "g-days/question/meaning": "g-days/card/sentence",
+        "g-days/question/itsu": "g-days/card/itsu"
+      }
+    },
+    "g-day-parts": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-days",
+        "g-no",
+        "g-to"
+      ],
+      "words": [
+        "あさ",
+        "ひる",
+        "よる"
+      ],
+      "grammar": [],
+      "review": {
+        "g-day-parts/question/evening": "g-day-parts/card/parts",
+        "g-day-parts/question/no": "g-day-parts/card/with-no",
+        "g-day-parts/question/meaning": "g-day-parts/card/sentence"
+      }
+    },
+    "g-weekdays": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-days",
+        "g-who"
+      ],
+      "words": [
+        "げつようび",
+        "かようび",
+        "すいようび",
+        "もくようび",
+        "きんようび",
+        "どようび",
+        "にちようび",
+        "なんようび"
+      ],
+      "grammar": [],
+      "review": {
+        "g-weekdays/question/friday": "g-weekdays/card/weekdays",
+        "g-weekdays/question/next-day": "g-weekdays/card/weekdays",
+        "g-weekdays/question/ask": "g-weekdays/card/ask"
+      }
+    },
+    "g-numbers": {
+      "unit": "時間與數字",
+      "requires": [],
+      "words": [
+        "いち",
+        "に",
+        "さん",
+        "よん",
+        "ご",
+        "ろく",
+        "なな",
+        "はち",
+        "きゅう",
+        "じゅう",
+        "ゼロ"
+      ],
+      "grammar": [],
+      "review": {
+        "g-numbers/question/san": "g-numbers/card/one-five",
+        "g-numbers/question/seven": "g-numbers/card/six-ten",
+        "g-numbers/question/kyuu": "g-numbers/card/six-ten"
+      }
+    },
+    "g-prices": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-numbers",
+        "g-demo",
+        "g-question",
+        "g-who"
+      ],
+      "words": [
+        "ひゃく",
+        "せん",
+        "さんびゃく",
+        "ろっぴゃく",
+        "はっぴゃく",
+        "えん",
+        "いくら"
+      ],
+      "grammar": [],
+      "review": {
+        "g-prices/question/hyaku": "g-prices/card/yen",
+        "g-prices/question/gohyaku": "g-prices/card/units",
+        "g-prices/question/sanbyaku": "g-prices/card/sound-change",
+        "g-prices/question/ask": "g-prices/card/ikura"
+      }
+    },
+    "g-counting": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-prices"
+      ],
+      "words": [
+        "ひとつ",
+        "ふたつ",
+        "みっつ",
+        "よっつ",
+        "いつつ",
+        "いくつ"
+      ],
+      "grammar": [],
+      "review": {
+        "g-counting/question/two": "g-counting/card/tsu",
+        "g-counting/question/ikutsu": "g-counting/card/ikutsu",
+        "g-counting/question/yottsu": "g-counting/card/tsu"
+      }
+    },
+    "g-people": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-counting",
+        "g-who"
+      ],
+      "words": [
+        "ひとり",
+        "ふたり",
+        "にん",
+        "よにん",
+        "なんにん"
+      ],
+      "grammar": [],
+      "review": {
+        "g-people/question/three": "g-people/card/nin",
+        "g-people/question/two": "g-people/card/one-two",
+        "g-people/question/four": "g-people/card/nin"
+      }
+    },
+    "g-clock": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-numbers",
+        "g-days",
+        "g-weekdays",
+        "g-people"
+      ],
+      "words": [
+        "じ",
+        "よじ",
+        "しちじ",
+        "くじ",
+        "はん",
+        "なんじ"
+      ],
+      "grammar": [],
+      "review": {
+        "g-clock/question/four": "g-clock/card/special",
+        "g-clock/question/nine": "g-clock/card/special",
+        "g-clock/question/han": "g-clock/card/han",
+        "g-clock/question/ask": "g-clock/card/ask"
       }
     }
   };
@@ -3174,6 +4050,9 @@ const Content = (() => {
       const entry = plan[course.id], path = `lessonPlan.${course.id}`;
       if (!record(entry)) { fail(path, 'every grammar lesson needs a plan entry'); return; }
       for (const key of ['requires', 'words', 'grammar']) if (!Array.isArray(entry[key])) fail(`${path}.${key}`, 'required array');
+      // A unit is one run of lessons; the grammar page shows one heading per unit.
+      if (typeof entry.unit === 'string' && entry.unit !== entry.unit.trim()) fail(`${path}.unit`, 'unit title has surrounding spaces');
+      if (text(entry.unit, `${path}.unit`, 'zh') && index > 0 && plan[lessonsInOrder[index - 1].id]?.unit !== entry.unit && lessonsInOrder.slice(0, index).some(item => plan[item.id]?.unit === entry.unit)) fail(`${path}.unit`, 'lessons in a unit must be next to each other');
       for (const req of entry.requires || []) {
         const at = lessonsInOrder.findIndex(item => item.id === req);
         if (at < 0 || at >= index) fail(`${path}.requires`, `${req} must be an earlier lesson`);
