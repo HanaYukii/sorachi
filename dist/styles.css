@@ -1147,9 +1147,17 @@ html { line-break: strict; }
 .review-lessons .text-button { text-align: left; white-space: normal; }
 .study-nav > .primary:only-child { margin-left: auto; }
 .kana-hint { text-align: left; padding: 16px 18px; margin: 16px 0 0; border-radius: 16px; background: var(--paper); }
-.kana-hint .reading-label { margin: 0 0 8px; text-align: left; letter-spacing: 0; font-size: 12px; color: var(--purple-deep); }
-.kana-hint .hint-text { margin: 0; }
-.kana-hint .text-button { min-height: 44px; font-size: 13px; margin: 4px 0; }
+.kana-hint .hint-title { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--purple-deep); }
+.hint-list { margin: 0; display: grid; gap: 8px; }
+.hint-list > div { display: grid; grid-template-columns: 3.4em minmax(0, 1fr); gap: 0 10px; align-items: baseline; }
+.hint-list dt { font-size: 12px; color: var(--muted); }
+.hint-list dd { margin: 0; font-size: 15px; line-height: 1.7; }
+.hint-list dd:has(.hint-word) { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; }
+.hint-word { font-family: "Noto Sans JP", sans-serif; font-size: 18px; }
+/* The kana being learned is underlined as well as coloured. */
+.hint-word mark { background: none; color: var(--purple-deep); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.hint-roman { font-size: 13px; color: var(--muted); }
+.hint-list .audio-button { margin: 0; }
 .kana-hint details { display: inline-block; vertical-align: middle; margin-left: 18px; }
 .kana-hint details[open] { display: block; margin-left: 0; }
 .kana-hint summary { min-height: 44px; display: list-item; align-content: center; cursor: pointer; font-size: 12px; color: var(--muted); }

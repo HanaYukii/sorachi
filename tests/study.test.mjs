@@ -536,10 +536,18 @@ test('delayed success stays removed after completion and reload with the newer h
  assert.equal(history[0].firstCorrect,4);assert.deepEqual(history[0].retryQuestions,[1]);
 });
 
-test('memory hints persist preferences without starting lessons, speaking, or appearing on a question', () => {
- const b=harness(null,[{lang:'ja-JP'}]);b.loadHints();b.action('open',{course:'h-a'});assert.match(b.html,/記憶提示/);const before=b.html,attempt=b.study.currentAttempt('h-a'),cancels=b.cancels;
- b.action('hint');assert.notEqual(b.html,before);assert.equal(b.stored,null);assert.equal(b.utterances.length,0);assert.equal(b.cancels,cancels);assert.deepEqual(clone(b.study.currentAttempt('h-a')),clone(attempt));
- for(let i=0;i<5;i++)b.action('next');assert.doesNotMatch(b.html,/記憶提示|換個記法/);
+test('the hint box shows origin, comparison and example together, plays the example word, and never shows on a question', () => {
+ const b=harness(null,[{lang:'ja-JP'}]);b.loadHints();b.action('open',{course:'h-a'});
+ assert.match(b.html,/<p class="hint-title">記憶提示<\/p><dl class="hint-list"><div><dt>字源<\/dt><dd>由漢字「安」草寫變來。<\/dd><\/div><div><dt>比一比<\/dt>/);
+ assert.match(b.html,/<button class="audio-button" data-action="study-word-audio" data-letter="あ">[\s\S]*?播放「<span lang="ja">あめ<\/span>」的讀音/);
+ assert.doesNotMatch(b.html,/換個記法|study-hint/);
+ const attempt=b.study.currentAttempt('h-a');
+ b.action('word-audio',{letter:'あ'});
+ assert.equal(b.utterances.at(-1).text,'あめ');
+ assert.equal(b.stored,null);assert.deepEqual(clone(b.study.currentAttempt('h-a')),clone(attempt));
+ b.action('word-audio',{letter:'い'});assert.equal(b.utterances.length,1,'Only the word on the card on screen plays');
+ b.action('hint');assert.equal(b.stored,null,'The old switch does nothing');
+ for(let i=0;i<5;i++)b.action('next');assert.doesNotMatch(b.html,/記憶提示|hint-word/);
 });
 
 test('grammar still requires a correct retry and preserves its live region and first score', () => {
@@ -893,16 +901,16 @@ test('resume target follows meaningful grammar activity and ignores merely opene
   assert.match(finished.render('#grammar'),/複習學過的句型/);
 });
 
-test('hint and speed preferences survive reload, affect speech, and failed writes keep the old choice', () => {
-  const b=harness(null,[{lang:'ja-JP'}]);b.loadHints();b.action('open',{course:'h-a'});b.action('hint');
-  assert.equal(b.preferences.kanaHints['あ'],1); assert.equal(b.study.hasProgress('h-a'),false);
+test('speed preferences survive reload and affect speech; a hint choice saved by an older version changes nothing', () => {
+  const b=harness(null,[{lang:'ja-JP'}]);b.loadHints();
   b.render('#settings');b.action('rate',{rate:'0.65'});
-  const r=harness(null,[{lang:'ja-JP'}],[],{preferences:b.preferences});r.loadHints();r.action('open',{course:'h-a'});
-  assert.match(r.html,/聲音連結/);r.action('audio',{index:'0'});assert.equal(r.utterances.at(-1).rate,0.65);
+  const r=harness(null,[{lang:'ja-JP'}],[],{preferences:{...b.preferences,kanaHints:{'あ':1}}});r.loadHints();r.action('open',{course:'h-a'});
+  assert.match(r.html,/<dt>字源<\/dt>[\s\S]*<dt>比一比<\/dt>[\s\S]*<dt>例子<\/dt>/,'Every hint shows, whatever the old choice was');
+  r.action('audio',{index:'0'});assert.equal(r.utterances.at(-1).rate,0.65);
   r.render('#travel/t-pay');r.action('travel-audio',{course:'t-pay',index:'0',full:'0'});r.flushTimers();
   assert.equal(r.utterances.at(-1).rate,0.65);
   r.blockLocalWrites();r.render('#settings');r.action('rate',{rate:'1'});assert.equal(r.preferences.ttsRate,0.65);
-  r.action('open',{course:'h-a'});r.action('hint');assert.equal(r.preferences.kanaHints['あ'],1);
+  assert.equal(r.preferences.kanaHints['あ'],1,'The old choice is kept as it was');
 });
 
 test('travel favorites are independent of course progress, render saved cards and allow playback and removal', () => {

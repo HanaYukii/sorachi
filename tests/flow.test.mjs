@@ -877,13 +877,12 @@ function finishKanaRound(b, {missFirst=false,missRetry=false}={}) {
 test('short review is reachable from home, clears a recent mistake, and leaves first-attempt history intact',()=>{
   const b=browser({hash:'#study/h-a'});
   const before=b.stored;
-  const renders=b.renderCount;
-  b.study('study-hint');
-  assert.deepEqual(JSON.parse(b.stored).learning,JSON.parse(before).learning,'Hint switching must not create learning progress');
-  assert.equal(b.renderCount,renders,'Hint switching updates the live region in place');
-  assert.match(b.node('.hint-label').textContent,/聲音連結/);
-  assert.match(b.node('.hint-text').textContent,/讀 a/);
-  assert.match(b.html,/<div aria-live="polite" aria-atomic="true"><p class="reading-label hint-label">/);
+  // The hint box shows everything at once; playing its example word starts nothing and saves nothing.
+  assert.match(b.html,/<dt>字源<\/dt><dd>由漢字「安」草寫變來。<\/dd>/);
+  assert.match(b.html,/<span class="hint-word" lang="ja"><mark>あ<\/mark>め<\/span><span class="hint-roman">ame<\/span><span>雨<\/span>/);
+  assert.doesNotMatch(b.html,/換個記法|study-hint/);
+  b.study('study-word-audio',{letter:'あ'});
+  assert.equal(b.stored,before,'Playing an example word saves nothing');
   for(let i=0;i<5;i++)b.study('study-next');
   const missedId=b.state.study.courses['h-a'].active.practice.questions[0].id;
   finishKanaRound(b,{missFirst:true,missRetry:true});
@@ -1289,8 +1288,9 @@ test('grammar review, favorites and preferences survive backup restore; newer cl
   b.study('study-answer',{choice:(question.answer+1)%question.options.length});
   b.navigate('#travel/t-pay');const phrase=vm.runInContext('Content.phrasebook.find(p=>p.id==="t-pay").steps[0].id',contentContext);
   b.study('study-favorite',{phrase});b.navigate('#settings');b.study('study-rate',{rate:'0.65'});
-  b.study('study-open',{course:'h-a'});b.study('study-hint');
-  const before=b.stored,restored=await importAndReload(browser(),before);
+  // A hint choice saved by an older version still travels with the backup, though hints no longer switch.
+  const old=JSON.parse(b.stored);old.preferences.kanaHints={'あ':1};
+  const before=JSON.stringify(old),restored=await importAndReload(browser(),before);
   assert.equal(restored.state.study.grammarReviewSession.items[0].questionId,question.id);
   assert.equal(restored.state.study.grammarReview[question.id].wrong,true);
   const envelope=JSON.parse(restored.stored);
