@@ -23,6 +23,7 @@ const Study = (() => {
   const total = (id) => courses[id] ? size(courses[id]) : 0;
   // Four-digit years only: an extreme saved date (+275760-…) would make later +1ms arithmetic throw.
   const iso = (value) => { const text = typeof value === "string" && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null; return text && /^\d{4}-/.test(text) ? text : null; };
+  const LAST_DATE = Date.parse("9999-12-31T23:59:59.999Z");
   const permutation = (value, n) => Array.isArray(value) && value.length === n && new Set(value).size === n && value.every((v) => Number.isInteger(v) && v >= 0 && v < n);
   const shuffle = (n) => {
     const list = Array.from({ length: n }, (_, i) => i);
@@ -218,11 +219,10 @@ const Study = (() => {
   }
   // A clear is dated after the previous clear and after every answer and record this browser has dated, also when the
   // clock went back or two clears fall in one millisecond; otherwise a backup made before it looks newer and brings
-  // ended rounds and mistakes back (#36). Capped at the last date iso() keeps.
-  const LAST_DATE=Date.parse('9999-12-31T23:59:59.999Z');
+  // ended rounds and mistakes back (#36). Dates iso() would drop are skipped, and the clear stays within LAST_DATE.
   function clearReview() {
     const data=state();
-    const dates=[data.reviewClearedAt,...Object.values(data.kanaReview).map(item=>item.lastSeen),...Object.values(data.grammarReview).map(item=>item.lastSeen),...(api.history?.()||[]).map(entry=>entry?.date)].map(date=>Date.parse(date)).filter(Number.isFinite);
+    const dates=[data.reviewClearedAt,...Object.values(data.kanaReview).map(item=>item.lastSeen),...Object.values(data.grammarReview).map(item=>item.lastSeen),...(api.history?.()||[]).map(entry=>entry?.date)].map(date=>Date.parse(iso(date))).filter(Number.isFinite);
     data.kanaReview={}; data.reviewSession=null; data.grammarReview={}; data.grammarReviewSession=null; data.reviewClearedAt=new Date(Math.min(LAST_DATE,Math.max(Date.now(),...dates.map(time=>time+1)))).toISOString();
     for (const id of Object.keys(courses)) if(courses[id].type==='kana') {if(data.courses[id])data.courses[id].active=null;drafts.delete(id);}
   }
