@@ -6,7 +6,8 @@ const KanaPractice = (() => {
   const entries = Object.values(Content.courses).filter(c => c.type === 'kana').flatMap(c => c.questions.map(q => ({id:q.id,courseId:c.id,script:c.script,character:q.character,reading:q.reading})));
   const registry = new Map(entries.map(item => [item.id,item]));
   const entry = id => registry.get(id) || null;
-  const iso = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
+  // Four-digit years only: an extreme saved date (+275760-…) would make later +1ms arithmetic throw.
+  const iso = value => { const text = typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null; return text && /^\d{4}-/.test(text) ? text : null; };
   // Common confusions outrank looser look-alikes when only one learned row may contribute.
   const groups = ['ぬめ','ねれわ','はほ','るろ','あお','さき','さち','いり','うつ','まも','シツ','ソン','クケ','クタ','ウワ','スヌ','チテ','クフワ','コユ','ナメ'];
   const looseGroups = ['はま','きち','シン','ツソ','ウフ','フラ','コロ'];
