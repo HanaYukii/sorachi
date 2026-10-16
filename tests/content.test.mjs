@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '3007689a3d6f103c595cfb237bd81b5d3a6ba706f17698c3a3ec5af396d6ec49');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '7cda6dfb1b84fe4a9804d8dacfee60ac6f14648d39f83a9507d28ea4be7135dc');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -102,9 +102,9 @@ test('intro distractors are balanced and travel phrases retain concise contextua
   assert.equal(reservation.keywords[0][0], '予約（よやく）');
 });
 
-test('registry includes 52 kana groups, forty-five grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
-  assert.equal(Object.keys(Content.courses).length, 99);
-  assert.equal(Content.grammar.length, 45);
+test('registry includes 52 kana groups, forty-eight grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
+  assert.equal(Object.keys(Content.courses).length, 102);
+  assert.equal(Content.grammar.length, 48);
   for (const id of ['t-place', 't-order', 't-pay', 't-charge']) {
     assert.equal(Content.getCourse(id), null);
     assert.ok(Content.phrasebook.some(c => c.id === id));
@@ -316,7 +316,7 @@ test('speech text is kana only and fixes readings device voices may get wrong', 
 
 test('grammar lessons follow a plan: earlier requirements, taught words only, a card to revisit for every question', () => {
   const ids = Content.grammar.map(g => g.id);
-  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-kochira', 'g-who', 'g-negative', 'g-no', 'g-nouns', 'g-mo', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock', 'g-minutes', 'g-kara-made-time', 'g-dates', 'g-dates-2', 'g-dates-3', 'g-verbs', 'g-masen', 'g-mashita', 'g-ni-de', 'g-transport', 'g-arimasu', 'g-position', 'g-adj-i', 'g-adj-neg', 'g-adj-na', 'g-who-2', 'g-soshite-demo', 'g-kara-reason', 'g-verb-forms', 'g-te-forms', 'g-te-kudasai', 'g-te-sequence', 'g-te-iru', 'g-te-mo-ii']);
+  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-kochira', 'g-who', 'g-negative', 'g-no', 'g-nouns', 'g-mo', 'g-kochira-2', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock', 'g-minutes', 'g-kara-made-time', 'g-dates', 'g-dates-2', 'g-dates-3', 'g-verbs', 'g-masen', 'g-mashita', 'g-ni-de', 'g-transport', 'g-arimasu', 'g-position', 'g-adj-i', 'g-adj-neg', 'g-adj-na', 'g-who-2', 'g-soshite-demo', 'g-kara-reason', 'g-dakara', 'g-kedo', 'g-verb-forms', 'g-te-forms', 'g-te-kudasai', 'g-te-sequence', 'g-te-iru', 'g-te-mo-ii']);
   for (const lesson of Content.grammar) {
     const plan = Content.lessonPlan[lesson.id];
     for (const req of plan.requires) assert.ok(ids.indexOf(req) < ids.indexOf(lesson.id), `${lesson.id} requires ${req}`);
@@ -393,4 +393,27 @@ test('〜ています keeps 予約しています as a state, and 〜てもい�
   assert.equal(ask.options[ask.answer], 'ここで まっても いいですか。');
   assert.ok(ask.options.includes('ここで まって ください。'));
   assert.doesNotMatch(card('g-te-mo-ii', 'g-te-mo-ii/card/answer').speech, /…/);
+});
+
+test('connector lessons test position and direction, and こちら also introduces people', () => {
+  const question = (course, id) => Content.getCourse(course).questions.find(q => q.id === id);
+  // だから opens the second sentence; から, which attaches to the first, is the wrong option there.
+  const dakara = question('g-dakara', 'g-dakara/question/dakara');
+  assert.equal(dakara.options[dakara.answer], 'だから');
+  assert.ok(dakara.options.includes('から'));
+  // No けど question offers から and ので together, so the two reason words cannot be ruled out as a pair.
+  for (const q of Content.getCourse('g-kedo').questions) {
+    assert.ok(!(q.options.some(o => /から/.test(o)) && q.options.some(o => /ので/.test(o))), q.id);
+  }
+  const join = question('g-kedo', 'g-kedo/question/join');
+  assert.equal(join.options[join.answer], 'この へやは ちいさいですけど、きれいです。');
+  // こちら introduces a person and stands for one's own side; it is not a word for ここ.
+  const choose = question('g-kochira-2', 'g-kochira-2/question/choose');
+  assert.equal(choose.options[choose.answer], 'こちら');
+  assert.ok(choose.options.includes('ここ'));
+  const koso = question('g-kochira-2', 'g-kochira-2/question/koso');
+  assert.ok(koso.options.every(o => o.startsWith('不會，')), 'The opening word cannot give the answer away');
+  const ids = Content.grammar.map(lesson => lesson.id);
+  assert.equal(ids[ids.indexOf('g-kara-reason') + 1], 'g-dakara');
+  assert.equal(ids[ids.indexOf('g-mo') + 1], 'g-kochira-2');
 });

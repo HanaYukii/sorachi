@@ -1251,6 +1251,78 @@ const Content = (() => {
       ]
     },
     {
+      "id": "g-kochira-2",
+      "type": "grammar",
+      "title": "こちら：介紹人、自己這一方",
+      "subtitle": "這位是…、我才是…",
+      "steps": [
+        {
+          "title": "介紹人：こちらは〜です",
+          "example": "こちらは たなかさんです。",
+          "reading": "kochira wa tanaka san desu",
+          "meaning": "這位是田中先生。",
+          "body": "介紹在場的人時，用「こちら」指那個人，比「この ひと」客氣；これ 是指東西，不用來介紹人。也可以說「こちらは ともだちの たなかさんです」（這位是我的朋友田中先生）。",
+          "id": "g-kochira-2/card/introduce"
+        },
+        {
+          "title": "自己這一方：こちらこそ",
+          "example": "すみません。 ／ いいえ、こちらこそ。",
+          "reading": "sumimasen / iie, kochira koso",
+          "meaning": "不好意思。／ 不會，我才不好意思。",
+          "body": "對方向你道歉或道謝時，回「こちらこそ」，意思是「我才是」。這裡的「こちら」指說話的人自己這一方，不是方向；「いいえ」是客氣地說「不會」，不是「不是」。",
+          "id": "g-kochira-2/card/koso"
+        },
+        {
+          "title": "方向還是人",
+          "example": "トイレは こちらです。 ／ こちらは たなかさんです。",
+          "reading": "toire wa kochira desu / kochira wa tanaka san desu",
+          "meaning": "廁所在這邊。／ 這位是田中先生。",
+          "body": "「こちら」可以指方向，也可以指人或自己這一方，要看句子在說什麼。",
+          "id": "g-kochira-2/card/which"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "朋友帶一位你不認識的人過來，說「こちらは たなかさんです。」意思是？",
+          "options": [
+            "這位是田中先生。",
+            "田中先生在這邊。",
+            "我是田中。"
+          ],
+          "answer": 0,
+          "explanation": "「こちらは〜です」在介紹人：這位是田中先生。「田中先生在這邊」要說 たなかさんは こちらです；「我是田中」是 わたしは たなかです（說自己的名字不加 さん）。",
+          "id": "g-kochira-2/question/introduce"
+        },
+        {
+          "prompt": "你在路上不小心撞到人，說了「すみません」。對方回「いいえ、こちらこそ」，意思最接近哪一個？",
+          "options": [
+            "不會，我才不好意思。",
+            "不會，請往這邊走。",
+            "不會，你才要說對不起。"
+          ],
+          "answer": 0,
+          "explanation": "「こちら」指說話的人自己這一方，「こちらこそ」是「我才是」：不會，我才不好意思。這裡不是在指方向，也不是要你道歉。",
+          "id": "g-kochira-2/question/koso"
+        },
+        {
+          "prompt": "介紹站在旁邊的朋友：＿＿は ともだちの たなかさんです。",
+          "options": [
+            "こちら",
+            "ここ",
+            "これ"
+          ],
+          "readings": [
+            "kochira",
+            "koko",
+            "kore"
+          ],
+          "answer": 0,
+          "explanation": "介紹在場的人用「こちら」，比較客氣。「ここ」是地點；「これ」用在東西，直接拿來指在場的人不禮貌。",
+          "id": "g-kochira-2/question/choose"
+        }
+      ]
+    },
+    {
       "id": "g-to",
       "type": "grammar",
       "title": "和：AとB",
@@ -3601,6 +3673,158 @@ const Content = (() => {
       ]
     },
     {
+      "id": "g-dakara",
+      "type": "grammar",
+      "title": "原因（二）：だから・〜ので",
+      "subtitle": "所以…，以及比較委婉的「因為」",
+      "steps": [
+        {
+          "title": "所以：だから",
+          "example": "きょうは さむいです。 だから、うちに います。",
+          "reading": "kyou wa samui desu. dakara, uchi ni imasu.",
+          "meaning": "今天很冷。所以待在家。",
+          "body": "「だから」放在第二個句子的開頭，表示「所以」：前一句是原因，後一句是結果。意思和「さむいですから、うちに います」一樣，只是分成兩句說。對客人或長輩，第二句開頭可以改說「ですから」；單獨的「から」不放在句子開頭。",
+          "id": "g-dakara/card/dakara"
+        },
+        {
+          "title": "比較委婉的因為：〜ので",
+          "example": "いま ひるやすみですので、いちじからです。",
+          "reading": "ima hiruyasumi desu node, ichiji kara desu",
+          "meaning": "現在是午休時間，所以 1 點才開始。",
+          "body": "「ので」和「から」一樣接在句子後面表示原因，聽起來比較委婉、客氣，店員說明或車站廣播很常用。",
+          "id": "g-dakara/card/node"
+        },
+        {
+          "title": "整理：から、ので、だから",
+          "example": "たかいですから、かいません。 ／ たかいですので、かいません。 ／ たかいです。 だから、かいません。",
+          "reading": "takai desu kara, kaimasen / takai desu node, kaimasen / takai desu. dakara, kaimasen.",
+          "meaning": "因為很貴，所以不買。／ 意思一樣，比較委婉 ／ 很貴。所以不買。",
+          "body": "三個都表示前因後果。から、ので 接在第一句後面；だから 放在第二句開頭。對店員或不熟的人說明原因時，ので 聽起來比較委婉。",
+          "id": "g-dakara/card/compare"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "天氣冷是原因，待在家是結果：きょうは さむいです。＿＿、うちに います。",
+          "options": [
+            "だから",
+            "でも",
+            "から"
+          ],
+          "readings": [
+            "dakara",
+            "demo",
+            "kara"
+          ],
+          "answer": 0,
+          "explanation": "原因在前一句、結果在後一句，第二句開頭用「だから」（所以）。「でも」是但是，冷和待在家不是相反；「から」要接在第一句後面（さむいですから、…），不放在第二句開頭。",
+          "id": "g-dakara/question/dakara"
+        },
+        {
+          "prompt": "店員說「いま ひるやすみですので、いちじからです。」，意思是？",
+          "options": [
+            "現在是午休時間，所以 1 點才開始。",
+            "因為 1 點才開始，所以現在是午休時間。",
+            "午休從 1 點開始。"
+          ],
+          "answer": 0,
+          "explanation": "「ので」前面是原因：現在是午休，所以要 1 點才開始。原因和結果不能對調；「午休從 1 點開始」要說 ひるやすみは いちじからです。",
+          "id": "g-dakara/question/node"
+        },
+        {
+          "prompt": "「たかいですので、かいません。」和哪一句的意思最接近？",
+          "options": [
+            "たかいですから、かいません。",
+            "たかいです。でも、かいません。",
+            "たかいです。そして、かいません。"
+          ],
+          "readings": [
+            "takai desu kara, kaimasen",
+            "takai desu. demo, kaimasen.",
+            "takai desu. soshite, kaimasen."
+          ],
+          "answer": 0,
+          "explanation": "「ので」和「から」都表示原因：因為很貴，所以不買。「でも」是但是，「そして」是而且、然後，都不是在說原因。",
+          "id": "g-dakara/question/same"
+        }
+      ]
+    },
+    {
+      "id": "g-kedo",
+      "type": "grammar",
+      "title": "連接句子（二）：〜けど",
+      "subtitle": "接在句子後面的「但是」",
+      "steps": [
+        {
+          "title": "…，但是…：〜けど",
+          "example": "この パンは おいしいですけど、たかいです。",
+          "reading": "kono pan wa oishii desu kedo, takai desu",
+          "meaning": "這個麵包很好吃，但是很貴。",
+          "body": "「けど」接在第一個句子後面，表示前後相反，像「…，但是…」。說話時很常用；正式的文章多用別的說法。けど 還有其他用法，之後再學。",
+          "id": "g-kedo/card/kedo"
+        },
+        {
+          "title": "でも 和 けど",
+          "example": "おいしいです。 でも、たかいです。 ／ おいしいですけど、たかいです。",
+          "reading": "oishii desu. demo, takai desu. / oishii desu kedo, takai desu",
+          "meaning": "很好吃。但是很貴。／ 很好吃，但是很貴。",
+          "body": "意思一樣，位置不同：でも 放在第二句開頭，けど 接在第一句後面，把兩句變成一句。",
+          "id": "g-kedo/card/demo"
+        },
+        {
+          "title": "整理：放在哪裡",
+          "example": "そして、でも、だから ／ から、ので、けど",
+          "reading": "soshite, demo, dakara / kara, node, kedo",
+          "meaning": "放在第二句開頭 ／ 接在第一句後面",
+          "body": "第二句開頭：そして（而且）、でも（但是）、だから（所以）。接在第一句後面：から（因為）、ので（較委婉的因為）、けど（但是）。",
+          "id": "g-kedo/card/review"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "方便是優點，小是缺點：この へやは べんりです＿＿、ちいさいです。",
+          "options": [
+            "けど",
+            "から"
+          ],
+          "readings": [
+            "kedo",
+            "kara"
+          ],
+          "answer": 0,
+          "explanation": "優點接缺點，前後相反，用「けど」（但是）。「から」表示原因，但方便不是小的原因。",
+          "id": "g-kedo/question/kedo"
+        },
+        {
+          "prompt": "「やすいですけど、かいません。」是什麼意思？",
+          "options": [
+            "很便宜，但是不買。",
+            "因為很便宜，所以不買。",
+            "很便宜，所以買了。"
+          ],
+          "answer": 0,
+          "explanation": "「けど」是但是：很便宜，但是不買。「因為…所以…」是 から、ので；「買了」要說 かいました。",
+          "id": "g-kedo/question/meaning"
+        },
+        {
+          "prompt": "「この へやは ちいさいです。でも、きれいです。」意思不變，改成一句話：",
+          "options": [
+            "この へやは ちいさいですけど、きれいです。",
+            "この へやは ちいさいですから、きれいです。",
+            "この へやは ちいさいですでも、きれいです。"
+          ],
+          "readings": [
+            "kono heya wa chiisai desu kedo, kirei desu",
+            "kono heya wa chiisai desu kara, kirei desu",
+            "kono heya wa chiisai desu demo, kirei desu"
+          ],
+          "answer": 0,
+          "explanation": "這裡的 でも 和 けど 都是但是：把 けど 接在第一句後面，就能併成一句，意思不變。でも 只能放在第二句開頭，不能直接接在「です」後面；用 から 會變成「因為小，所以乾淨」，意思就不一樣了。",
+          "id": "g-kedo/question/join"
+        }
+      ]
+    },
+    {
       "id": "g-verb-forms",
       "type": "grammar",
       "title": "動詞原形與三類：のむ・たべる・する",
@@ -4283,6 +4507,25 @@ const Content = (() => {
         "g-mo/question/that-too": "g-mo/card/thing"
       }
     },
+    "g-kochira-2": {
+      "unit": "基本句子",
+      "requires": [
+        "g-kochira",
+        "g-mo",
+        "g-negative",
+        "g-nouns",
+        "g-who"
+      ],
+      "words": [
+        "こちらこそ"
+      ],
+      "grammar": [],
+      "review": {
+        "g-kochira-2/question/introduce": "g-kochira-2/card/introduce",
+        "g-kochira-2/question/koso": "g-kochira-2/card/koso",
+        "g-kochira-2/question/choose": "g-kochira-2/card/introduce"
+      }
+    },
     "g-to": {
       "unit": "基本句子",
       "requires": [
@@ -4858,6 +5101,38 @@ const Content = (() => {
         "g-kara-reason/question/meaning": "g-kara-reason/card/reason",
         "g-kara-reason/question/start": "g-kara-reason/card/compare",
         "g-kara-reason/question/fill": "g-kara-reason/card/example"
+      }
+    },
+    "g-dakara": {
+      "unit": "形容詞與連接",
+      "requires": [
+        "g-kara-reason",
+        "g-kara-made-time"
+      ],
+      "words": [
+        "だから",
+        "ので"
+      ],
+      "grammar": [],
+      "review": {
+        "g-dakara/question/dakara": "g-dakara/card/dakara",
+        "g-dakara/question/node": "g-dakara/card/node",
+        "g-dakara/question/same": "g-dakara/card/compare"
+      }
+    },
+    "g-kedo": {
+      "unit": "形容詞與連接",
+      "requires": [
+        "g-dakara"
+      ],
+      "words": [
+        "けど"
+      ],
+      "grammar": [],
+      "review": {
+        "g-kedo/question/kedo": "g-kedo/card/kedo",
+        "g-kedo/question/meaning": "g-kedo/card/kedo",
+        "g-kedo/question/join": "g-kedo/card/demo"
       }
     },
     "g-verb-forms": {
