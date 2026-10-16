@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "7be5985051e0e4682e457a9d231f4a121ee705ab472c311ec091c44d185b8b4f",
+  "buildId": "af29eba3fe9892982bc7d5e60bd0f072b31a854d500f3c5a481ffd36b6362484",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app.js",
-      "sha256": "cd6bc197a07201b5a79da37366da025673ccb9391fc1adc442dccacd484aedc3",
-      "bytes": 40209,
+      "sha256": "4a5f13b12d1d79ae8f749af3b78137a2eb7cc249d003c027b2233bfb31ed67c3",
+      "bytes": 40103,
       "mime": "text/javascript"
     },
     {
@@ -63,6 +63,18 @@
       "mime": "image/png"
     },
     {
+      "path": "assets/grammar-notebook.svg",
+      "sha256": "dc3653a4bd30c67fb05ef070d30330391bb8046535d5c3e110116734daf6975f",
+      "bytes": 692,
+      "mime": "image/svg+xml"
+    },
+    {
+      "path": "assets/travel-bag.svg",
+      "sha256": "f7c9bcfd340010f9fd12d28beb1d1de7e74d34c376dbedd503388801af677949",
+      "bytes": 927,
+      "mime": "image/svg+xml"
+    },
+    {
       "path": "content.js",
       "sha256": "407ae843ae40b39ed804b7526c76c0dce0aad0f8ada0fd6a5764ef18e2e4e709",
       "bytes": 58452,
@@ -76,7 +88,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "d7a5c9d0d8645c2518e3e7343566a551422160078a53f7e36cefbf24561c5597",
+      "sha256": "17d88fce81fdc090b4918fbc54a06800cd76908434700ea979dfab65e07805dc",
       "bytes": 1804,
       "mime": "text/html"
     },
@@ -106,8 +118,8 @@
     },
     {
       "path": "styles.css",
-      "sha256": "e71856e455160bc393e6b3960f0bbdf13075c938accd203e4f1161e83de05bd2",
-      "bytes": 38895,
+      "sha256": "7a2ee60eedd0002d56d3c495cf2ee7a883e2b4816a3ed9b2f88163653589d775",
+      "bytes": 38923,
       "mime": "text/css"
     }
   ]
