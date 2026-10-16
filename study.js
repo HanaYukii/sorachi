@@ -388,11 +388,14 @@ const Study = (() => {
     const word = (text) => { const at = text.indexOf("（"); return at < 0 ? escape(text) : `${escape(text.slice(0, at))}<span class="kw-kana">${escape(text.slice(at))}</span>`; };
     return `<div class="keyword-box"><h3>關鍵字</h3><dl>${keywords.map(([text, reading, meaning]) => `<div><dt><strong lang="ja">${word(text)}</strong><span>${escape(reading)}</span></dt><dd>${escape(meaning)}</dd></div>`).join("")}</dl></div>`;
   }
+  // One box with everything a kana has (#35): its kanji origin, how it differs from a kana easy to mix up, and an
+  // example word to hear with the kana marked. Nothing to switch between; words are examples and never tested.
+  const markKana = (word, letter) => { const at = word.indexOf(letter); return at < 0 ? escape(word) : `${escape(word.slice(0, at))}<mark>${escape(letter)}</mark>${escape(word.slice(at + letter.length))}`; };
   function hintCard(course, index) {
-    const hints=typeof KanaHints!=='undefined'?KanaHints.get(course.letters[index]):[];
-    if(!hints?.length)return '';
-    const selected=(preferences().kanaHints?.[course.letters[index]] || 0)%hints.length, hint=hints[selected];
-    return `<aside class="kana-hint"><div aria-live="polite" aria-atomic="true"><p class="reading-label hint-label">記憶提示 · ${escape(hint.label)}</p><p class="hint-text">${escape(hint.text)}</p></div>${hints.length>1?'<button class="text-button" data-action="study-hint">換個記法</button>':''}${KanaHints.notice?`<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>`:''}</aside>`;
+    const letter = course.letters[index], hints = typeof KanaHints !== "undefined" ? KanaHints.get(letter) : [];
+    if (!hints?.length) return "";
+    const item = (hint) => `<div><dt>${escape(hint.label)}</dt><dd>${hint.word ? `<span class="hint-word" lang="ja">${markKana(hint.word, letter)}</span><span class="hint-roman">${escape(hint.romaji)}</span><span>${escape(hint.meaning)}</span><button class="audio-button" data-action="study-word-audio" data-letter="${escape(letter)}">${speaker}<span class="visually-hidden">播放「<span lang="ja">${escape(hint.word)}</span>」的讀音</span></button>` : escape(hint.text)}</dd></div>`;
+    return `<aside class="kana-hint"><p class="hint-title">記憶提示</p><dl class="hint-list">${hints.map(item).join("")}</dl>${hints.some((hint) => hint.word) ? '<p class="study-audio-status study-note" data-audio-for="hint-word" role="status" aria-live="polite"></p>' : ""}${KanaHints.notice ? `<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>` : ""}</aside>`;
   }
   const sameSoundNote = { "ぢ": "ぢ 和 じ 同音，都讀 ji；一般多寫 じ。", "づ": "づ 和 ず 同音，都讀 zu；一般多寫 ず。", "ヂ": "ヂ 和 ジ 同音，都讀 ji；一般多寫 ジ。", "ヅ": "ヅ 和 ズ 同音，都讀 zu；一般多寫 ズ。" };
   function card(course, active) {
@@ -672,6 +675,9 @@ const Study = (() => {
     } catch { /* Navigation must remain usable when the speech engine fails. */ }
   }
   function speak(course, index, selector = ".study-audio-status", full = false, button = null) {
+    say(course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : (full && course.steps[index].polite ? course.steps[index].politeSpeech || course.steps[index].polite : course.steps[index].speech || course.steps[index].example).replace(/\s*／\s*/g, "、"), selector, button);
+  }
+  function say(spoken, selector, button) {
     const waiting = audioTimer !== null;
     clearAudioRequest();
     const generation = audioGeneration;
@@ -696,7 +702,6 @@ const Study = (() => {
         }
         return;
       }
-      const spoken = course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : (full && course.steps[index].polite ? course.steps[index].politeSpeech || course.steps[index].polite : course.steps[index].speech || course.steps[index].example).replace(/\s*／\s*/g, "、");
       const utterance = new SpeechSynthesisUtterance(spoken);
       utterance.voice = voice; utterance.lang = "ja-JP"; utterance.rate = speechRate();
       // Hints under any speaker go as soon as audio can play.
@@ -835,14 +840,10 @@ const Study = (() => {
       if (active.phase === "cards" && (course.type === "kana" || course.type === "grammar") && Number.isInteger(index) && index >= 0 && index < cards(course)) speak(course, index, ".study-audio-status", false, button);
       return true;
     }
-    if(action==='study-hint'&&course.type==='kana'&&active.phase==='cards'){
-      const key = course.letters[active.cursor], hints = KanaHints.get(key);
-      const selected = ((preferences().kanaHints?.[key] || 0)+1)%hints.length;
-      if (!api.savePreferences?.({...preferences(),kanaHints:{...preferences().kanaHints,[key]:selected}})) return true;
-      // Update in place so the live region announces the new hint and focus stays on the button.
-      const hint=hints[selected];
-      const label=document.querySelector('.hint-label'),text=document.querySelector('.hint-text');
-      if(hint&&label&&text){label.textContent=`記憶提示 · ${hint.label}`;text.textContent=hint.text;}else redraw('[data-action="study-hint"]');
+    if (action === "study-word-audio") {
+      const letter = course.type === "kana" && active.phase === "cards" ? course.letters[active.cursor] : null;
+      const example = letter && letter === button.dataset.letter && typeof KanaHints !== "undefined" ? KanaHints.get(letter).find((hint) => hint.word) : null;
+      if (example) say(example.word, '[data-audio-for="hint-word"]', button);
       return true;
     }
     if(course.type==='kana'&&active.phase==='quiz'){
