@@ -99,9 +99,6 @@ function home() {
   const begun = progress.inProgress;
   const grammarNext = Study.grammarNext();
   const grammarStarted = Content.grammar.some(c => progress.study.courses[c.id]?.completedAt || Study.hasProgress(c.id));
-  const grammarAction = !grammarStarted ? 'data-action="grammar"' : grammarNext ? `data-action="study-open" data-course="${grammarNext.courseId}"` : 'data-action="study-grammar-review"';
-  const grammarLabel = !grammarStarted ? "看句型" : !grammarNext ? "複習句型" : grammarNext.resume ? "接著學" : "學下一課";
-  const action = begun ? "接著學" : progress.completed ? "再練習一次" : "認識三種日文寫法";
   const rowIds = (group) => (script) => Content.rowGroups[group].map((row) => `${script}-${row}`);
   const basic = rowIds("basic"), voiced = rowIds("voiced"), youon = rowIds("youon");
   // Learners who already moved on to katakana keep going there before returning to voiced hiragana.
@@ -115,52 +112,65 @@ function home() {
   const scriptCompleted = kanaIds.filter((id) => id[0] === nextKana[0] && progress.study.courses[id]?.completedAt).length;
   const activeKana = progress.study.courses[nextKana]?.active;
   const kanaAction = Study.hasProgress(nextKana) && activeKana && activeKana.phase !== "done" ? "接著練五十音" : progress.study.courses[nextKana]?.completedAt ? "再練一次五十音" : "開始學五十音";
-  const newVisitor = !progress.completed && !progress.inProgress && !progress.history.length && !Object.keys(progress.study.courses).some(id => Study.hasProgress(id) || progress.study.courses[id]?.completedAt);
-  const introEntry = `<div class="script-supplement${newVisitor ? " intro-entry" : ""}"><button class="text-button" data-action="start">${action}${icons.arrow}</button>${newVisitor ? '<p>平假名、片假名與漢字的用法。</p>' : ''}${begun ? `<span class="path-progress">上次學到第 ${progress.step + 1} 步</span>` : progress.completed ? '<span class="path-progress">已完成</span>' : ''}</div>`;
+  const saved = Study.dashboardSummary().savedPhrases;
+  const newVisitor = !progress.completed && !progress.inProgress && !progress.history.length && !saved && !Object.keys(progress.study.courses).some(id => Study.hasProgress(id) || progress.study.courses[id]?.completedAt);
+  const kanaOpen = Study.hasProgress(nextKana) && activeKana?.phase !== "done";
+  const allKanaDone = kanaIds.every((id) => progress.study.courses[id]?.completedAt);
+  // Once both scripts are done, the main card leads to grammar instead of replaying kana.
+  const grammarHero = !newVisitor && allKanaDone && !kanaOpen && grammarNext;
+  // Returning learners read where to go next, unfinished work first; no "today" wording, so no daily pressure.
+  const plan = [kanaOpen && `接著練${kanaTitle}`, grammarNext?.resume && `把「${grammarNext.title}」學完`, !kanaOpen && !allKanaDone && `練${kanaTitle}`, grammarStarted && grammarNext && !grammarNext.resume && `學「${grammarNext.title}」`].filter(Boolean).slice(0, 2);
+  const welcome = newVisitor ? "零基礎也可以用。學五十音、練句型，旅行時查常用語。" : plan.length ? `接下來可以：${escapeHTML(plan.join("，或"))}。` : "歡迎回來。";
+  const kanaHero = `<section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">五十音</span><span>${kanaOpen ? "接著練習" : progress.study.courses[nextKana]?.completedAt ? "複習" : "下一組"}</span></div><h2 id="course-title">${escapeHTML(kanaTitle)}</h2><p class="hero-description">入門必學，搭配各式技巧好好記熟。</p><p class="kana-progress">${scriptName}已完成 ${scriptCompleted} / ${Content.rows.length} 組 · 這組 ${Study.total(nextKana)} 個字</p><button class="primary" data-action="study-open" data-course="${nextKana}">${kanaAction}${icons.arrow}</button><div><button class="text-button course-map-link" data-action="kana">查看全部五十音分組</button></div></div><div class="hero-art" aria-hidden="true">${friend("", "", "cloud-kana", 210, "(max-width: 540px) 112px, 210px")}</div>${reviewEntry}</section>`;
+  const grammarDone = Content.grammar.filter((course) => progress.study.courses[course.id]?.completedAt).length;
+  const hero = grammarHero ? `<section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">基礎句型</span><span>${grammarNext.resume ? "接著學" : "下一課"}</span></div><h2 id="course-title">${escapeHTML(grammarNext.title)}</h2><p class="hero-description">${escapeHTML(Content.lessonPlan[grammarNext.courseId]?.unit || "")}</p><p class="kana-progress">句型已完成 ${grammarDone} / ${Content.grammar.length} 課</p><button class="primary" data-action="study-open" data-course="${grammarNext.courseId}">${grammarNext.resume ? "接著學" : "開始這一課"}${icons.arrow}</button><div><button class="text-button course-map-link" data-action="grammar">查看全部句型</button></div></div><div class="hero-art" aria-hidden="true">${friend("", "", "cloud-complete", 210, "(max-width: 540px) 112px, 210px")}</div>${reviewEntry}</section>` : kanaHero;
   // New visitors get one clear way in; returning learners get a dashboard of what is next and how far they are.
-  const below = newVisitor ? `<section class="learning-path" aria-label="學習與旅遊"><div class="path-cards"><article class="path-card grammar-entry">${friend("path-art", "", "cloud-complete", 100, "(max-width: 540px) 66px, 100px")}<div class="path-copy"><span class="path-number aqua-label">說明與練習</span><h2>基礎句型</h2><p>日文基本的句子架構。</p><button class="text-button" ${grammarAction}>${grammarLabel}${icons.arrow}</button></div></article><article class="path-card travel-entry">${friend("path-art", "", "cloud-travel", 100, "(max-width: 540px) 66px, 100px")}<div class="path-copy"><span class="path-number">依情境查閱</span><h2>旅遊常用語</h2><p>記好這些關鍵字，不用完整句，也能清楚表達意思。</p><button class="text-button" data-action="travel">查常用語${icons.arrow}</button></div></article></div></section>${introEntry}` : homeDashboard({ grammarNext, begun });
+  const below = newVisitor ? `<section class="learning-path" aria-label="學習與旅遊"><div class="path-cards"><article class="path-card grammar-entry">${friend("path-art", "", "cloud-complete", 100, "(max-width: 540px) 66px, 100px")}<div class="path-copy"><span class="path-number aqua-label">說明與練習</span><h2>基礎句型</h2><p>日文基本的句子架構。</p><button class="text-button" data-action="grammar">看句型${icons.arrow}</button></div></article><article class="path-card travel-entry">${friend("path-art", "", "cloud-travel", 100, "(max-width: 540px) 66px, 100px")}<div class="path-copy"><span class="path-number">依情境查閱</span><h2>旅遊常用語</h2><p>記好這些關鍵字，不用完整句，也能清楚表達意思。</p><button class="text-button" data-action="travel">查常用語${icons.arrow}</button></div></article></div></section><div class="script-supplement intro-entry"><button class="text-button" data-action="start">認識三種日文寫法${icons.arrow}</button><p>平假名、片假名與漢字的用法。</p></div>` : homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review, saved });
   app.innerHTML = `<div class="shell">
     <header class="site-header home-header"><a class="brand" href="#home" aria-label="SoraChi 首頁">${friend("", "", "cloud-friend", 42)}<span class="brand-word">SoraChi<span class="brand-dot">.</span></span></a></header>
-    <main id="main" tabindex="-1" class="home"><section class="welcome"><h1 class="focus-heading" tabindex="-1">日文入門</h1><p>${newVisitor ? "零基礎也可以用。學五十音、練句型，旅行時查常用語。" : "歡迎回來，接著上次的進度學。"}</p></section>
-    <section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">五十音</span><span>${Study.hasProgress(nextKana) && activeKana?.phase !== "done" ? "接著練習" : progress.study.courses[nextKana]?.completedAt ? "複習" : "下一組"}</span></div><h2 id="course-title">${escapeHTML(kanaTitle)}</h2><p class="hero-description">入門必學，搭配各式技巧好好記熟。</p><p class="kana-progress">${scriptName}已完成 ${scriptCompleted} / ${Content.rows.length} 組 · 這組 ${Study.total(nextKana)} 個字</p><button class="primary" data-action="study-open" data-course="${nextKana}">${kanaAction}${icons.arrow}</button><div><button class="text-button course-map-link" data-action="kana">查看全部五十音分組</button></div></div><div class="hero-art" aria-hidden="true">${friend("", "", "cloud-kana", 210, "(max-width: 540px) 112px, 210px")}</div>${reviewEntry}</section>
+    <main id="main" tabindex="-1" class="home"><section class="welcome"><h1 class="focus-heading" tabindex="-1">日文入門</h1><p>${welcome}</p></section>
+    ${hero}
     ${below}
     <aside class="gentle-note">${icons.book}<span>不用登入；進度只存在這個瀏覽器。</span></aside>${warning()}</main>${footer()}</div>`;
 }
 
 // Returning learners: what to do next, everything on offer, and progress kept in this browser.
-// No streaks or points: the numbers only describe what has been learned.
-function homeDashboard({ grammarNext, begun }) {
+// No streaks or points: the numbers only describe what has been learned, and each appears once.
+function homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review, saved }) {
   const courses = progress.study.courses, done = (id) => Boolean(courses[id]?.completedAt);
   const kanaIds = (script) => Object.values(Content.rowGroups).flat().map((row) => `${script}-${row}`);
   const chars = (ids) => ids.reduce((sum, id) => sum + Study.total(id), 0);
   const grammarDone = Content.grammar.filter((course) => done(course.id)).length;
+  const hasRecord = progress.history.length > 0 || Object.keys(courses).some(done);
   const scored = progress.history.filter((entry) => Number.isInteger(entry.firstCorrect) && entry.total > 0);
-  const firstRight = scored.length ? Math.round(100 * scored.reduce((sum, entry) => sum + entry.firstCorrect, 0) / scored.reduce((sum, entry) => sum + entry.total, 0)) : null;
-  const summary = Study.dashboardSummary(), review = Study.reviewSummary();
-  const units = [];
-  for (const course of Content.grammar) {
-    const title = Content.lessonPlan[course.id]?.unit || "其他";
-    if (!units.length || units[units.length - 1].title !== title) units.push({ title, total: 0, done: 0 });
-    units[units.length - 1].total++;
-    if (done(course.id)) units[units.length - 1].done++;
-  }
+  // Rounded down, so one slip in a thousand never shows as 100%.
+  const firstRight = scored.length ? Math.floor(100 * scored.reduce((sum, entry) => sum + entry.firstCorrect, 0) / scored.reduce((sum, entry) => sum + entry.total, 0)) : null;
+  const units = Study.grammarUnits().map((unit) => ({ title: unit.title, total: unit.lessons.length, done: unit.lessons.filter((course) => done(course.id)).length }));
+  const { grammarReviewSize, grammarReviewResume } = Study.dashboardSummary();
   const stat = (label, value, unit) => `<div><dt>${label}</dt><dd><strong>${value}</strong>${unit}</dd></div>`;
-  const bar = (label, count, total, unit) => `<li><span>${escapeHTML(label)}</span><span class="dash-count">${count} / ${total} ${unit}</span><span class="dash-bar" aria-hidden="true"><i style="width:${total ? Math.round(100 * count / total) : 0}%"></i></span></li>`;
+  const bar = (label, count, total) => `<li><span>${escapeHTML(label)}</span><span class="dash-count">${count} / ${total} 課</span><span class="dash-bar" aria-hidden="true"><i style="width:${total ? Math.round(100 * count / total) : 0}%"></i></span></li>`;
+  // Rows that only change page are links; rows that open a lesson or a round are buttons.
   const row = (target, title, text, meta = "") => `<li>${target.startsWith("#") ? `<a class="dash-row" href="${target}">` : `<button class="dash-row" ${target}>`}<span class="dash-row-main"><strong>${title}</strong><span>${text}</span></span>${meta ? `<span class="dash-row-meta">${meta}</span>` : ""}${icons.arrow}${target.startsWith("#") ? "</a>" : "</button>"}</li>`;
+  // The writing-system introduction is offered next while it is paused or before any practice; otherwise it waits in 全部內容.
+  const introNext = begun || (!progress.completed && !hasRecord);
+  const intro = row('data-action="start"', "日文的三種文字", begun ? `接著學，上次學到第 ${progress.step + 1} 步` : "平假名、片假名與漢字的用法", introNext ? "" : progress.completed ? "已完成" : "還沒看");
+  const unitOf = (id) => escapeHTML(Content.lessonPlan[id]?.unit || "");
   const next = [
-    grammarNext ? row(`data-action="study-open" data-course="${grammarNext.courseId}"`, "基礎句型", `${grammarNext.resume ? "接著學" : "下一課"}：${escapeHTML(grammarNext.title)}`, `${grammarDone} / ${Content.grammar.length} 課`) : "",
-    summary.grammarReviewSize ? row("#grammar-review", "句型小複習", "從完成的課裡挑幾題混在一起練", summary.grammarReviewResume ? "繼續" : `${summary.grammarReviewSize} 題`) : "",
-    summary.savedPhrases ? row("#travel/favorites", "我的常用語", "收藏的旅遊用語", `${summary.savedPhrases} 張`) : "",
-    // The writing-system introduction stays in 接著做 until finished, and while a replay is paused.
-    begun || !progress.completed ? row('data-action="start"', "日文的三種文字", begun ? `接著學，上次學到第 ${progress.step + 1} 步` : "平假名、片假名與漢字的用法") : "",
+    grammarNext && !grammarHero ? grammarStarted ? row(`data-action="study-open" data-course="${grammarNext.courseId}"`, "基礎句型", `${grammarNext.resume ? "接著學" : "下一課"}：${escapeHTML(grammarNext.title)}`, unitOf(grammarNext.courseId)) : row("#grammar", "基礎句型", `從第一課開始：${escapeHTML(grammarNext.title)}`, unitOf(grammarNext.courseId)) : "",
+    grammarReviewSize ? row('data-action="study-grammar-review"', "句型小複習", "從完成的課裡挑幾題混在一起練", grammarReviewResume ? "繼續" : `${grammarReviewSize} 題`) : "",
+    saved ? row("#travel/favorites", "我的常用語", "收藏的旅遊用語", `${saved} 張`) : "",
+    introNext ? intro : "",
   ].join("");
+  const progressPanel = hasRecord
+    ? `<dl class="dash-stats">${stat("平假名", chars(kanaIds("h").filter(done)), ` / ${chars(kanaIds("h"))} 字`)}${stat("片假名", chars(kanaIds("k").filter(done)), ` / ${chars(kanaIds("k"))} 字`)}${stat("基礎句型", grammarDone, ` / ${Content.grammar.length} 課`)}${stat("上次答錯的字", review.wrongCount, " 個")}${stat("第一次答對", firstRight === null ? "還沒有" : firstRight, firstRight === null ? "" : "%")}</dl>
+      <details class="dash-units"><summary>句型各單元進度</summary><ul class="dash-bars">${units.map((unit) => bar(unit.title, unit.done, unit.total)).join("")}</ul></details>
+      <p class="dash-note">${scored.length ? `依這個瀏覽器最近 ${scored.length} 次完成的練習計算。第一次答對只算每題第一次的選擇，重試和複習不算。` : "依這個瀏覽器的紀錄計算。"}</p>`
+    : `<p class="dash-note">完成第一組練習後，這裡會顯示學過多少。</p>`;
+  const records = progress.history.length >= DataStore.MAX_ATTEMPTS ? `最近 ${DataStore.MAX_ATTEMPTS} 次` : progress.history.length ? `${progress.history.length} 次` : "";
   return `<div class="home-dashboard">
     ${next ? `<section class="dash-next" aria-labelledby="dash-next-title"><h2 id="dash-next-title">接著做</h2><ul class="dash-list">${next}</ul></section>` : ""}
-    <section class="dash-progress" aria-labelledby="dash-progress-title"><h2 id="dash-progress-title">你的進度</h2><dl class="dash-stats">${stat("平假名", chars(kanaIds("h").filter(done)), ` / ${chars(kanaIds("h"))} 字`)}${stat("片假名", chars(kanaIds("k").filter(done)), ` / ${chars(kanaIds("k"))} 字`)}${stat("基礎句型", grammarDone, ` / ${Content.grammar.length} 課`)}${stat("答錯待複習", review.wrongCount, " 個字")}${stat("第一次答對", firstRight === null ? "—" : firstRight, firstRight === null ? "" : "%")}${stat("完成練習", progress.history.length, " 次")}</dl>
-      <h3>五十音</h3><ul class="dash-bars">${bar("平假名", kanaIds("h").filter(done).length, kanaIds("h").length, "組")}${bar("片假名", kanaIds("k").filter(done).length, kanaIds("k").length, "組")}</ul>
-      <h3>基礎句型</h3><ul class="dash-bars">${units.map((unit) => bar(unit.title, unit.done, unit.total, "課")).join("")}</ul>
-      <p class="dash-note">依這個瀏覽器的紀錄計算。第一次答對只算每題第一次的選擇。</p></section>
-    <section class="dash-all" aria-labelledby="dash-all-title"><h2 id="dash-all-title">全部內容</h2><ul class="dash-list">${row('data-action="kana"', "五十音", "平假名、片假名，濁音、拗音、促音與長音", `${Content.rowGroups.basic.length + Content.rowGroups.voiced.length + Content.rowGroups.youon.length} 組`)}${row('data-action="grammar"', "基礎句型", "從句子架構開始，每課只用前面教過的詞", `${Content.grammar.length} 課`)}${row('data-action="travel"', "旅遊常用語", "依情境查關鍵字，可以收藏", `${Content.phrasebook.length} 種情境`)}${progress.completed && !begun ? row('data-action="start"', "日文的三種文字", "平假名、片假名與漢字的用法", "已完成") : ""}${row('data-action="history"', "學習紀錄", "完成時間與第一次作答的成績", progress.history.length ? `${progress.history.length} 次` : "")}</ul></section>
+    <section class="dash-progress" aria-labelledby="dash-progress-title"><h2 id="dash-progress-title">你的進度</h2>${progressPanel}</section>
+    <section class="dash-all" aria-labelledby="dash-all-title"><h2 id="dash-all-title">全部內容</h2><ul class="dash-list">${row("#kana", "五十音", "平假名、片假名，濁音、拗音、促音與長音", `各 ${kanaIds("h").length} 組`)}${row("#grammar", "基礎句型", "從句子架構開始，每課只用前面教過的詞", `${Content.grammar.length} 課`)}${row("#travel", "旅遊常用語", "依情境查關鍵字，可以收藏", `${Content.phrasebook.length} 種情境`)}${introNext ? "" : intro}${row("#history", "學習紀錄", "完成時間與第一次作答的成績", records)}</ul></section>
   </div>`;
 }
 

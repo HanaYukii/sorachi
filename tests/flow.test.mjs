@@ -1625,26 +1625,74 @@ test('returning learners get a home dashboard of next steps, everything on offer
   b.study('study-favorite', { phrase: 'phrase/hotel/check-in' });
   b.navigate('#home');
   const html = b.html, section = (name) => html.match(new RegExp(`<section class="${name}"[\\s\\S]*?</section>`))[0];
-  assert.match(html, /歡迎回來/);
+  assert.match(html, /<p>接下來可以：練平假名・か行，或學「指示詞：これ・それ・あれ」。<\/p>/, 'Where to go next, without "today" pressure');
   const progress = section('dash-progress');
   assert.match(progress, /<dt>平假名<\/dt><dd><strong>5<\/strong> \/ 104 字<\/dd>/);
   assert.match(progress, new RegExp(`<dt>基礎句型</dt><dd><strong>2</strong> / ${grammarCount} 課</dd>`));
-  // h-a: 4 of 5 right the first time, plus 2 + 2 grammar questions right: 8 of 9.
-  assert.match(progress, /<dt>第一次答對<\/dt><dd><strong>89<\/strong>%<\/dd>/);
-  assert.match(progress, /<dt>完成練習<\/dt><dd><strong>3<\/strong> 次<\/dd>/);
-  assert.match(progress, /<span>平假名<\/span><span class="dash-count">1 \/ 26 組<\/span>/);
-  assert.match(progress, /<span>基本句子<\/span><span class="dash-count">2 \/ /);
+  // h-a: 4 of 5 right the first time, plus 2 + 2 grammar questions right: 8 of 9 is 88.9%, shown rounded down.
+  assert.match(progress, /<dt>第一次答對<\/dt><dd><strong>88<\/strong>%<\/dd>/);
+  assert.match(progress, /<dt>上次答錯的字<\/dt><dd><strong>0<\/strong> 個<\/dd>/);
+  assert.doesNotMatch(progress, /完成練習|平假名<\/span><span class="dash-count">/, 'Counts shown elsewhere are not repeated');
+  assert.match(progress, /<summary>句型各單元進度<\/summary>[\s\S]*<span>基本句子<\/span><span class="dash-count">2 \/ /);
   assert.match(progress, /aria-hidden="true"><i style="width:/, 'Bars are decoration; the counts are text');
+  assert.match(progress, /最近 3 次完成的練習計算。第一次答對只算每題第一次的選擇，重試和複習不算/);
   const next = section('dash-next');
-  assert.match(next, /data-action="study-open" data-course="g-demo"/);
-  assert.match(next, /下一課：指示詞：これ・それ・あれ/);
-  assert.match(next, /href="#grammar-review"/, 'Two finished lessons open the grammar review');
+  assert.match(next, /data-action="study-open" data-course="g-demo"[\s\S]*?下一課：指示詞：これ・それ・あれ[\s\S]*?基本句子/);
+  assert.match(next, /data-action="study-grammar-review"[\s\S]*?4 題/, 'Two finished lessons offer the grammar review');
   assert.match(next, /href="#travel\/favorites"[\s\S]*?1 張/);
   const everything = section('dash-all');
-  for (const action of ['kana', 'grammar', 'travel', 'history']) assert.match(everything, new RegExp(`data-action="${action}"`), action);
+  for (const hash of ['#kana', '#grammar', '#travel', '#history']) assert.match(everything, new RegExp(`<a class="dash-row" href="${hash}">`), hash);
+  assert.match(everything, /各 26 組/);
+  assert.match(everything, /data-action="start"[\s\S]*?還沒看/, 'After practice the introduction waits in 全部內容');
   assert.equal((html.match(/data-action="start"/g) || []).length, 1, 'One way into the writing-system introduction');
   assert.ok(html.indexOf('dash-next') < html.indexOf('dash-progress'), 'What to do next comes first, also for keyboard and screen readers');
   assert.match(html, /data-action="study-open" data-course="h-ka"/, 'The kana card still leads to the next group');
-  b.action('history');
-  assert.equal(b.hash, '#history');
+});
+
+test('home dashboard edge cases: paused introduction, saved phrases only, kana finished, unscored history, unfinished grammar review', () => {
+  const section = (b, name) => (b.html.match(new RegExp(`<section class="${name}"[\\s\\S]*?</section>`)) || [''])[0];
+  const starts = (b) => (b.html.match(/data-action="start"/g) || []).length;
+  // Only the introduction, paused at step 2: nothing to count yet.
+  const paused = browser({ hash: '#lesson' });
+  paused.action('next');
+  paused.navigate('#home');
+  assert.match(section(paused, 'dash-progress'), /完成第一組練習後，這裡會顯示學過多少。/);
+  assert.doesNotMatch(section(paused, 'dash-progress'), /dash-stats/, 'No wall of zeros');
+  assert.match(section(paused, 'dash-next'), /data-action="start"[\s\S]*?接著學，上次學到第 2 步/);
+  assert.equal(starts(paused), 1);
+  // Someone who only saved a travel phrase finds it again from home.
+  const traveller = browser({ hash: '#travel/hotel' });
+  traveller.study('study-favorite', { phrase: 'phrase/hotel/check-in' });
+  traveller.navigate('#home');
+  assert.match(traveller.html, /home-dashboard/);
+  assert.match(section(traveller, 'dash-next'), /href="#travel\/favorites"[\s\S]*?1 張/);
+  assert.equal(starts(traveller), 1);
+  // Both scripts done: the main card leads to grammar instead of replaying kana.
+  const data = JSON.parse(browser().stored);
+  const kanaRows = vm.runInContext('JSON.stringify(Object.values(Content.rowGroups).flat())', contentContext);
+  for (const row of JSON.parse(kanaRows)) for (const script of ['h', 'k']) data.learning.study.courses[`${script}-${row}`] = { completedAt: '2026-10-01T00:00:00.000Z' };
+  data.attempts = [{ id: 'old', courseId: 'h-a', date: '2026-10-01T00:00:00.000Z', total: 5, firstCorrect: null, retryQuestions: [] }];
+  const fluent = browser({ raw: JSON.stringify(data) });
+  assert.match(section(fluent, 'lesson-hero'), /<span class="number">基礎句型<\/span>[\s\S]*?data-action="study-open" data-course="g-identity"/);
+  assert.match(section(fluent, 'lesson-hero'), /句型已完成 0 \//);
+  assert.doesNotMatch(section(fluent, 'dash-next'), /基礎句型/, 'Grammar is not offered twice');
+  assert.match(section(fluent, 'dash-progress'), /<dt>平假名<\/dt><dd><strong>104<\/strong> \/ 104 字/);
+  assert.match(section(fluent, 'dash-progress'), /<dt>第一次答對<\/dt><dd><strong>還沒有<\/strong><\/dd>/, 'Records without first answers are not scored');
+  // An unfinished grammar review round says it continues.
+  const reviewer = browser();
+  for (const id of ['g-identity', 'g-question']) {
+    const course = JSON.parse(vm.runInContext(`JSON.stringify(Content.courses[${JSON.stringify(id)}])`, contentContext));
+    reviewer.study('study-open', { course: id });
+    for (let i = 0; i < course.steps.length; i++) reviewer.study('study-next');
+    for (let i = 0; i < course.questions.length; i++) {
+      const active = reviewer.state.study.courses[id].active;
+      reviewer.study('study-answer', { choice: course.questions[active.order[active.cursor]].answer });
+      reviewer.study('study-next');
+    }
+  }
+  reviewer.navigate('#home');
+  reviewer.study('study-grammar-review');
+  assert.equal(reviewer.hash, '#grammar-review');
+  reviewer.navigate('#home');
+  assert.match(section(reviewer, 'dash-next'), /data-action="study-grammar-review"[\s\S]*?繼續/);
 });
