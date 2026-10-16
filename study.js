@@ -208,9 +208,12 @@ const Study = (() => {
     if (saved?.completedAt) return "已完成・可再練";
     return "開始";
   }
+  // A kana row shows each character with its romaji underneath as one unit, so a wrapped row never mismatches them (#80).
+  const kanaCells = (course) => `<span class="kana-cells">${course.letters.map((letter, i) => `<span class="kana-cell"><span lang="ja">${escape(letter)}</span><span class="kana-roman">${escape(course.readings[i])}</span></span>`).join("")}</span>`;
   function row(course) {
     const learned = state().courses[course.id];
-    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span><strong${course.type === "kana" ? ' lang="ja"' : ""}>${escape(course.type === "kana" ? course.row : course.title)}</strong><span class="${course.type === "kana" ? "reading-label" : "course-subtitle"}"${course.type === "kana" || course.home === "kana" ? ' lang="ja"' : ""}>${escape(course.type === "kana" ? course.letters.join("　") : course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span></span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
+    const name = course.type === "kana" ? `<strong lang="ja">${escape(course.row)}</strong>${course.row.endsWith("行") ? `<span class="row-roman">（${escape(course.readings[0])}）</span>` : ""}` : `<strong>${escape(course.title)}</strong>`;
+    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span>${name}${course.type === "kana" ? kanaCells(course) : `<span class="course-subtitle"${course.home === "kana" ? ' lang="ja"' : ""}>${escape(course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span>`}</span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
   }
   const kanaRows = (script, group) => Content.rowGroups[group].map((key) => courses[`${script}-${key}`]).filter(Boolean);
   function reviewSummary() {
