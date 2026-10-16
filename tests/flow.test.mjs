@@ -1606,9 +1606,9 @@ test('with a clock that went backwards, a kana answer is still dated after the l
 test('a second clear still ends what a backup made before it holds, when the clock went back or both clears fall in one millisecond', async () => {
   const phrase = vm.runInContext('Content.phrasebook.find(p=>p.id==="t-pay").steps[0].id', contentContext);
   const clear = (b) => { b.navigate('#history'); b.action('clear-history'); b.action('confirm-clear'); };
-  for (const [label, first, practice, second] of [
-    ['clock went back', '2026-10-17T10:00:00.000Z', '2026-10-17T10:01:00.000Z', '2026-10-17T09:00:00.000Z'],
-    ['same millisecond', '2026-10-17T10:00:00.000Z', '2026-10-17T10:00:00.000Z', '2026-10-17T10:00:00.000Z'],
+  for (const [label, first, practice, second, step] of [
+    ['clock went back', '2026-10-17T10:00:00.000Z', '2026-10-17T10:01:00.000Z', '2026-10-17T09:00:00.000Z', 30000],
+    ['same millisecond', '2026-10-17T10:00:00.000Z', '2026-10-17T10:00:00.000Z', '2026-10-17T10:00:00.000Z', 0],
   ]) {
     const b = completedGrammarBrowser();
     setClock(b, first);
@@ -1616,16 +1616,24 @@ test('a second clear still ends what a backup made before it holds, when the clo
     for (let i = 0; i < 5; i++) b.study('study-next');
     finishKanaRound(b, { missFirst: true });
     clear(b);
-    // After the first clear: a missed kana round (a dated record), an unfinished kana review and grammar review, and an open lesson.
+    // After the first clear: an unfinished kana review and grammar review, a missed kana round and an open lesson.
     setClock(b, practice);
-    openKanaQuiz(b, 'k-a');
-    playRound(b, 'k-a', (q, session) => session.cursor === 0);
     b.navigate('#kana-review'); b.study('study-review-start');
     b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, 'review')), true) });
     b.navigate('#grammar-review'); b.study('study-grammar-review');
     const item = b.state.study.grammarReviewSession.items[0];
     const question = vm.runInContext(`Content.courses[${JSON.stringify(item.courseId)}].questions[${item.q}]`, contentContext);
     b.study('study-answer', { choice: (question.answer + 1) % question.options.length });
+    // The clock moves on between steps, so the round's record is dated after every answer: the clear must follow the record too.
+    let now = Date.parse(practice);
+    openKanaQuiz(b, 'k-a');
+    for (let guard = 0; guard < 15 && practiceOf(b, 'k-a').round !== 'done'; guard++) {
+      const session = practiceOf(b, 'k-a');
+      b.study('study-answer', { choice: choiceFor(questionOf(session), session.round === 'first' && session.cursor === 0) });
+      now += step; setClock(b, new Date(now).toISOString());
+      b.study('study-next');
+    }
+    assert.ok(b.state.study.courses['k-a'].completedAt, label);
     b.study('study-open', { course: 'h-ka' }); b.study('study-next');
     b.navigate('#travel/t-pay'); b.study('study-favorite', { phrase });
     b.navigate('#settings'); b.study('study-rate', { rate: '0.65' });
@@ -1656,6 +1664,23 @@ test('a second clear still ends what a backup made before it holds, when the clo
       }
     }
   }
+});
+
+test('a restored record dated past year 9999 does not date a clear at the end of time, so later mistakes survive a reload', async () => {
+  const b = browser({ hash: '#study/h-a' });
+  for (let i = 0; i < 5; i++) b.study('study-next');
+  finishKanaRound(b, { missFirst: true });
+  const backup = JSON.parse(b.stored);
+  backup.attempts.push({ ...backup.attempts[0], id: 'far-future', date: '+275760-09-13T00:00:00.000Z' });
+  const restored = await importAndReload(browser(), JSON.stringify(backup));
+  assert.ok(restored.state.history.some((entry) => entry.id === 'far-future'), 'The backup is accepted with the odd record');
+  restored.navigate('#history'); restored.action('clear-history'); restored.action('confirm-clear');
+  const clearedAt = restored.state.study.reviewClearedAt;
+  assert.ok(clearedAt < '2100', clearedAt);
+  openKanaQuiz(restored, 'h-ka');
+  const x = questionOf(practiceOf(restored, 'h-ka')).id;
+  restored.study('study-answer', { choice: choiceFor(questionOf(practiceOf(restored, 'h-ka')), true) });
+  assert.equal(browser({ raw: restored.stored }).state.study.kanaReview[x]?.wrong, true);
 });
 
 test('returning learners get a home dashboard of next steps, everything on offer and progress; new visitors do not', () => {
