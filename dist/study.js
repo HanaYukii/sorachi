@@ -216,8 +216,14 @@ const Study = (() => {
     const availableCount = KanaPractice.entries.filter(item => data.kanaReview[item.id] || data.courses[item.courseId]?.completedAt).length;
     return {wrongCount:wrong.length,availableCount,wrongLabels:wrong.slice(0,5).map(item=>`${item.character}（${item.reading}）`),canResume:Boolean(data.reviewSession && data.reviewSession.round!=='done'),hasData:Object.keys(data.kanaReview).length>0 || Boolean(data.reviewSession) || Object.keys(data.grammarReview).length>0 || Boolean(data.grammarReviewSession)};
   }
+  // A clear is dated after the previous clear and after every answer and record this browser has dated, also when the
+  // clock went back or two clears fall in one millisecond; otherwise a backup made before it looks newer and brings
+  // ended rounds and mistakes back (#36). Capped at the last date iso() keeps.
+  const LAST_DATE=Date.parse('9999-12-31T23:59:59.999Z');
   function clearReview() {
-    const data=state(); data.kanaReview={}; data.reviewSession=null; data.grammarReview={}; data.grammarReviewSession=null; data.reviewClearedAt=new Date().toISOString();
+    const data=state();
+    const dates=[data.reviewClearedAt,...Object.values(data.kanaReview).map(item=>item.lastSeen),...Object.values(data.grammarReview).map(item=>item.lastSeen),...(api.history?.()||[]).map(entry=>entry?.date)].map(date=>Date.parse(date)).filter(Number.isFinite);
+    data.kanaReview={}; data.reviewSession=null; data.grammarReview={}; data.grammarReviewSession=null; data.reviewClearedAt=new Date(Math.min(LAST_DATE,Math.max(Date.now(),...dates.map(time=>time+1)))).toISOString();
     for (const id of Object.keys(courses)) if(courses[id].type==='kana') {if(data.courses[id])data.courses[id].active=null;drafts.delete(id);}
   }
   function currentPractice() {

@@ -1603,6 +1603,61 @@ test('with a clock that went backwards, a kana answer is still dated after the l
   assert.equal(restored.state.study.kanaReview[x].wrong, false, 'The older backup cannot bring the mistake back');
 });
 
+test('a second clear still ends what a backup made before it holds, when the clock went back or both clears fall in one millisecond', async () => {
+  const phrase = vm.runInContext('Content.phrasebook.find(p=>p.id==="t-pay").steps[0].id', contentContext);
+  const clear = (b) => { b.navigate('#history'); b.action('clear-history'); b.action('confirm-clear'); };
+  for (const [label, first, practice, second] of [
+    ['clock went back', '2026-10-17T10:00:00.000Z', '2026-10-17T10:01:00.000Z', '2026-10-17T09:00:00.000Z'],
+    ['same millisecond', '2026-10-17T10:00:00.000Z', '2026-10-17T10:00:00.000Z', '2026-10-17T10:00:00.000Z'],
+  ]) {
+    const b = completedGrammarBrowser();
+    setClock(b, first);
+    b.navigate('#study/h-a');
+    for (let i = 0; i < 5; i++) b.study('study-next');
+    finishKanaRound(b, { missFirst: true });
+    clear(b);
+    // After the first clear: a missed kana round (a dated record), an unfinished kana review and grammar review, and an open lesson.
+    setClock(b, practice);
+    openKanaQuiz(b, 'k-a');
+    playRound(b, 'k-a', (q, session) => session.cursor === 0);
+    b.navigate('#kana-review'); b.study('study-review-start');
+    b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, 'review')), true) });
+    b.navigate('#grammar-review'); b.study('study-grammar-review');
+    const item = b.state.study.grammarReviewSession.items[0];
+    const question = vm.runInContext(`Content.courses[${JSON.stringify(item.courseId)}].questions[${item.q}]`, contentContext);
+    b.study('study-answer', { choice: (question.answer + 1) % question.options.length });
+    b.study('study-open', { course: 'h-ka' }); b.study('study-next');
+    b.navigate('#travel/t-pay'); b.study('study-favorite', { phrase });
+    b.navigate('#settings'); b.study('study-rate', { rate: '0.65' });
+    const backup = b.stored, saved = JSON.parse(backup).learning.study;
+    assert.ok(saved.reviewSession && saved.grammarReviewSession && saved.courses['h-ka'].active && Object.keys(saved.kanaReview).length && Object.keys(saved.grammarReview).length, label);
+    setClock(b, second);
+    // A clear that cannot be saved changes nothing, the records and the date of the last clear included.
+    const kept = b.state;
+    b.failSetItem(); clear(b); b.failSetItem(false);
+    assert.equal(b.stored, backup, label);
+    assert.deepEqual(b.state, kept, label);
+    clear(b);
+    const cleared = b.stored;
+    assert.ok(JSON.parse(cleared).learning.study.reviewClearedAt > saved.reviewClearedAt, `${label}: the second clear must be dated after the first`);
+    for (const [direction, local, incoming] of [['restore into the cleared browser', cleared, backup], ['restore the cleared data into the old browser', backup, cleared]]) {
+      const restored = await importAndReload(browser({ raw: local }), incoming);
+      for (const page of [restored, browser({ raw: restored.stored, hash: '#kana-review' })]) {
+        const study = page.state.study, where = `${label}, ${direction}`;
+        assert.equal(study.courses['h-ka']?.active ?? null, null, where);
+        assert.equal(study.reviewSession, null, where);
+        assert.equal(study.grammarReviewSession, null, where);
+        assert.deepEqual(Object.keys(study.kanaReview), [], where);
+        assert.deepEqual(Object.keys(study.grammarReview), [], where);
+        for (const id of ['h-a', 'k-a', 'g-identity', 'g-question']) assert.ok(study.courses[id].completedAt, `${where}: ${id} stays completed`);
+        const envelope = JSON.parse(page.stored);
+        assert.deepEqual(envelope.favorites, [phrase], where);
+        assert.equal(envelope.preferences.ttsRate, 0.65, where);
+      }
+    }
+  }
+});
+
 test('returning learners get a home dashboard of next steps, everything on offer and progress; new visitors do not', () => {
   const b = browser();
   assert.doesNotMatch(b.html, /home-dashboard/, 'A new visitor keeps the single way in');
