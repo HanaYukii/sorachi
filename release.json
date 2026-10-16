@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "af29eba3fe9892982bc7d5e60bd0f072b31a854d500f3c5a481ffd36b6362484",
+  "buildId": "deed6b56150bed39b5d405823cdf3f79a1dd7fe1723c48c5e592eb10b1544bba",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app.js",
-      "sha256": "4a5f13b12d1d79ae8f749af3b78137a2eb7cc249d003c027b2233bfb31ed67c3",
-      "bytes": 40103,
+      "sha256": "ef194c7275b14ac26d68c14395daa0b3fab56849e9f15f67a9f2b4dbcd4315db",
+      "bytes": 40173,
       "mime": "text/javascript"
     },
     {
@@ -57,22 +57,40 @@
       "mime": "image/webp"
     },
     {
+      "path": "assets/cloud-kana-128.webp",
+      "sha256": "790a5d41b7033634309048fa182859e6de9ebe6c94ef0529bb57689702900617",
+      "bytes": 4622,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-kana-256.webp",
+      "sha256": "7a9ccfbbdd4212c416fe37c62d68aef2ac903e8554484adf13d384233fc7dca7",
+      "bytes": 10086,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-kana-512.webp",
+      "sha256": "0c761ea9e546134309e61adcf537c5b774813680e4eee9a099263308ec432e38",
+      "bytes": 22982,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-travel-128.webp",
+      "sha256": "fb71538fe413c0d3b0b9652134d2ecac89cdbe76ff5a144e0985f21620179aa7",
+      "bytes": 4752,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-travel-256.webp",
+      "sha256": "f4e5fdbee16c95cdc93fa48be0452314db7de75ac03bced357020498cd1a416e",
+      "bytes": 10736,
+      "mime": "image/webp"
+    },
+    {
       "path": "assets/favicon-32.png",
       "sha256": "2bc76a6ccd2aa0bad5dfdaee8119a13a1252570e286b0d1d9a399a5fe1e72a4f",
       "bytes": 1849,
       "mime": "image/png"
-    },
-    {
-      "path": "assets/grammar-notebook.svg",
-      "sha256": "dc3653a4bd30c67fb05ef070d30330391bb8046535d5c3e110116734daf6975f",
-      "bytes": 692,
-      "mime": "image/svg+xml"
-    },
-    {
-      "path": "assets/travel-bag.svg",
-      "sha256": "f7c9bcfd340010f9fd12d28beb1d1de7e74d34c376dbedd503388801af677949",
-      "bytes": 927,
-      "mime": "image/svg+xml"
     },
     {
       "path": "content.js",
@@ -88,7 +106,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "17d88fce81fdc090b4918fbc54a06800cd76908434700ea979dfab65e07805dc",
+      "sha256": "720c8fc4d42f2adc54a5e8878cac70d1d7ca4b3ac06f14b428ffcd3eaac0976c",
       "bytes": 1804,
       "mime": "text/html"
     },
