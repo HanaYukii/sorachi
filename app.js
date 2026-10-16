@@ -358,10 +358,15 @@ app.addEventListener("change", (event) => {
   try { event.target.value = ""; } catch { /* Read-only in some engines. */ }
   importFile(file);
 });
-app.addEventListener("input", () => {
+app.addEventListener("input", (event) => {
+  if (event?.target?.id === "travel-search") { Study.searchTravel(event.target.value, event.isComposing); return; }
   if (location.hash !== "#feedback") return;
   feedbackDraft = {category: app.querySelector("#feedback-category").value, message: app.querySelector("#feedback-message").value};
   app.querySelector("#feedback-ready").replaceChildren();
+});
+// A word finished with an input method searches once, when it is done.
+app.addEventListener("compositionend", (event) => {
+  if (event.target?.id === "travel-search") Study.searchTravel(event.target.value);
 });
 app.addEventListener("submit", (event) => {
   if (event.target.id !== "feedback-form") return;
@@ -428,6 +433,9 @@ function route() {
     // Back on the kana table or the grammar list from a lesson, that lesson's row is in view and has focus.
     const row = (location.hash === "#kana" || location.hash === "#grammar") && left ? app.querySelector(`[data-course="${left}"]`) : null;
     if (row) { row.focus({ preventScroll: true }); row.scrollIntoView?.({ block: "center" }); }
+    // A travel card opened from a search result.
+    const found = app.querySelector(".travel-found");
+    if (found) { found.focus({ preventScroll: true }); found.scrollIntoView?.({ block: "start" }); }
     return;
   }
   if (location.hash === "#lesson") {
