@@ -305,7 +305,7 @@ test('backup import reports added, existing and over-limit records instead of si
  older.history=[{id:'old-1',date:'2025-01-01T00:00:00.000Z',total:2,firstCorrect:1,retryQuestions:[4]},{id:'new-3',date:new Date(Date.UTC(2026,5,1,0,3)).toISOString(),total:2,firstCorrect:2,retryQuestions:[]}];
  source.store.writeProgress(older);
  const result=target.store.importBackupDetailed(source.store.exportBackup());
- assert.deepEqual({...result},{ok:true,added:0,existing:1,skipped:1,dropped:0});
+ assert.deepEqual({...result},{ok:true,added:0,existing:1,skipped:1,dropped:0,clearApplied:false});
  assert.equal(target.store.readProgress().history.length,200);
  assert.equal(target.store.importBackupDetailed('x'.repeat(target.api.MAX_BACKUP_CHARS+1)).reason,'too-large');
  assert.equal(target.store.importBackupDetailed('{').reason,'invalid');
@@ -344,7 +344,7 @@ test('import reports local records pushed out by newer imported ones',()=>{
  const source=setup(), theirs=source.store.readProgress();
  theirs.history=Array.from({length:3},(_,i)=>({id:`new-${i}`,date:new Date(Date.UTC(2026,0,1,0,i)).toISOString(),total:2,firstCorrect:2,retryQuestions:[]}));
  source.store.writeProgress(theirs);
- assert.deepEqual({...target.store.importBackupDetailed(source.store.exportBackup())},{ok:true,added:3,existing:0,skipped:0,dropped:3});
+ assert.deepEqual({...target.store.importBackupDetailed(source.store.exportBackup())},{ok:true,added:3,existing:0,skipped:0,dropped:3,clearApplied:false});
 });
 
 test('a clear on either side keeps older mistakes and review sessions from coming back',()=>{

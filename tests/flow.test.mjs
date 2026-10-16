@@ -1079,3 +1079,80 @@ test('home and utility pages reach the travel phrases in one tap', () => {
     assert.match(b.html, /<a class="header-link" href="#travel">旅遊常用語<\/a>/, hash);
   }
 });
+
+function startKanaQuiz(b, course) {
+  b.study('study-open', { course });
+  for (let i = 0; i < 10 && b.state.study.courses[course]?.active?.phase !== 'quiz'; i++) b.study('study-next');
+  const q = b.state.study.courses[course].active.practice.questions[0];
+  b.study('study-answer', { choice: q.options.findIndex((id) => id !== q.id) });
+}
+const tick = () => { const until = Date.now() + 3; while (Date.now() < until); };
+
+test('a restore never revives practice that a newer clear ended, on either side', async () => {
+  const restore = async (b, raw) => {
+    b.change('backup-file', [{ size: raw.length, text: async () => raw }]);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(b.reloads, 1);
+    return browser({ raw: b.stored, hash: '#kana' });
+  };
+  const clearedAt = (b) => JSON.parse(b.stored).learning.study.reviewClearedAt;
+  // 1. This browser cleared after the backup was made: the backup's active quiz and review stay ended.
+  const a = browser({ hash: '#study/h-a' });
+  for (let i = 0; i < 5; i++) a.study('study-next');
+  finishKanaRound(a, { missFirst: true });
+  startKanaQuiz(a, 'h-ka');
+  a.navigate('#kana-review'); a.study('study-review-start');
+  const q = a.state.study.reviewSession.questions[0];
+  a.study('study-answer', { choice: q.options.indexOf(q.id) });
+  const before = JSON.parse(a.stored);
+  assert.ok(before.learning.study.reviewSession && before.learning.study.courses['h-ka'].active.phase === 'quiz');
+  tick();
+  // 1a. Both sides have h-ka.
+  a.navigate('#history'); a.action('clear-history'); a.action('confirm-clear');
+  const cleared = browser({ raw: a.stored, hash: '#history' });
+  const afterLocalClear = await restore(cleared, JSON.stringify(before));
+  assert.equal(afterLocalClear.state.study.reviewSession, null);
+  assert.equal(afterLocalClear.state.study.courses['h-ka'].active, null);
+  assert.ok(afterLocalClear.state.study.courses['h-a'].completedAt, 'Earned completion is kept');
+  assert.deepEqual(afterLocalClear.state.study.kanaReview, {});
+  assert.equal(afterLocalClear.state.study.reviewClearedAt, clearedAt(cleared));
+  // 1b. Only the backup has h-ka.
+  const c = browser({ hash: '#study/h-a' });
+  for (let i = 0; i < 5; i++) c.study('study-next');
+  finishKanaRound(c);
+  c.navigate('#history'); c.action('clear-history'); c.action('confirm-clear');
+  assert.equal(JSON.parse(c.stored).learning.study.courses['h-ka'], undefined);
+  const fresh = browser({ raw: c.stored, hash: '#history' });
+  const afterLocalOnly = await restore(fresh, JSON.stringify(before));
+  assert.equal(afterLocalOnly.state.study.courses['h-ka']?.active ?? null, null);
+  assert.equal(afterLocalOnly.state.study.reviewSession, null);
+  assert.deepEqual(afterLocalOnly.state.study.kanaReview, {});
+  // 2. The backup cleared after this browser's practice began: local kana rounds and review end,
+  //    whether or not the backup has that course; grammar progress stays.
+  const b = browser({ hash: '#study/h-a' });
+  for (let i = 0; i < 5; i++) b.study('study-next');
+  finishKanaRound(b, { missFirst: true });
+  startKanaQuiz(b, 'h-ka');
+  startKanaQuiz(b, 'k-a');
+  b.study('study-open', { course: 'g-demo' }); b.study('study-next');
+  assert.equal(b.state.study.courses['g-demo'].active.cursor, 1);
+  b.navigate('#kana-review'); b.study('study-review-start');
+  assert.ok(b.state.study.reviewSession);
+  tick();
+  const other = browser({ hash: '#study/h-a' });
+  for (let i = 0; i < 5; i++) other.study('study-next');
+  finishKanaRound(other);
+  startKanaQuiz(other, 'h-ka');
+  other.navigate('#history'); other.action('clear-history'); other.action('confirm-clear');
+  assert.equal(JSON.parse(other.stored).learning.study.courses['h-ka'].active, null, 'Both sides have h-ka');
+  const mine = browser({ raw: b.stored, hash: '#history' });
+  const afterRemoteClear = await restore(mine, other.stored);
+  const study = afterRemoteClear.state.study;
+  assert.equal(study.reviewSession, null);
+  assert.equal(study.courses['h-ka'].active, null);
+  assert.equal(study.courses['k-a'].active, null, 'A course only this browser has ends too');
+  assert.equal(study.courses['g-demo'].active.cursor, 1, 'Grammar progress is not a kana round');
+  assert.ok(study.courses['h-a'].completedAt);
+  assert.deepEqual(study.kanaReview, {});
+  assert.equal(study.reviewClearedAt, clearedAt(other));
+});

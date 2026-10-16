@@ -44,29 +44,42 @@ const DataStore = (() => {
   const later = (x, y) => (time(x) ?? -Infinity) >= (time(y) ?? -Infinity) ? x : y;
   const realProgress = (active) => object(active) && (active.phase !== "cards" || (Number.isInteger(active.cursor) && active.cursor > 0));
   // completedAt records the most recent completion, so the later side also supplies lastResult.
-  function mergeCourse(local, incoming) {
-    if (!object(incoming)) return local;
-    if (!object(local)) return incoming;
+  // Kana course ids (h-*, k-*; validate() reserves these prefixes): a records clear ends their unfinished rounds, nothing else.
+  const kanaCourse = (id) => /^[hk]-[a-z]+$/.test(id);
+  function mergeCourse(local, incoming, clearWinner) {
+    if (!object(incoming)) return clearWinner === "incoming" && object(local) ? {...local, active: null} : local;
+    if (!object(local)) return clearWinner === "local" ? {...incoming, active: null} : incoming;
     const newer = later(local.completedAt, incoming.completedAt) === local.completedAt ? local : incoming;
+    // Without a start time for each round, the side that cleared later decides which rounds survive.
+    const active = clearWinner === "local" ? local.active ?? null
+      : clearWinner === "incoming" ? incoming.active ?? null
+      : realProgress(local.active) ? local.active : incoming.active ?? local.active ?? null;
     return {...incoming,...local,
       completedAt: time(newer.completedAt) === null ? null : newer.completedAt,
       attempts: Math.max(Number.isInteger(local.attempts) ? local.attempts : 0, Number.isInteger(incoming.attempts) ? incoming.attempts : 0),
       lastResult: newer.lastResult ?? null,
-      active: realProgress(local.active) ? local.active : incoming.active ?? local.active ?? null};
+      active};
   }
   function mergeStudy(local, incoming) {
+    // A clear on either side wins: mistakes seen before the later clear are dropped, and review sessions and
+    // unfinished kana rounds come only from the side that cleared later, even rounds the other side began after
+    // that clear, because rounds carry no start time. Completion, results and grammar progress still merge.
+    const localClear = time(local.reviewClearedAt) ?? -Infinity, incomingClear = time(incoming.reviewClearedAt) ?? -Infinity;
+    const clearWinner = localClear > incomingClear ? "local" : incomingClear > localClear ? "incoming" : null;
     const courses = {...(incoming.courses || {})};
-    for (const [id, course] of Object.entries(local.courses || {})) courses[id] = mergeCourse(course, incoming.courses?.[id]);
-    // A clear on either side wins over older mistakes and sessions from the other.
+    for (const id of new Set([...Object.keys(local.courses || {}), ...Object.keys(incoming.courses || {})])) {
+      courses[id] = mergeCourse(local.courses?.[id], incoming.courses?.[id], kanaCourse(id) ? clearWinner : null);
+    }
     const cleared = later(local.reviewClearedAt, incoming.reviewClearedAt);
     const clearedAt = time(cleared) === null ? null : cleared;
     const fresh = (item) => clearedAt === null || (time(item?.lastSeen) ?? -Infinity) > time(clearedAt);
     const review = {};
     for (const source of [incoming.kanaReview, local.kanaReview]) for (const [id, item] of Object.entries(object(source) ? source : {})) if (fresh(item) && later(item?.lastSeen, review[id]?.lastSeen) === item?.lastSeen) review[id] = item;
-    const localCleared = (time(local.reviewClearedAt) ?? -Infinity) > (time(incoming.reviewClearedAt) ?? -Infinity);
     const learned = Object.values(local.courses || {}).some((course) => object(course) && (time(course.completedAt) !== null || realProgress(course.active)));
-    return {...incoming,...local,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,
-      reviewSession:local.reviewSession ?? (localCleared ? null : incoming.reviewSession ?? null),
+    const reviewSession = clearWinner === "local" ? local.reviewSession ?? null
+      : clearWinner === "incoming" ? incoming.reviewSession ?? null
+      : local.reviewSession ?? incoming.reviewSession ?? null;
+    return {...incoming,...local,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,reviewSession,
       ...(clearedAt ? {reviewClearedAt:clearedAt} : {})};
   }
   const emptyIntro = () => ({step:0,completed:false,inProgress:false,answers:{},firstAnswers:{}});
@@ -121,7 +134,8 @@ const DataStore = (() => {
     // Restores a backup into this browser. Records merge by id (newest 200 kept);
     // each course keeps the latest completion with its result and the larger attempt
     // count, and an in-progress round only fills in where this browser has none.
-    // This is a local backup primitive, not cloud sync.
+    // When one side cleared records later, that clear decides mistakes, review sessions
+    // and unfinished kana rounds (see mergeStudy). This is a local backup primitive, not cloud sync.
     function importBackupDetailed(raw) {
       if (typeof raw !== "string" || raw.length > MAX_BACKUP_CHARS) return {ok:false,reason:"too-large"};
       let parsed;
@@ -134,7 +148,8 @@ const DataStore = (() => {
       const attempts = mergeAttempts(snapshot.attempts,all).slice(-MAX_ATTEMPTS);
       const keptIds = new Set(attempts.map((item) => item.id));
       const fresh = [...incomingIds].filter((id) => !localIds.has(id));
-      const report = {added:fresh.filter((id) => keptIds.has(id)).length,existing:incomingIds.size - fresh.length,skipped:fresh.filter((id) => !keptIds.has(id)).length,dropped:[...localIds].filter((id) => !keptIds.has(id)).length};
+      const report = {added:fresh.filter((id) => keptIds.has(id)).length,existing:incomingIds.size - fresh.length,skipped:fresh.filter((id) => !keptIds.has(id)).length,dropped:[...localIds].filter((id) => !keptIds.has(id)).length,
+        clearApplied:(time(current.study.reviewClearedAt) ?? -Infinity) !== (time(incoming.learning.study.reviewClearedAt) ?? -Infinity)};
       const introStarted = current.intro.completed || current.intro.inProgress || current.intro.step > 0;
       const intro = introStarted ? {...current.intro,completed:current.intro.completed || incoming.learning.intro.completed} : incoming.learning.intro;
       const study = mergeStudy(current.study,incoming.learning.study);

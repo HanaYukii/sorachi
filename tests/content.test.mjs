@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), 'c4a456798a2302e18b5cf6105b7b7db51e3e4e4d0b5277d95574e835b5b6598b');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '045f7be326db7dc6bcbb80d79b08abf89b34e232cbdb6ce61315422cc9e1f6a1');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -146,6 +146,7 @@ test('options must be distinct nonempty strings and the correct index must exist
   assert.match(errors(d => d.grammar[1].questions[0].answer = 100), /answer/i);
   assert.match(errors(d => d.phrasebook[0].questions = []), /not quizzes/i);
   assert.match(errors(d => d.grammar[0].group = 'travel'), /phrasebook/i);
+  assert.match(errors(d => d.grammar[0].id = 'k-kanji'), /reserved for kana/i);
   assert.match(errors(d => d.grammar[0].questions[0].answer = 0.5), /answer/i);
   assert.match(errors(d => d.intro.questions[4].options = []), /options/i);
   assert.match(errors(d => d.intro.questions[5].hint = ''), /hint/i);
@@ -235,7 +236,10 @@ test('transit phrases pair the concepts, keep the question context, and hedge ti
   assert.match(card('direction').example, /この電車.*京都/);
   assert.match(card('transfer').polite, /京都まで行きたいです。どこで乗り換えますか？/);
   assert.match(card('get-off').example, /降りればいい/);
-  assert.match(card('platform').body, /終點站/);
+  assert.match(card('platform').body, /「〇〇行き」表示開往〇〇/);
+  assert.doesNotMatch(card('platform').body, /「行き」後面/);
+  assert.doesNotMatch(card('platform').body, /行先欄/);
+  assert.equal(card('get-off').keywords[0][0], 'どの駅（どのえき）', 'The minimal question is visible without expanding');
   assert.equal(card('day-pass').staffAsks.example, '何枚ですか？');
   for (const step of transit.steps) assert.ok(step.keywords.length <= 3, step.id);
   const at = Content.phrasebook.findIndex(c => c.id === 'transit');
