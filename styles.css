@@ -1015,6 +1015,15 @@ button svg {
 .script-tabs button[aria-pressed="true"], .script-tabs button[aria-selected="true"] { background: white; box-shadow: 0 2px 5px #6750830c; color: var(--purple-deep); font-weight: 600; }
 .course-list { display: grid; gap: 12px; padding: 0; margin: 24px 0; list-style: none; }
 .course-list-heading { font-size: 18px; margin: 32px 0 0; }
+/* Grammar units open and close; a closed unit still says what it teaches and how far the learner is. */
+.unit-section { margin-top: 14px; }
+.unit-section > summary { cursor: pointer; padding: 14px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--white); list-style-position: inside; }
+.unit-section > summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; }
+.unit-section[open] > summary { border-color: var(--purple); }
+.unit-title { font-size: 17px; font-weight: 700; }
+.unit-goal, .unit-count { display: block; margin-top: 4px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+.unit-count { font-size: 12px; }
+.unit-section > .course-list { margin-top: 10px; }
 .option-reading { display: block; font-size: 12px; font-weight: 400; color: var(--muted); letter-spacing: 0.5px; }
 .course-list-heading + .study-note { margin: 8px 0 0; }
 .course-row { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 19px 22px; display: flex; gap: 20px; align-items: center; justify-content: space-between; text-align: left; }
