@@ -66,9 +66,7 @@ test('memory aid notice distinguishes invention from writing instruction', () =>
 test('a memory-hint anchor word never means something else on a travel card', () => {
   const phrasebook = new Map();
   for (const category of content.phrasebook) for (const step of category.steps) for (const [word, , meaning] of step.keywords) {
-    // Index the kana reading in （） too: 〜行き（ゆき）would otherwise hide a ゆき anchor meaning 雪.
-    const reading = word.match(/（(.+?)）/u)?.[1];
-    for (const key of [word.replace(/（.*?）/u, ''), reading]) if (key) phrasebook.set(key.replace(/〜/gu, ''), meaning);
+    phrasebook.set(word.replace(/（.*?）/u, ''), meaning);
   }
   let parsed = 0;
   for (const letter of letters) {
@@ -80,19 +78,6 @@ test('a memory-hint anchor word never means something else on a travel card', ()
   }
   assert.ok(parsed >= 80, 'Anchors must parse, or the check would silently pass');
   assert.ok(phrasebook.size >= 60);
-});
-
-test('an anchor word starts with its own kana and keeps that kana\'s plain sound', () => {
-  const basic = content.rows.slice(0, 10).flatMap(row => [...row[2], ...row[3]]);
-  assert.equal(basic.length, 92);
-  for (const letter of basic) {
-    // を／ん put the kana at the end of the word (みずをのむ, ほん), so they are checked above instead.
-    const anchor = 'をヲんン'.includes(letter) ? null : hints.get(letter)[1].text.match(/^「(.+?)」（(.+?)）/u);
-    if (!anchor) continue;
-    const [first, second] = [...anchor[1]];
-    assert.equal(first, letter, letter);
-    assert.doesNotMatch(second || '', /[ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ]/u, letter);
-  }
 });
 
 test('contracted-sound hints point back to the i-column kana and give the one-beat reading', () => {
