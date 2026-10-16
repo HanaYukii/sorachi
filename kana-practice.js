@@ -8,7 +8,7 @@ const KanaPractice = (() => {
   const entry = id => registry.get(id) || null;
   const iso = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
   // Common confusions outrank looser look-alikes when only one learned row may contribute.
-  const groups = ['ぬめ','ねれわ','はほ','るろ','あお','さき','さち','いり','うつ','シツ','ソン','クケ','クタ','ウワ','スヌ','チテ','フワ','コユ','ナメ'];
+  const groups = ['ぬめ','ねれわ','はほ','るろ','あお','さき','さち','いり','うつ','まも','シツ','ソン','クケ','クタ','ウワ','スヌ','チテ','クフワ','コユ','ナメ'];
   const looseGroups = ['はま','きち','シン','ツソ','ウフ','フラ','コロ'];
   const shuffled = list => {
     const result = [...list];
