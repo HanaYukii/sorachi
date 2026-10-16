@@ -203,6 +203,22 @@ test('sanitization rejects malformed kana sessions, old versions and skipped una
   assert.deepEqual(clone(b.study.sanitize(null)),{script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
 });
 
+test('old or malformed kana review rounds restart empty while completions and kana mistakes stay', () => {
+  const b=harness(), ids=b.content.courses['h-a'].questions.map(q=>q.id);
+  const valid=clone(b.practice.create(ids.slice(0,3),{mode:'review'}));
+  const base={courses:{'h-a':{attempts:1,completedAt:'2026-10-01T00:00:00.000Z',lastResult:{firstCorrect:4,total:5},active:null}},kanaReview:{[ids[0]]:{lastSeen:'2026-10-01T00:00:00.000Z',wrong:true}}};
+  assert.ok(b.study.sanitize(clone({...base,reviewSession:valid})).reviewSession,'A current round is kept');
+  const variants={'version 0':{...valid,version:0},'version 2':{...valid,version:2},'mode course':{...valid,mode:'course'},'no revisions':{...valid,revisions:undefined},
+    'stale revision':{...valid,revisions:{'h-a':'c1-0000000000000000'}},'old shape':{ids:valid.questions.map(q=>q.id),cursor:1}};
+  for(const [name,reviewSession] of Object.entries(variants)) {
+    const state=b.study.sanitize(clone({...base,reviewSession}));
+    assert.equal(state.reviewSession,null,name);
+    assert.equal(state.courses['h-a'].completedAt,'2026-10-01T00:00:00.000Z',name);
+    assert.deepEqual(clone(state.courses['h-a'].lastResult),{firstCorrect:4,total:5},name);
+    assert.deepEqual(clone(state.kanaReview),base.kanaReview,name);
+  }
+});
+
 test('an unavailable Japanese voice shows visible fallback and never speaks English', () => {
   const voices = [{ lang: 'en-US', name: 'English' }];
   const b = harness(null, voices); b.action('open', { course: 'h-a' });
@@ -812,4 +828,23 @@ test('a fresh correct review answer clears an old mistake and a later wrong answ
   const {question}=reviewQuestion(b);b.action('answer',{choice:String((question.answer+1)%question.options.length)});
   playReview(b); assert.equal(b.state.grammarReview[question.id].wrong,true);
   b.action('grammar-review');playReview(b);assert.equal(b.state.grammarReview[question.id].wrong,false);
+});
+
+// Port of Jabiko srs.test.ts "re-adds a question that is missed again after being cleared" (#37).
+test('a kana character answered right leaves the mistake pool, and a later wrong answer puts it back', () => {
+  const b=harness();startQuiz(b,'h-a');
+  const id=b.practice.current(b.state.courses['h-a'].active.practice).id, item=b.practice.entry(id), label=`${item.character}（${item.reading}）`;
+  const pool=()=>[...b.study.reviewSummary().wrongLabels];
+  assert.deepEqual(pool(),[]);
+  b.action('answer',{choice:String(chooseCurrent(b,'h-a',true))});
+  assert.deepEqual(pool(),[label],'A miss enters the pool at once');
+  b.action('next');finishQuiz(b,'h-a');
+  assert.equal(b.state.kanaReview[id].wrong,false);assert.deepEqual(pool(),[],'One right answer takes it out');
+  b.render('#kana-review');b.action('review-start');
+  const session=b.state.reviewSession;
+  for(let guard=0;guard<5&&b.practice.current(session).id!==id;guard++){const q=b.practice.current(session);b.action('answer',{choice:String(q.options.indexOf(q.id))});b.action('next');}
+  const q=b.practice.current(session);assert.equal(q.id,id);
+  b.action('answer',{choice:String((q.options.indexOf(id)+1)%q.options.length)});
+  assert.deepEqual(pool(),[label],'Missed again after being cleared: back in');
+  assert.equal(b.practice.selectReview(b.state.kanaReview,b.state.courses)[0],id,'and first in the next round');
 });

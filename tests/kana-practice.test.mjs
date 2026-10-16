@@ -7,7 +7,16 @@ for(const file of ['content','kana-practice']) vm.runInContext(readFileSync(new 
 const {P,C}=vm.runInContext('({P:KanaPractice,C:Content})',context);
 const ids=id=>C.courses[id].questions.map(q=>q.id);
 const clone=x=>JSON.parse(JSON.stringify(x));
-function finishFirst(s,wrong=[]) { while(s.round==='first'){const q=P.current(s);const correct=q.options.indexOf(q.id);P.answer(s,wrong.includes(q.id)?(correct+1)%q.options.length:correct);P.next(s);} }
+function finishFirst(s,wrong=[],K=P) { while(s.round==='first'){const q=K.current(s);const correct=q.options.indexOf(q.id);K.answer(s,wrong.includes(q.id)?(correct+1)%q.options.length:correct);K.next(s);} }
+// Sweeps run in their own context with Math.random swapped for mulberry32, so a failing seed replays exactly.
+// Production code still uses Math.random.
+const SEEDS=[1,2,3,0x5eed,20261016];
+const seededContext=vm.createContext({console});
+for(const file of ['content','kana-practice']) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`,import.meta.url),'utf8'),seededContext);
+function seeded(seed) {
+ vm.runInContext(`{let a=${seed}|0;Math.random=()=>{a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}`,seededContext);
+ return vm.runInContext('({P:KanaPractice,random:Math.random})',seededContext);
+}
 
 test('each round mixes directions with bounded cross-row options and no duplicate readings',()=>{
  for(let run=0;run<30;run++){
@@ -66,6 +75,23 @@ test('looser look-alikes from a learned row fill the cross-row slot (き meets �
  }
 });
 
+test('Jabiko look-alikes always meet: ま with も in their row, ク with フ or ワ from a learned row',()=>{
+ for(const seed of SEEDS){
+  const {P}=seeded(seed);
+  const meets=(course,learned,target,partner)=>{
+   for(let run=0;run<8;run++){
+    const q=P.create(ids(course),{completedIds:learned}).questions.find(q=>P.entry(q.id).character===target);
+    assert.ok(q.options.some(id=>P.entry(id).character===partner),`seed ${seed}, run ${run}: ${target} should meet ${partner}`);
+   }
+  };
+  meets('h-ma',[],'ま','も');meets('h-ma',[],'も','ま');
+  meets('k-ka',['k-ha'],'ク','フ');meets('k-ha',['k-ka'],'フ','ク');
+  meets('k-ka',['k-wa'],'ク','ワ');meets('k-wa',['k-ka'],'ワ','ク');
+  // A common confusion: ク outranks the looser ウ for フ's one cross-row slot.
+  meets('k-ha',['k-a','k-ka'],'フ','ク');
+ }
+});
+
 test('short review presents the selected recent mistake before older successful characters',()=>{
  const row=ids('h-a');
  const review=Object.fromEntries(row.map((id,i)=>[id,{lastSeen:`2026-10-1${i+1}T00:00:00.000Z`,wrong:i===3}]));
@@ -115,20 +141,48 @@ test('voiced rows contrast with their learned base row and long review pools sti
  assert.ok(P.sanitize(clone(s)));
 });
 
-test('every kana course with any learned rows yields legal options: one answer, distinct readings, same script, 2–5 choices',()=>{
+test('every kana course with any learned rows yields legal options over fixed seeds: one answer, distinct readings, same script, 2–5 choices, two same-row peers',()=>{
  const kana=Object.values(C.courses).filter(c=>c.type==='kana');
- for(const course of kana){
-  const sameScript=kana.filter(c=>c.script===course.script&&c.id!==course.id).map(c=>c.id);
-  for(let run=0;run<6;run++){
-   const learned=sameScript.filter(()=>Math.random()<0.4);
-   const s=P.create(ids(course.id),{completedIds:learned});
-   for(const q of [...s.questions,...s.questions.map(x=>({...x}))]){
-    assert.ok(q.options.length>=2&&q.options.length<=5,course.id);
-    assert.equal(q.options.filter(id=>id===q.id).length,1,course.id);
-    assert.equal(new Set(q.options).size,q.options.length,course.id);
-    assert.equal(new Set(q.options.map(id=>P.entry(id).reading)).size,q.options.length,course.id);
-    assert.ok(q.options.every(id=>P.entry(id).script===course.script),course.id);
-    assert.ok(q.options.every(id=>[course.id,...learned].includes(P.entry(id).courseId)),course.id);
+ for(const seed of SEEDS){
+  const {P,random}=seeded(seed);
+  for(const course of kana){
+   const sameScript=kana.filter(c=>c.script===course.script&&c.id!==course.id).map(c=>c.id);
+   for(let run=0;run<6;run++){
+    const learned=sameScript.filter(()=>random()<0.4), at=`seed ${seed}, ${course.id}, run ${run}`;
+    const s=P.create(ids(course.id),{completedIds:learned});
+    finishFirst(s,ids(course.id),P);
+    for(const q of [...s.questions,...s.retryQuestions]){
+     assert.ok(q.options.length>=2&&q.options.length<=5,at);
+     assert.equal(q.options.filter(id=>id===q.id).length,1,at);
+     assert.equal(new Set(q.options).size,q.options.length,at);
+     assert.equal(new Set(q.options.map(id=>P.entry(id).reading)).size,q.options.length,at);
+     assert.ok(q.options.every(id=>P.entry(id).script===course.script),at);
+     assert.ok(q.options.every(id=>[course.id,...learned].includes(P.entry(id).courseId)),at);
+     const same=q.options.filter(id=>P.entry(id).courseId===course.id).length;
+     assert.ok(same>=3&&q.options.length-same<=1,`${at}: ${same} same-row options of ${q.options.length}`);
+    }
+   }
+  }
+ }
+ const replay=()=>JSON.stringify(seeded(SEEDS[0]).P.create(ids('h-sa'),{completedIds:['h-a','h-ka','h-ta']}));
+ assert.equal(replay(),replay(),'The same seed gives the same round');
+});
+
+// Port of Jabiko kanaDrill.test.ts "NEVER offer a same-romaji distractor" (#37), with the pairs named.
+test('same-reading pairs never appear as answer and distractor in one question: お／を、オ／ヲ、じ／ぢ、ず／づ、ジ／ヂ、ズ／ヅ',()=>{
+ const pairs=[['お','を'],['オ','ヲ'],['じ','ぢ'],['ず','づ'],['ジ','ヂ'],['ズ','ヅ']];
+ for(const seed of SEEDS){
+  const {P}=seeded(seed);
+  for(const [x,y] of pairs){
+   const a=P.entries.find(item=>item.character===x),b=P.entries.find(item=>item.character===y);
+   assert.equal(a.reading,b.reading,`${x} and ${y} share one reading`);
+   // Each target meets the other's row: in its own course, and both together in a review.
+   for(let run=0;run<10;run++) for(const s of [P.create(ids(a.courseId),{completedIds:[b.courseId]}),P.create(ids(b.courseId),{completedIds:[a.courseId]}),P.create([a.id,b.id],{mode:'review'})]){
+    finishFirst(s,s.questions.map(q=>q.id),P);
+    for(const q of [...s.questions,...s.retryQuestions]){
+     const shown=q.options.map(id=>P.entry(id).character);
+     assert.ok(!(shown.includes(x)&&shown.includes(y)),`seed ${seed}: ${x} and ${y} offered together for ${P.entry(q.id).character}`);
+    }
    }
   }
  }
