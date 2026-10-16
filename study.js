@@ -301,7 +301,7 @@ const Study = (() => {
     if (state().grammarReviewSession) save();
     return grammarRound();
   }
-  // Counts the home dashboard shows, so the home page never reaches into study state.
+  // Counts for the home dashboard that only Study can compute (saved phrases, the grammar review round).
   function dashboardSummary() {
     const round = grammarRound();
     return { savedPhrases: savedPhrases().length, grammarReviewSize: reviewSize(), grammarReviewResume: Boolean(round && !round.done) };
@@ -826,5 +826,5 @@ const Study = (() => {
     if(course.type==='kana'&&active?.phase==='quiz'&&active.practice.round==='retry')return `${course.title}・再試一次第 ${active.practice.cursor+1} 步`;
     return `${course.title}${active ? active.phase === "done" ? "・完成頁" : `・${active.phase === "cards" ? "認識" : "練習"}第 ${active.cursor + 1} 步` : ""}`;
   }
-  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse, hasProgress, currentAttempt, reviewSummary, clearReview, currentPractice, currentReview, grammarNext, dashboardSummary };
+  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse, hasProgress, currentAttempt, reviewSummary, clearReview, currentPractice, currentReview, grammarNext, grammarUnits, dashboardSummary };
 })();
