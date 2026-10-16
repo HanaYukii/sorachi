@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '9a085f25f5a3ea7f79ce22bc01f09c64240d4b5bd0bdcb8e8a9d5dec0563c0f6');
+  assert.equal(createHash('sha256').update(original).digest('hex'), 'cbf49ad927f0845cc4705d5ccea7f69212a31731d60520bd3f394b0a93d09a4e');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -102,9 +102,9 @@ test('intro distractors are balanced and travel phrases retain concise contextua
   assert.equal(reservation.keywords[0][0], '予約（よやく）');
 });
 
-test('registry includes 52 kana groups, twenty-six grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
-  assert.equal(Object.keys(Content.courses).length, 80);
-  assert.equal(Content.grammar.length, 26);
+test('registry includes 52 kana groups, thirty-five grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
+  assert.equal(Object.keys(Content.courses).length, 89);
+  assert.equal(Content.grammar.length, 35);
   for (const id of ['t-place', 't-order', 't-pay', 't-charge']) {
     assert.equal(Content.getCourse(id), null);
     assert.ok(Content.phrasebook.some(c => c.id === id));
@@ -310,7 +310,7 @@ test('speech text is kana only and fixes readings device voices may get wrong', 
 
 test('grammar lessons follow a plan: earlier requirements, taught words only, a card to revisit for every question', () => {
   const ids = Content.grammar.map(g => g.id);
-  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-who', 'g-negative', 'g-no', 'g-mo', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock', 'g-kara-made-time', 'g-verbs', 'g-masen', 'g-mashita', 'g-ni-de', 'g-arimasu', 'g-position']);
+  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-who', 'g-negative', 'g-no', 'g-mo', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock', 'g-kara-made-time', 'g-verbs', 'g-masen', 'g-mashita', 'g-ni-de', 'g-arimasu', 'g-position', 'g-adj-i', 'g-adj-neg', 'g-adj-na', 'g-who-2', 'g-soshite-demo', 'g-kara-reason', 'g-te-forms', 'g-te-kudasai', 'g-te-sequence']);
   for (const lesson of Content.grammar) {
     const plan = Content.lessonPlan[lesson.id];
     for (const req of plan.requires) assert.ok(ids.indexOf(req) < ids.indexOf(lesson.id), `${lesson.id} requires ${req}`);
@@ -324,7 +324,7 @@ test('grammar lessons follow a plan: earlier requirements, taught words only, a 
   assert.match(errors(d => { d.lessonPlan['g-kono'].requires = ['g-who']; }), /must be an earlier lesson/);
   assert.match(errors(d => { delete d.lessonPlan['g-mo'].review['g-mo/question/meaning']; }), /needs a card to revisit/);
   assert.match(errors(d => { delete d.lessonPlan['g-to']; }), /needs a plan entry/);
-  assert.deepEqual([...new Set(Content.grammar.map(lesson => Content.lessonPlan[lesson.id].unit))], ['名詞句', '時間與數字', '動作與地點']);
+  assert.deepEqual([...new Set(Content.grammar.map(lesson => Content.lessonPlan[lesson.id].unit))], ['名詞句', '時間與數字', '動作與地點', '形容詞與連接', 'て形']);
   assert.match(errors(d => { d.lessonPlan['g-to'].unit = '時間與數字'; }), /lessons in a unit must be next to each other/);
   assert.match(errors(d => { delete d.lessonPlan['g-days'].unit; }), /lessonPlan.g-days.unit: required nonempty text/);
   assert.match(errors(d => { d.lessonPlan['g-days'].unit = '時間與數字 '; }), /unit title has surrounding spaces/);

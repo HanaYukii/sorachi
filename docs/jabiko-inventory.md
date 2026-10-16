@@ -2,7 +2,7 @@
 
 - 來源：Jabiko（唯讀參考）`src/domain/exam/items/n5.ts`，commit `31c96ab`（2026-10-11）。
 - 授權：Jabiko repo 沒有授權檔。它的文件說明這些題目是自撰的，參考公開資料只取題型與範圍，沒有複製題幹。使用者在 2026-10-16 允許移植最基礎的題目。所以只搬自撰題，並在 `content.js` 的 `lessonPlan.<課>.sources` 記錄原題 ID。
-- 判斷依據：SoraChi 目前教過的內容（五十音、26 課句型）；「先教再考」；題目答案唯一、干擾項合理。
+- 判斷依據：SoraChi 目前教過的內容（五十音、35 課句型）；「先教再考」；題目答案唯一、干擾項合理。
 
 ## 分類
 
@@ -32,6 +32,10 @@
 | `n5-grammar-e-kyouto-iku` | へ | 先不沿用：題幹有漢字，選項的 が 下一課才教，已有同考點題 | `g-ni-de` |
 | `n5-grammar-ni-shichiji-okiru` | に（時間） | 等先備：時間點的 に 還沒教 | — |
 | `n5-grammar-made-kuji-hataraku` | まで（時間） | 先不沿用：題幹的 けさ、はたらきました 還沒教，已有同考點題 | `g-kara-made-time` |
-| `n5-grammar-kara-atama-itai` | から（原因） | 等 #67 | — |
+| `n5-grammar-kara-atama-itai` | から（原因） | 先不沿用：題幹的 あたま、いたい 還沒教，已有同考點題 | `g-kara-reason` |
 | `n5-grammar-dare-party-kuru` | だれ | 等先備：題幹用過去式「来ましたか」 | #63 之後 |
-| 其餘文法題 | て形、形容詞、過去等 | 等對應的課（#63–#68） | — |
+| `n5-grammar-tekudasai-iu` | てください | 先不沿用：題幹的 もう一度、言います 還沒教，已有同考點題 | `g-te-kudasai` |
+| `n5-grammar-tekara-te-arau-taberu` | てから | 先不沿用：題幹的 手、あらいます 還沒教，已有同考點題 | `g-te-sequence` |
+| `n5-grammar-na` | な形容詞＋名詞 | 先不沿用：題幹的 とても、こうえん 還沒教，已有同考點題 | `g-adj-na` |
+| `n5-grammar-kute` | 〜くて | 等先備：形容詞的て形還沒教 | — |
+| 其餘文法題 | ています、たい、ませんか、より、だけ、ね、よ、ましょう、ながら 等 | 等對應的課（還沒排） | — |
