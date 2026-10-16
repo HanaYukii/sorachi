@@ -1519,10 +1519,11 @@ test('feedback from a retry round names the retried question and round, in a cou
     return body;
   };
   const retryReport = (where, place) => {
-    while (practiceOf(b, where).round === 'first') {
+    for (let guard = 0; guard < 20 && practiceOf(b, where).round === 'first'; guard++) {
       const session = practiceOf(b, where);
       b.study('study-answer', { choice: choiceFor(questionOf(session), session.cursor === 0) }); b.study('study-next');
     }
+    assert.equal(practiceOf(b, where).round, 'retry', 'The first round must reach the retry');
     const question = questionOf(practiceOf(b, where)), course = question.id.split('/')[0], body = report();
     const revision = vm.runInContext(`Content.courseRevision(${JSON.stringify(course)})`, contentContext);
     for (const line of [`所在位置：${place}`, `courseId: ${course}`, `courseRevision: ${revision}`, `questionId: ${question.id}`, `direction: ${question.direction}`, 'practiceVersion: 1', 'round: retry']) assert.ok(body.split('\n').includes(line), `${line}\n${body}`);

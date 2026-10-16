@@ -480,12 +480,13 @@ test('the kana review done page says when first answers were wrong, even if the 
  const b=harness();startQuiz(b,'h-a');finishQuiz(b,'h-a');
  const play=(missFirst,missRetry)=>{
   b.render('#kana-review');b.action('review-start');const session=b.state.reviewSession;
-  while(session.round!=='done'){const q=b.practice.current(session),right=q.options.indexOf(q.id),miss=session.round==='first'?missFirst.includes(session.cursor):missRetry;b.action('answer',{choice:String(miss?(right+1)%q.options.length:right)});b.action('next');}
+  for(let guard=0;guard<20&&session.round!=='done';guard++){const q=b.practice.current(session),right=q.options.indexOf(q.id),miss=session.round==='first'?missFirst.includes(session.cursor):missRetry;b.action('answer',{choice:String(miss?(right+1)%q.options.length:right)});b.action('next');}
+  assert.equal(session.round,'done','The review round must finish');
   return session;
  };
  const summary=()=>b.render('#kana-review').match(/<h2>複習完成<\/h2>(.*?)<button/)[1];
  play([0,2],false);
- assert.match(summary(),/<p>第一次答錯 2 個字，重考都答對了。<\/p>/);
+ assert.match(summary(),/<p>第一次答錯 2 個字，再考一次都答對了。<\/p>/);
  assert.doesNotMatch(summary(),/這次的字都答對了/,'Two first answers were wrong this round');
  play([],false);
  assert.match(summary(),/<p>這次的字都答對了。<\/p>/);
@@ -876,4 +877,15 @@ test('a kana character answered right leaves the mistake pool, and a later wrong
   b.action('answer',{choice:String((q.options.indexOf(id)+1)%q.options.length)});
   assert.deepEqual(pool(),[label],'Missed again after being cleared: back in');
   assert.equal(b.practice.selectReview(b.state.kanaReview,b.state.courses)[0],id,'and first in the next round');
+});
+
+test('extreme saved dates are dropped, so answering kana never throws', () => {
+  // +1ms on a year-275760 date overflows toISOString(); such dates only come from hand-edited data.
+  const far = '+275760-09-13T00:00:00.000Z', id = 'h-a/question/u3042';
+  const b = harness({ reviewClearedAt: far, kanaReview: { [id]: { lastSeen: far, wrong: true } } });
+  assert.equal(b.state.reviewClearedAt, null);
+  assert.equal(b.state.kanaReview[id], undefined);
+  startQuiz(b, 'h-a');
+  assert.doesNotThrow(() => b.action('answer', { choice: String(chooseCurrent(b, 'h-a')) }));
+  for (const item of Object.values(b.state.kanaReview)) assert.match(item.lastSeen, /^\d{4}-/);
 });

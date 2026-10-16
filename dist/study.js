@@ -21,7 +21,8 @@ const Study = (() => {
   const title = (id) => courses[id]?.title || null;
   const travelTitle = (id) => id === "favorites" ? "我的常用語" : travelItem(id)?.title || null;
   const total = (id) => courses[id] ? size(courses[id]) : 0;
-  const iso = (value) => typeof value === "string" && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
+  // Four-digit years only: an extreme saved date (+275760-…) would make later +1ms arithmetic throw.
+  const iso = (value) => { const text = typeof value === "string" && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null; return text && /^\d{4}-/.test(text) ? text : null; };
   const permutation = (value, n) => Array.isArray(value) && value.length === n && new Set(value).size === n && value.every((v) => Number.isInteger(v) && v >= 0 && v < n);
   const shuffle = (n) => {
     const list = Array.from({ length: n }, (_, i) => i);
@@ -431,7 +432,7 @@ const Study = (() => {
       const remaining=session.questions.filter(q=>state().kanaReview[q.id]?.wrong).map(q=>KanaPractice.entry(q.id));
       // retryQuestions are this round's first-time misses; a miss fixed in the retry is not "all right".
       const missed=session.retryQuestions.length, retryRight=session.retryQuestions.every((q,i)=>q.options[session.retryAnswers[i]]===q.id);
-      body=`<h2>複習完成</h2><p>這次練了 ${session.questions.length} 個字。</p>${remaining.length?`<p>還可以再練：${remaining.map(item=>escape(`${item.character}（${item.reading}）`)).join('、')}</p>`:missed?`<p>第一次答錯 ${missed} 個字${retryRight?'，重考都答對了':''}。</p>`:'<p>這次的字都答對了。</p>'}<button class="primary" data-action="study-review-start">再複習 ${Math.min(5,summary.availableCount)} 個字</button>`;
+      body=`<h2>複習完成</h2><p>這次練了 ${session.questions.length} 個字。</p>${remaining.length?`<p>還可以再練：${remaining.map(item=>escape(`${item.character}（${item.reading}）`)).join('、')}</p>`:missed?`<p>第一次答錯 ${missed} 個字${retryRight?`，再考一次${missed>1?'都':''}答對了`:''}。</p>`:'<p>這次的字都答對了。</p>'}<button class="primary" data-action="study-review-start">再複習 ${Math.min(5,summary.availableCount)} 個字</button>`;
     }else if(session)body=practiceQuiz(session,true);
     else body=`<p>先練答錯的字，較早答錯的先練；再複習較久沒練的字，最多 5 個。</p>${summary.wrongLabels.length?`<p>${wrongLine(summary)}</p>`:''}${summary.availableCount?'<button class="primary" data-action="study-review-start">開始複習</button>':'<p>先完成一組五十音練習，就可以在這裡複習。</p>'}`;
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音複習</h1>${body}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`,'#kana','回五十音');
