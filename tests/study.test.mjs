@@ -559,6 +559,26 @@ test('ぢ／づ cards say up front that they share a reading with じ／ず', ()
   assert.match(b.html, /ヅ 和 ズ 同音，都讀 zu/);
 });
 
+test('the kana table pairs every character with its romaji from the lesson data, and the quiz shows none', () => {
+  const b = harness(null, [{ lang: 'ja-JP' }]);
+  for (const script of ['h', 'k']) {
+    b.render('#kana'); b.action('script', { script });
+    const html = b.render('#kana');
+    const ids = Object.values(b.content.rowGroups).flat().map((row) => `${script}-${row}`);
+    for (const id of ids) {
+      const course = b.content.courses[id];
+      const rowHtml = html.match(new RegExp(`data-course="${id}">([\\s\\S]*?)</button>`))[1];
+      const cells = [...rowHtml.matchAll(/<span class="kana-cell"><span lang="ja">([^<]+)<\/span><span class="kana-roman">([^<]+)<\/span><\/span>/g)].map((m) => [m[1], m[2]]);
+      assert.deepEqual(cells, [...course.letters].map((letter, i) => [letter, course.readings[i]]), id);
+      if (course.row.endsWith('行')) assert.ok(rowHtml.includes(`<span class="row-roman">（${course.readings[0]}）</span>`), id);
+    }
+  }
+  const pairs = (id) => Object.fromEntries(b.content.courses[id].letters.map((letter, i) => [letter, b.content.courses[id].readings[i]]));
+  assert.deepEqual([pairs('h-sa').し, pairs('h-ta').ち, pairs('h-ta').つ, pairs('h-ha').ふ, pairs('h-wa').を, pairs('h-wa').ん, pairs('k-wa').ヲ, pairs('h-da').ぢ, pairs('h-da').づ], ['shi', 'chi', 'tsu', 'fu', 'o', 'n', 'o', 'ji', 'zu']);
+  startQuiz(b, 'h-ka');
+  assert.doesNotMatch(b.html, /kana-roman|row-roman/, 'The quiz gives no romaji away');
+});
+
 test('audio buttons say what is visible, keyword boxes are not repeated landmarks, kana rows are marked Japanese', () => {
   const b = harness(null, [{ lang: 'ja-JP' }]);
   b.render('#travel/t-order');
