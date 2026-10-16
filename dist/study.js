@@ -534,17 +534,19 @@ const Study = (() => {
       body = `<section class="study-card study-result"><h2>${missed.length ? "練習完成" : "全部答對"}</h2><p>這輪答對 <strong>${total - missed.length} / ${total}</strong> 題</p>${missed.length ? `<p class="study-note">答錯的字：${missed.map((item) => escape(`${item.character}（${item.reading}）`)).join("、")}</p>` : ""}<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a><button class="text-button" data-action="study-random-again">再練 ${RANDOM_SIZE} 題</button></div></section>`;
     } else {
       const q = round.items[round.cursor], item = KanaPractice.entry(q.id), chosen = round.answers[round.cursor], answered = chosen !== undefined, correct = answered && q.options[chosen] === q.id;
-      body = `<p class="reading-label">基本平假名 · ${round.cursor + 1} / ${total} · 選一個答案</p><section class="study-card study-quiz"><h2>${q.direction === "reading" ? "這個讀音，對應哪個字？" : "這個字，讀音是哪一個？"}</h2><div class="kana-character"${q.direction === "character" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? item.reading : item.character)}</div><div class="study-options kana-options" role="group" aria-label="答案選項">${q.options.map((id, index) => { const option = KanaPractice.entry(id); return `<button class="answer${answered && chosen === index ? (correct ? " correct" : " wrong") : ""}" data-action="study-answer" data-choice="${index}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}${q.direction === "reading" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? option.character : option.reading)}<span class="answer-status">${answered && chosen === index ? (correct ? " ✓ 答對了" : " ✕ 答錯了") : ""}</span></button>`; }).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(randomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${round.cursor + 1 === total ? "看結果 →" : "下一題 →"}</button></div>`;
+      body = `<p class="reading-label">基本平假名 · ${round.cursor + 1} / ${total} · 選一個答案</p><section class="study-card study-quiz"><h2>${q.direction === "reading" ? "這個讀音，對應哪個字？" : "這個字，讀音是哪一個？"}</h2><div class="kana-character"${q.direction === "character" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? item.reading : item.character)}</div><div class="study-options kana-options" role="group" aria-label="答案選項">${q.options.map((id, index) => { const option = KanaPractice.entry(id); return `<button class="answer${answered && id === q.id ? " correct" : answered && chosen === index ? " wrong" : ""}" data-action="study-answer" data-choice="${index}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}${q.direction === "reading" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? option.character : option.reading)}<span class="answer-status">${answered ? answerMark(chosen === index, id === q.id, correct) : ""}</span></button>`; }).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(randomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${round.cursor + 1 === total ? "看結果 →" : "下一題 →"}</button></div>`;
     }
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音隨機練習</h1>${body}<p class="study-note">從 46 個基本平假名隨機出題，不用先學過；這裡的作答不會記成成績，也不會改變複習。</p><div class="lesson-utilities">${table}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
   // Like updatePractice: a random round's answer is marked in place, so a screen reader hears the feedback and
-  // focus moves on to 下一題.
-  function paintChoice(choice, correct, feedbackText) {
+  // focus moves on to 下一題. After a miss the right option is marked too.
+  const answerMark = (selected, right, correct) => selected ? (correct ? " ✓ 答對了" : " ✕ 答錯了") : !correct && right ? " ✓ 正確答案" : "";
+  function paintChoice(choice, rightChoice, feedbackText) {
+    const correct = choice === rightChoice;
     for (const node of document.querySelectorAll('[data-action="study-answer"]')) {
-      const selected = Number(node.dataset.choice) === choice;
-      node.classList.toggle("correct", selected && correct); node.classList.toggle("wrong", selected && !correct); node.setAttribute("aria-disabled", "true"); node.setAttribute("tabindex", "-1");
-      const mark = node.querySelector(".answer-status"); if (mark) mark.textContent = selected ? (correct ? " ✓ 答對了" : " ✕ 答錯了") : "";
+      const value = Number(node.dataset.choice), selected = value === choice, right = value === rightChoice;
+      node.classList.toggle("correct", right); node.classList.toggle("wrong", selected && !correct); node.setAttribute("aria-disabled", "true"); node.setAttribute("tabindex", "-1");
+      const mark = node.querySelector(".answer-status"); if (mark) mark.textContent = answerMark(selected, right, correct);
     }
     const feedback = document.querySelector(".study-feedback");
     if (feedback) {
@@ -557,10 +559,13 @@ const Study = (() => {
   // 句型隨機練習 (#83): five questions from the noun-sentence lessons that open 基本句子, for anyone, with or without
   // records. Like 五十音隨機練習 a round lives in this page only and records nothing; each question is asked once,
   // and a miss shows the answer with its explanation.
-  const GRAMMAR_RANDOM_LESSONS = ["g-identity", "g-question", "g-demo", "g-negative", "g-no", "g-mo", "g-to"];
+  // Each question was checked for a learner starting from zero: it gives its meaning or situation in Chinese and
+  // readings for its Japanese options. Questions that need a lesson first, or ask the meaning of Japanese shown
+  // without a reading, stay out; a question added to these lessons later does not join by itself.
+  const GRAMMAR_RANDOM_POOL = ["g-identity/question/topic-reading", "g-question/question/question-ending", "g-demo/question/held-item", "g-demo/question/distant-item", "g-demo/question/listener-item", "g-negative/question/ja-nai", "g-negative/question/answer", "g-no/question/my-bread", "g-mo/question/me-too", "g-to/question/and", "g-to/question/point"];
   let grammarRandomRound = null;
   function newGrammarRandomRound() {
-    const pool = GRAMMAR_RANDOM_LESSONS.flatMap((id) => courses[id].questions.map((_, q) => ({ courseId: id, q })));
+    const pool = GRAMMAR_RANDOM_POOL.map((id) => { const courseId = id.split("/")[0]; return { courseId, q: courses[courseId]?.questions.findIndex((question) => question.id === id) ?? -1 }; }).filter(({ q }) => q >= 0);
     const items = shuffle(pool.length).slice(0, RANDOM_SIZE).map((i) => ({ ...pool[i], options: shuffle(courses[pool[i].courseId].questions[pool[i].q].options.length) }));
     return { items, cursor: 0, answers: [], done: false };
   }
@@ -569,7 +574,7 @@ const Study = (() => {
     const choice = round.answers[round.cursor];
     if (choice === undefined) return "";
     const { question } = grammarRandomItem(round);
-    return choice === question.answer ? `答對了。${question.explanation}` : `正確答案：${question.options[question.answer]}。${question.explanation}`;
+    return choice === question.answer ? `答對了。${question.explanation}` : `正確答案：${question.options[question.answer]}${question.readings ? `（${question.readings[question.answer]}）` : ""}。${question.explanation}`;
   }
   function grammarRandomPage() {
     grammarRandomRound ||= newGrammarRandomRound();
@@ -582,8 +587,8 @@ const Study = (() => {
       const missed = [...new Set(round.items.filter((item, i) => !right(item, i)).map((item) => item.courseId))];
       body = `<section class="study-card study-result"><h2>${missed.length ? "練習完成" : "全部答對"}</h2><p>這輪答對 <strong>${round.items.filter(right).length} / ${total}</strong> 題</p>${missed.length ? `<p class="study-note">想多看說明，可以看這幾課：</p><ul class="review-lessons">${missed.map((id) => `<li><button class="text-button" data-action="study-open" data-course="${id}">${escape(courses[id].title)} →</button></li>`).join("")}</ul>` : ""}<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a><button class="text-button" data-action="study-grammar-random-again">再練一次</button></div></section>`;
     } else {
-      const { item, course, question } = grammarRandomItem(round), chosen = round.answers[round.cursor], answered = chosen !== undefined, correct = chosen === question.answer;
-      body = `<p class="reading-label">入門句型 · ${round.cursor + 1} / ${total} · ${escape(course.title)}</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map((choice) => `<button class="answer${answered && chosen === choice ? (correct ? " correct" : " wrong") : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${answered && chosen === choice ? (correct ? " ✓ 答對了" : " ✕ 答錯了") : ""}</span></button>`).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarRandomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${round.cursor + 1 === total ? "看結果 →" : "下一題 →"}</button></div>`;
+      const { item, question } = grammarRandomItem(round), chosen = round.answers[round.cursor], answered = chosen !== undefined, correct = chosen === question.answer;
+      body = `<p class="reading-label">入門句型 · ${round.cursor + 1} / ${total} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map((choice) => `<button class="answer${answered && choice === question.answer ? " correct" : answered && chosen === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${answered ? answerMark(chosen === choice, choice === question.answer, correct) : ""}</span></button>`).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarRandomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${round.cursor + 1 === total ? "看結果 →" : "下一題 →"}</button></div>`;
     }
     return wrap(`<h1 class="focus-heading" tabindex="-1">句型隨機練習</h1>${body}<p class="study-note">從「基本句子」開頭幾課的名詞句隨機出題，不用先學過；這裡的作答不會記成成績，也不會改變複習。</p><div class="lesson-utilities">${list}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
@@ -895,7 +900,7 @@ const Study = (() => {
       if (action === "study-answer") {
         const choice = Number(button.dataset.choice);
         const q = round.items[round.cursor];
-        if (round.answers[round.cursor] === undefined && Number.isInteger(choice) && q.options[choice]) { round.answers[round.cursor] = choice; paintChoice(choice, q.options[choice] === q.id, randomFeedback(round)); }
+        if (round.answers[round.cursor] === undefined && Number.isInteger(choice) && q.options[choice]) { round.answers[round.cursor] = choice; paintChoice(choice, q.options.indexOf(q.id), randomFeedback(round)); }
       } else if (round.answers[round.cursor] !== undefined) {
         if (round.cursor + 1 < round.items.length) round.cursor++; else round.done = true;
         redraw();
@@ -909,7 +914,7 @@ const Study = (() => {
       if (!round || round.done) return true;
       if (action === "study-answer") {
         const choice = Number(button.dataset.choice), { item, question } = grammarRandomItem(round);
-        if (round.answers[round.cursor] === undefined && item.options.includes(choice)) { round.answers[round.cursor] = choice; paintChoice(choice, choice === question.answer, grammarRandomFeedback(round)); }
+        if (round.answers[round.cursor] === undefined && item.options.includes(choice)) { round.answers[round.cursor] = choice; paintChoice(choice, question.answer, grammarRandomFeedback(round)); }
       } else if (round.answers[round.cursor] !== undefined) {
         if (round.cursor + 1 < round.items.length) round.cursor++; else round.done = true;
         redraw();
