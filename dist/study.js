@@ -252,7 +252,7 @@ const Study = (() => {
   function kanaPage() {
     const script = state().script;
     const learnedBefore = Object.values(state().courses).some((c) => wasEarlierDay(c.completedAt));
-    return wrap(`<h1 class="focus-heading" tabindex="-1">五十音表</h1><p class="study-note">第一次學日文，可以先選「平假名」，從「あ行」開始。每組先看字、聽讀音，再做選擇題；不需要先背完整張表。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div><p class="study-note">${script === "h" ? "平假名用來寫許多日文詞語。先認字，再慢慢練熟讀音。" : "片假名常用來寫外來語，例如「コーヒー」（咖啡）。讀音和平假名對應，字形不同。"}</p>${reviewEntry()}<section class="study-review-entry"><h2>五十音隨機練習</h2><p class="study-note">基本平假名・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-kana-random">練 5 題 →</button></section>${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${kanaRows(script, "basic").map(row).join("")}</div><h2 class="course-list-heading">濁音・半濁音</h2><p class="study-note">在字的右上加兩點（濁點）或小圈（半濁點），讀音會改變，例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list">${kanaRows(script, "voiced").map(row).join("")}</div><h2 class="course-list-heading">促音・長音</h2><p class="study-note">學過基本字後，再練「停一下」和「拉長音」。課內會用例子說明怎麼念。</p><div class="course-list">${Content.sounds.map(row).join("")}</div><h2 class="course-list-heading">拗音</h2><p class="study-note">把兩個字合在一起念，例如 き＋小的 ゃ → きゃ（kya）。不要拆成 ki、ya 兩個音；這種組合叫「拗音」。</p><div class="course-list">${kanaRows(script, "youon").map(row).join("")}</div><p class="study-note">每種假名先練 46 個基本字，再練 25 個濁音・半濁音和 33 個拗音。</p>`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">五十音表</h1><p class="study-note">第一次學日文，可以先選「平假名」，從「あ行」開始。每組先看字、聽讀音，再做選擇題；不需要先背完整張表。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div><p class="study-note">${script === "h" ? "平假名用來寫許多日文詞語。先認字，再慢慢練熟讀音。" : "片假名常用來寫外來語，例如「コーヒー」（咖啡）。讀音和平假名對應，字形不同。"}</p>${reviewEntry()}<section class="study-review-entry"><h2>五十音隨機練習</h2><p class="study-note">基本平假名・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-kana-random">練 5 題 →</button></section><h2 class="course-list-heading">基本字</h2>${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${kanaRows(script, "basic").map(row).join("")}</div><h2 class="course-list-heading">濁音・半濁音</h2><p class="study-note">在字的右上加兩點（濁點）或小圈（半濁點），讀音會改變，例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list">${kanaRows(script, "voiced").map(row).join("")}</div><h2 class="course-list-heading">促音・長音</h2><p class="study-note">學過基本字後，再練「停一下」和「拉長音」。課內會用例子說明怎麼念。</p><div class="course-list">${Content.sounds.map(row).join("")}</div><h2 class="course-list-heading">拗音</h2><p class="study-note">把兩個字合在一起念，例如 き＋小的 ゃ → きゃ（kya）。不要拆成 ki、ya 兩個音；這種組合叫「拗音」。</p><div class="course-list">${kanaRows(script, "youon").map(row).join("")}</div><p class="study-note">每種假名先練 46 個基本字，再練 25 個濁音・半濁音和 33 個拗音。</p>`);
   }
   function settingsPage() {
     return wrap(`<h1 class="focus-heading" tabindex="-1">學習設定</h1><section class="study-card"><h2>播放語速</h2><p class="study-note">五十音、句型與旅遊用語都會使用這個速度。</p><div class="script-tabs" role="group" aria-label="播放語速">${[[0.65,"慢速"],[0.8,"一般"],[1,"原速"]].map(([rate,label]) => `<button data-action="study-rate" data-rate="${rate}" aria-pressed="${speechRate() === rate}">${label}</button>`).join("")}</div><p class="study-note">設定存在這個瀏覽器。假名字卡的「換個記法」也會記住你的選擇。</p></section>`);
@@ -388,7 +388,7 @@ const Study = (() => {
       const back = travelReturn;
       travelReturn = null;
       travelShown = travelResults(back);
-      return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<div class="travel-search" role="search"><label for="travel-search">找詞或情境</label><input id="travel-search" type="search" value="${escape(travelQuery)}" placeholder="例如：結帳、Suica、寄放行李" autocomplete="off" enterkeyhint="search"><p id="travel-status" class="visually-hidden" role="status" aria-live="polite"></p></div><div id="travel-results">${travelShown}</div><a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span>${savedPhrases().length} 張收藏 →</span></a>${travelGroups()}`);
+      return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<div class="travel-search" role="search"><label for="travel-search">找詞或情境</label><input id="travel-search" type="search" value="${escape(travelQuery)}" placeholder="例如：結帳、Suica、寄放行李" autocomplete="off" enterkeyhint="search"><p id="travel-status" class="visually-hidden" role="status" aria-live="polite"></p></div><div id="travel-results">${travelShown}</div><a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span class="favorites-count">${savedPhrases().length} 張收藏<span aria-hidden="true"> →</span></span></a>${travelGroups()}`);
     }
     const item = travelItem(id), found = travelFound;
     travelFound = null;
@@ -448,27 +448,36 @@ const Study = (() => {
   // (#79). A situation missing here still shows, in a last group.
   const TRAVEL_GROUPS = [
     { title: "隨時用得到", note: "叫人、聽不懂、東西不見", tone: "purple", ids: ["basics"] },
-    { title: "吃飯與購物", note: "點餐、內用外帶、結帳、買東西", tone: "orange", ids: ["t-order", "dining", "t-pay", "shopping"] },
+    { title: "吃飯與購物", note: "點餐、內用外帶、結帳、買東西", tone: "apricot", ids: ["t-order", "dining", "t-pay", "shopping"] },
     { title: "搭車與找路", note: "買票、月台、加值、找廁所和置物櫃", tone: "aqua", ids: ["transit", "t-charge", "t-place"] },
-    { title: "住宿與景點", note: "飯店、排隊、入場與活動", tone: "deep", ids: ["hotel", "lines", "live"] },
+    { title: "住宿與景點", note: "飯店、排隊、入場與活動", tone: "rose", ids: ["hotel", "lines", "live"] },
   ];
-  // Up to three words per situation, one per card, with what they mean; generic words, amounts and a meaning already
-  // shown are left out. The Chinese comes first: the Japanese is the thing to say once the situation is found.
-  const genericWords = new Set(["お願いします", "どこ", "これ"]);
+  // Words that show what a situation covers, picked by hand from its cards: a pair stays together (內用、外帶) and a
+  // word that reads the same in Chinese (出口) is left out. The Chinese comes first: the Japanese is the thing to say
+  // once the situation is found.
+  const TRAVEL_WORDS = {
+    basics: ["すみません", "もう一度", "わかりません"],
+    "t-order": ["ひとつ", "アイス", "大盛"],
+    dining: ["店内", "持ち帰り", "お水"],
+    "t-pay": ["お会計", "カード", "Suica"],
+    shopping: ["いくら", "試着", "袋"],
+    transit: ["片道", "ホーム", "乗り換え"],
+    "t-charge": ["チャージ", "1000円"],
+    "t-place": ["トイレ", "エレベーター", "ロッカー"],
+    hotel: ["チェックイン", "チェックアウト", "荷物"],
+    lines: ["最後尾", "何時まで", "当日券"],
+    live: ["開場", "物販", "ドリンク代"],
+  };
   function travelWords(item) {
-    const picked = [];
-    for (const step of item.steps) {
-      const found = step.keywords.map(([word, , meaning]) => ({ word: word.replace(/（.*?）/u, ""), meaning: meaning.split("／")[0] }))
-        .find(({ word, meaning }) => !genericWords.has(word) && !/^[0-9０-９]/.test(word) && !picked.some((p) => p.meaning === meaning));
-      if (found) picked.push(found);
-      if (picked.length === 3) break;
-    }
-    return picked.map(({ word, meaning }) => `<span class="travel-word">${escape(meaning)}<span lang="ja">${escape(word)}</span></span>`).join("");
+    const words = item.steps.flatMap((step) => step.keywords).map(([word, , meaning]) => ({ word: word.replace(/（.*?）/u, ""), meaning: meaning.split("／")[0] }));
+    return (TRAVEL_WORDS[item.id] || []).map((word) => words.find((entry) => entry.word === word)).filter(Boolean)
+      .map(({ word, meaning }) => `<span class="travel-word">${escape(meaning)}<span lang="ja">${escape(word)}</span></span>`).join("");
   }
+  // A card is named by its title and plain Chinese line; the words below would only repeat them.
   function travelGroups() {
     const grouped = new Set(TRAVEL_GROUPS.flatMap((group) => group.ids)), rest = PHRASEBOOK.filter((item) => !grouped.has(item.id));
     const groups = [...TRAVEL_GROUPS, ...(rest.length ? [{ title: "其他", note: "", tone: "purple", ids: rest.map((item) => item.id) }] : [])];
-    return `<nav class="travel-groups" aria-label="旅遊情境">${groups.map((group, n) => `<section class="travel-group tone-${group.tone}" aria-labelledby="travel-group-${n}"><h2 id="travel-group-${n}">${escape(group.title)}</h2>${group.note ? `<p>${escape(group.note)}</p>` : ""}<div class="travel-categories">${group.ids.map(travelItem).filter(Boolean).map((item) => `<a class="course-row" href="#travel/${item.id}"><span><strong>${escape(item.title)}</strong><span class="reading-label">${escape(item.subtitle)}</span><span class="travel-words">${travelWords(item)}</span></span><span aria-hidden="true">→</span></a>`).join("")}</div></section>`).join("")}</nav>`;
+    return `<nav class="travel-groups" aria-label="旅遊情境">${groups.map((group, n) => `<section class="travel-group tone-${group.tone}" aria-labelledby="travel-group-${n}"><h2 id="travel-group-${n}">${escape(group.title)}</h2>${group.note ? `<p>${escape(group.note)}</p>` : ""}<div class="travel-categories">${group.ids.map(travelItem).filter(Boolean).map((item) => `<a class="course-row" href="#travel/${item.id}" aria-labelledby="travel-${item.id}-name travel-${item.id}-note"><span><strong id="travel-${item.id}-name">${escape(item.title)}</strong><span class="reading-label" id="travel-${item.id}-note">${escape(item.subtitle)}</span><span class="travel-words">${travelWords(item)}</span></span><span aria-hidden="true">→</span></a>`).join("")}</div></section>`).join("")}</nav>`;
   }
   // Travel cards have a short phrase and, sometimes, a fuller form; each gets its own button and status.
   // A speaker button whose name says which Japanese it plays (#78); the status line stays empty unless audio cannot play.

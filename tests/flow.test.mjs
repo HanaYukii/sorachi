@@ -209,7 +209,8 @@ function browser({
         currentHash = value;
         entries.splice(at + 1, Infinity, { hash: value, state: null });
         at++;
-        pending.push(() => dispatch(windowListeners, "hashchange", { oldURL, newURL: url(value) }));
+        // A browser fires popstate for a new address too, before hashchange.
+        pending.push(() => dispatch(windowListeners, "popstate", { state: null }), () => dispatch(windowListeners, "hashchange", { oldURL, newURL: url(value) }));
       }
     },
   });
@@ -230,8 +231,9 @@ function browser({
       location,
       history: {
         get state() { return entries[at].state; },
+        // A browser keeps a copy of the state, not the object itself.
         replaceState(state, _title, hash) {
-          entries[at] = { hash: hash ?? entries[at].hash, state: state ?? null };
+          entries[at] = { hash: hash ?? entries[at].hash, state: state == null ? null : structuredClone(state) };
           currentHash = entries[at].hash;
         },
       },
@@ -274,7 +276,8 @@ function browser({
   vm.runInContext(readFileSync(new URL("../dist/diagnostics.js", import.meta.url), "utf8"), context);
   vm.runInContext(source, context, { filename: "dist/app.js" });
   flush();
-  function click(selector, { force = false } = {}) {
+  // `detail` is the click count: 2 is the second click of a double click, 0 a key press.
+  function click(selector, { force = false, detail = 1 } = {}) {
     const node = querySelector(selector);
     assert.ok(node, `Expected visible control ${selector}`);
     if (node.disabled && !force) return;
@@ -282,6 +285,7 @@ function browser({
     if (force) node.disabled = false;
     const event = {
       target: node,
+      detail,
       defaultPrevented: false,
       preventDefault() {
         this.defaultPrevented = true;
@@ -2173,6 +2177,23 @@ test('回 follows the entry, not the address: same-address jumps, older feedback
   f.action('feedback-back');
   assert.equal(f.hash, '#study/h-ka');
   assert.deepEqual(exit(f), ['#home', '回首頁']);
+  // Two feedback pages about lessons that were both opened from home: the older one still reports its own lesson.
+  const h = browser();
+  h.study('study-open', { course: 'h-ka' });
+  h.action('feedback'); h.action('feedback-back');
+  h.navigate('#home'); h.study('study-open', { course: 'h-ra' });
+  h.action('feedback');
+  h.go(-4);
+  assert.equal(h.hash, '#feedback');
+  assert.match(h.html, /か行/);
+  assert.doesNotMatch(h.html, /ら行/);
+  h.submitFeedback('問題回報', '這裡怪怪的');
+  const body = new URL(h.node('#feedback-ready').children[1].href).searchParams.get('body');
+  assert.match(body, /か行/);
+  assert.doesNotMatch(body, /ら行/);
+  h.action('feedback-back');
+  assert.equal(h.hash, '#study/h-ka');
+  assert.deepEqual(exit(h), ['#home', '回首頁']);
   // A redirected entry is marked as having no source, so a later visit back cannot give it one.
   const r = browser({ hash: '#study/t-pay' });
   assert.equal(r.hash, '#travel/t-pay');
@@ -2199,6 +2220,19 @@ test('random rounds: reports name the question, a double click never answers, re
   assert.equal(d.node('[data-action="study-next"]').disabled, true, 'Still unanswered');
   d.study('study-answer', { choice: 0 }, 1);
   assert.equal(d.node('[data-action="study-next"]').disabled, false);
+  // Enter or Space on an option (no click count) answers too.
+  d.study('study-next');
+  d.study('study-answer', { choice: 0 }, 0);
+  assert.equal(d.node('[data-action="study-next"]').disabled, false);
+  // The intro lesson's options too: double-clicking 下一步 into the first question does not answer it.
+  const intro = browser();
+  reachQuiz(intro);
+  intro.click('[data-answer="1"]', { detail: 2 });
+  assert.equal(intro.nextDisabled, true, 'Still unanswered');
+  assert.deepEqual(intro.state.firstAnswers, {});
+  intro.click('[data-answer="0"]', { detail: 0 });
+  assert.equal(intro.nextDisabled, false);
+  assert.deepEqual(Object.keys(intro.state.firstAnswers), ['4']);
   // Five different readings in every round, so the prompt "o" never comes twice.
   for (let round = 0; round < 60; round++) {
     d.navigate('#home'); d.study('study-kana-random');

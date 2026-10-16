@@ -85,7 +85,7 @@ const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
 // link, has none. An entry gets its source once, when it is first shown, so going back to it never changes it.
 const exits = ["#home", "#kana", "#grammar"];
 const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|kana-random$|grammar-random$|feedback$)/.test(page || "");
-let cameFrom = null, shown = null, shownHash = null;
+let cameFrom = null, shown = null, shownHash = null, shownFeedback = null;
 function arrive() {
   if (window.history.state?.from === undefined) window.history.replaceState({ from: exits.includes(shown) ? shown : passesOn(shown) ? cameFrom : null }, "");
   route();
@@ -463,6 +463,7 @@ function route() {
     const saved = window.history.state?.feedback;
     if (saved) ({ back: feedbackReturn, context: feedbackContext, diagnostics: feedbackDiagnostics } = saved);
     else window.history.replaceState({ ...window.history.state, feedback: { back: feedbackReturn, context: feedbackContext, diagnostics: feedbackDiagnostics } }, "");
+    shownFeedback = JSON.stringify(window.history.state?.feedback ?? null);
     feedbackPage();
   }
   else if (location.hash === "#about") aboutPage();
@@ -492,8 +493,8 @@ function restart() {
 app.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button || button.disabled || restarting) return;
-  // The second click of a double click never answers: after 再練 or 下一題 a new option can sit under the pointer.
-  if (event.detail > 1 && button.dataset.action === "study-answer") return;
+  // The second click of a double click never answers: after 再練, 下一題 or 開始練習 a new option can sit under the pointer.
+  if (event.detail > 1 && (button.dataset.action === "study-answer" || button.dataset.answer !== undefined)) return;
   if (Study.handle(button)) return;
   if (button.dataset.answer !== undefined) {
     const answer = Number(button.dataset.answer);
@@ -626,9 +627,12 @@ window.addEventListener("storage", (event) => {
   updateStorageWarning();
 });
 window.addEventListener("hashchange", arrive);
-// Back or forward between two entries with the same address fires no hashchange, but their sources can differ.
+// Back or forward between two entries with the same address fires no hashchange, but their sources can differ, and
+// two feedback pages with the same source can be about different pages.
 window.addEventListener("popstate", () => {
-  if (location.hash === shownHash && (exits.includes(window.history.state?.from) ? window.history.state.from : null) !== cameFrom) route();
+  if (location.hash !== shownHash) return;
+  const from = exits.includes(window.history.state?.from) ? window.history.state.from : null;
+  if (from !== cameFrom || location.hash === "#feedback" && JSON.stringify(window.history.state?.feedback ?? null) !== shownFeedback) route();
 });
 // The page opened first has no source; marking it keeps a later visit back from giving it one.
 if (window.history.state?.from === undefined) window.history.replaceState({ from: null }, "");

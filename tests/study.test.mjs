@@ -665,13 +665,33 @@ test('audio buttons say what is visible, keyword boxes are not repeated landmark
 test('travel pages show staff questions and Japanese keywords; other pages link to travel phrases', () => {
   const b = harness();
   b.render('#travel');
-  // Situations come in a few groups; each card has at most three words, Chinese first, generic words and amounts left out.
+  // Situations come in four groups, each with its own colour, and the saved phrases' arrow is not read out.
   assert.match(b.html, /<h2 id="travel-group-1">吃飯與購物<\/h2><p>點餐、內用外帶、結帳、買東西<\/p>/);
+  assert.deepEqual([...b.html.matchAll(/class="travel-group tone-([a-z]+)"/g)].map((m) => m[1]), ['purple', 'apricot', 'aqua', 'rose']);
+  assert.match(b.html, /<a class="course-row favorites-entry" href="#travel\/favorites"><strong>我的常用語<\/strong><span class="favorites-count">0 張收藏<span aria-hidden="true"> →<\/span><\/span><\/a>/);
+  // Each card is named by its title and Chinese line, and shows two or three of its own words: Chinese first, never a
+  // word that reads the same in Chinese (出口), never a meaning twice, and a pair stays together.
   assert.match(b.html, /<span class="travel-words"><span class="travel-word">結帳<span lang="ja">お会計<\/span><\/span><span class="travel-word">信用卡<span lang="ja">カード<\/span><\/span><span class="travel-word">西瓜卡<span lang="ja">Suica<\/span><\/span><\/span>/);
-  assert.match(b.html, /<span class="travel-word">幾位<span lang="ja">何名様<\/span><\/span><span class="travel-word">內用<span lang="ja">店内<\/span><\/span><span class="travel-word">水<span lang="ja">お水<\/span><\/span><\/span>/);
-  assert.doesNotMatch(b.html, /<span lang="ja">(お願いします|1000円|これ|どこ)<\/span><\/span>/);
-  for (const item of b.content.phrasebook) assert.equal((b.html.match(new RegExp(`href="#travel/${item.id}"`, 'g')) || []).length, 1, `${item.id} appears once`);
-  for (const group of b.html.match(/<section class="travel-group[\s\S]*?<\/section>/g)) assert.ok((group.match(/class="travel-word"/g) || []).length <= 3 * (group.match(/class="course-row"/g) || []).length);
+  assert.match(b.html, /<span class="travel-word">內用<span lang="ja">店内<\/span><\/span><span class="travel-word">外帶<span lang="ja">持ち帰り<\/span><\/span>/);
+  assert.doesNotMatch(b.html, /<span lang="ja">(お願いします|これ|どこ|出口|一日券)<\/span><\/span>/);
+  for (const item of b.content.phrasebook) {
+    const cards = b.html.match(new RegExp(`<a class="course-row" href="#travel/${item.id}"[\\s\\S]*?</a>`, 'g')) || [];
+    assert.equal(cards.length, 1, `${item.id} appears once`);
+    assert.match(cards[0], new RegExp(`aria-labelledby="travel-${item.id}-name travel-${item.id}-note"><span><strong id="travel-${item.id}-name">`));
+    assert.doesNotMatch(item.subtitle, /^[぀-ヿ]/, `${item.id}: the Chinese line starts in Chinese`);
+    const words = [...cards[0].matchAll(/<span class="travel-word">([^<]+)<span lang="ja">([^<]+)<\/span><\/span>/g)].map(([, meaning, word]) => ({ meaning, word }));
+    assert.ok(words.length >= 2 && words.length <= 3, `${item.id}: ${words.length} words`);
+    const keywords = item.steps.flatMap((step) => step.keywords);
+    for (const { meaning, word } of words) {
+      assert.notEqual(meaning, word, `${item.id}: ${word}`);
+      assert.ok(keywords.some(([w, , m]) => w.replace(/（.*?）/u, '') === word && m.split('／')[0] === meaning), `${item.id}: ${word} is one of its keywords`);
+    }
+    assert.equal(new Set(words.map(({ meaning }) => meaning)).size, words.length, `${item.id}: no meaning twice`);
+  }
+  // On the kana table, the basic rows have their own heading after the random practice box.
+  b.render('#kana');
+  assert.match(b.html, /<h2>五十音隨機練習<\/h2>[\s\S]*?<\/section><h2 class="course-list-heading">基本字<\/h2><div class="course-list">/);
+  b.render('#travel');
   b.render('#travel/dining');
   assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">店員可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
   b.render('#kana');
