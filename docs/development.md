@@ -84,6 +84,7 @@ node scripts/prepare-release.mjs --check
 - `dist/storage.js`：本機資料、遷移、鎖定與備份合併。
 - `dist/diagnostics.js`：回報附帶的版本與教材 ID。
 - `art/`：角色原圖與生成提示（不發佈）；`dist/assets/` 是轉出的 WebP 與圖示。
+- 定期盤點程式與文件的步驟、一定要保留的相容處理：[maintenance.md](maintenance.md)。
 
 ## 來源
 
