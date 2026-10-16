@@ -36,7 +36,13 @@ node scripts/prepare-release.mjs --check
   git worktree remove ../sorachi-good
   ```
 
-  事後仍要在 `main` 上 revert。改過 storage 格式或遷移的版本只往前修，不回滾。回滾步驟尚未實際演練。
+  事後仍要在 `main` 上 revert。改過 storage 格式或遷移的版本只往前修，不回滾。
+
+- 2026-10-16 演練過一般情況：
+  - `git revert 3f8bfa6`（只改記憶提示文字和測試，沒動 storage）。生成檔 `dist/index.html`、`dist/release.json` 會衝突，先取 HEAD 版本再跑 `node scripts/prepare-release.mjs`。
+  - 推送後發佈：撤銷版 build `68d908bb` 約 2 分鐘上線，線上確認變回舊提示。
+  - 再 revert 一次還原，回到原本的 build `85b560b3`。
+- 推送後馬上發佈，可能查不到剛建立的 CI run：GitHub API 有 60 秒快取。publish 會拒絕並提示重試，等一分鐘再跑即可。
 
 ### 共用 origin 的規則
 
