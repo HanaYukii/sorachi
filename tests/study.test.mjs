@@ -249,8 +249,21 @@ test('an unavailable Japanese voice shows visible fallback and never speaks Engl
   assert.equal(b.utterances[0].lang, 'ja-JP');
   assert.equal(b.utterances[0].rate, 0.8);
   assert.equal(b.utterances[0].voice.lang, 'ja-JP');
-  b.study.stopAudio(); const oldText = b.status.textContent;
-  b.utterances[0].onend(); assert.equal(b.status.textContent, oldText);
+  // A late "interrupted" error from an earlier request changes nothing; an error on the current one ends the ring and says so.
+  const current = b.pressed;
+  b.utterances[0].onerror({ error: 'interrupted' });
+  assert.equal(b.status.textContent, '');
+  assert.ok(current.classes.has('playing'));
+  b.utterances.at(-1).onerror({ error: 'synthesis-failed' });
+  assert.ok(!current.classes.has('playing'));
+  assert.match(b.status.textContent, /沒有播放成功/);
+  // Playing again clears the hint; leaving the page stops the audio and the ring.
+  b.action('audio', { index: '1' });
+  assert.equal(b.status.textContent, '');
+  const last = b.pressed;
+  b.study.stopAudio();
+  assert.ok(!last.classes.has('playing'));
+  b.utterances.at(-1).onend(); assert.equal(b.status.textContent, '');
 });
 
 test('audio uses ha and he for standalone kana, o for wo, and n for the nasal', () => {
@@ -592,6 +605,16 @@ test('audio buttons say what is visible, keyword boxes are not repeated landmark
   }
   assert.equal(names.length, (b.html.match(/class="audio-button"/g) || []).length, 'Every speaker has a name');
   assert.doesNotMatch(b.html, /裝置合成語音|>播放讀音</);
+  // Kana cards, grammar cards and 我的常用語 use the same speaker.
+  const speakerFor = (html, action, text) => new RegExp(`<button class="audio-button" data-action="${action}"[^>]*><svg[^>]*aria-hidden="true">[\\s\\S]*?</svg><span class="visually-hidden">播放「<span lang="ja">${text}</span>」的讀音</span></button>`).test(html);
+  b.action('open', { course: 'h-a' });
+  assert.ok(speakerFor(b.html, 'study-audio', 'あ'));
+  b.action('open', { course: 'g-identity' });
+  assert.ok(speakerFor(b.html, 'study-audio', b.content.courses['g-identity'].steps[0].example));
+  const phrase = order.steps[0];
+  const saved = harness(null, [{ lang: 'ja-JP' }], [], { favorites: [phrase.id] });
+  assert.ok(speakerFor(saved.render('#travel/favorites'), 'study-travel-audio', phrase.example));
+  for (const html of [b.html, saved.html]) assert.doesNotMatch(html, /裝置合成語音|>播放讀音</);
   assert.doesNotMatch(b.html, /<section class="keyword-box"|aria-label="關鍵字"/);
   b.render('#kana');
   assert.match(b.html, /<strong lang="ja">あ行<\/strong>/);

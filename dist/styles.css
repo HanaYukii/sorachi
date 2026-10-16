@@ -1071,13 +1071,12 @@ button svg {
 .study-card .grammar-example { font-family: "Noto Sans JP", sans-serif; color: var(--purple-deep); font-size: 27px; line-height: 1.9; margin: 23px 0 8px; }
 .lesson-header a.exit { text-decoration: none; }
 .study-audio-status { min-height: 23px; }
-/* Speaker buttons: 44px to tap; playing shows as a ring as well as a colour. */
-.audio-button { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: 6px 0 2px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--white); color: var(--purple-deep); cursor: pointer; transition: background-color .15s, box-shadow .15s, transform .1s; }
-.audio-button:hover { background: var(--lilac); }
+/* Speaker buttons: 44px to tap; playing shows as a thicker dark ring as well as a colour. */
+.audio-button { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: 6px 0 2px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--white); color: var(--purple-deep); transition: background-color .15s, transform .1s; }
+@media (hover: hover) { .audio-button:hover { background: var(--lilac); } }
 .audio-button:active { transform: scale(.94); }
 .audio-button:focus-visible { outline-offset: 3px; }
-.audio-button.playing { background: var(--aqua); border-color: var(--aqua-ink); box-shadow: 0 0 0 3px var(--aqua); color: var(--aqua-ink); }
-@media (prefers-reduced-motion: reduce) { .audio-button { transition: none; } .audio-button:active { transform: none; } }
+.audio-button.playing { border: 3px solid var(--aqua-ink); background: var(--aqua); color: var(--aqua-ink); }
 @media (max-width: 400px) {
   .course-row .reading-label { font-size: 16px; }
   .course-row .course-state { max-width: 80px; font-size: 10px; }
