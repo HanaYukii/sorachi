@@ -368,6 +368,19 @@ test('a clear on either side keeps older mistakes and review sessions from comin
  assert.equal(study.reviewClearedAt,'2026-06-01T00:00:00.000Z');
 });
 
+test('backup import keeps the later answer for each kana character in both directions, and this browser\'s answer on the same lastSeen',()=>{
+ const at=(day,wrong)=>({lastSeen:`2026-10-0${day}T00:00:00.000Z`,wrong});
+ const [a,i,u,e]=['h-a/question/u3042','h-a/question/u3044','h-a/question/u3046','h-a/question/u3048'];
+ const write=kanaReview=>{const b=setup(),flat=b.store.readProgress();flat.study={script:'h',courses:{},kanaReview};assert.equal(b.store.writeProgress(flat),true);return b;};
+ const mine={[a]:at(1,true),[i]:at(3,false),[u]:at(2,true)}, theirs={[a]:at(2,false),[i]:at(1,true),[u]:at(2,false),[e]:at(1,true)};
+ const here=write(mine),there=write(theirs),fromHere=here.store.exportBackup(),fromThere=there.store.exportBackup();
+ const review=b=>JSON.parse(JSON.stringify(b.store.readProgress().study.kanaReview));
+ assert.equal(here.store.importBackupDetailed(fromThere).ok,true);
+ assert.deepEqual(review(here),{[a]:theirs[a],[i]:mine[i],[u]:mine[u],[e]:theirs[e]});
+ assert.equal(there.store.importBackupDetailed(fromHere).ok,true);
+ assert.deepEqual(review(there),{[a]:theirs[a],[i]:mine[i],[u]:theirs[u],[e]:theirs[e]});
+});
+
 test('local preferences are validated and merge individual hint choices through backup import',()=>{
  const a=setup(),b=setup();
  a.store.savePreferences({ttsRate:0.65,kanaHints:{'あ':1,'い':0,'bad':1,'う':99}});

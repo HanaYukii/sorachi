@@ -22,10 +22,13 @@ function browser({
   raw,
   hash = "#home",
   storageBlocked = false,
+  sharedStorage = null,
 } = {}) {
   let initialKey = key;
   try { if (JSON.parse(raw)?.schemaVersion) initialKey = "sorachi:data:v2"; } catch {}
-  const storage = new Map([[initialKey, raw ?? JSON.stringify(saved)]]);
+  // Two tabs of one browser pass the same Map.
+  const storage = sharedStorage ?? new Map([[initialKey, raw ?? JSON.stringify(saved)]]);
+  let setItemFails = false;
   const windowListeners = new Map();
   const documentListeners = new Map();
   const pending = [];
@@ -217,6 +220,7 @@ function browser({
       },
       setItem(name, value) {
         if (storageBlocked) throw new Error("storage unavailable");
+        if (setItemFails) throw new Error("QuotaExceededError");
         storage.set(name, value);
       },
       removeItem(name) {
@@ -269,6 +273,14 @@ function browser({
     click,
     navigate(hash) { location.hash = hash; flush(); },
     blockStorage() { storageBlocked = true; },
+    // A full quota: only setItem throws, so reads and the other-tab check keep working.
+    failSetItem(fail = true) { setItemFails = fail; },
+    // Another tab wrote the shared storage; the browser tells this tab.
+    storageEvent(name = "sorachi:data:v2") {
+      dispatch(windowListeners, "storage", {key:name});
+      flush();
+    },
+    run(code) { return vm.runInContext(code, context); },
     externalWrite(value) {
       storage.set("sorachi:data:v2", value);
       dispatch(windowListeners, "storage", {key:"sorachi:data:v2"});
@@ -809,7 +821,7 @@ test("feedback captures the displayed shuffled question and loaded asset version
   assert.ok(body.includes(questionId));
   assert.ok(body.includes(active.courseRevision));
   assert.ok(body.includes(active.direction));
-  for (const file of ['content','app']) assert.ok(body.includes(index.match(new RegExp(file + '\\.js\\?v=([a-f0-9]{10})'))[1]));
+  for (const file of ['content','app','study','storage']) assert.ok(body.includes(`${file}.js: ${index.match(new RegExp(file + '\\.js\\?v=([a-f0-9]{10})'))[1]}`), file);
   assert.ok(!body.includes(owner));
   assert.doesNotMatch(body, /firstCorrect|firstAnswers|history|guest|成績|螢幕|userAgent/i);
   assert.ok(Buffer.byteLength(href) < 8192);
@@ -1282,4 +1294,310 @@ test('grammar review write failure preserves the last stored round and never add
  assert.equal(r.state.study.grammarReviewSession.cursor,0);
  assert.deepEqual(JSON.parse(JSON.stringify(r.state.study.grammarReviewSession.first)),{});
  assert.deepEqual(JSON.parse(r.stored).attempts,history);
+});
+
+// #36: state and data stress scenarios for the kana short review and first scores.
+const practiceOf = (b, where) => where === 'review' ? b.state.study.reviewSession : b.state.study.courses[where].active.practice;
+const questionOf = (session) => (session.round === 'retry' ? session.retryQuestions : session.questions)[session.cursor];
+const choiceFor = (question, wrong = false) => question.options.findIndex((id) => wrong ? id !== question.id : id === question.id);
+// The warning is updated in place after an answer and rendered into the page after a redraw.
+const storageWarning = (b) => `${b.node('#storage-status')?.innerHTML || ''}${b.html.match(/<div id="storage-status">(.*?)<\/div>/)?.[1] || ''}`;
+function openKanaQuiz(b, course) {
+  b.study('study-open', { course });
+  for (let i = 0; i < 10 && b.state.study.courses[course]?.active?.phase !== 'quiz'; i++) b.study('study-next');
+  assert.equal(b.state.study.courses[course].active.phase, 'quiz');
+}
+// Plays to the end of the round; `miss` picks the first-round questions to answer wrong, the retry is answered right.
+function playRound(b, where, miss = () => false) {
+  for (let guard = 0; guard < 15; guard++) {
+    const session = practiceOf(b, where);
+    if (session.round === 'done') return;
+    b.study('study-answer', { choice: choiceFor(questionOf(session), session.round === 'first' && miss(questionOf(session), session)) });
+    b.study('study-next');
+  }
+  assert.fail('The round must finish');
+}
+
+test('a course answer during an unfinished review updates the mistake list but never the review round, also after reload', () => {
+  for (const courseWrong of [false, true]) {
+    let b = browser({ hash: '#study/h-a' });
+    openKanaQuiz(b, 'h-a');
+    const x = questionOf(practiceOf(b, 'h-a')).id;
+    playRound(b, 'h-a', (q) => q.id === x);
+    assert.equal(b.state.study.kanaReview[x].wrong, false);
+    b.navigate('#kana-review'); b.study('study-review-start');
+    // Leave the review on x, answered wrong, before 下一題.
+    for (let guard = 0; guard < 5; guard++) {
+      const q = questionOf(practiceOf(b, 'review'));
+      b.study('study-answer', { choice: choiceFor(q, q.id === x) });
+      if (q.id === x) break;
+      b.study('study-next');
+    }
+    assert.equal(b.state.study.kanaReview[x].wrong, true);
+    const round = JSON.stringify(b.state.study.reviewSession);
+    b.navigate('#kana');
+    openKanaQuiz(b, 'h-a');
+    for (let guard = 0; guard < 5; guard++) {
+      const q = questionOf(practiceOf(b, 'h-a'));
+      if (q.id === x) { b.study('study-answer', { choice: choiceFor(q, courseWrong) }); break; }
+      b.study('study-answer', { choice: choiceFor(q) }); b.study('study-next');
+    }
+    assert.equal(b.state.study.kanaReview[x].wrong, courseWrong, 'The latest answer decides');
+    assert.equal(JSON.stringify(b.state.study.reviewSession), round, 'A course quiz never changes the review round');
+    b = browser({ raw: b.stored, hash: '#kana-review' });
+    assert.equal(JSON.stringify(b.state.study.reviewSession), round, 'The review round survives the reload unchanged');
+    assert.equal(b.state.study.kanaReview[x].wrong, courseWrong);
+    const records = b.state.history.length;
+    let retried = false;
+    b.study('study-next');
+    for (let guard = 0; guard < 12 && practiceOf(b, 'review').round !== 'done'; guard++) {
+      const session = practiceOf(b, 'review');
+      retried ||= session.round === 'retry' && questionOf(session).id === x;
+      b.study('study-answer', { choice: choiceFor(questionOf(session)) }); b.study('study-next');
+    }
+    assert.equal(practiceOf(b, 'review').round, 'done');
+    assert.ok(retried, 'x, missed first in this round, comes back in its retry');
+    assert.equal(b.state.study.kanaReview[x].wrong, false);
+    assert.equal(b.state.history.length, records, 'The review adds no record');
+  }
+});
+
+test('clearing records drops an untouched kana draft; restoring a pre-clear backup brings back its history records by design, but not mistakes, the review round or unfinished kana practice', async () => {
+  const b = browser({ hash: '#study/h-a' });
+  const attempt = (id) => JSON.parse(b.run(`JSON.stringify(Study.currentAttempt(${JSON.stringify(id)}))`));
+  openKanaQuiz(b, 'h-a');
+  playRound(b, 'h-a', (q, session) => session.cursor === 0);
+  openKanaQuiz(b, 'h-ka');
+  b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, 'h-ka')), true) });
+  b.navigate('#kana-review'); b.study('study-review-start');
+  b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, 'review')), true) });
+  const backup = b.stored, before = JSON.parse(backup).learning.study;
+  assert.equal(JSON.parse(backup).attempts.length, 1);
+  assert.ok(Object.values(before.kanaReview).some((item) => item.wrong) && before.reviewSession && before.courses['h-ka'].active);
+  b.navigate('#kana'); b.study('study-open', { course: 'h-sa' });
+  b.navigate('#grammar'); b.study('study-open', { course: 'g-identity' });
+  const grammarDraft = attempt('g-identity');
+  assert.equal(attempt('h-sa').touched, false);
+  assert.equal(JSON.parse(b.stored).learning.study.courses['h-sa'], undefined, 'An untouched draft is never stored');
+  tick();
+  b.navigate('#history'); b.action('clear-history'); b.action('confirm-clear');
+  assert.equal(attempt('h-sa'), null, 'The untouched kana draft ends with the other kana practice');
+  assert.deepEqual(attempt('g-identity'), grammarDraft, 'A grammar draft is not kana practice');
+  b.study('study-open', { course: 'h-sa' });
+  const fresh = attempt('h-sa');
+  assert.equal(fresh.touched, false); assert.equal(fresh.phase, 'cards'); assert.equal(fresh.cursor, 0);
+  assert.ok(fresh.practice.answers.every((answer) => answer === null), 'Reopening builds a fresh draft');
+  const restored = await importAndReload(b, backup);
+  restored.navigate('#kana');
+  assert.equal(restored.state.history.length, 1, 'Records merge back by id, so the restore brings the cleared history back');
+  assert.deepEqual(restored.state.study.kanaReview, {});
+  assert.equal(restored.state.study.reviewSession, null);
+  assert.equal(restored.state.study.courses['h-ka'].active, null);
+  assert.ok(restored.state.study.courses['h-a'].completedAt);
+  assert.doesNotMatch(restored.html, /答錯的字/);
+});
+
+test('when only saving fails, answers, next, completion and review keep the last stored snapshot and warn; after recovery one save writes everything with exactly one record', () => {
+  const b = browser({ hash: '#study/h-a' });
+  openKanaQuiz(b, 'h-a');
+  const last = b.stored, full = /目前瀏覽器無法儲存進度/;
+  b.failSetItem();
+  const missed = questionOf(practiceOf(b, 'h-a'));
+  b.study('study-answer', { choice: choiceFor(missed, true) });
+  assert.equal(b.stored, last, 'answer');
+  assert.notEqual(practiceOf(b, 'h-a').answers[0], null, 'The page keeps the answer');
+  assert.equal(b.state.study.kanaReview[missed.id].wrong, true);
+  assert.match(storageWarning(b), full);
+  assert.equal(b.node('#announcer').textContent, '這次的進度沒有存到瀏覽器。');
+  b.study('study-next');
+  assert.equal(b.stored, last, 'next');
+  assert.equal(practiceOf(b, 'h-a').cursor, 1);
+  assert.match(storageWarning(b), full);
+  const lost = browser({ raw: b.stored, hash: '#study/h-a' });
+  assert.deepEqual(practiceOf(lost, 'h-a').answers, [null, null, null, null, null], 'A reload now shows the last stored snapshot');
+  playRound(b, 'h-a');
+  assert.equal(b.state.study.courses['h-a'].active.phase, 'done');
+  assert.equal(b.state.history.length, 1);
+  assert.equal(b.stored, last, 'completion');
+  assert.match(b.html, /練習完成/);
+  assert.match(storageWarning(b), full);
+  b.navigate('#kana-review'); b.study('study-review-start');
+  b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, 'review')), true) }); b.study('study-next');
+  assert.equal(b.stored, last, 'review');
+  assert.equal(practiceOf(b, 'review').cursor, 1);
+  assert.match(storageWarning(b), full);
+  b.failSetItem(false);
+  b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, 'review'))) });
+  assert.equal(b.node('#announcer').textContent, '已恢復儲存。');
+  const saved = JSON.parse(b.stored);
+  assert.equal(saved.attempts.length, 1, 'Exactly one record');
+  assert.equal(saved.attempts[0].firstCorrect, 4);
+  assert.equal(saved.learning.study.courses['h-a'].active.phase, 'done');
+  assert.ok(saved.learning.study.courses['h-a'].completedAt);
+  assert.deepEqual(saved.learning.study.reviewSession, b.state.study.reviewSession);
+  assert.deepEqual(saved.learning.study.kanaReview, b.state.study.kanaReview);
+  b.study('study-next');
+  assert.match(b.html, /<div id="storage-status"><\/div>/);
+  const reloaded = browser({ raw: b.stored, hash: '#kana-review' });
+  assert.equal(reloaded.state.history.length, 1);
+  assert.equal(practiceOf(reloaded, 'review').cursor, 2);
+});
+
+test('two tabs on one storage: the later writer is refused and warned, a storage event warns at once, and a stale tab cannot undo a clear', () => {
+  const seed = browser({ hash: '#study/h-a' });
+  openKanaQuiz(seed, 'h-a');
+  const shared = new Map(seed.storage), raw = () => shared.get('sorachi:data:v2'), conflict = /另一個分頁已更新或清除資料/;
+  const a = browser({ sharedStorage: shared, hash: '#study/h-a' }), b = browser({ sharedStorage: shared, hash: '#study/h-a' });
+  const q = questionOf(practiceOf(a, 'h-a'));
+  assert.equal(questionOf(practiceOf(b, 'h-a')).id, q.id);
+  a.study('study-answer', { choice: choiceFor(q) });
+  const afterA = raw();
+  b.study('study-answer', { choice: choiceFor(q, true) });
+  assert.equal(raw(), afterA, 'The later writer is refused');
+  assert.notEqual(practiceOf(b, 'h-a').answers[0], null, 'Its own answer stays on its page');
+  assert.match(storageWarning(b), conflict);
+  a.study('study-next'); b.study('study-next');
+  assert.notEqual(raw(), afterA, 'The first tab keeps saving');
+  assert.match(storageWarning(b), conflict, 'The second tab stays stopped');
+  const reopened = practiceOf(browser({ sharedStorage: shared, hash: '#study/h-a' }), 'h-a');
+  assert.equal(reopened.questions[0].options[reopened.answers[0]], q.id, 'A reload shows the saved right answer, not the refused wrong one');
+  // A storage event warns before the stale tab does anything.
+  const c = browser({ sharedStorage: shared, hash: '#kana' }), d = browser({ sharedStorage: shared, hash: '#kana' });
+  c.study('study-script', { script: 'k' });
+  const afterC = raw();
+  d.storageEvent();
+  assert.match(d.node('#storage-status').innerHTML, conflict);
+  assert.equal(d.node('#announcer').textContent, '另一個分頁更新了資料，這個分頁已停止儲存。');
+  d.study('study-script', { script: 'h' });
+  assert.equal(raw(), afterC);
+  // A tab still in a quiz cannot write back what another tab cleared.
+  const e = browser({ sharedStorage: shared, hash: '#study/h-a' }), f = browser({ sharedStorage: shared, hash: '#history' });
+  f.action('clear-history'); f.action('confirm-clear');
+  const cleared = raw();
+  e.study('study-answer', { choice: choiceFor(questionOf(practiceOf(e, 'h-a')), true) });
+  assert.equal(raw(), cleared);
+  assert.deepEqual(JSON.parse(cleared).learning.study.kanaReview, {});
+  assert.equal(JSON.parse(cleared).learning.study.courses['h-a'].active, null);
+  assert.match(storageWarning(e), conflict);
+});
+
+test('a review of exactly two characters says 複習 2 個字, mixes both directions with three same-row options, and ends with 再複習 2 個字 without a record', () => {
+  for (const course of ['h-ya', 'k-wa']) for (let run = 0; run < 4; run++) {
+    let b = browser({ hash: '#kana' });
+    openKanaQuiz(b, course);
+    b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, course)), true) }); b.study('study-next');
+    b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, course)), true) });
+    b.navigate('#kana');
+    assert.match(b.html, /複習 2 個字/);
+    b.navigate('#kana-review'); b.study('study-review-start');
+    const session = practiceOf(b, 'review');
+    assert.equal(session.questions.length, 2);
+    assert.equal(new Set(session.questions.map((q) => q.direction)).size, 2, 'Two questions still ask both ways');
+    for (const q of session.questions) {
+      assert.equal(q.options.length, 3);
+      assert.ok(q.options.every((id) => id.startsWith(`${course}/`)), 'Options stay in the row');
+    }
+    b.study('study-answer', { choice: choiceFor(questionOf(session), true) });
+    b = browser({ raw: b.stored, hash: '#kana-review' });
+    b.study('study-next');
+    playRound(b, 'review', () => true);
+    const done = practiceOf(b, 'review');
+    assert.ok(done.retryQuestions.every((q, i) => q.direction !== done.questions[i].direction), 'The retry asks the other way round');
+    assert.match(b.html, /再複習 2 個字/);
+    assert.equal(b.state.history.length, 0);
+  }
+});
+
+test('feedback from a retry round names the retried question and round, in a course and in the review; completion pages name no question', () => {
+  const b = browser({ hash: '#study/h-a' });
+  const report = () => {
+    const stored = b.stored;
+    b.action('feedback'); b.submitFeedback('問題回報', '測試');
+    const body = new URL(b.node('#feedback-ready').children[1].href).searchParams.get('body');
+    b.action('feedback-back');
+    assert.equal(b.stored, stored, 'Feedback never writes progress');
+    return body;
+  };
+  const retryReport = (where, place) => {
+    while (practiceOf(b, where).round === 'first') {
+      const session = practiceOf(b, where);
+      b.study('study-answer', { choice: choiceFor(questionOf(session), session.cursor === 0) }); b.study('study-next');
+    }
+    const question = questionOf(practiceOf(b, where)), course = question.id.split('/')[0], body = report();
+    const revision = vm.runInContext(`Content.courseRevision(${JSON.stringify(course)})`, contentContext);
+    for (const line of [`所在位置：${place}`, `courseId: ${course}`, `courseRevision: ${revision}`, `questionId: ${question.id}`, `direction: ${question.direction}`, 'practiceVersion: 1', 'round: retry']) assert.ok(body.split('\n').includes(line), `${line}\n${body}`);
+  };
+  const doneReport = (place) => {
+    const body = report();
+    assert.ok(body.includes(`所在位置：${place}`), body);
+    assert.doesNotMatch(body, /questionId:|round:/);
+  };
+  openKanaQuiz(b, 'h-a');
+  retryReport('h-a', '平假名・あ行・再試一次第 1 步');
+  playRound(b, 'h-a');
+  doneReport('平假名・あ行・完成頁');
+  b.navigate('#kana-review'); b.study('study-review-start');
+  retryReport('review', '五十音複習・再試一次第 1 步');
+  playRound(b, 'review');
+  doneReport('五十音複習・完成頁');
+});
+
+test('on the review page a forced 回去看看 changes nothing, while switching script and opening a course still work', () => {
+  const b = browser({ hash: '#study/h-a' });
+  openKanaQuiz(b, 'h-a'); playRound(b, 'h-a');
+  b.navigate('#kana-review'); b.study('study-review-start');
+  b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, 'review'))) });
+  const round = JSON.stringify(b.state.study.reviewSession), stored = b.stored;
+  b.study('study-review');
+  assert.equal(b.stored, stored); assert.equal(b.hash, '#kana-review');
+  b.study('study-script', { script: 'k' });
+  assert.equal(b.state.study.script, 'k', 'The script switch is not swallowed by the review page');
+  assert.equal(b.hash, '#kana-review');
+  b.study('study-open', { course: 'h-ka' });
+  assert.equal(b.hash, '#study/h-ka', 'Opening a course is not swallowed by the review page');
+  assert.equal(JSON.stringify(b.state.study.reviewSession), round, 'Neither touches the review round');
+  b.navigate('#kana-review'); b.study('study-next');
+  assert.equal(practiceOf(b, 'review').cursor, 1, 'The round goes on where it was');
+  playRound(b, 'review');
+  const done = b.stored;
+  b.study('study-answer', { choice: 0 }); b.study('study-next');
+  assert.equal(b.stored, done, 'The done page still ignores answers');
+  b.study('study-open', { course: 'k-a' });
+  assert.equal(b.hash, '#study/k-a');
+});
+
+// Pins Date inside one page so a test can move its clock, also backwards.
+function setClock(b, iso) {
+  b.run(`if (!globalThis.__realDate) { globalThis.__realDate = Date; globalThis.Date = class extends __realDate { constructor(...args) { super(...(args.length ? args : [globalThis.__now])); } static now() { return globalThis.__now; } }; } globalThis.__now = __realDate.parse(${JSON.stringify(iso)});`);
+}
+test('with a clock that went backwards, a kana answer is still dated after the last clear and the previous answer, so a backup restore keeps it', async () => {
+  // After a clear: the next answer must not look older than the clear.
+  const b = browser({ hash: '#study/h-a' });
+  setClock(b, '2026-10-16T10:00:00.000Z');
+  openKanaQuiz(b, 'h-a');
+  b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, 'h-a')), true) });
+  setClock(b, '2026-10-16T10:05:00.000Z');
+  b.navigate('#history'); b.action('clear-history'); b.action('confirm-clear');
+  setClock(b, '2026-10-16T10:01:00.000Z');
+  openKanaQuiz(b, 'h-a');
+  const after = questionOf(practiceOf(b, 'h-a')).id;
+  b.study('study-answer', { choice: choiceFor(questionOf(practiceOf(b, 'h-a')), true) });
+  const { kanaReview, reviewClearedAt } = b.state.study;
+  assert.ok(kanaReview[after].lastSeen > reviewClearedAt, `${kanaReview[after].lastSeen} must follow the clear at ${reviewClearedAt}`);
+  const elsewhere = await importAndReload(browser(), b.stored);
+  assert.equal(elsewhere.state.study.kanaReview[after]?.wrong, true, 'Restoring the backup keeps the mistake made after the clear');
+  // After an earlier answer: a right answer must not look older than the miss it replaces.
+  const c = browser({ hash: '#study/h-a' });
+  setClock(c, '2026-10-16T10:00:00.000Z');
+  openKanaQuiz(c, 'h-a');
+  const x = questionOf(practiceOf(c, 'h-a')).id;
+  c.study('study-answer', { choice: choiceFor(questionOf(practiceOf(c, 'h-a')), true) });
+  const backup = c.stored;
+  setClock(c, '2026-10-16T09:50:00.000Z');
+  c.study('study-next');
+  playRound(c, 'h-a');
+  assert.equal(c.state.study.kanaReview[x].wrong, false);
+  assert.ok(c.state.study.kanaReview[x].lastSeen > '2026-10-16T10:00:00.000Z', c.state.study.kanaReview[x].lastSeen);
+  const restored = await importAndReload(c, backup);
+  assert.equal(restored.state.study.kanaReview[x].wrong, false, 'The older backup cannot bring the mistake back');
 });

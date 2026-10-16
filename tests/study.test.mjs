@@ -122,7 +122,11 @@ test('each kana appears once with mixed directions; choices and order persist af
     assert.deepEqual([...a.order].sort(), Array.from({ length: n }, (_, i) => i));
     assert.equal(new Set(a.practice.questions.map(q=>q.direction)).size,2);
     assert.equal(new Set(a.practice.questions.map(q=>q.id)).size,n);
-    for(const q of a.practice.questions) assert.ok(q.options.every(id=>b.practice.entry(id).courseId===id.split('/')[0] && b.practice.entry(id).script===id[0]));
+    // No other row is learned, so every option comes from this course; `option` must not shadow `id`.
+    const fromRow=options=>options.every(option=>b.practice.entry(option).courseId===id && b.practice.entry(option).script===id[0]);
+    for(const q of a.practice.questions) assert.ok(fromRow(q.options),id);
+    const otherRow=b.practice.entries.find(item=>item.script===id[0] && item.courseId!==id).id;
+    assert.equal(fromRow([...a.practice.questions[0].options,otherRow]),false,'The check rejects an option from another row');
     const restored = harness(b.stored); restored.render(`#study/${id}`);
     assert.deepEqual(clone(restored.state.courses[id].active.order), clone(a.order));
     assert.deepEqual(clone(restored.state.courses[id].active.practice), clone(a.practice));
@@ -470,6 +474,31 @@ test('short review persists retries without creating course completions or histo
  session=reloaded.state.reviewSession;q=reloaded.practice.current(session);reloaded.action('answer',{choice:String((q.options.indexOf(q.id)+1)%q.options.length)});reloaded.action('next');
  assert.equal(session.round,'done');assert.equal(reloaded.study.reviewSummary().wrongCount,1);assert.equal(reloaded.records.length,0);assert.deepEqual(clone(reloaded.state.courses),before);
  assert.match(reloaded.html,/再複習 1 個字/);reloaded.action('review-start');assert.equal(reloaded.state.reviewSession.round,'first');assert.equal(reloaded.state.reviewSession.questions[0].id,id);
+});
+
+test('the kana review done page says when first answers were wrong, even if the retry fixed them all', () => {
+ const b=harness();startQuiz(b,'h-a');finishQuiz(b,'h-a');
+ const play=(missFirst,missRetry)=>{
+  b.render('#kana-review');b.action('review-start');const session=b.state.reviewSession;
+  while(session.round!=='done'){const q=b.practice.current(session),right=q.options.indexOf(q.id),miss=session.round==='first'?missFirst.includes(session.cursor):missRetry;b.action('answer',{choice:String(miss?(right+1)%q.options.length:right)});b.action('next');}
+  return session;
+ };
+ const summary=()=>b.render('#kana-review').match(/<h2>複習完成<\/h2>(.*?)<button/)[1];
+ play([0,2],false);
+ assert.match(summary(),/<p>第一次答錯 2 個字，重考都答對了。<\/p>/);
+ assert.doesNotMatch(summary(),/這次的字都答對了/,'Two first answers were wrong this round');
+ play([],false);
+ assert.match(summary(),/<p>這次的字都答對了。<\/p>/);
+ const missed=play([1],true).questions[1].id;
+ assert.match(summary(),/<p>還可以再練：[^<]+（[a-z]+）<\/p>/);assert.doesNotMatch(summary(),/都答對了/);
+ // The done page stays reachable from #kana; a course quiz that fixes the retry miss must not make the retry look right.
+ b.render('#kana');startQuiz(b,'h-a');
+ const active=b.state.courses['h-a'].active;
+ while(b.practice.current(active.practice).id!==missed){b.action('answer',{choice:String(chooseCurrent(b,'h-a'))});b.action('next');}
+ b.action('answer',{choice:String(chooseCurrent(b,'h-a'))});
+ assert.equal(b.state.kanaReview[missed].wrong,false);
+ assert.match(summary(),/<p>第一次答錯 1 個字。<\/p>/);
+ assert.equal(b.records.length,1,'Reviews add no record');
 });
 
 test('delayed success stays removed after completion and reload with the newer history timestamp', () => {

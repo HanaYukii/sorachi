@@ -419,13 +419,19 @@ const Study = (() => {
     if(feedback){feedback.textContent=practiceFeedback(session);feedback.classList.toggle('wrong',!correct);const bounds=feedback.getBoundingClientRect?.();if(!bounds||bounds.top<0||bounds.bottom>window.innerHeight)feedback.scrollIntoView?.({block:'nearest',behavior:'smooth'});}
     const next=document.querySelector('[data-action="study-next"]');if(next){next.disabled=false;next.focus({preventScroll:true});}
   }
-  function rememberAnswer(outcome) { state().kanaReview[outcome.id]={lastSeen:new Date().toISOString(),wrong:!outcome.correct}; }
+  // Like rememberGrammar: a clock that went back never dates an answer before the previous one or the last clear.
+  function rememberAnswer(outcome) {
+    const previous=Date.parse(state().kanaReview[outcome.id]?.lastSeen)||0, cleared=Date.parse(state().reviewClearedAt)||0;
+    state().kanaReview[outcome.id]={lastSeen:new Date(Math.max(Date.now(),previous+1,cleared+1)).toISOString(),wrong:!outcome.correct};
+  }
   function reviewPage() {
     const session=state().reviewSession, summary=reviewSummary();
     let body;
     if(session?.round==='done'){
       const remaining=session.questions.filter(q=>state().kanaReview[q.id]?.wrong).map(q=>KanaPractice.entry(q.id));
-      body=`<h2>複習完成</h2><p>這次練了 ${session.questions.length} 個字。</p>${remaining.length?`<p>還可以再練：${remaining.map(item=>escape(`${item.character}（${item.reading}）`)).join('、')}</p>`:'<p>這次的字都答對了。</p>'}<button class="primary" data-action="study-review-start">再複習 ${Math.min(5,summary.availableCount)} 個字</button>`;
+      // retryQuestions are this round's first-time misses; a miss fixed in the retry is not "all right".
+      const missed=session.retryQuestions.length, retryRight=session.retryQuestions.every((q,i)=>q.options[session.retryAnswers[i]]===q.id);
+      body=`<h2>複習完成</h2><p>這次練了 ${session.questions.length} 個字。</p>${remaining.length?`<p>還可以再練：${remaining.map(item=>escape(`${item.character}（${item.reading}）`)).join('、')}</p>`:missed?`<p>第一次答錯 ${missed} 個字${retryRight?'，重考都答對了':''}。</p>`:'<p>這次的字都答對了。</p>'}<button class="primary" data-action="study-review-start">再複習 ${Math.min(5,summary.availableCount)} 個字</button>`;
     }else if(session)body=practiceQuiz(session,true);
     else body=`<p>先練答錯的字，較早答錯的先練；再複習較久沒練的字，最多 5 個。</p>${summary.wrongLabels.length?`<p>${wrongLine(summary)}</p>`:''}${summary.availableCount?'<button class="primary" data-action="study-review-start">開始複習</button>':'<p>先完成一組五十音練習，就可以在這裡複習。</p>'}`;
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音複習</h1>${body}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`,'#kana','回五十音');
@@ -666,7 +672,8 @@ const Study = (() => {
       if(ids.length){state().reviewSession=KanaPractice.create(ids,{completedIds:completedKanaIds(),mode:'review'});save();api.go('#kana-review');}
       return true;
     }
-    if(location.hash==='#kana-review'){
+    // The review page owns only answer and next; study-open, study-script and the like go to the handlers below.
+    if(location.hash==='#kana-review'&&(action==='study-answer'||action==='study-next')){
       const session=state().reviewSession;
       if(!session||session.round==='done')return true;
       if(action==='study-answer'){

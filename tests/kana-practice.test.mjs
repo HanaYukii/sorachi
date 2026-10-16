@@ -168,6 +168,21 @@ test('every kana course with any learned rows yields legal options over fixed se
  assert.equal(replay(),replay(),'The same seed gives the same round');
 });
 
+test('や and わ rows with no other learned row: every first and retry question offers exactly the three kana of the row',()=>{
+ for(const seed of SEEDS){
+  const {P}=seeded(seed);
+  for(const course of ['h-ya','k-ya','h-wa','k-wa']) for(let run=0;run<5;run++){
+   const s=P.create(ids(course),{completedIds:[]});
+   finishFirst(s,ids(course),P);
+   assert.equal(s.retryQuestions.length,3);
+   for(const q of [...s.questions,...s.retryQuestions]){
+    assert.deepEqual([...q.options].sort(),[...ids(course)].sort(),`seed ${seed}, ${course}`);
+    assert.equal(new Set(q.options.map(id=>P.entry(id).reading)).size,3);
+   }
+  }
+ }
+});
+
 // Port of Jabiko kanaDrill.test.ts "NEVER offer a same-romaji distractor" (#37), with the pairs named.
 test('same-reading pairs never appear as answer and distractor in one question: お／を、オ／ヲ、じ／ぢ、ず／づ、ジ／ヂ、ズ／ヅ',()=>{
  const pairs=[['お','を'],['オ','ヲ'],['じ','ぢ'],['ず','づ'],['ジ','ヂ'],['ズ','ヅ']];

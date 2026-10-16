@@ -25,11 +25,11 @@ test('versions come from the loaded script tags without exposing their URLs or q
  const result=Diagnostics.capture({hash:'#home',scripts:[
   {src:'https://example.test/private/content.js?v=0123456789&token=secret-query'},
   {src:'./app.js?v=ABCDEF0123#secret-fragment'},
-  {src:'./study.js?v=ffffffffff'},
+  {src:'./unknown.js?v=ffffffffff'},
  ]});
  assert.deepEqual(plain(result),{contentVersion:'0123456789',appVersion:'abcdef0123'});
  assert.deepEqual(plain(Diagnostics.capture({hash:'#home'})),{contentVersion:'0123456789',appVersion:'abcdef0123'});
- assert.doesNotMatch(Diagnostics.format(result),/https|private|token|secret|study\.js/);
+ assert.doesNotMatch(Diagnostics.format(result),/https|private|token|secret|unknown\.js/);
 });
 
 test('quiz diagnostics resolve the shuffled question index and whitelist kana direction',()=>{
@@ -173,4 +173,16 @@ test('practice and hint asset hashes identify their exact loaded releases withou
  assert.equal(snapshot.hintsVersion,'abc4567890');
  assert.match(Diagnostics.format(snapshot),/kana-practice\.js: 123456789a/);
  assert.doesNotMatch(Diagnostics.format(snapshot),/private|hidden|host|secret/);
+});
+
+test('study and storage asset hashes are reported too, since review, retry and saving live there',()=>{
+ const {Diagnostics}=setup();
+ const snapshot=Diagnostics.capture({scripts:['https://host.test/private/study.js?v=fedcba9876&secret=hidden','./storage.js?v=ABCDEF4567#frag','./content.js?v=0123456789']});
+ assert.equal(snapshot.studyVersion,'fedcba9876');
+ assert.equal(snapshot.storageVersion,'abcdef4567');
+ const text=Diagnostics.format(snapshot);
+ assert.match(text,/^study\.js: fedcba9876$/m); assert.match(text,/^storage\.js: abcdef4567$/m);
+ assert.doesNotMatch(text,/private|hidden|host|secret|frag/);
+ const twice=Diagnostics.capture({scripts:['./study.js?v=fedcba9876','./study.js?v=0123456789']});
+ assert.equal(twice.studyVersion,undefined,'Two different study.js builds are ambiguous, like any other script');
 });
