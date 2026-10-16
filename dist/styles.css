@@ -942,7 +942,7 @@ button svg {
 /* Quiet secondary tools keep the lesson as the primary path. */
 .quiet-links { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
 .footer .text-button { font-size: 12px; min-height: 44px; }
-.lesson-utilities { display: flex; justify-content: center; margin-top: 24px; }
+.lesson-utilities { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 24px; margin-top: 24px; }
 .lesson-utilities .text-button { font-size: 12px; color: var(--muted); min-height: 44px; }
 .utility-main { max-width: 650px; margin: 38px auto 60px; }
 .utility-main h1 { font-size: 32px; margin: 12px 0; letter-spacing: -.6px; }
