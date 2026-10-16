@@ -6268,7 +6268,7 @@ const Content = (() => {
     {
       "id": "t-charge",
       "title": "交通卡加值",
-      "subtitle": "チャージ・加值金額",
+      "subtitle": "請店員加值・說出金額",
       "steps": [
         {
           "title": "請店員幫交通卡加值",
