@@ -1179,8 +1179,9 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
   .site-header .prototype { display: none; }
 }
 
-/* Home: a compact kana lead, with prominent, expandable section entries. */
-.home { padding-top: 14px; }
+/* Home: the three content blocks are the primary navigation. */
+.home-header { height: 86px; border-bottom: 1px solid var(--line); }
+.home { padding-top: 24px; }
 .home .welcome { margin-bottom: 22px; }
 .home .welcome h1 { font-size: 30px; margin: 0 0 8px; }
 .lesson-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 270px; background: var(--lilac); border: 1px solid #e5dcf1; border-radius: 28px; overflow: hidden; }
@@ -1203,7 +1204,15 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .review-entry .text-button { flex-shrink: 0; font-weight: 700; }
 .learning-path { margin: 18px 0; }
 .path-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 18px; }
-.path-card { display: flex; align-items: center; gap: 20px; border: 1px solid #d1e7eb; border-radius: 24px; padding: 24px; background: #edf7f8; }
+.path-card { position: relative; display: flex; align-items: center; gap: 20px; border: 1px solid #d1e7eb; border-radius: 24px; padding: 24px; background: #edf7f8; }
+.path-card .text-button::after { content: ""; position: absolute; inset: 0; border-radius: 24px; cursor: pointer; }
+.path-card:has(.text-button:focus-visible) { outline: 3px solid var(--purple); outline-offset: 4px; }
+.path-card .text-button:focus-visible { outline: none; }
+@media (hover: hover) {
+  .path-card:hover { border-color: var(--aqua-ink); }
+  .travel-entry:hover { border-color: var(--orange-ink); }
+  .path-card:hover .text-button { text-decoration: underline; }
+}
 .path-art { width: 100px; height: auto; flex-shrink: 0; }
 .path-copy { min-width: 0; }
 .path-card h2 { font-size: 22px; margin: 10px 0 7px; }
@@ -1213,7 +1222,14 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .travel-entry { background: #fff3e9; border-color: #f2dfd0; }
 .travel-entry .path-number { color: var(--orange-ink); background: #fbe5d3; }
 .travel-entry .text-button { color: var(--orange-ink); }
-.home .gentle-note { margin-top: 22px; }
+.home .script-supplement { margin-top: 22px; padding: 12px 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; gap: 0 16px; }
+.home .script-supplement p { margin: 0; font-size: 12px; }
+.home .gentle-note { margin-top: 12px; padding: 0; background: none; gap: 8px; color: var(--muted); font-size: 12px; }
+.home .gentle-note svg { width: 17px; height: 17px; }
+@media (max-width: 740px) {
+  .home-header { height: 72px; }
+  .home { padding-top: 20px; }
+}
 @media (max-width: 740px) {
   .lesson-hero { grid-template-columns: minmax(0, 1fr) 210px; }
   .hero-copy { padding: 22px; }
