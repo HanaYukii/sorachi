@@ -133,3 +133,15 @@ test('every kana course with any learned rows yields legal options: one answer, 
   }
  }
 });
+
+test('a learned contracted sound does not crowd out a single kana classic look-alike (き still meets さ)',()=>{
+ for(let run=0;run<30;run++){
+  const s=P.create(ids('h-ka'),{completedIds:['h-sa','h-kya']});
+  const ki=s.questions.find(q=>P.entry(q.id).character==='き');
+  assert.ok(ki.options.some(id=>P.entry(id).character==='さ'));
+ }
+ for(let run=0;run<30;run++){
+  const s=P.create(ids('h-kya'),{completedIds:['h-ka']});
+  for(const q of s.questions) assert.ok(q.options.some(id=>P.entry(id).character==='き'),'A contracted sound still meets its base');
+ }
+});

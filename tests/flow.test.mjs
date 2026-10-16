@@ -938,7 +938,7 @@ test('home goes on to voiced hiragana after the basic rows, but keeps katakana l
   const basicH = ['a','ka','sa','ta','na','ha','ma','ya','ra','wa'].map((row) => `h-${row}`);
   const hiragana = withCompleted(basicH);
   assert.match(hiragana.html, /data-action="study-open" data-course="h-ga"/);
-  assert.match(hiragana.html, /平假名已完成 10 \/ 15 組/);
+  assert.match(hiragana.html, /平假名已完成 10 \/ 26 組/);
   const katakana = withCompleted([...basicH, 'k-a', 'k-ka']);
   assert.match(katakana.html, /data-action="study-open" data-course="k-sa"/);
 });

@@ -20,7 +20,10 @@ const KanaPractice = (() => {
     const shares=(list,candidate)=>list.some(group=>group.includes(target.character)&&group.includes(entry(candidate).character));
     // か／が／ぱ-style pairs differ only by the voicing mark, the most common confusion once both are learned.
     const base=character=>character.normalize('NFD')[0];
-    const similar=candidate=>shares(groups,candidate)||base(entry(candidate).character)===base(target.character)?2:shares(looseGroups,candidate)?1:0;
+    // きゃ meets き, but a contracted sound does not crowd out the classic look-alikes of a single kana (き meets さ).
+    const sameBase=candidate=>base(entry(candidate).character)===base(target.character);
+    const longer=candidate=>[...entry(candidate).character].length>[...target.character].length;
+    const similar=candidate=>shares(groups,candidate)||sameBase(candidate)&&!longer(candidate)?2:shares(looseGroups,candidate)||sameBase(candidate)?1:0;
     const peers=shuffled(pool.filter(candidate=>candidate!==id && entry(candidate).script===target.script)).sort((a,b)=>similar(b)-similar(a));
     const sameRow=peers.filter(candidate=>entry(candidate).courseId===target.courseId), otherRows=peers.filter(candidate=>entry(candidate).courseId!==target.courseId);
     const options=[id];

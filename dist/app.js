@@ -94,10 +94,11 @@ function home() {
   document.title = "SoraChi｜日文入門練習";
   const begun = progress.inProgress;
   const action = begun ? "接著學" : progress.completed ? "再練習一次" : "認識三種日文寫法";
-  const basic = (script) => Content.rows.slice(0, 10).map(([row]) => `${script}-${row}`), voiced = (script) => Content.rows.slice(10).map(([row]) => `${script}-${row}`);
+  const rowIds = (group) => (script) => Content.rowGroups[group].map((row) => `${script}-${row}`);
+  const basic = rowIds("basic"), voiced = rowIds("voiced"), youon = rowIds("youon");
   // Learners who already moved on to katakana keep going there before returning to voiced hiragana.
   const startedKatakana = basic("k").some((id) => progress.study.courses[id]?.completedAt);
-  const kanaIds = startedKatakana ? [...basic("h"), ...basic("k"), ...voiced("h"), ...voiced("k")] : [...basic("h"), ...voiced("h"), ...basic("k"), ...voiced("k")];
+  const kanaIds = startedKatakana ? [...basic("h"), ...basic("k"), ...voiced("h"), ...voiced("k"), ...youon("h"), ...youon("k")] : [...basic("h"), ...voiced("h"), ...youon("h"), ...basic("k"), ...voiced("k"), ...youon("k")];
   const nextKana = kanaIds.find((id) => Study.hasProgress(id) && progress.study.courses[id]?.active?.phase !== "done") || kanaIds.find((id) => !progress.study.courses[id]?.completedAt) || "h-a";
   const kanaTitle = Study.title(nextKana);
   const review = Study.reviewSummary();

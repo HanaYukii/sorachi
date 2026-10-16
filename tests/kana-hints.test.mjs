@@ -9,8 +9,8 @@ vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 
 const { content, hints } = context;
 const letters = content.rows.flatMap(row => [...row[2], ...row[3]]);
 
-test('all 142 taught kana have two distinct short plain-text memory hints', () => {
-  assert.equal(letters.length, 142);
+test('all 208 taught kana (basic, voiced, contracted) have two distinct short plain-text memory hints', () => {
+  assert.equal(letters.length, 208);
   for (const letter of letters) {
     const entries = hints.get(letter);
     assert.equal(entries.length, 2, letter);
@@ -78,4 +78,11 @@ test('a memory-hint anchor word never means something else on a travel card', ()
   }
   assert.ok(parsed >= 80, 'Anchors must parse, or the check would silently pass');
   assert.ok(phrasebook.size >= 60);
+});
+
+test('contracted-sound hints point back to the i-column kana and give the one-beat reading', () => {
+  assert.equal(hints.get('きゃ')[0].text, 'き 後面接一個小的 ゃ；寫成大的 や 就是 き、や 兩個音。');
+  assert.equal(hints.get('きゃ')[1].text, 'き（ki）和小 ゃ（ya）合成一拍，讀 kya。');
+  assert.equal(hints.get('ジョ')[1].text, 'ジ（ji）和小 ョ（yo）合成一拍，讀 jo。');
+  assert.equal(hints.get('ゃ').length, 0);
 });

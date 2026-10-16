@@ -58,7 +58,7 @@ function harness(saved, voices = [], history = []) {
     get voiceReads() { return voiceReads; }, voicesReady() { for (const callback of [...(speechEvents.voiceschanged || [])]) callback(); },
   };
 }
-const groupKeys = ['a','ka','sa','ta','na','ha','ma','ya','ra','wa','ga','za','da','ba','pa'];
+const groupKeys = ['a','ka','sa','ta','na','ha','ma','ya','ra','wa','ga','za','da','ba','pa','kya','sha','cha','nya','hya','mya','rya','gya','ja','bya','pya'];
 function startQuiz(b, id) {
   b.action('open', { course: id });
   const course = b.content.courses[id]; const count = course.type === 'kana' ? course.letters.length : course.steps.length;
@@ -90,12 +90,13 @@ test('two scripts cover 46 basic and 25 voiced characters each and only one scri
   assert.equal(b.study.title('missing'), null);
   for (const script of ['h', 'k']) {
     b.render('#kana'); b.action('script', { script });
-    assert.equal((b.html.match(/data-action="study-open"/g) || []).length, 15);
-    assert.match(b.html, /濁音・半濁音/);
+    // 26 kana rows plus the two special-sound lessons.
+    assert.equal((b.html.match(/data-action="study-open"/g) || []).length, 28);
+    for (const heading of ['濁音・半濁音', '拗音', '促音・長音']) assert.match(b.html, new RegExp(`<h2 class="course-list-heading">${heading}</h2>`));
     const letters = [];
     for (const key of groupKeys) {
       const id = `${script}-${key}`;
-      const n = ['ya', 'wa'].includes(key) ? 3 : 5;
+      const n = ['ya', 'wa'].includes(key) || key.length === 3 || key === 'ja' ? 3 : 5;
       assert.equal(b.study.total(id), n);
       b.action('open', { course: id });
       for (let i = 0; i < n; i++) {
@@ -103,8 +104,8 @@ test('two scripts cover 46 basic and 25 voiced characters each and only one scri
         b.action('next');
       }
     }
-    assert.equal(letters.length, 71);
-    assert.equal(new Set(letters).size, 71);
+    assert.equal(letters.length, 104);
+    assert.equal(new Set(letters).size, 104);
     assert.ok(!letters.some((c) => ['ゐ','ゑ','ヰ','ヱ'].includes(c)));
   }
 });
@@ -334,7 +335,7 @@ test('retry labels use question identity and revision, with safe historical and 
   assert.deepEqual([...b.study.retryLabels({...entry,courseRevision:'old'})],[q.character]);
   assert.deepEqual([...b.study.retryLabels({...entry,questionIds:undefined})],['第 1 題']);
   assert.match(b.html,/第一次答錯/); assert.match(b.html,/下一組/);
-  assert.equal(b.study.nextCourse('h-a'),'h-ka'); assert.equal(b.study.nextCourse('k-a'),'k-ka'); assert.equal(b.study.nextCourse('k-wa'),'k-ga'); assert.equal(b.study.nextCourse('h-pa'),null); assert.equal(b.study.nextCourse('k-pa'),null); assert.equal(b.study.nextCourse('g-identity'),null);
+  assert.equal(b.study.nextCourse('h-a'),'h-ka'); assert.equal(b.study.nextCourse('k-a'),'k-ka'); assert.equal(b.study.nextCourse('k-wa'),'k-ga'); assert.equal(b.study.nextCourse('h-pa'),'h-kya'); assert.equal(b.study.nextCourse('h-pya'),null); assert.equal(b.study.nextCourse('k-pya'),null); assert.equal(b.study.nextCourse('g-identity'),null);
 });
 
 test('katakana special hints distinguish o from wo by character', () => {
@@ -504,4 +505,26 @@ test('travel pages show staff questions and Japanese keywords; other pages link 
   assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">店員可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
   b.render('#kana');
   assert.match(b.html, /<a class="header-link" href="#travel">旅遊常用語<\/a>/);
+});
+
+test('contracted-sound cards show their hint and special-sound lessons return to the kana page', () => {
+  const b = harness(null, [{ lang: 'ja-JP' }]);
+  b.action('open', { course: 'h-kya' });
+  assert.match(b.html, /<div class="kana-character" lang="ja">きゃ<\/div>/);
+  b.action('audio', { index: '0' }); assert.equal(b.utterances.at(-1).text, 'きゃ');
+  b.action('open', { course: 's-sokuon' });
+  assert.match(b.html, /發音說明 · 1 \/ 3/);
+  assert.match(b.html, /href="#kana"/);
+  assert.match(b.html, /回五十音/);
+  for (let i = 0; i < 3; i++) b.action('next');
+  assert.equal(b.state.courses['s-sokuon'].active.phase, 'quiz');
+  b.render('#grammar');
+  assert.doesNotMatch(b.html, /s-sokuon|s-long/, 'Special-sound lessons are not grammar lessons');
+});
+
+test('history labels decode contracted-sound question IDs even after the course changes', () => {
+  const b = harness();
+  const entry = { courseId: 'h-kya', courseRevision: 'old', total: 3, firstCorrect: 1, retryQuestions: [1, 3], questionIds: ['h-kya/question/u304d-3083', 'h-kya/question/u304d-3085', 'h-kya/question/u304d-3087'] };
+  assert.deepEqual([...b.study.retryLabels(entry)], ['きゃ', 'きょ']);
+  assert.deepEqual([...b.study.retryLabels({ ...entry, questionIds: ['h-kya/question/u30ad-3083', 'x', 'y'] })], ['第 1 題', '第 3 題'], 'Katakana code points in a hiragana course are not trusted');
 });

@@ -8,12 +8,12 @@ const context = vm.createContext({});
 vm.runInContext(readFileSync(new URL('../dist/content.js', import.meta.url), 'utf8') + '\nglobalThis.loaded = Content;', context);
 const Content = context.loaded;
 const plain = value => JSON.parse(JSON.stringify(value));
-const data = () => plain({ rows: Content.rows, grammar: Content.grammar, phrasebook: Content.phrasebook, intro: Content.intro });
+const data = () => plain({ rows: Content.rows, grammar: Content.grammar, sounds: Content.sounds, phrasebook: Content.phrasebook, intro: Content.intro });
 const errors = mutate => { const copy = data(); mutate(copy); return Content.validate(copy).join('\n'); };
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '045f7be326db7dc6bcbb80d79b08abf89b34e232cbdb6ce61315422cc9e1f6a1');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '693a824bd2a10f3401818111054173a79f51b6e1bd692b99bf79ad895a7b7cbd');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -102,8 +102,8 @@ test('intro distractors are balanced and travel phrases retain concise contextua
   assert.equal(reservation.keywords[0][0], '予約（よやく）');
 });
 
-test('registry includes 30 kana groups and three grammar courses; retired travel courses keep only a title', () => {
-  assert.equal(Object.keys(Content.courses).length, 33);
+test('registry includes 52 kana groups, three grammar courses and two special-sound lessons; retired travel courses keep only a title', () => {
+  assert.equal(Object.keys(Content.courses).length, 57);
   for (const id of ['t-place', 't-order', 't-pay', 't-charge']) {
     assert.equal(Content.getCourse(id), null);
     assert.ok(Content.phrasebook.some(c => c.id === id));
@@ -112,11 +112,11 @@ test('registry includes 30 kana groups and three grammar courses; retired travel
   }
   for (const script of ['h', 'k']) {
     const courses = Object.values(Content.courses).filter(c => c.script === script);
-    assert.equal(courses.length, 15);
-    assert.equal(courses.flatMap(c => c.letters).length, 71);
-    assert.equal(new Set(courses.flatMap(c => c.letters)).size, 71);
-    assert.equal(courses.flatMap(c => c.cards).length, 71);
-    assert.equal(courses.flatMap(c => c.questions).length, 71);
+    assert.equal(courses.length, 26);
+    assert.equal(courses.flatMap(c => c.letters).length, 104);
+    assert.equal(new Set(courses.flatMap(c => c.letters)).size, 104);
+    assert.equal(courses.flatMap(c => c.cards).length, 104);
+    assert.equal(courses.flatMap(c => c.questions).length, 104);
     for (const c of courses) assert.ok(c.cards.every(card => card.id.includes(card.character.codePointAt(0).toString(16))));
   }
   assert.equal(Content.getCourse('__proto__'), null);
@@ -189,12 +189,12 @@ test('legacy revision baseline is literal and matches the exact initial extracti
 });
 
 test('voiced and semi-voiced rows are required with the shared ji／zu readings', () => {
-  const voiced = Content.rows.slice(10).map(row => row[0]);
+  const voiced = Content.rows.slice(10, 15).map(row => row[0]);
   assert.deepEqual(plain(voiced), ['ga', 'za', 'da', 'ba', 'pa']);
   assert.deepEqual(plain(Content.getCourse('h-da').readings), ['da', 'ji', 'zu', 'de', 'do']);
   assert.deepEqual(plain(Content.getCourse('k-pa').letters), ['パ', 'ピ', 'プ', 'ペ', 'ポ']);
-  const withoutPa = { ...JSON.parse(JSON.stringify(data())), rows: plain(Content.rows).slice(0, 14) };
-  assert.ok(plain(Content.validate(withoutPa)).some(message => /fifteen rows/.test(message)));
+  const withoutPa = { ...JSON.parse(JSON.stringify(data())), rows: plain(Content.rows).filter(row => row[0] !== 'pa') };
+  assert.ok(plain(Content.validate(withoutPa)).some(message => /twenty-six rows/.test(message)));
 });
 
 test('grammar questions with Japanese options must carry matching romaji, travel legacy courses are exempt', () => {
@@ -244,4 +244,27 @@ test('transit phrases pair the concepts, keep the question context, and hedge ti
   for (const step of transit.steps) assert.ok(step.keywords.length <= 3, step.id);
   const at = Content.phrasebook.findIndex(c => c.id === 'transit');
   assert.equal(Content.phrasebook[at - 1].id, 't-charge', 'Transport stays next to IC top-ups');
+});
+
+test('contracted sounds are two-character kana rows with joined IDs, and special sounds are lessons on the kana page', () => {
+  assert.deepEqual(plain(Content.rowGroups.youon), ['kya', 'sha', 'cha', 'nya', 'hya', 'mya', 'rya', 'gya', 'ja', 'bya', 'pya']);
+  const kya = Content.getCourse('h-kya');
+  assert.deepEqual(plain(kya.letters), ['きゃ', 'きゅ', 'きょ']);
+  assert.deepEqual(plain(kya.readings), ['kya', 'kyu', 'kyo']);
+  assert.equal(kya.cards[0].id, 'h-kya/card/u304d-3083');
+  assert.deepEqual(plain(Content.getCourse('k-ja').letters), ['ジャ', 'ジュ', 'ジョ']);
+  assert.equal(Content.getCourse('h-a').cards[0].id, 'h-a/card/u3042', 'Single-character IDs stay the same');
+  for (const id of ['s-sokuon', 's-long']) {
+    const lesson = Content.getCourse(id);
+    assert.equal(lesson.home, 'kana');
+    assert.ok(lesson.steps.length >= 3 && lesson.questions.length >= 3);
+  }
+  assert.match(Content.getCourse('s-sokuon').steps[0].reading, /kippu/);
+  assert.match(Content.getCourse('s-long').steps[0].reading, /obaasan/);
+  assert.match(errors(d => { d.sounds[0].home = undefined; }), /special-sound/);
+  assert.match(errors(d => { d.grammar[0].home = 'kana'; }), /special-sound/);
+  assert.match(errors(d => { d.rows[15][2] = ['きゃ', 'きゅ']; }), /coverage/);
+  assert.match(errors(d => { d.rows[15][2] = 'きゃ きゅ きょ'; }), /coverage/, 'A contracted row written as one string would split into single kana');
+  assert.equal(Content.courseRevision('h-kya'), Content.courseRevision('h-kya'));
+  assert.equal(Content.courseRevision('nope'), null);
 });

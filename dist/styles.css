@@ -1104,6 +1104,10 @@ button svg {
 @media (max-width: 600px) { .travel-categories { grid-template-columns: 1fr; } }
 
 :lang(ja) { font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; }
+/* Wrapping keeps small ゃゅょっ and ー with the kana before them. */
+html { line-break: strict; }
+/* Example sentences break at the spaces between words, not inside a word. */
+.study-card .grammar-example { word-break: keep-all; overflow-wrap: anywhere; }
 .course-row .reading-label:not([lang="ja"]) { font-size: 13px; color: var(--muted); }
 .study-options .answer-status:empty { display: none; }
 .study-options .wrong .answer-status { color: var(--orange-ink); }
