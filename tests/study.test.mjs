@@ -182,7 +182,7 @@ test('reviewing cards mid-quiz retains original answers and resumes at first inc
 test('all grammar courses complete their content-defined cards and questions with stable score semantics', () => {
   const b = harness(); b.render('#grammar');
   assert.equal((b.html.match(/class="course-row" data-action="study-open"/g) || []).length, b.content.grammar.length);
-  assert.deepEqual([...b.html.matchAll(/<h2 class="course-list-heading">([^<]+)<\/h2>/g)].map(m => m[1]), ['基本句子', '時間與數字', '動作與地點', '形容詞與連接', 'て形'], 'One heading per unit, in teaching order');
+  assert.deepEqual([...b.html.matchAll(/<h2 class="course-list-heading">([^<]+)<\/h2>/g)].map(m => m[1]), ['基本句子', '時間與數字', '動作與地點', '形容詞與連接', '動詞原形與て形'], 'One heading per unit, in teaching order');
   assert.deepEqual([...b.html.matchAll(/class="course-row" data-action="study-open" data-course="([^"]+)"/g)].map(m => m[1]), [...b.content.grammar.map(lesson => lesson.id)], 'Units keep the teaching order');
   for (const { id } of b.content.grammar) {
     assert.equal(b.study.total(id), b.content.courses[id].questions.length);

@@ -772,6 +772,83 @@ const Content = (() => {
       ]
     },
     {
+      "id": "g-kochira",
+      "type": "grammar",
+      "title": "方向與客氣說法：こちら・どちら",
+      "subtitle": "這邊、那邊，比較客氣的問法",
+      "steps": [
+        {
+          "title": "方向：こちら・そちら・あちら・どちら",
+          "example": "こちら ／ そちら ／ あちら ／ どちら",
+          "reading": "kochira / sochira / achira / dochira",
+          "meaning": "這邊 ／ 那邊（你那邊）／ 那邊（遠處）／ 哪邊",
+          "body": "和 ここ、そこ、あそこ、どこ 一樣看靠近誰，但こちら系列說的是方向或那一帶，語氣也比較客氣。「こちら」還能指人或自己這一方，之後再學。",
+          "id": "g-kochira/card/words"
+        },
+        {
+          "title": "店員常說：こちらです",
+          "example": "こちらです。",
+          "reading": "kochira desu",
+          "meaning": "在這邊。／ 這邊請。",
+          "body": "店員帶路或指出方向時常說「こちらです」：在這邊、這邊請。說的是往這一邊，比「ここです」客氣。",
+          "id": "g-kochira/card/staff"
+        },
+        {
+          "title": "客氣地問路：どちらですか",
+          "example": "すみません、トイレは どちらですか。",
+          "reading": "sumimasen, toire wa dochira desu ka",
+          "meaning": "不好意思，廁所在哪邊？",
+          "body": "問方向用「どちら」，比「どこ」客氣。「どちら」也能問「兩個裡的哪一個」，之後再學。",
+          "id": "g-kochira/card/ask"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "你問店員廁所在哪裡，店員往自己身後一指，說「こちらです」。意思最接近哪一個？",
+          "options": [
+            "在這邊。",
+            "在那邊（遠處）。",
+            "在哪裡？"
+          ],
+          "answer": 0,
+          "explanation": "「こちら」指說話的人這一邊、這個方向，店員用它客氣地帶路：在這邊。遠處的那邊是「あちら」，「どちら」是在問。",
+          "id": "g-kochira/question/staff"
+        },
+        {
+          "prompt": "想客氣地問廁所在哪邊：トイレは＿＿ですか。",
+          "options": [
+            "どちら",
+            "こちら",
+            "あちら"
+          ],
+          "readings": [
+            "dochira",
+            "kochira",
+            "achira"
+          ],
+          "answer": 0,
+          "explanation": "問方向用「どちら」，比「どこ」客氣。「こちら」「あちら」是在指出方向，不是在問。",
+          "id": "g-kochira/question/ask"
+        },
+        {
+          "prompt": "店員指著走廊盡頭，離你們兩個人都遠的方向說：トイレは＿＿です。",
+          "options": [
+            "あちら",
+            "こちら",
+            "どちら"
+          ],
+          "readings": [
+            "achira",
+            "kochira",
+            "dochira"
+          ],
+          "answer": 0,
+          "explanation": "離雙方都遠的方向用「あちら」，遠近的分法和「あそこ」相同。「こちら」是說話的人這一邊，「どちら」是在問。",
+          "id": "g-kochira/question/far"
+        }
+      ]
+    },
+    {
       "id": "g-who",
       "type": "grammar",
       "title": "疑問詞：だれ・なに・どこ",
@@ -1008,6 +1085,91 @@ const Content = (() => {
           "answer": 0,
           "explanation": "「にほんご」是日文，「ほん」是書；「の」在這裡表示內容，所以是「日文書」，不必翻成「日文的書」。",
           "id": "g-no/question/meaning"
+        }
+      ]
+    },
+    {
+      "id": "g-nouns",
+      "type": "grammar",
+      "title": "常用名詞：ともだち・きっぷ・ホテル",
+      "subtitle": "人、東西、地方各兩個詞",
+      "steps": [
+        {
+          "title": "人：ともだち・せんせい",
+          "example": "ともだち ／ せんせい",
+          "reading": "tomodachi / sensei",
+          "meaning": "朋友 ／ 老師",
+          "body": "「せんせい」是老師，也用來稱呼醫生。叫老師時直接說「せんせい」就可以。",
+          "id": "g-nouns/card/people"
+        },
+        {
+          "title": "東西：きっぷ・かばん",
+          "example": "きっぷ ／ かばん",
+          "reading": "kippu / kaban",
+          "meaning": "車票 ／ 包包",
+          "body": "「きっぷ」的小 っ 要停一拍，念成 kip-pu。「かばん」是包包。",
+          "id": "g-nouns/card/things"
+        },
+        {
+          "title": "地方：みせ・ホテル",
+          "example": "みせ ／ ホテル",
+          "reading": "mise / hoteru",
+          "meaning": "店 ／ 飯店",
+          "body": "「みせ」是店家，「ホテル」是飯店。",
+          "id": "g-nouns/card/places"
+        },
+        {
+          "title": "放進學過的句子",
+          "example": "これは わたしの きっぷです。 ／ ホテルは どこですか。",
+          "reading": "kore wa watashi no kippu desu / hoteru wa doko desu ka",
+          "meaning": "這是我的車票。／ 飯店在哪裡？",
+          "body": "換成新學的名詞，前面學過的句子都能用。",
+          "id": "g-nouns/card/sentences"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「せんせい」是什麼意思？",
+          "options": [
+            "老師",
+            "朋友",
+            "學生"
+          ],
+          "answer": 0,
+          "explanation": "「せんせい」是老師。朋友是「ともだち」，學生是「がくせい」。",
+          "id": "g-nouns/question/sensei"
+        },
+        {
+          "prompt": "想說「這是我的車票」：これは わたしの＿＿です。",
+          "options": [
+            "きっぷ",
+            "かばん",
+            "みせ"
+          ],
+          "readings": [
+            "kippu",
+            "kaban",
+            "mise"
+          ],
+          "answer": 0,
+          "explanation": "車票是「きっぷ」。「かばん」是包包，「みせ」是店。",
+          "id": "g-nouns/question/kippu"
+        },
+        {
+          "prompt": "想問飯店在哪裡：＿＿は どこですか。",
+          "options": [
+            "ホテル",
+            "ともだち",
+            "せんせい"
+          ],
+          "readings": [
+            "hoteru",
+            "tomodachi",
+            "sensei"
+          ],
+          "answer": 0,
+          "explanation": "飯店是「ホテル」。「ともだち」是朋友，「せんせい」是老師。",
+          "id": "g-nouns/question/hotel"
         }
       ]
     },
@@ -2319,6 +2481,83 @@ const Content = (() => {
       ]
     },
     {
+      "id": "g-transport",
+      "type": "grammar",
+      "title": "交通工具：〜で いきます",
+      "subtitle": "搭什麼去",
+      "steps": [
+        {
+          "title": "搭什麼：〜で",
+          "example": "でんしゃで いきます。",
+          "reading": "densha de ikimasu",
+          "meaning": "搭電車去。",
+          "body": "交通工具後面接「で」，表示用什麼方式去。「でんしゃ」是電車。",
+          "id": "g-transport/card/de"
+        },
+        {
+          "title": "其他交通工具",
+          "example": "バスで ／ タクシーで",
+          "reading": "basu de / takushii de",
+          "meaning": "搭公車 ／ 搭計程車",
+          "body": "「バス」是公車、巴士，「タクシー」是計程車。走路去一般說「あるいて いきます」，之後再學。",
+          "id": "g-transport/card/more"
+        },
+        {
+          "title": "和地點一起說",
+          "example": "きょうとに でんしゃで いきます。",
+          "reading": "kyouto ni densha de ikimasu",
+          "meaning": "搭電車去京都。",
+          "body": "要去的地方用「に」（也可以用「へ」），交通工具用「で」。「えきで かいます」的「で」是做事情的地方，這裡的「で」是方式，要看前面接的是什麼。",
+          "id": "g-transport/card/both"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「搭公車去」：バス＿＿いきます。",
+          "options": [
+            "で",
+            "に",
+            "を"
+          ],
+          "readings": [
+            "de",
+            "ni",
+            "o"
+          ],
+          "answer": 0,
+          "explanation": "交通工具用「で」：バスで いきます。「に」用在要去的地方；「を」接吃、喝、買的東西。",
+          "id": "g-transport/question/bus"
+        },
+        {
+          "prompt": "「タクシーで いきます」是什麼意思？",
+          "options": [
+            "搭計程車去",
+            "搭公車去",
+            "搭電車去"
+          ],
+          "answer": 0,
+          "explanation": "「タクシー」是計程車，「で」是交通方式：搭計程車去。公車是「バス」，電車是「でんしゃ」。",
+          "id": "g-transport/question/taxi"
+        },
+        {
+          "prompt": "想說「搭電車去京都」：きょうと＿＿ でんしゃで いきます。",
+          "options": [
+            "に",
+            "で",
+            "を"
+          ],
+          "readings": [
+            "ni",
+            "de",
+            "o"
+          ],
+          "answer": 0,
+          "explanation": "要去的地方用「に」（也可以用「へ」）：きょうとに。「きょうとで」是在京都做事情，不是要去的地方；「を」接吃、喝、買的東西。",
+          "id": "g-transport/question/place"
+        }
+      ]
+    },
+    {
       "id": "g-arimasu",
       "type": "grammar",
       "title": "有、在：あります・います",
@@ -2957,6 +3196,90 @@ const Content = (() => {
       ]
     },
     {
+      "id": "g-verb-forms",
+      "type": "grammar",
+      "title": "動詞原形與三類：のむ・たべる・する",
+      "subtitle": "字典上的寫法，以及動詞怎麼分組",
+      "steps": [
+        {
+          "title": "ます形和原形",
+          "example": "たべます ／ たべる",
+          "reading": "tabemasu / taberu",
+          "meaning": "吃（禮貌說法）／ 吃（原形）",
+          "body": "前面學的「〜ます」是禮貌的說法，叫「ます形」。字典上的寫法叫「原形」（辭書形），查字典或聽到比較隨意的說法時會用到。動詞分成三類，要看「ます」前面的音；下一課的て形也是看這個音來變。",
+          "id": "g-verb-forms/card/plain"
+        },
+        {
+          "title": "第一類：i 段換成 u 段",
+          "example": "のみます → のむ ／ かいます → かう ／ いきます → いく",
+          "reading": "nomimasu → nomu / kaimasu → kau / ikimasu → iku",
+          "meaning": "喝 ／ 買 ／ 去",
+          "body": "i 段是 i 結尾的音（い、き、み），u 段是 u 結尾的音（う、く、む）。第一類把「ます」前面 i 段的音，換成同一行 u 段的音：み→む、い→う、き→く。",
+          "speech": "のみます、のむ。かいます、かう。いきます、いく。",
+          "id": "g-verb-forms/card/group1"
+        },
+        {
+          "title": "第二類與第三類",
+          "example": "たべます → たべる ／ みます → みる ／ します → する ／ きます → くる",
+          "reading": "tabemasu → taberu / mimasu → miru / shimasu → suru / kimasu → kuru",
+          "meaning": "吃 ／ 看 ／ 做 ／ 來",
+          "body": "第二類：把「ます」換成「る」。「ます」前面是 e 段（e 結尾，像「べ」be）的一定是第二類；i 段的大多是第一類，但「みます」「います」也是第二類（みる、いる），要個別記。第三類只有「します→する」「きます→くる」兩個。",
+          "speech": "たべます、たべる。みます、みる。します、する。きます、くる。",
+          "id": "g-verb-forms/card/group2-3"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「のみます」的原形是哪一個？",
+          "options": [
+            "のむ",
+            "のみる",
+            "のまる"
+          ],
+          "readings": [
+            "nomu",
+            "nomiru",
+            "nomaru"
+          ],
+          "answer": 0,
+          "explanation": "「のみます」是第一類，把「ます」前的 み 換成同一行的 む：のむ。「のみる」是把「ます」直接換成「る」，那是第二類的變法；「のまる」是把 み 換成 ま 再加「る」，兩種變法混在一起了。",
+          "id": "g-verb-forms/question/nomu"
+        },
+        {
+          "prompt": "「たべます」的原形是哪一個？",
+          "options": [
+            "たべる",
+            "たぶ",
+            "たべう"
+          ],
+          "readings": [
+            "taberu",
+            "tabu",
+            "tabeu"
+          ],
+          "answer": 0,
+          "explanation": "「ます」前面是 e 段的「べ」，屬於第二類，把「ます」換成「る」：たべる。「たぶ」「たべう」是照第一類改成 u 結尾的音，但「たべます」不是第一類。",
+          "id": "g-verb-forms/question/taberu"
+        },
+        {
+          "prompt": "「します」的原形是哪一個？",
+          "options": [
+            "する",
+            "しる",
+            "します"
+          ],
+          "readings": [
+            "suru",
+            "shiru",
+            "shimasu"
+          ],
+          "answer": 0,
+          "explanation": "「します」是第三類，原形是「する」，要個別記。照第二類把「ます」換成「る」會變成「しる」，那是另一個動詞（知る，知道）；「します」是ます形。",
+          "id": "g-verb-forms/question/suru"
+        }
+      ]
+    },
+    {
       "id": "g-te-forms",
       "type": "grammar",
       "title": "て形（一）：動詞怎麼變",
@@ -3286,6 +3609,25 @@ const Content = (() => {
         "g-kono/question/dore": "g-kono/card/which"
       }
     },
+    "g-kochira": {
+      "unit": "基本句子",
+      "requires": [
+        "g-kono",
+        "g-place"
+      ],
+      "words": [
+        "こちら",
+        "そちら",
+        "あちら",
+        "どちら"
+      ],
+      "grammar": [],
+      "review": {
+        "g-kochira/question/staff": "g-kochira/card/staff",
+        "g-kochira/question/ask": "g-kochira/card/ask",
+        "g-kochira/question/far": "g-kochira/card/words"
+      }
+    },
     "g-who": {
       "unit": "基本句子",
       "requires": [
@@ -3348,6 +3690,27 @@ const Content = (() => {
       },
       "sources": {
         "g-no/question/jabiko-no": "Jabiko src/domain/exam/items/n5.ts n5-grammar-no @31c96ab"
+      }
+    },
+    "g-nouns": {
+      "unit": "基本句子",
+      "requires": [
+        "g-no",
+        "g-place"
+      ],
+      "words": [
+        "ともだち",
+        "せんせい",
+        "きっぷ",
+        "かばん",
+        "みせ",
+        "ホテル"
+      ],
+      "grammar": [],
+      "review": {
+        "g-nouns/question/sensei": "g-nouns/card/people",
+        "g-nouns/question/kippu": "g-nouns/card/things",
+        "g-nouns/question/hotel": "g-nouns/card/places"
       }
     },
     "g-mo": {
@@ -3675,6 +4038,23 @@ const Content = (() => {
         "g-ni-de/question/go": "g-ni-de/card/ni-e"
       }
     },
+    "g-transport": {
+      "unit": "動作與地點",
+      "requires": [
+        "g-ni-de"
+      ],
+      "words": [
+        "でんしゃ",
+        "バス",
+        "タクシー"
+      ],
+      "grammar": [],
+      "review": {
+        "g-transport/question/bus": "g-transport/card/de",
+        "g-transport/question/taxi": "g-transport/card/more",
+        "g-transport/question/place": "g-transport/card/both"
+      }
+    },
     "g-arimasu": {
       "unit": "動作與地點",
       "requires": [
@@ -3841,18 +4221,43 @@ const Content = (() => {
         "g-kara-reason/question/fill": "g-kara-reason/card/example"
       }
     },
-    "g-te-forms": {
-      "unit": "て形",
+    "g-verb-forms": {
+      "unit": "動詞原形與て形",
       "requires": [
         "g-mashita",
         "g-arimasu"
       ],
       "words": [
+        "たべる",
+        "のむ",
+        "かう",
+        "いく",
+        "みる",
+        "する",
+        "くる",
         "みます",
-        "まちます",
-        "きます",
         "します",
-        "いきます",
+        "きます",
+        "いきます"
+      ],
+      "grammar": [
+        "原形"
+      ],
+      "review": {
+        "g-verb-forms/question/nomu": "g-verb-forms/card/group1",
+        "g-verb-forms/question/taberu": "g-verb-forms/card/group2-3",
+        "g-verb-forms/question/suru": "g-verb-forms/card/group2-3"
+      }
+    },
+    "g-te-forms": {
+      "unit": "動詞原形與て形",
+      "requires": [
+        "g-mashita",
+        "g-arimasu",
+        "g-verb-forms"
+      ],
+      "words": [
+        "まちます",
         "たべて",
         "みて",
         "かって",
@@ -3872,7 +4277,7 @@ const Content = (() => {
       }
     },
     "g-te-kudasai": {
-      "unit": "て形",
+      "unit": "動詞原形與て形",
       "requires": [
         "g-te-forms",
         "g-demo"
@@ -3892,7 +4297,7 @@ const Content = (() => {
       }
     },
     "g-te-sequence": {
-      "unit": "て形",
+      "unit": "動詞原形與て形",
       "requires": [
         "g-te-kudasai",
         "g-kara-reason",
