@@ -1073,7 +1073,7 @@ const Content = (() => {
               "往〜"
             ]
           ],
-          "body": "站內標示常寫「〇番線」和「〇〇行き」，「行き」後面是這班車的終點站。目的地不是終點時看板上不會出現，可以改問「京都に行く電車は何番線ですか？」，或指著手機上的路線問。",
+          "body": "站內標示常寫「〇番線」和「〇〇行き」。「〇〇行き」表示開往〇〇，〇〇通常是這班車的終點站；你要去的站如果在途中，看板上可能不會出現，要再確認停靠站或問站務員，例如「京都に行く電車は何番線ですか？」（往京都的車在幾號月台？）。",
           "example": "京都行き、何番線？",
           "reading": "kyouto yuki, nanbansen",
           "meaning": "往京都的車，在幾號月台？",
@@ -1119,6 +1119,11 @@ const Content = (() => {
           "title": "在哪一站下車",
           "keywords": [
             [
+              "どの駅（どのえき）",
+              "dono eki",
+              "哪一站"
+            ],
+            [
               "降りる（おりる）",
               "oriru",
               "下車"
@@ -1129,7 +1134,7 @@ const Content = (() => {
               "下一站"
             ]
           ],
-          "body": "指著目的地問。對方可能回「次の駅」（下一站），再對照車廂裡的站名顯示就好。",
+          "body": "指著目的地問「どの駅？」（哪一站？）就夠了。對方可能回「次の駅」（下一站），再對照車廂裡的站名顯示就好。",
           "example": "どの駅で降りればいい？",
           "reading": "dono eki de orireba ii",
           "meaning": "要在哪一站下車？",
@@ -1459,6 +1464,8 @@ const Content = (() => {
         identifier(course.id, `${path}.id`, courseIds, 'course');
         if (course.type !== 'grammar') fail(`${path}.type`, 'course type must be grammar');
         if (course.group !== undefined) fail(`${path}.group`, 'travel content belongs in the phrasebook');
+        // Storage treats h-*/k-* ids as kana rows when a records clear ends unfinished rounds.
+        if (typeof course.id === 'string' && /^[hk]-/.test(course.id)) fail(`${path}.id`, 'h- and k- ids are reserved for kana rows');
         text(course.title, `${path}.title`, 'zh'); text(course.subtitle, `${path}.subtitle`);
         list(course.steps, `${path}.steps`).forEach((step, j) => card(step, `${path}.steps[${j}]`, cardIds));
         list(course.questions, `${path}.questions`).forEach((q, j) => question(q, `${path}.questions[${j}]`, questionIds));

@@ -222,7 +222,7 @@ function backupPanel() {
 }
 function importSummary(result) {
   if (!result.ok) return result.reason === "too-large" ? "這個檔案太大，不像 SoraChi 的備份檔。" : result.reason === "write" ? (dataStore.isConflict() ? "另一個分頁更新了資料，請重新整理後再還原。" : "這次沒有還原成功，瀏覽器無法儲存。原本的紀錄沒有改動。") : "讀不懂這個檔案，請選 SoraChi 下載的備份檔。原本的紀錄沒有改動。";
-  return `已從備份還原：新增 ${result.added} 筆紀錄${result.existing ? `，${result.existing} 筆原本就有` : ""}${result.skipped ? `，${result.skipped} 筆較舊的紀錄超過 ${DataStore.MAX_ATTEMPTS} 筆上限，沒有加入` : ""}${result.dropped ? `，本機 ${result.dropped} 筆較舊的紀錄超過 ${DataStore.MAX_ATTEMPTS} 筆上限，已移除` : ""}。課程進度已合併。`;
+  return `已從備份還原：新增 ${result.added} 筆紀錄${result.existing ? `，${result.existing} 筆原本就有` : ""}${result.skipped ? `，${result.skipped} 筆較舊的紀錄超過 ${DataStore.MAX_ATTEMPTS} 筆上限，沒有加入` : ""}${result.dropped ? `，本機 ${result.dropped} 筆較舊的紀錄超過 ${DataStore.MAX_ATTEMPTS} 筆上限，已移除` : ""}。課程進度已合併${result.clearApplied ? "；其中一邊較晚清除過紀錄，未完成的五十音練習與複習以那一邊為準" : ""}。`;
 }
 async function importFile(file) {
   const status = app.querySelector("#backup-status");
