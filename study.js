@@ -512,11 +512,10 @@ const Study = (() => {
         : sameSoundNote[letter] || "";
       body = `<div class="kana-character" lang="ja">${course.letters[i]}</div><div class="reading-label">讀音 <strong>${course.readings[i]}</strong></div>${audioButton(course, i)}${special?`<p class="study-note">${special}</p>`:""}${hintCard(course,i)}`;
     } else {
+      // A lesson card: the example, its reading and meaning, and the explanation (travel-only parts are rejected by
+      // Content.validate, so there is nothing else to show).
       const step = course.steps[i];
-      const keywords = step.keywords ? keywordBox(step.keywords) : "";
-      const extra = step.extra;
-      const supplement = extra ? `<details class="phrase-more"><summary>${escape(extra.title)}</summary>${keywordBox(extra.keywords)}<p lang="ja">${escape(extra.example)}</p><p class="reading-label">${escape(extra.reading)}</p><p>${escape(extra.meaning)}</p><p class="study-note">${escape(extra.body)}</p></details>` : "";
-      body = `<h2>${escape(step.title)}</h2>${keywords}${step.keywords ? '<h3 class="phrase-label">可以這樣說</h3>' : ""}<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="reading-label">${escape(step.reading)}</p>` : ""}<p>${escape(step.meaning)}</p>${audioButton(course, i)}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>較完整的說法</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p></details>` : ""}${supplement}`;
+      body = `<h2>${escape(step.title)}</h2><p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="reading-label">${escape(step.reading)}</p>` : ""}<p>${escape(step.meaning)}</p>${audioButton(course, i)}<p class="study-note">${escape(step.body)}</p>`;
     }
     // Once a grammar quiz has answers, the cards lead back to the question instead of restarting it.
     const resumable = course.type === "grammar" && Object.keys(active.first || {}).length > 0;
@@ -662,10 +661,10 @@ const Study = (() => {
     else body=`<p>先練答錯的字，較早答錯的先練；再複習較久沒練的字，最多 5 個。</p>${summary.wrongLabels.length?`<p>${wrongLine(summary)}</p>`:''}${summary.availableCount?'<button class="primary" data-action="study-review-start">開始複習</button>':'<p>先完成一組五十音練習，就可以在這裡複習。</p>'}`;
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音複習</h1>${body}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`,exit,exitLabel);
   }
+  // A grammar or special-sound lesson's question; kana lessons answer through KanaPractice instead.
   function answerFeedback(course, active) {
     const q = active.order[active.cursor], solved = active.solved[q] === true;
     if (!solved && active.wrong === null) return "";
-    if (course.type === "kana") return `${solved ? "答對了" : "正確答案"}：${course.letters[q]}＝${course.readings[q]}`;
     const question = course.questions[q];
     return solved ? `答對了。${question.explanation}` : `正確答案：${question.options[question.answer]}。${question.explanation}`;
   }
@@ -676,16 +675,11 @@ const Study = (() => {
     const index = cardId ? course.steps.findIndex((step) => step.id === cardId) : -1;
     return index >= 0 && !active.solved[active.order[active.cursor]] && active.wrong !== null ? `<button class="text-button look-back" data-action="study-look" data-card="${index}">回看說明：${escape(course.steps[index].title)}</button>` : "";
   }
+  // Kana lessons practise through KanaPractice; the rest is the grammar (and special-sound) quiz.
   function quiz(course, active) {
     if(course.type==='kana')return practiceQuiz(active.practice);
-    const q = active.order[active.cursor];
-    const solved = active.solved[q] === true;
-    const question = course.type === "grammar" ? course.questions[q] : null;
-    const prompt = question ? question.prompt : active.direction === "reading" ? "這個讀音，對應哪個字？" : "這個字，讀音是哪一個？";
-    const correct = question ? question.answer : q;
-    const options = question ? question.options : active.direction === "reading" ? course.letters : course.readings;
-    const feedback = answerFeedback(course, active);
-    return `<p class="reading-label">練習 · ${active.cursor + 1} / ${size(course)} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(prompt)}</h2>${question ? "" : `<div class="kana-character"${active.direction === "character" ? ' lang="ja"' : ""}>${escape(active.direction === "reading" ? course.readings[q] : course.letters[q])}</div>`}<div class="study-options${course.type === "kana" ? " kana-options" : ""}" role="group" aria-label="答案選項">${active.options[q].map((choice) => `<button class="answer${solved && choice === correct ? " correct" : active.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question?.readings ? `<span lang="ja">${escape(options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : course.type === "kana" && active.direction === "reading" ? `<span lang="ja">${escape(options[choice])}</span>` : escape(options[choice])}<span class="answer-status">${solved && choice === correct ? ' ✓ 答對了' : active.wrong === choice ? ' ✕ 再試一次' : ''}</span></button>`).join("")}</div><p class="study-feedback${!solved && active.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(feedback)}</p><div class="look-back-slot">${lookBack(course, active)}</div></section><div class="study-nav"><button class="text-button" data-action="study-review">回去看看</button><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${active.cursor === size(course) - 1 ? "完成這一輪" : "下一題 →"}</button></div><p class="study-note">答錯可以重試；第一次的答案會留下紀錄，重試不會改寫第一次作答的成績。</p>`;
+    const q = active.order[active.cursor], solved = active.solved[q] === true, question = course.questions[q], correct = question.answer;
+    return `<p class="reading-label">練習 · ${active.cursor + 1} / ${size(course)} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${active.options[q].map((choice) => `<button class="answer${solved && choice === correct ? " correct" : active.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${solved && choice === correct ? ' ✓ 答對了' : active.wrong === choice ? ' ✕ 再試一次' : ''}</span></button>`).join("")}</div><p class="study-feedback${!solved && active.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(answerFeedback(course, active))}</p><div class="look-back-slot">${lookBack(course, active)}</div></section><div class="study-nav"><button class="text-button" data-action="study-review">回去看看</button><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${active.cursor === size(course) - 1 ? "完成這一輪" : "下一題 →"}</button></div><p class="study-note">答錯可以重試；第一次的答案會留下紀錄，重試不會改寫第一次作答的成績。</p>`;
   }
   function nextCourse(id) {
     const course = courses[id];
@@ -722,7 +716,7 @@ const Study = (() => {
   }
   function updateAnswer(course, active) {
     const q = active.order[active.cursor];
-    paintAnswer(course.type === "kana" ? q : course.questions[q].answer, active.solved[q] === true, active.wrong, answerFeedback(course, active), lookBack(course, active));
+    paintAnswer(course.questions[q].answer, active.solved[q] === true, active.wrong, answerFeedback(course, active), lookBack(course, active));
   }
   function paintAnswer(correct, solved, wrongChoice, feedbackText, lookHtml) {
     for (const node of document.querySelectorAll('[data-action="study-answer"]')) {
@@ -1050,7 +1044,7 @@ const Study = (() => {
       const q = active.order[active.cursor];
       const choice = Number(button.dataset.choice);
       if (active.solved[q] || !active.options[q].includes(choice)) return true;
-      const correct = choice === (course.type === "kana" ? q : course.questions[q].answer);
+      const correct = choice === course.questions[q].answer;
       if (active.first[q] === undefined) {
         active.first[q] = correct;
         if (GRAMMAR.some(c => c.id === course.id)) rememberGrammar(course, course.questions[q], correct);
