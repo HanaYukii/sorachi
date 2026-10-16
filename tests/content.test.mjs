@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '9162b85892be1aea6711a5b638fb8e24e33fcc9285e9de05dac39ae84d397520');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '9a085f25f5a3ea7f79ce22bc01f09c64240d4b5bd0bdcb8e8a9d5dec0563c0f6');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -102,9 +102,9 @@ test('intro distractors are balanced and travel phrases retain concise contextua
   assert.equal(reservation.keywords[0][0], '予約（よやく）');
 });
 
-test('registry includes 52 kana groups, nineteen grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
-  assert.equal(Object.keys(Content.courses).length, 73);
-  assert.equal(Content.grammar.length, 19);
+test('registry includes 52 kana groups, twenty-six grammar lessons and two special-sound lessons; retired travel courses keep only a title', () => {
+  assert.equal(Object.keys(Content.courses).length, 80);
+  assert.equal(Content.grammar.length, 26);
   for (const id of ['t-place', 't-order', 't-pay', 't-charge']) {
     assert.equal(Content.getCourse(id), null);
     assert.ok(Content.phrasebook.some(c => c.id === id));
@@ -310,7 +310,7 @@ test('speech text is kana only and fixes readings device voices may get wrong', 
 
 test('grammar lessons follow a plan: earlier requirements, taught words only, a card to revisit for every question', () => {
   const ids = Content.grammar.map(g => g.id);
-  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-who', 'g-negative', 'g-no', 'g-mo', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock']);
+  assert.deepEqual(plain(ids), ['g-identity', 'g-question', 'g-demo', 'g-place', 'g-kono', 'g-who', 'g-negative', 'g-no', 'g-mo', 'g-to', 'g-kara-made', 'g-days', 'g-day-parts', 'g-weekdays', 'g-numbers', 'g-prices', 'g-counting', 'g-people', 'g-clock', 'g-kara-made-time', 'g-verbs', 'g-masen', 'g-mashita', 'g-ni-de', 'g-arimasu', 'g-position']);
   for (const lesson of Content.grammar) {
     const plan = Content.lessonPlan[lesson.id];
     for (const req of plan.requires) assert.ok(ids.indexOf(req) < ids.indexOf(lesson.id), `${lesson.id} requires ${req}`);
@@ -324,7 +324,7 @@ test('grammar lessons follow a plan: earlier requirements, taught words only, a 
   assert.match(errors(d => { d.lessonPlan['g-kono'].requires = ['g-who']; }), /must be an earlier lesson/);
   assert.match(errors(d => { delete d.lessonPlan['g-mo'].review['g-mo/question/meaning']; }), /needs a card to revisit/);
   assert.match(errors(d => { delete d.lessonPlan['g-to']; }), /needs a plan entry/);
-  assert.deepEqual([...new Set(Content.grammar.map(lesson => Content.lessonPlan[lesson.id].unit))], ['名詞句', '時間與數字']);
+  assert.deepEqual([...new Set(Content.grammar.map(lesson => Content.lessonPlan[lesson.id].unit))], ['名詞句', '時間與數字', '動作與地點']);
   assert.match(errors(d => { d.lessonPlan['g-to'].unit = '時間與數字'; }), /lessons in a unit must be next to each other/);
   assert.match(errors(d => { delete d.lessonPlan['g-days'].unit; }), /lessonPlan.g-days.unit: required nonempty text/);
   assert.match(errors(d => { d.lessonPlan['g-days'].unit = '時間與數字 '; }), /unit title has surrounding spaces/);
@@ -332,11 +332,13 @@ test('grammar lessons follow a plan: earlier requirements, taught words only, a 
 
 test('ported Jabiko questions keep their source and stems', () => {
   const sources = Object.assign({}, ...Object.values(Content.lessonPlan).map(plan => plan.sources || {}));
-  assert.deepEqual(Object.keys(sources).sort(), ['g-no/question/jabiko-no', 'g-who/question/jabiko-doko']);
-  for (const [id, source] of Object.entries(sources)) assert.match(source, /^Jabiko src\/domain\/exam\/items\/n5\.ts n5-grammar-[a-z]+ @31c96ab$/, id);
+  assert.deepEqual(Object.keys(sources).sort(), ['g-arimasu/question/jabiko-ga', 'g-no/question/jabiko-no', 'g-who/question/jabiko-doko']);
+  for (const [id, source] of Object.entries(sources)) assert.match(source, /^Jabiko src\/domain\/exam\/items\/n5\.ts n5-grammar-[a-z-]+ @31c96ab$/, id);
   const question = (course, id) => Content.getCourse(course).questions.find(q => q.id === id);
   assert.match(question('g-no', 'g-no/question/jabiko-no').prompt, /これは わたし ＿＿ かさです。/);
   assert.deepEqual(plain(question('g-who', 'g-who/question/jabiko-doko').options), ['どこ', 'だれ', 'いつ', 'なに']);
+  assert.match(question('g-arimasu', 'g-arimasu/question/jabiko-ga').prompt, /あそこに ねこ ＿＿ います。/);
+  assert.deepEqual(plain(question('g-arimasu', 'g-arimasu/question/jabiko-ga').options), ['が', 'を', 'へ', 'と']);
 });
 
 test('reviewed number readings stay fixed: 4 and 9 on the clock, four people, 300 yen', () => {

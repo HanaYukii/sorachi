@@ -1931,6 +1931,564 @@ const Content = (() => {
           "id": "g-clock/question/ask"
         }
       ]
+    },
+    {
+      "id": "g-kara-made-time",
+      "type": "grammar",
+      "title": "幾點到幾點：〜から〜まで",
+      "subtitle": "時間的起點與終點",
+      "steps": [
+        {
+          "title": "幾點到幾點",
+          "example": "くじから ごじまで",
+          "reading": "kuji kara goji made",
+          "meaning": "從 9 點到 5 點",
+          "body": "時間的起點接「から」，終點接「まで」，和地點的用法一樣。",
+          "id": "g-kara-made-time/card/hours"
+        },
+        {
+          "title": "星期幾到星期幾",
+          "example": "げつようびから きんようびまで",
+          "reading": "getsuyoubi kara kin'youbi made",
+          "meaning": "從星期一到星期五",
+          "body": "日子也一樣，起點接「から」，終點接「まで」。",
+          "id": "g-kara-made-time/card/days"
+        },
+        {
+          "title": "放進句子裡",
+          "example": "ひるやすみは じゅうにじから いちじまでです。",
+          "reading": "hiruyasumi wa juuniji kara ichiji made desu",
+          "meaning": "午休是 12 點到 1 點。",
+          "body": "「ひるやすみ」是午休（ひる＋やすみ），「じゅうにじ」是 12 點（じゅう＋に）。整句是名詞句：〜は 〜から 〜までです。",
+          "id": "g-kara-made-time/card/sentence"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「從 9 點」：くじ＿＿",
+          "options": [
+            "から",
+            "まで",
+            "の"
+          ],
+          "readings": [
+            "kara",
+            "made",
+            "no"
+          ],
+          "answer": 0,
+          "explanation": "起點用「から」：くじから。「まで」是終點，「くじの」是「9 點的」。",
+          "id": "g-kara-made-time/question/kara"
+        },
+        {
+          "prompt": "朋友說「すいようびまで やすみです」，是什麼意思？",
+          "options": [
+            "休假到星期三。",
+            "從星期三開始休假。",
+            "只有星期三休假。"
+          ],
+          "answer": 0,
+          "explanation": "「まで」是終點：休假到星期三為止。從星期三開始要說「すいようびから」；只有星期三休假不會用「まで」。",
+          "id": "g-kara-made-time/question/meaning"
+        },
+        {
+          "prompt": "店家營業到晚上 8 點：はちじ＿＿です。",
+          "options": [
+            "まで",
+            "から",
+            "の"
+          ],
+          "readings": [
+            "made",
+            "kara",
+            "no"
+          ],
+          "answer": 0,
+          "explanation": "終點用「まで」：はちじまで（到 8 點）。「はちじから」是從 8 點開始，「はちじの」是「8 點的」。",
+          "id": "g-kara-made-time/question/made"
+        }
+      ]
+    },
+    {
+      "id": "g-verbs",
+      "type": "grammar",
+      "title": "動作句：〜を 〜ます",
+      "subtitle": "吃、喝、買",
+      "steps": [
+        {
+          "title": "吃什麼：を",
+          "example": "パンを たべます。",
+          "reading": "pan o tabemasu",
+          "meaning": "吃麵包。",
+          "body": "動作的對象放在「を」前面，後面接動詞。當助詞的「を」念 o，和「お」同音。",
+          "id": "g-verbs/card/taberu"
+        },
+        {
+          "title": "動詞放在後面",
+          "example": "みずを のみます。",
+          "reading": "mizu o nomimasu",
+          "meaning": "喝水。",
+          "body": "「たべます」是吃，「のみます」是喝。中文說「喝水」，日文把動詞放在後面：みずを のみます。這幾課的動詞都用禮貌的「〜ます」形。",
+          "id": "g-verbs/card/nomu"
+        },
+        {
+          "title": "買：かいます",
+          "example": "パンを かいます。",
+          "reading": "pan o kaimasu",
+          "meaning": "買麵包。",
+          "body": "「かいます」是買。吃什麼、喝什麼、買什麼，都用「を」接東西。",
+          "id": "g-verbs/card/kau"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「喝水」：みず＿＿のみます。",
+          "options": [
+            "を",
+            "の",
+            "と"
+          ],
+          "readings": [
+            "o",
+            "no",
+            "to"
+          ],
+          "answer": 0,
+          "explanation": "喝的東西用「を」：みずを のみます。「みずの」是「水的」，「みずと」是「水和…」，都不能標出要喝的東西。",
+          "id": "g-verbs/question/wo"
+        },
+        {
+          "prompt": "「みずを かいます」是什麼意思？",
+          "options": [
+            "買水",
+            "喝水",
+            "買麵包"
+          ],
+          "answer": 0,
+          "explanation": "「みず」是水，「かいます」是買：買水。喝是「のみます」，麵包是「パン」。",
+          "id": "g-verbs/question/meaning"
+        },
+        {
+          "prompt": "「みずを のみます」裡的「を」怎麼念？",
+          "options": [
+            "o",
+            "wo",
+            "wa"
+          ],
+          "answer": 0,
+          "explanation": "當助詞的「を」一般念 o，和「お」同音。羅馬字有時寫成 wo，念法還是 o；wa 是助詞「は」的念法。",
+          "id": "g-verbs/question/reading"
+        }
+      ]
+    },
+    {
+      "id": "g-masen",
+      "type": "grammar",
+      "title": "動作句否定：〜ません",
+      "subtitle": "不吃、不喝、不去",
+      "steps": [
+        {
+          "title": "不做：ません",
+          "example": "パンを たべません。",
+          "reading": "pan o tabemasen",
+          "meaning": "不吃麵包。",
+          "body": "把「ます」換成「ません」，就是不做這個動作。",
+          "id": "g-masen/card/masen"
+        },
+        {
+          "title": "換個東西",
+          "example": "コーヒーを のみません。",
+          "reading": "koohii o nomimasen",
+          "meaning": "不喝咖啡。",
+          "body": "「コーヒー」是咖啡，片假名的「ー」是長音。",
+          "id": "g-masen/card/coffee"
+        },
+        {
+          "title": "回答要不要去",
+          "example": "あした いきますか。 ／ いいえ、いきません。",
+          "reading": "ashita ikimasu ka / iie, ikimasen",
+          "meaning": "明天要去嗎？／ 不，不去。",
+          "body": "「いきます」是去。被問「〜ますか」時，不做就回答「いいえ、〜ません」。",
+          "id": "g-masen/card/answer"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「不喝水」：みずを のみ＿＿。",
+          "options": [
+            "ません",
+            "ます",
+            "ますか"
+          ],
+          "readings": [
+            "masen",
+            "masu",
+            "masu ka"
+          ],
+          "answer": 0,
+          "explanation": "不做這個動作用「ません」：のみません。「ます」是要喝，「ますか」是在問要不要喝。",
+          "id": "g-masen/question/masen"
+        },
+        {
+          "prompt": "朋友問「あした いきますか」。你不去：いいえ、＿＿。",
+          "options": [
+            "いきません",
+            "いきます",
+            "じゃないです"
+          ],
+          "readings": [
+            "ikimasen",
+            "ikimasu",
+            "ja nai desu"
+          ],
+          "answer": 0,
+          "explanation": "問「〜ますか」，不去就用動詞的否定：いいえ、いきません。「いいえ、いきます」前後矛盾；「じゃないです」是名詞句的「不是…」，不能代替動詞的否定。",
+          "id": "g-masen/question/answer"
+        },
+        {
+          "prompt": "「コーヒーを かいません。」是什麼意思？",
+          "options": [
+            "不買咖啡。",
+            "買咖啡。",
+            "不喝咖啡。"
+          ],
+          "answer": 0,
+          "explanation": "「かいません」是不買：不買咖啡。買咖啡是「かいます」，不喝咖啡是「のみません」。",
+          "id": "g-masen/question/meaning"
+        }
+      ]
+    },
+    {
+      "id": "g-mashita",
+      "type": "grammar",
+      "title": "過去：〜ました・〜ませんでした",
+      "subtitle": "昨天做了、昨天沒做",
+      "steps": [
+        {
+          "title": "做了：ました",
+          "example": "きのう パンを たべました。",
+          "reading": "kinou pan o tabemashita",
+          "meaning": "昨天吃了麵包。",
+          "body": "把「ます」換成「ました」，就是過去做了這件事。「きのう」這類時間詞常放在句子前面。",
+          "id": "g-mashita/card/mashita"
+        },
+        {
+          "title": "沒做：ませんでした",
+          "example": "きのう コーヒーを のみませんでした。",
+          "reading": "kinou koohii o nomimasen deshita",
+          "meaning": "昨天沒有喝咖啡。",
+          "body": "過去沒做這件事，用「ませんでした」。",
+          "id": "g-mashita/card/masen-deshita"
+        },
+        {
+          "title": "四種說法對照",
+          "example": "たべます ／ たべません ／ たべました ／ たべませんでした",
+          "reading": "tabemasu / tabemasen / tabemashita / tabemasen deshita",
+          "meaning": "吃 ／ 不吃 ／ 吃了 ／ 沒有吃",
+          "body": "「ます」「ません」用在現在或之後（あした たべます＝明天要吃），「ました」「ませんでした」用在過去。",
+          "id": "g-mashita/card/four-forms"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "昨天喝了水：きのう みずを のみ＿＿。",
+          "options": [
+            "ました",
+            "ます",
+            "ません"
+          ],
+          "readings": [
+            "mashita",
+            "masu",
+            "masen"
+          ],
+          "answer": 0,
+          "explanation": "過去做了用「ました」：のみました。「ます」「ません」是現在或之後。",
+          "id": "g-mashita/question/mashita"
+        },
+        {
+          "prompt": "「きのう パンを たべませんでした。」是什麼意思？",
+          "options": [
+            "昨天沒有吃麵包。",
+            "昨天吃了麵包。",
+            "明天不吃麵包。"
+          ],
+          "answer": 0,
+          "explanation": "「ませんでした」是過去沒做：昨天沒有吃麵包。吃了是「たべました」；明天不吃是「あした たべません」。",
+          "id": "g-mashita/question/meaning"
+        },
+        {
+          "prompt": "想說「昨天沒有去」：きのう いき＿＿。",
+          "options": [
+            "ませんでした",
+            "ません",
+            "ました"
+          ],
+          "readings": [
+            "masen deshita",
+            "masen",
+            "mashita"
+          ],
+          "answer": 0,
+          "explanation": "過去沒做用「ませんでした」。「ません」是現在或之後不做，「ました」是做了。",
+          "id": "g-mashita/question/not-go"
+        }
+      ]
+    },
+    {
+      "id": "g-ni-de",
+      "type": "grammar",
+      "title": "去哪裡、在哪裡做：に・へ・で",
+      "subtitle": "目的地與動作的地點",
+      "steps": [
+        {
+          "title": "去哪裡：に／へ",
+          "example": "きょうとに いきます。 ／ きょうとへ いきます。",
+          "reading": "kyouto ni ikimasu / kyouto e ikimasu",
+          "meaning": "去京都。",
+          "body": "要去的地方用「に」或「へ」，兩個都可以。中文說「去京都」，但日文要去的地方不用「を」。「へ」當助詞時念 e。",
+          "speech": "きょうとに いきます。きょうとえ いきます。",
+          "id": "g-ni-de/card/ni-e"
+        },
+        {
+          "title": "在哪裡做：で",
+          "example": "えきで パンを かいます。",
+          "reading": "eki de pan o kaimasu",
+          "meaning": "在車站買麵包。",
+          "body": "做動作的地方用「で」：在車站買。",
+          "id": "g-ni-de/card/de"
+        },
+        {
+          "title": "比一比",
+          "example": "えきに いきます。 ／ えきで かいます。",
+          "reading": "eki ni ikimasu / eki de kaimasu",
+          "meaning": "去車站。／ 在車站買。",
+          "body": "「に」是要去的地方，「で」是做事情的地方。",
+          "id": "g-ni-de/card/compare"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「在京都買咖啡」：きょうと＿＿コーヒーを かいます。",
+          "options": [
+            "で",
+            "に",
+            "を"
+          ],
+          "readings": [
+            "de",
+            "ni",
+            "o"
+          ],
+          "answer": 0,
+          "explanation": "做動作的地點用「で」：きょうとで かいます。「きょうとに」是要去京都；「を」已經接在買的東西「コーヒー」後面。",
+          "id": "g-ni-de/question/de"
+        },
+        {
+          "prompt": "「とうきょうに いきます」的「に」換成哪一個，意思幾乎不變？",
+          "options": [
+            "へ",
+            "で",
+            "を"
+          ],
+          "readings": [
+            "e",
+            "de",
+            "o"
+          ],
+          "answer": 0,
+          "explanation": "要去的地方可以用「に」或「へ」。「で」是做事情的地方；「を」接吃、喝、買的東西，要去的地方不用「を」。",
+          "id": "g-ni-de/question/same"
+        },
+        {
+          "prompt": "想說「去京都」：きょうと＿＿いきます。",
+          "options": [
+            "に",
+            "で",
+            "を"
+          ],
+          "readings": [
+            "ni",
+            "de",
+            "o"
+          ],
+          "answer": 0,
+          "explanation": "要去的地方用「に」（也可以用「へ」）。「で」是做事情的地方；「を」接吃、喝、買的東西，要去的地方不用「を」。",
+          "id": "g-ni-de/question/go"
+        }
+      ]
+    },
+    {
+      "id": "g-arimasu",
+      "type": "grammar",
+      "title": "有、在：あります・います",
+      "subtitle": "東西用あります，人和動物用います",
+      "steps": [
+        {
+          "title": "東西：あります",
+          "example": "パンが あります。",
+          "reading": "pan ga arimasu",
+          "meaning": "有麵包。",
+          "body": "東西「有、在」用「あります」，前面的「が」標出是什麼東西。「が」和「は」的差別之後再學。",
+          "id": "g-arimasu/card/arimasu"
+        },
+        {
+          "title": "人和動物：います",
+          "example": "ねこが います。",
+          "reading": "neko ga imasu",
+          "meaning": "有貓。",
+          "body": "人和動物用「います」，東西用「あります」。「ねこ」是貓。",
+          "id": "g-arimasu/card/imasu"
+        },
+        {
+          "title": "在哪裡有",
+          "example": "あそこに トイレが あります。",
+          "reading": "asoko ni toire ga arimasu",
+          "meaning": "那裡有廁所。",
+          "body": "在哪裡有，用「地點＋に」：あそこに。東西或人在的地方用「に」，做動作的地方用「で」。",
+          "id": "g-arimasu/card/place"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「那裡有廁所」：あそこに トイレが＿＿。",
+          "options": [
+            "あります",
+            "います",
+            "です"
+          ],
+          "readings": [
+            "arimasu",
+            "imasu",
+            "desu"
+          ],
+          "answer": 0,
+          "explanation": "東西或設施用「あります」。「います」用在人和動物；「です」不能這樣接在「が」後面。",
+          "id": "g-arimasu/question/arimasu"
+        },
+        {
+          "prompt": "「あそこに たなかさんが います。」是什麼意思？",
+          "options": [
+            "田中先生在那裡。",
+            "田中先生去那裡。",
+            "田中先生在那裡買東西。"
+          ],
+          "answer": 0,
+          "explanation": "「います」表示人在：田中先生在那裡。去是「いきます」，買是「かいます」。",
+          "id": "g-arimasu/question/meaning"
+        },
+        {
+          "prompt": "想說「車站有廁所」：えき＿＿トイレが あります。",
+          "options": [
+            "に",
+            "で",
+            "を"
+          ],
+          "readings": [
+            "ni",
+            "de",
+            "o"
+          ],
+          "answer": 0,
+          "explanation": "東西在的地方用「に」：えきに トイレが あります。「で」是做動作的地方（えきで かいます），「を」接動作的對象。",
+          "id": "g-arimasu/question/ni"
+        },
+        {
+          "prompt": "選出適合的詞：あそこに ねこ ＿＿ います。",
+          "options": [
+            "が",
+            "を",
+            "へ",
+            "と"
+          ],
+          "readings": [
+            "ga",
+            "o",
+            "e",
+            "to"
+          ],
+          "answer": 0,
+          "explanation": "「有、在」的句子用「が」標出是什麼：ねこが います。「を」接吃、喝、買的東西，「へ」是要去的地方，「と」是「和」，用來連接名詞。",
+          "id": "g-arimasu/question/jabiko-ga"
+        }
+      ]
+    },
+    {
+      "id": "g-position",
+      "type": "grammar",
+      "title": "位置：うえ・まえ・となり",
+      "subtitle": "在什麼東西的哪一邊",
+      "steps": [
+        {
+          "title": "上、下、裡面",
+          "example": "うえ ／ した ／ なか",
+          "reading": "ue / shita / naka",
+          "meaning": "上面 ／ 下面 ／ 裡面",
+          "body": "位置詞接在「名詞＋の」後面，例如「つくえの うえ」是桌子上面（つくえ＝桌子）。",
+          "id": "g-position/card/three"
+        },
+        {
+          "title": "前、後、旁邊、附近",
+          "example": "まえ ／ うしろ ／ となり ／ ちかく",
+          "reading": "mae / ushiro / tonari / chikaku",
+          "meaning": "前面 ／ 後面 ／ 旁邊 ／ 附近",
+          "body": "「となり」是緊鄰的旁邊、隔壁，「ちかく」是附近、不遠的地方。",
+          "id": "g-position/card/four"
+        },
+        {
+          "title": "放進句子裡",
+          "example": "えきの まえに コンビニが あります。",
+          "reading": "eki no mae ni konbini ga arimasu",
+          "meaning": "車站前面有便利商店。",
+          "body": "「えきの まえに」＝在車站前面。「コンビニ」是便利商店。",
+          "id": "g-position/card/sentence"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「桌子上面」：つくえの＿＿",
+          "options": [
+            "うえ",
+            "した",
+            "なか"
+          ],
+          "readings": [
+            "ue",
+            "shita",
+            "naka"
+          ],
+          "answer": 0,
+          "explanation": "上面是「うえ」。「した」是下面，「なか」是裡面。",
+          "id": "g-position/question/ue"
+        },
+        {
+          "prompt": "「えきの ちかく」是什麼意思？",
+          "options": [
+            "車站附近",
+            "車站裡面",
+            "車站前面"
+          ],
+          "answer": 0,
+          "explanation": "「ちかく」是附近：車站附近。裡面是「なか」，前面是「まえ」。",
+          "id": "g-position/question/chikaku"
+        },
+        {
+          "prompt": "車站隔壁就是便利商店：えきの＿＿に コンビニが あります。",
+          "options": [
+            "となり",
+            "うしろ",
+            "なか"
+          ],
+          "readings": [
+            "tonari",
+            "ushiro",
+            "naka"
+          ],
+          "answer": 0,
+          "explanation": "緊鄰的旁邊用「となり」。「うしろ」是後面，「なか」是裡面。",
+          "id": "g-position/question/tonari"
+        }
+      ]
     }
   ];
   // Grammar lessons are taught in array order and grouped into units on the grammar page. The plan lists what each lesson introduces and needs
@@ -2323,6 +2881,145 @@ const Content = (() => {
         "g-clock/question/nine": "g-clock/card/special",
         "g-clock/question/han": "g-clock/card/han",
         "g-clock/question/ask": "g-clock/card/ask"
+      }
+    },
+    "g-kara-made-time": {
+      "unit": "時間與數字",
+      "requires": [
+        "g-kara-made",
+        "g-clock",
+        "g-weekdays",
+        "g-day-parts"
+      ],
+      "words": [
+        "ひるやすみ"
+      ],
+      "grammar": [],
+      "review": {
+        "g-kara-made-time/question/kara": "g-kara-made-time/card/hours",
+        "g-kara-made-time/question/meaning": "g-kara-made-time/card/days",
+        "g-kara-made-time/question/made": "g-kara-made-time/card/hours"
+      }
+    },
+    "g-verbs": {
+      "unit": "動作與地點",
+      "requires": [
+        "g-to"
+      ],
+      "words": [
+        "たべ",
+        "のみ",
+        "かい"
+      ],
+      "grammar": [
+        "を",
+        "ます"
+      ],
+      "review": {
+        "g-verbs/question/wo": "g-verbs/card/taberu",
+        "g-verbs/question/meaning": "g-verbs/card/kau",
+        "g-verbs/question/reading": "g-verbs/card/taberu"
+      }
+    },
+    "g-masen": {
+      "unit": "動作與地點",
+      "requires": [
+        "g-verbs",
+        "g-negative",
+        "g-days"
+      ],
+      "words": [
+        "コーヒー",
+        "いき"
+      ],
+      "grammar": [
+        "ません"
+      ],
+      "review": {
+        "g-masen/question/masen": "g-masen/card/masen",
+        "g-masen/question/answer": "g-masen/card/answer",
+        "g-masen/question/meaning": "g-masen/card/masen"
+      }
+    },
+    "g-mashita": {
+      "unit": "動作與地點",
+      "requires": [
+        "g-masen"
+      ],
+      "words": [],
+      "grammar": [
+        "ました",
+        "ませんでした"
+      ],
+      "review": {
+        "g-mashita/question/mashita": "g-mashita/card/mashita",
+        "g-mashita/question/meaning": "g-mashita/card/masen-deshita",
+        "g-mashita/question/not-go": "g-mashita/card/four-forms"
+      }
+    },
+    "g-ni-de": {
+      "unit": "動作與地點",
+      "requires": [
+        "g-masen",
+        "g-kara-made"
+      ],
+      "words": [],
+      "grammar": [
+        "に",
+        "へ",
+        "で"
+      ],
+      "review": {
+        "g-ni-de/question/de": "g-ni-de/card/de",
+        "g-ni-de/question/same": "g-ni-de/card/ni-e",
+        "g-ni-de/question/go": "g-ni-de/card/ni-e"
+      }
+    },
+    "g-arimasu": {
+      "unit": "動作與地點",
+      "requires": [
+        "g-ni-de",
+        "g-mo"
+      ],
+      "words": [
+        "ねこ",
+        "あります",
+        "います"
+      ],
+      "grammar": [
+        "が"
+      ],
+      "review": {
+        "g-arimasu/question/arimasu": "g-arimasu/card/arimasu",
+        "g-arimasu/question/meaning": "g-arimasu/card/imasu",
+        "g-arimasu/question/ni": "g-arimasu/card/place",
+        "g-arimasu/question/jabiko-ga": "g-arimasu/card/arimasu"
+      },
+      "sources": {
+        "g-arimasu/question/jabiko-ga": "Jabiko src/domain/exam/items/n5.ts n5-grammar-ga-neko-iru @31c96ab"
+      }
+    },
+    "g-position": {
+      "unit": "動作與地點",
+      "requires": [
+        "g-arimasu"
+      ],
+      "words": [
+        "うえ",
+        "した",
+        "なか",
+        "まえ",
+        "うしろ",
+        "となり",
+        "ちかく",
+        "つくえ",
+        "コンビニ"
+      ],
+      "grammar": [],
+      "review": {
+        "g-position/question/ue": "g-position/card/three",
+        "g-position/question/chikaku": "g-position/card/four",
+        "g-position/question/tonari": "g-position/card/four"
       }
     }
   };
