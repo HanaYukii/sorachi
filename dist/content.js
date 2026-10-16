@@ -7057,7 +7057,7 @@ const Content = (() => {
         return rest.replace(/[\s　、。？！「」（）／・〜…＿-]/gu, '');
       };
       // Examples and the correct option must use taught words only; distractors may show wrong forms.
-      const texts = [...steps.flatMap(step => [step?.example, step?.polite]), ...questions.map(item => Array.isArray(item?.options) ? item.options[item.answer] : null)];
+      const texts = [...steps.map(step => step?.example), ...questions.map(item => Array.isArray(item?.options) ? item.options[item.answer] : null)];
       for (const value of texts.filter(value => typeof value === 'string')) {
         const rest = untaught(value);
         if (/[\u3040-\u30ff\u3400-\u9fff]/u.test(rest) && /[\u3040-\u30ff]/u.test(value)) fail(`${path}`, `"${value}" uses words this lesson has not taught: ${rest}`);

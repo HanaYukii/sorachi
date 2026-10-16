@@ -11,9 +11,9 @@
 
 1. **基準**：最新 main、`git status` 乾淨、CI 通過；記下開始的 commit。
 2. **找候選**
-   - CSS：每個 class 有沒有 `dist/*.js` 或 `index.html` 產生它，包括 template 裡拼出來的 class（例如 `tone-${...}`）和 `classList.toggle`。
+   - CSS：每個 class 有沒有 `dist/*.js` 或 `index.html` 產生它，包括 template 裡拼出來的 class（例如 `tone-${...}`）和 `classList.toggle`。組合的選擇器（`A + B`、`A > B`）要確認畫面上真的有這個組合，不是兩個 class 各自存在就算。
    - JS：沒人讀的變數、函式、匯出；前面已經 return 掉、走不到的分支。
-   - 文件：README 和 `docs/` 有沒有還在描述已經拿掉的功能；引用測試寫測試標題，不寫行號。
+   - 文件：README 和 `docs/` 有沒有還在描述已經拿掉的功能。引用測試寫測試標題、引用程式寫函式名稱，不寫行號；把舊行號換成標題時，要用寫那份文件當時的版本去查。
 3. **分類**：確認可刪、可以重構、仍需查證。
    - 文字搜尋零筆不等於沒用。還要查動態 class、`data-action` 事件、字串 key、全域匯出、發佈腳本與測試入口。
 4. **不動舊資料相容**：見下一節。真的要拿掉，另開 issue，寫淘汰理由和資料保護方式。
@@ -27,21 +27,25 @@
 - `preferences.kanaHints` 的合併：舊備份裡的提示選擇，現在不影響畫面。
 - `LEGACY_KEY`／`forgetLegacy`、`legacyCourseRevision`、`retiredTitles`。
 - `#done` 的保護和 `#study/t-*` 的轉址（舊的旅遊課網址）。
+- 清除標記 `reviewClearedAt`：清除之後，舊備份不能把錯字、複習和未完成的練習帶回來。
+- 跨分頁保護：寫入前比對原文的衝突鎖、`storage` 事件的警告。
+- 讀不懂或較新的資料：鎖住不寫、提供下載，重新開始時先存到 quarantine key。
 - 以下舊紀錄的處理：
   - `sanitize()` 的舊格式路徑；
   - `retryLabels` 對舊紀錄的備用寫法；
   - 未知課程的紀錄保留；
   - 學習紀錄裡「舊版」的文字。
-- 只給測試用的匯出：`store.importBackup`、`KanaPractice.firstCorrect`、`Study.nextCourse`、`Content.revisionOf`。
+- 只給測試用的匯出：`store.importBackup`、`DataStore.mergeAttempts`、`KanaPractice.firstCorrect`、`Study.nextCourse`、`Content.revisionOf`、`Content.rows`（程式內部仍在用，從外面只有測試讀）。
 
 ## 2026-10-17 第一輪（到 main 46b66f2）
 
 | 做了什麼 | commit |
 | --- | --- |
 | 刪掉沒有任何畫面會產生的樣式：29 條規則（舊首頁、prototype 標籤、course-sections 等），另從字級下限的選擇器清單拿掉兩個，以及 `--radius`；也刪掉沒用到的程式：`clock`／`leaf` 圖示、`Study.bind` 沒讀的 `escape`／`friend`、`ROWS`。測試不再允許已經不存在的 `hintChoices.clear()`。 | 5c1cfc9 |
-| 句型測驗裡走不到的五十音分支拿掉。課程卡不再畫只有舊旅遊課才有的關鍵字、完整說法和延伸說法，內容檢查改成拒收這些欄位。 | 6c1b065 |
+| 句型測驗裡走不到的五十音分支拿掉。課程卡不再畫只有舊旅遊課才有的關鍵字、完整說法和延伸說法，內容檢查改成拒收這些欄位（連同店員問句和完整說法的語音用字）。 | 6c1b065 |
 | 修過期文字：設定頁的「換個記法」、空紀錄頁的按鈕（改成「看五十音表」）、README 與文件。kana-practice-audit 的測試引用改成標題。 | f5deb96 |
 | `iso()` 只留 KanaPractice 一份；兩個一模一樣的題目 helper 合成 `roundItem`。 | 46b66f2 |
+| 審查後補：kana-practice-audit 有四個測試引用指錯（舊行號要用 7ced429 的版本查），改正，程式引用改成函式名稱；README 的記憶提示說明；拿掉只有舊課程卡會用的 `.phrase-label + .grammar-example` 和內容檢查裡讀 `polite` 的一處。 | 「Correct the kana audit's test citations and fill the checklist」 |
 
 驗證：內容檢查、全部測試（261 個）、prepare-release，並在瀏覽器開過主要頁面，沒有錯誤訊息。
 

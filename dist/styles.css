@@ -960,7 +960,7 @@ button svg {
 .word-examples .script-cell strong { font-size: 14px; font-weight: 500; }
 .word-examples .script-cell p { font-size: 11px; margin-top: 10px; }
 
-/* Travel lessons keep the useful words visible before the longer phrasing. */
+/* Travel cards keep the useful words visible before the longer phrasing. */
 .keyword-box { background: var(--aqua); border-radius: 16px; padding: 18px; margin: 16px 0 24px; }
 .keyword-box h3, .phrase-label { font-size: 12px; color: var(--aqua-ink); margin: 0 0 12px; }
 .keyword-box dl { margin: 0; }
@@ -969,7 +969,6 @@ button svg {
 .keyword-box dt strong { display: block; font-size: 18px; line-height: 1.7; }
 .keyword-box dt span { display: block; color: var(--aqua-ink); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
 .keyword-box dd { margin: 0; font-size: 14px; line-height: 1.8; }
-.phrase-label + .grammar-example { margin-top: 8px; }
 .phrase-more { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 16px; }
 .phrase-more summary { cursor: pointer; color: var(--purple-deep); font-size: 14px; padding: 8px 0; min-height: 44px; }
 .phrase-more p[lang="ja"] { font-size: 19px; color: var(--purple-deep); margin-top: 10px; }
