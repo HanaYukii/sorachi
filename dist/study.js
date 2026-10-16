@@ -12,14 +12,14 @@ const Study = (() => {
   let warmVoiceListener = null;
   const drafts = new Map();
   let draftState = null;
-  const hintChoices = new Map();
-  // The grammar mini-review round lives in memory only: it never saves, records or changes lesson scores.
-  let reviewRound = null, reviewRoundState = null;
+  const preferences = () => api.preferences?.() || {};
+  const favoriteIds = () => api.favorites?.() || [];
+  const speechRate = () => [0.65, 0.8, 1].includes(preferences().ttsRate) ? preferences().ttsRate : 0.8;
   const escape = (text) => String(text).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
   const size = (course) => course.type === "kana" ? course.letters.length : course.questions.length;
   const cards = (course) => course.type === "kana" ? course.letters.length : course.steps.length;
   const title = (id) => courses[id]?.title || null;
-  const travelTitle = (id) => travelItem(id)?.title || null;
+  const travelTitle = (id) => id === "favorites" ? "我的常用語" : travelItem(id)?.title || null;
   const total = (id) => courses[id] ? size(courses[id]) : 0;
   const iso = (value) => typeof value === "string" && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
   const permutation = (value, n) => Array.isArray(value) && value.length === n && new Set(value).size === n && value.every((v) => Number.isInteger(v) && v >= 0 && v < n);
@@ -60,7 +60,7 @@ const Study = (() => {
     return active;
   }
   function sanitize(saved) {
-    const state = { script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt) };
+    const state = { script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt), grammarReview: {}, grammarReviewSession: null, lastGrammarId: null };
     const review = KanaPractice.sanitize(saved?.reviewSession);
     if (review?.mode === 'review') state.reviewSession = review;
     for (const [id, course] of Object.entries(courses)) {
@@ -114,12 +114,49 @@ const Study = (() => {
       }
       state.courses[id] = result;
     }
+    for (const course of GRAMMAR) for (const question of course.questions) {
+      const item = saved?.grammarReview?.[question.id];
+      if (item?.courseRevision === Content.courseRevision(course.id) && iso(item.lastSeen) && typeof item.wrong === "boolean" && (!state.reviewClearedAt || iso(item.lastSeen) > state.reviewClearedAt)) {
+        state.grammarReview[question.id] = { courseRevision: item.courseRevision, lastSeen: iso(item.lastSeen), wrong: item.wrong };
+      }
+    }
+    state.grammarReviewSession = sanitizeGrammarRound(saved?.grammarReviewSession, state.courses);
+    if (GRAMMAR.some(c => c.id === saved?.lastGrammarId)) state.lastGrammarId = saved.lastGrammarId;
     return state;
+  }
+  // Saved choices are meaningful only for the exact question IDs and course revisions.
+  function sanitizeGrammarRound(raw, learned) {
+    if (!raw || raw.version !== 1 || !Array.isArray(raw.items) || raw.items.length < 1 || raw.items.length > 5 || typeof raw.done !== "boolean") return null;
+    const items = [];
+    for (const item of raw.items) {
+      const course = GRAMMAR.find(c => c.id === item?.courseId), question = course?.questions[item.q];
+      if (!course || !Number.isInteger(item.q) || !learned[course.id]?.completedAt || !question || question.id !== item.questionId || item.courseRevision !== Content.courseRevision(course.id) || !permutation(item.options, question.options.length) || items.some(i => i.questionId === question.id)) return null;
+      items.push({courseId:course.id, q:item.q, questionId:question.id, courseRevision:item.courseRevision, options:[...item.options]});
+    }
+    if (!Number.isInteger(raw.cursor) || raw.cursor < 0 || raw.cursor >= items.length) return null;
+    const first = {}, solved = {};
+    for (let i=0; i<items.length; i++) {
+      if (typeof raw.first?.[i] === "boolean") first[i] = raw.first[i];
+      if (raw.solved?.[i] === true && typeof first[i] === "boolean") solved[i] = true;
+      if (first[i] === true && !solved[i] || i < raw.cursor && !solved[i] || i > raw.cursor && first[i] !== undefined) return null;
+    }
+    if (raw.done && (raw.cursor !== items.length-1 || items.some((_,i) => !solved[i]))) return null;
+    let wrong = null;
+    const current = items[raw.cursor], question = courses[current.courseId].questions[current.q];
+    if (!solved[raw.cursor] && first[raw.cursor] === false && Number.isInteger(raw.wrong) && current.options.includes(raw.wrong) && raw.wrong !== question.answer) wrong = raw.wrong;
+    return {version:1,items,cursor:raw.cursor,first,solved,wrong,done:raw.done};
   }
   function bind(callbacks) {
     api = callbacks;
     warmVoices();
     KanaPractice.seedReview(state().kanaReview, api.history?.() || [], state().reviewClearedAt);
+    for (const entry of api.history?.() || []) {
+      const course = GRAMMAR.find(c => c.id === entry.courseId);
+      if (!course || entry.courseRevision && entry.courseRevision !== Content.courseRevision(course.id) || !iso(entry.date) || state().reviewClearedAt && iso(entry.date) <= state().reviewClearedAt) continue;
+      for (const [i,id] of (entry.questionIds || []).entries()) if (course.questions.some(q => q.id === id) && (!state().grammarReview[id] || iso(entry.date) > state().grammarReview[id].lastSeen)) {
+        state().grammarReview[id] = {courseRevision:Content.courseRevision(course.id),lastSeen:iso(entry.date),wrong:(entry.retryQuestions || []).includes(i+1)};
+      }
+    }
   }
   const state = () => api.getState();
   const courseState = (id) => state().courses[id] || blankCourse();
@@ -141,6 +178,7 @@ const Study = (() => {
   }
   function touch(course, saved, active) {
     active.touched = true;
+    if (GRAMMAR.some(c => c.id === course.id)) state().lastGrammarId = course.id;
     saved.active = active;
     state().courses[course.id] = saved;
     drafts.delete(course.id);
@@ -175,10 +213,10 @@ const Study = (() => {
     // Same order as KanaPractice.selectReview, so the listed characters are the ones the next round practices.
     const wrong = KanaPractice.entries.filter(item => data.kanaReview[item.id]?.wrong).sort((a,b)=>data.kanaReview[a.id].lastSeen.localeCompare(data.kanaReview[b.id].lastSeen)||a.id.localeCompare(b.id));
     const availableCount = KanaPractice.entries.filter(item => data.kanaReview[item.id] || data.courses[item.courseId]?.completedAt).length;
-    return {wrongCount:wrong.length,availableCount,wrongLabels:wrong.slice(0,5).map(item=>`${item.character}（${item.reading}）`),canResume:Boolean(data.reviewSession && data.reviewSession.round!=='done'),hasData:Object.keys(data.kanaReview).length>0 || Boolean(data.reviewSession)};
+    return {wrongCount:wrong.length,availableCount,wrongLabels:wrong.slice(0,5).map(item=>`${item.character}（${item.reading}）`),canResume:Boolean(data.reviewSession && data.reviewSession.round!=='done'),hasData:Object.keys(data.kanaReview).length>0 || Boolean(data.reviewSession) || Object.keys(data.grammarReview).length>0 || Boolean(data.grammarReviewSession)};
   }
   function clearReview() {
-    const data=state(); data.kanaReview={}; data.reviewSession=null; data.reviewClearedAt=new Date().toISOString();
+    const data=state(); data.kanaReview={}; data.reviewSession=null; data.grammarReview={}; data.grammarReviewSession=null; data.reviewClearedAt=new Date().toISOString();
     for (const id of Object.keys(courses)) if(courses[id].type==='kana') {if(data.courses[id])data.courses[id].active=null;drafts.delete(id);}
   }
   function currentPractice() {
@@ -199,11 +237,23 @@ const Study = (() => {
     const learnedBefore = Object.values(state().courses).some((c) => wasEarlierDay(c.completedAt));
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音練習</h1><p class="study-note">第一次學日文，可以先選「平假名」，從「あ行」開始。每組先看字、聽讀音，再做選擇題；不需要先背完整張表。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div><p class="study-note">${script === "h" ? "平假名用來寫許多日文詞語。先認字，再慢慢練熟讀音。" : "片假名常用來寫外來語，例如「コーヒー」（咖啡）。讀音和平假名對應，字形不同。"}</p>${reviewEntry()}${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${kanaRows(script, "basic").map(row).join("")}</div><h2 class="course-list-heading">濁音・半濁音</h2><p class="study-note">在字的右上加兩點（濁點）或小圈（半濁點），讀音會改變，例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list">${kanaRows(script, "voiced").map(row).join("")}</div><h2 class="course-list-heading">促音・長音</h2><p class="study-note">學過基本字後，再練「停一下」和「拉長音」。課內會用例子說明怎麼念。</p><div class="course-list">${Content.sounds.map(row).join("")}</div><h2 class="course-list-heading">拗音</h2><p class="study-note">把兩個字合在一起念，例如 き＋小的 ゃ → きゃ（kya）。不要拆成 ki、ya 兩個音；這種組合叫「拗音」。</p><div class="course-list">${kanaRows(script, "youon").map(row).join("")}</div><p class="study-note">每種假名先練 46 個基本字，再練 25 個濁音・半濁音和 33 個拗音。</p>`);
   }
+  function settingsPage() {
+    return wrap(`<h1 class="focus-heading" tabindex="-1">學習設定</h1><section class="study-card"><h2>播放語速</h2><p class="study-note">五十音、句型與旅遊用語都會使用這個速度。</p><div class="script-tabs" role="group" aria-label="播放語速">${[[0.65,"慢速"],[0.8,"一般"],[1,"原速"]].map(([rate,label]) => `<button data-action="study-rate" data-rate="${rate}" aria-pressed="${speechRate() === rate}">${label}</button>`).join("")}</div><p class="study-note">設定存在這個瀏覽器。假名字卡的「換個記法」也會記住你的選擇。</p></section>`);
+  }
   function readingHelp() {
     return `<details class="phrase-more reading-help"><summary>日文下方的英文字母怎麼看？</summary><p class="study-note">這是「羅馬字」，用英文字母提示日文讀音，不是照英文單字念。不確定時可以按「播放讀音」。</p><p class="study-note">aa、ii、uu、ee、oo 表示把音拉長。ou、ei 也常念成長音，例如 gakusei（學生）的最後念成 see：ga-ku-see。五十音區的「長音」課有更多例子。</p></details>`;
   }
+  function grammarNext() {
+    const unfinished = c => state().courses[c.id]?.active?.touched && state().courses[c.id].active.phase !== "done";
+    const course = GRAMMAR.find(c => c.id === state().lastGrammarId && unfinished(c)) || GRAMMAR.find(unfinished) || GRAMMAR.find(c => !state().courses[c.id]?.completedAt);
+    return course ? {courseId:course.id,title:course.title,resume:Boolean(unfinished(course))} : null;
+  }
+  function grammarNextEntry() {
+    const next = grammarNext();
+    return next ? `<section class="study-review-entry"><h2>${next.resume ? "接著學" : "下一課"}</h2><button class="text-button" data-action="study-open" data-course="${next.courseId}">${escape(next.title)} →</button></section>` : "";
+  }
   function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按「播放讀音」跟著念。</p>${readingHelp()}${grammarReviewEntry()}${grammarUnits().map(unit => `<h2 class="course-list-heading">${escape(unit.title)}</h2><div class="course-list">${unit.lessons.map(row).join("")}</div>`).join("")}`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按「播放讀音」跟著念。</p>${readingHelp()}${grammarNextEntry()}${grammarReviewEntry()}${grammarUnits().map(unit => `<h2 class="course-list-heading">${escape(unit.title)}</h2><div class="course-list">${unit.lessons.map(row).join("")}</div>`).join("")}`);
   }
   // Consecutive lessons with the same unit share one heading, in teaching order.
   function grammarUnits() {
@@ -221,24 +271,16 @@ const Study = (() => {
   const reviewCap = (done) => done.length >= 3 ? 2 : 3;
   // The first two lessons have two questions each, so a round can be shorter than 5.
   const reviewSize = () => { const done = completedGrammar(); return done.length < 2 ? 0 : Math.min(5, done.reduce((sum, course) => sum + Math.min(reviewCap(done), course.questions.length), 0)); };
-  function grammarRound() {
-    if (reviewRoundState !== state()) { reviewRound = null; reviewRoundState = state(); }
-    return reviewRound;
+  function grammarRound() { return state().grammarReviewSession; }
+  function rememberGrammar(course, question, correct) {
+    const previous = Date.parse(state().grammarReview[question.id]?.lastSeen) || 0, cleared = Date.parse(state().reviewClearedAt) || 0;
+    state().grammarReview[question.id] = {courseRevision:Content.courseRevision(course.id),lastSeen:new Date(Math.max(Date.now(),previous+1,cleared+1)).toISOString(),wrong:!correct};
   }
   const reviewKey = (item) => `${item.courseId}:${item.q}`;
   function selectGrammarReview(recent = new Set()) {
     const done = completedGrammar();
     if (done.length < 2) return [];
-    // History is in date order, so the last record of a lesson is its latest one.
-    const latestRecord = new Map(), wrong = [];
-    for (const entry of api.history?.() || []) if (entry?.courseId) latestRecord.set(entry.courseId, entry);
-    for (const course of done) {
-      const latest = latestRecord.get(course.id);
-      for (const number of Array.isArray(latest?.retryQuestions) ? latest.retryQuestions : []) {
-        const q = course.questions.findIndex(question => question.id === latest.questionIds?.[number - 1]);
-        if (q >= 0) wrong.push({ courseId: course.id, q });
-      }
-    }
+    const wrong = done.flatMap(course => course.questions.flatMap((question,q) => state().grammarReview[question.id]?.wrong ? [{courseId:course.id,q}] : []));
     const rest = done.flatMap(course => course.questions.map((_, q) => ({ courseId: course.id, q })));
     const ordered = [...shuffle(wrong.length).map(i => wrong[i]), ...shuffle(rest.length).map(i => rest[i])];
     const cap = reviewCap(done), count = {}, picked = [];
@@ -254,8 +296,9 @@ const Study = (() => {
   function startGrammarRound() {
     const last = grammarRound(), recent = new Set(last?.done ? last.items.filter((_, i) => last.first[i]).map(reviewKey) : []);
     const items = selectGrammarReview(recent);
-    reviewRound = items.length ? { items: items.map(item => ({ ...item, options: shuffle(courses[item.courseId].questions[item.q].options.length) })), cursor: 0, first: {}, solved: {}, wrong: null, done: false } : null;
-    return reviewRound;
+    state().grammarReviewSession = items.length ? { version:1, items: items.map(item => ({ ...item, questionId:courses[item.courseId].questions[item.q].id, courseRevision:Content.courseRevision(item.courseId), options: shuffle(courses[item.courseId].questions[item.q].options.length) })), cursor: 0, first: {}, solved: {}, wrong: null, done: false } : null;
+    if (state().grammarReviewSession) save();
+    return grammarRound();
   }
   function grammarReviewEntry() {
     if (completedGrammar().length < 2) return "";
@@ -291,14 +334,20 @@ const Study = (() => {
     } else if (round) {
       const { item, course, question } = reviewItem(round), solved = round.solved[round.cursor] === true;
       body = `<p class="reading-label">複習 · ${round.cursor + 1} / ${round.items.length} · ${escape(course.title)}</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map(choice => `<button class="answer${solved && choice === question.answer ? " correct" : round.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${solved && choice === question.answer ? " ✓ 答對了" : round.wrong === choice ? " ✕ 再試一次" : ""}</span></button>`).join("")}</div><p class="study-feedback${!solved && round.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarReviewFeedback(round))}</p><div class="look-back-slot">${grammarReviewLook(round)}</div></section><div class="study-nav"><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${round.cursor === round.items.length - 1 ? "完成複習" : "下一題 →"}</button></div>`;
-    } else body = reviewSize() ? `<p>從完成的句型課挑 ${reviewSize()} 題混在一起練，各課最近一次練習中第一次答錯的題目會優先出現。答錯時會顯示正確答案和說明，可以再選一次。</p><button class="primary" data-action="study-grammar-review">開始複習</button>` : '<p>先完成兩課句型，就可以在這裡複習。</p><a class="primary" href="#grammar">看句型列表</a>';
-    return wrap(`<h1 class="focus-heading" tabindex="-1">句型小複習</h1>${body}<p class="study-note">複習不會存檔，重新整理頁面就會重來；也不會改變各課的完成紀錄和成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#grammar", "回句型列表");
+    } else body = reviewSize() ? `<p>從完成的句型課挑 ${reviewSize()} 題混在一起練，最近答錯、還沒獨立答對的題目會優先出現。答錯時會顯示正確答案和說明，可以再選一次。</p><button class="primary" data-action="study-grammar-review">開始複習</button>` : '<p>先完成兩課句型，就可以在這裡複習。</p><a class="primary" href="#grammar">看句型列表</a>';
+    return wrap(`<h1 class="focus-heading" tabindex="-1">句型小複習</h1>${body}<p class="study-note">複習進度會保存在這個瀏覽器，下次可以接著練；不會改變各課的完成紀錄和成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#grammar", "回句型列表");
   }
+  function travelCard(item,step,index) { return `<section class="study-card travel-card"><div class="travel-card-heading"><h2>${escape(step.title)}</h2><button class="text-button favorite-toggle" data-action="study-favorite" data-phrase="${step.id}" aria-pressed="${favoriteIds().includes(step.id)}" aria-label="${escape(step.title)}：收藏">${favoriteIds().includes(step.id) ? "已收藏" : "收藏"}</button></div>${keywordBox(step.keywords)}<div class="phrase-short"><h3 class="phrase-label">可以這樣說</h3><p lang="ja">${escape(step.example)}</p><p class="reading-label">${escape(step.reading)}</p><p>${escape(step.meaning)}</p>${audioButton(item, index, true, false)}</div>${step.staffAsks ? `<p class="staff-asks"><span class="staff-asks-label">店員可能會問</span><span lang="ja">${escape(step.staffAsks.example)}</span><span class="staff-asks-reading">${escape(step.staffAsks.reading)}</span><span>${escape(step.staffAsks.meaning)}</span></p>` : ""}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>看完整說法與讀音</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p>${audioButton(item, index, true, true)}</details>` : ""}${step.extra ? `<details class="phrase-more"><summary>${escape(step.extra.title)}</summary>${keywordBox(step.extra.keywords)}<p lang="ja">${escape(step.extra.example)}</p><p class="reading-label">${escape(step.extra.reading)}</p><p>${escape(step.extra.meaning)}</p><p class="study-note">${escape(step.extra.body)}</p></details>` : ""}</section>`; }
+  const savedPhrases = () => favoriteIds().flatMap(id => PHRASEBOOK.flatMap(item => item.steps.flatMap((step,index) => step.id === id ? [{item,step,index}] : [])));
   function travelPage(id) {
-    if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<nav class="travel-categories" aria-label="旅遊情境">${PHRASEBOOK.map(item => `<a class="course-row" href="#travel/${item.id}"><span><strong>${escape(item.title)}</strong><span class="reading-label">${escape(item.subtitle)}</span><span class="travel-keywords" lang="ja">${escape(travelKeywords(item))}</span></span><span aria-hidden="true">→</span></a>`).join("")}</nav>`);
+    if (id === "favorites") {
+      const saved = savedPhrases();
+      return wrap(`<h1 class="focus-heading" tabindex="-1">我的常用語</h1><p class="study-note">收藏的詞存在這個瀏覽器，旅行時可以直接來這裡找。</p>${saved.length ? saved.map(({item,step,index}) => travelCard(item,step,index)).join("") : '<section class="study-card"><h2>還沒有收藏</h2><p>在旅遊用語卡上按「收藏」，就會出現在這裡。</p><a class="text-button" href="#travel">找旅遊常用語 →</a></section>'}`,"#travel","回旅遊常用語");
+    }
+    if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span>${savedPhrases().length} 張收藏 →</span></a><nav class="travel-categories" aria-label="旅遊情境">${PHRASEBOOK.map(item => `<a class="course-row" href="#travel/${item.id}"><span><strong>${escape(item.title)}</strong><span class="reading-label">${escape(item.subtitle)}</span><span class="travel-keywords" lang="ja">${escape(travelKeywords(item))}</span></span><span aria-hidden="true">→</span></a>`).join("")}</nav>`);
     const item = travelItem(id);
     if (!item) return wrap('<h1 class="focus-heading" tabindex="-1">找不到這個情境</h1><a class="text-button" href="#travel">回旅遊常用語</a>');
-    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(item.title)}</h1><p class="study-note">先看關鍵字與意思，需要時再展開例句。</p>${item.steps.map((step, index) => `<section class="study-card travel-card"><h2>${escape(step.title)}</h2>${keywordBox(step.keywords)}<div class="phrase-short"><h3 class="phrase-label">可以這樣說</h3><p lang="ja">${escape(step.example)}</p><p class="reading-label">${escape(step.reading)}</p><p>${escape(step.meaning)}</p>${audioButton(item, index, true, false)}</div>${step.staffAsks ? `<p class="staff-asks"><span class="staff-asks-label">店員可能會問</span><span lang="ja">${escape(step.staffAsks.example)}</span><span class="staff-asks-reading">${escape(step.staffAsks.reading)}</span><span>${escape(step.staffAsks.meaning)}</span></p>` : ""}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>看完整說法與讀音</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p>${audioButton(item, index, true, true)}</details>` : ""}${step.extra ? `<details class="phrase-more"><summary>${escape(step.extra.title)}</summary>${keywordBox(step.extra.keywords)}<p lang="ja">${escape(step.extra.example)}</p><p class="reading-label">${escape(step.extra.reading)}</p><p>${escape(step.extra.meaning)}</p><p class="study-note">${escape(step.extra.body)}</p></details>` : ""}</section>`).join("")}<div class="study-nav"><a class="text-button" href="#travel">← 換個情境</a>${item.id === "basics" ? "" : '<a class="text-button" href="#travel/basics">需要幫忙時</a>'}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#travel", "回旅遊常用語");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(item.title)}</h1><p class="study-note">先看關鍵字與意思，需要時再展開例句。</p>${item.steps.map((step, index) => travelCard(item,step,index)).join("")}<div class="study-nav"><a class="text-button" href="#travel">← 換個情境</a>${item.id === "basics" ? "" : '<a class="text-button" href="#travel/basics">需要幫忙時</a>'}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#travel", "回旅遊常用語");
   }
   // Up to six keywords per situation (two per card, readings dropped, generic words and amounts skipped)
   // so a situation can be found again by its Japanese.
@@ -318,7 +367,7 @@ const Study = (() => {
   function hintCard(course, index) {
     const hints=typeof KanaHints!=='undefined'?KanaHints.get(course.letters[index]):[];
     if(!hints?.length)return '';
-    const key=`${course.id}:${index}`, selected=(hintChoices.get(key)||0)%hints.length, hint=hints[selected];
+    const selected=(preferences().kanaHints?.[course.letters[index]] || 0)%hints.length, hint=hints[selected];
     return `<aside class="kana-hint"><div aria-live="polite" aria-atomic="true"><p class="reading-label hint-label">記憶提示 · ${escape(hint.label)}</p><p class="hint-text">${escape(hint.text)}</p></div>${hints.length>1?'<button class="text-button" data-action="study-hint">換個記法</button>':''}${KanaHints.notice?`<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>`:''}</aside>`;
   }
   const sameSoundNote = { "ぢ": "ぢ 和 じ 同音，都讀 ji；一般多寫 じ。", "づ": "づ 和 ず 同音，都讀 zu；一般多寫 ず。", "ヂ": "ヂ 和 ジ 同音，都讀 ji；一般多寫 ジ。", "ヅ": "ヅ 和 ズ 同音，都讀 zu；一般多寫 ズ。" };
@@ -472,6 +521,7 @@ const Study = (() => {
     if (hash === "#kana-review") return reviewPage();
     if (hash === "#grammar") return grammarPage();
     if (hash === "#grammar-review") return grammarReviewPage();
+    if (hash === "#settings") return settingsPage();
     if (hash === "#travel") return travelPage();
     if (hash.startsWith("#travel/")) return travelPage(hash.slice(8));
     if (hash.startsWith("#study/")) {
@@ -557,7 +607,7 @@ const Study = (() => {
       }
       const spoken = course.type === "kana" ? ({ "を": "お", "は": "ハ", "へ": "ヘ" }[course.spoken[index]] || course.spoken[index]) : (full && course.steps[index].polite ? course.steps[index].politeSpeech || course.steps[index].polite : course.steps[index].speech || course.steps[index].example).replace(/\s*／\s*/g, "、");
       const utterance = new SpeechSynthesisUtterance(spoken);
-      utterance.voice = voice; utterance.lang = "ja-JP"; utterance.rate = 0.8;
+      utterance.voice = voice; utterance.lang = "ja-JP"; utterance.rate = speechRate();
       utterance.onstart = () => status("正在播放日文讀音…");
       utterance.onend = () => status("播放完了，也可以再聽一次。");
       utterance.onerror = failed;
@@ -588,8 +638,23 @@ const Study = (() => {
     const action = button.dataset.action;
     if (!action?.startsWith("study-")) return false;
     if (button.disabled) return true;
+    if (action === "study-rate") {
+      const rate = Number(button.dataset.rate);
+      if ([0.65,0.8,1].includes(rate) && api.savePreferences?.({...preferences(),ttsRate:rate})) { stopAudio(); redraw(`[data-rate="${rate}"]`); }
+      return true;
+    }
+    if (action === "study-favorite") {
+      const id = button.dataset.phrase;
+      if (!location.hash.startsWith("#travel/") || !PHRASEBOOK.some(item => item.steps.some(step => step.id === id))) return true;
+      const wasSaved = favoriteIds().includes(id), next = wasSaved ? favoriteIds().filter(value => value !== id) : [...favoriteIds(),id];
+      if (api.saveFavorites?.(next)) {
+        if (location.hash === "#travel/favorites") redraw();
+        else { button.textContent = wasSaved ? "收藏" : "已收藏"; button.setAttribute?.("aria-pressed",String(!wasSaved)); }
+      }
+      return true;
+    }
     if (action === "study-travel-audio") {
-      const item = location.hash.startsWith("#travel/") ? travelItem(location.hash.slice(8)) : null;
+      const item = location.hash === "#travel/favorites" ? travelItem(button.dataset.course) : location.hash.startsWith("#travel/") ? travelItem(location.hash.slice(8)) : null;
       const index = Number(button.dataset.index);
       const full = button.dataset.full !== "0" && Boolean(item?.steps?.[index]?.polite);
       if (item && item.id === button.dataset.course && Number.isInteger(index) && index >= 0 && index < item.steps.length) speak(item, index, `[data-audio-for="${item.id}-${index}${full ? "-full" : ""}"]`, full);
@@ -623,6 +688,7 @@ const Study = (() => {
       api.go(`#study/${course.id}`); return true;
     }
     if (action === "study-grammar-review") {
+      if (grammarRound() && !grammarRound().done) { api.go("#grammar-review"); return true; }
       if (startGrammarRound()) { if (location.hash === "#grammar-review") redraw(); else api.go("#grammar-review"); }
       return true;
     }
@@ -634,13 +700,17 @@ const Study = (() => {
         const choice = Number(button.dataset.choice);
         if (round.solved[round.cursor] || !item.options.includes(choice)) return true;
         const correct = choice === question.answer;
-        if (round.first[round.cursor] === undefined) round.first[round.cursor] = correct;
+        if (round.first[round.cursor] === undefined) {
+          round.first[round.cursor] = correct;
+          rememberGrammar(courses[item.courseId], question, correct);
+        }
         if (correct) { round.solved[round.cursor] = true; round.wrong = null; } else round.wrong = choice;
+        save();
         paintAnswer(question.answer, correct, round.wrong, grammarReviewFeedback(round), grammarReviewLook(round));
       } else if (action === "study-next" && round.solved[round.cursor]) {
         if (round.cursor === round.items.length - 1) round.done = true;
         else { round.cursor++; round.wrong = null; }
-        redraw();
+        save(); redraw();
       }
       return true;
     }
@@ -655,9 +725,11 @@ const Study = (() => {
       return true;
     }
     if(action==='study-hint'&&course.type==='kana'&&active.phase==='cards'){
-      const key=`${course.id}:${active.cursor}`;hintChoices.set(key,(hintChoices.get(key)||0)+1);
+      const key = course.letters[active.cursor], hints = KanaHints.get(key);
+      const selected = ((preferences().kanaHints?.[key] || 0)+1)%hints.length;
+      if (!api.savePreferences?.({...preferences(),kanaHints:{...preferences().kanaHints,[key]:selected}})) return true;
       // Update in place so the live region announces the new hint and focus stays on the button.
-      const hints=KanaHints.get(course.letters[active.cursor]),hint=hints[hintChoices.get(key)%hints.length];
+      const hint=hints[selected];
       const label=document.querySelector('.hint-label'),text=document.querySelector('.hint-text');
       if(hint&&label&&text){label.textContent=`記憶提示 · ${hint.label}`;text.textContent=hint.text;}else redraw('[data-action="study-hint"]');
       return true;
@@ -696,7 +768,10 @@ const Study = (() => {
       const choice = Number(button.dataset.choice);
       if (active.solved[q] || !active.options[q].includes(choice)) return true;
       const correct = choice === (course.type === "kana" ? q : course.questions[q].answer);
-      if (active.first[q] === undefined) active.first[q] = correct;
+      if (active.first[q] === undefined) {
+        active.first[q] = correct;
+        if (GRAMMAR.some(c => c.id === course.id)) rememberGrammar(course, course.questions[q], correct);
+      }
       if (correct) { active.solved[q] = true; active.wrong = null; }
       else active.wrong = choice;
       touch(course, saved, active);
@@ -726,6 +801,8 @@ const Study = (() => {
   function context(hash) {
     if (hash === "#kana") return "五十音學習路線";
     if (hash === "#kana-review") return state().reviewSession?.round==='done'?'五十音複習・完成頁':`五十音複習${state().reviewSession?`・${state().reviewSession.round==='retry'?'再試一次':'練習'}第 ${state().reviewSession.cursor+1} 步`:''}`;
+    if (hash === "#settings") return "學習設定";
+    if (hash === "#travel/favorites") return "我的常用語";
     if (hash === "#grammar") return "基礎句型學習路線";
     if (hash === "#grammar-review") { const round = grammarRound(); return round ? round.done ? "句型小複習・完成頁" : `句型小複習・第 ${round.cursor + 1} 題・${reviewItem(round).course.title}` : "句型小複習"; }
     if (hash === "#travel") return "旅遊常用語列表";
@@ -736,5 +813,5 @@ const Study = (() => {
     if(course.type==='kana'&&active?.phase==='quiz'&&active.practice.round==='retry')return `${course.title}・再試一次第 ${active.practice.cursor+1} 步`;
     return `${course.title}${active ? active.phase === "done" ? "・完成頁" : `・${active.phase === "cards" ? "認識" : "練習"}第 ${active.cursor + 1} 步` : ""}`;
   }
-  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse, hasProgress, currentAttempt, reviewSummary, clearReview, currentPractice, currentReview };
+  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse, hasProgress, currentAttempt, reviewSummary, clearReview, currentPractice, currentReview, grammarNext };
 })();

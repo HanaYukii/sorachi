@@ -833,7 +833,7 @@ test('short review is reachable from home, clears a recent mistake, and leaves f
   const before=b.stored;
   const renders=b.renderCount;
   b.study('study-hint');
-  assert.equal(b.stored,before,'Hint switching must not create learning progress');
+  assert.deepEqual(JSON.parse(b.stored).learning,JSON.parse(before).learning,'Hint switching must not create learning progress');
   assert.equal(b.renderCount,renders,'Hint switching updates the live region in place');
   assert.match(b.node('.hint-label').textContent,/聲音連結/);
   assert.match(b.node('.hint-text').textContent,/讀 a/);
@@ -1217,4 +1217,69 @@ test('grammar mini-review: feedback names the question on screen, like the kana 
   assert.ok(body.includes(`所在位置：句型小複習・第 1 題・${title}`), body);
   b.action('feedback-back');
   assert.match(b.html, /複習 · 1 \//, 'Coming back from feedback keeps the round');
+});
+
+function completedGrammarBrowser() {
+  const b=browser();
+  for(const id of ['g-identity','g-question']) {
+    const course=vm.runInContext(`Content.courses[${JSON.stringify(id)}]`,contentContext);
+    b.study('study-open',{course:id});for(const step of course.steps)b.study('study-next');
+    for(const q of course.questions) {
+      const active=b.state.study.courses[id].active;
+      b.study('study-answer',{choice:course.questions[active.order[active.cursor]].answer});b.study('study-next');
+    }
+  }
+  return b;
+}
+async function importAndReload(b,raw) {
+  b.navigate('#history');b.change('backup-file',[{size:raw.length,text:async()=>raw}]);
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(b.reloads,1);
+  return browser({raw:b.stored,hash:'#grammar-review'});
+}
+test('grammar review, favorites and preferences survive backup restore; newer clears win in both directions',async()=>{
+  const b=completedGrammarBrowser();b.navigate('#grammar-review');b.study('study-grammar-review');
+  const item=b.state.study.grammarReviewSession.items[0];
+  const question=vm.runInContext(`Content.courses[${JSON.stringify(item.courseId)}].questions[${item.q}]`,contentContext);
+  b.study('study-answer',{choice:(question.answer+1)%question.options.length});
+  b.navigate('#travel/t-pay');const phrase=vm.runInContext('Content.phrasebook.find(p=>p.id==="t-pay").steps[0].id',contentContext);
+  b.study('study-favorite',{phrase});b.navigate('#settings');b.study('study-rate',{rate:'0.65'});
+  b.study('study-open',{course:'h-a'});b.study('study-hint');
+  const before=b.stored,restored=await importAndReload(browser(),before);
+  assert.equal(restored.state.study.grammarReviewSession.items[0].questionId,question.id);
+  assert.equal(restored.state.study.grammarReview[question.id].wrong,true);
+  const envelope=JSON.parse(restored.stored);
+  assert.deepEqual(envelope.favorites,[phrase]);assert.equal(envelope.preferences.ttsRate,0.65);assert.equal(envelope.preferences.kanaHints['あ'],1);
+  const cleared=JSON.parse(before);cleared.learning.study.reviewClearedAt=new Date(Date.now()+1000).toISOString();
+  cleared.learning.study.grammarReview={};cleared.learning.study.grammarReviewSession=null;cleared.attempts=[];
+  for(const [local,incoming] of [[before,JSON.stringify(cleared)],[JSON.stringify(cleared),before]]) {
+    const result=await importAndReload(browser({raw:local}),incoming);
+    assert.equal(result.state.study.grammarReviewSession,null);
+    assert.deepEqual(JSON.parse(JSON.stringify(result.state.study.grammarReview)),{});
+    assert.ok(result.state.study.courses['g-identity'].completedAt);
+    const again=browser({raw:result.stored,hash:'#grammar-review'});assert.equal(again.state.study.grammarReviewSession,null);
+  }
+});
+test('clearing review ends grammar sessions, preserves favorites/settings and reports blocked writes',()=>{
+ const b=completedGrammarBrowser();b.navigate('#grammar-review');b.study('study-grammar-review');
+ b.navigate('#settings');b.study('study-rate',{rate:'0.65'});
+ b.navigate('#history');b.action('clear-history');b.action('confirm-clear');
+ const r=browser({raw:b.stored});assert.equal(r.state.study.grammarReviewSession,null);assert.equal(JSON.parse(r.stored).preferences.ttsRate,0.65);
+ const blocked=browser({hash:'#travel/t-pay'});const before=blocked.stored;blocked.blockStorage();
+ const phrase=vm.runInContext('Content.phrasebook.find(p=>p.id==="t-pay").steps[0].id',contentContext);
+ blocked.study('study-favorite',{phrase});assert.equal(blocked.stored,before);assert.match(blocked.node('#storage-status').innerHTML,/無法讀取|無法儲存/);
+ blocked.navigate('#settings');blocked.study('study-rate',{rate:'1'});assert.equal(blocked.stored,before);assert.match(blocked.html,/aria-pressed="true">一般/);
+});
+
+
+test('grammar review write failure preserves the last stored round and never add scores',()=>{
+ const b=completedGrammarBrowser();b.navigate('#grammar-review');b.study('study-grammar-review');
+ const original=b.stored,history=JSON.parse(original).attempts;
+ const item=b.state.study.grammarReviewSession.items[0];
+ const answer=vm.runInContext(`Content.courses[${JSON.stringify(item.courseId)}].questions[${item.q}].answer`,contentContext);
+ b.blockStorage();b.study('study-answer',{choice:answer});b.study('study-next');
+ assert.equal(b.stored,original);assert.match(b.html,/無法讀取|無法儲存/);
+ const r=browser({raw:b.stored,hash:'#grammar-review'});
+ assert.equal(r.state.study.grammarReviewSession.cursor,0);
+ assert.deepEqual(JSON.parse(JSON.stringify(r.state.study.grammarReviewSession.first)),{});
+ assert.deepEqual(JSON.parse(r.stored).attempts,history);
 });

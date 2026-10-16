@@ -48,7 +48,7 @@ node scripts/prepare-release.mjs --check
 - 寫入前比對上次讀到的原文；其他分頁改過資料時，這個分頁停止儲存並提示重新載入（不是合併，也不是交易）。
 - 資料損壞、缺欄位或版本較新時鎖住寫入、不覆寫。紀錄頁提供下載原始資料，以及另存到 `sorachi:data:v2:quarantine:<時間>` 後重新開始。
 - 成績紀錄保留最近 200 筆，題目改版不重算舊成績；只有教材 revision 一致的進行中練習才會接續。
-- 備份還原：紀錄依 attempt ID 合併；每課保留最近一次完成與成績、較大的練習次數。任一邊清除過紀錄時，錯字只留較晚清除之後的作答，複習與未完成的五十音練習只留清除較晚那一邊的。還原後重新載入頁面。
+- 備份還原：紀錄依 attempt ID 合併；每課保留最近一次完成與成績、較大的練習次數。任一邊清除過紀錄時，錯字只留較晚清除之後的作答，五十音／句型複習與未完成的五十音練習只留清除較晚那一邊的。還原後重新載入頁面。
 
 ## 句型課的順序與先備
 
@@ -57,7 +57,7 @@ node scripts/prepare-release.mjs --check
 - `validate()` 會檢查例句、正確答案與題幹裡的假名，只用這課與先備課教過的詞。新增課程時先寫好 lessonPlan，檢查不過就表示用了還沒教的詞。
 - 限制：檢查是把教過的詞從句子裡拿掉、看還剩什麼，所以完全由教過的詞拼成的新詞（例如 どこか）不會被抓到。數字 に、ご 和 じ、はん 這類很短的詞讓盲點變大：學過數字後，助詞 に（えきに）和 ごはん（ご＋はん）都會直接通過，之後教助詞 に 的課要人工核對。干擾選項可以是刻意的錯誤形式，不檢查。
 - Jabiko 題目的盤點與移植紀錄見 [jabiko-inventory.md](jabiko-inventory.md)。
-- 句型小複習（`#grammar-review`）只在記憶體：不呼叫 `save()`／`record()`，重新整理就重來。題目從完成的句型課挑，最多 5 題、每課最多 2 題（只完成兩課時 3 題）；各課最近一筆紀錄裡第一次答錯的題先出，上一輪第一次就答對的題排到最後。答錯時打開 `lessonPlan.review` 指的那張卡。
+- 句型小複習（`#grammar-review`）保存在 `learning.study.grammarReviewSession`，重載保留題序、選項、首答與目前位置；不呼叫 `record()`、不改課程成績。題目從完成的句型課挑，最多 5 題、每課最多 2 題（只完成兩課時 3 題）；以穩定題目 ID 記錄最近一次獨立作答結果，錯題優先；同題看完答案立即重試不移出錯題，下次獨立答對才移出。舊歷史只在沒有較新題目狀態時初始化。上一輪第一次就答對的題排到最後。答錯時打開 `lessonPlan.review` 指的那張卡。
 
 ## 教材原則
 
@@ -86,3 +86,11 @@ node scripts/prepare-release.mjs --check
 - 喝法：[Suntory ロック](https://www.suntory.co.jp/whisky/hibiki/time/drinkstyle/rocks.html)、[ソーダ割り](https://www.suntory.co.jp/whisky/hibiki/time/drinkstyle/soda.html)
 - 加值與交通卡：[7-Eleven](https://www.sej.co.jp/services/cash/traffic.html)、[全家](https://www.family.co.jp/services/payment/traffic_e_money.html)、[JR 東日本 Suica 加值](https://www.jreast.co.jp/suica/ic/use/chrg/)、[JR 西日本 ICOCA](https://www.jr-odekake.net/icoca/area/index.html)
 - 車票與座位：[JR 東日本旅客指南](https://www.jreast.co.jp/E/downloads/pdf/jr-east_guide_e.pdf)
+
+## Local continuity (issues #69–#72)
+
+- Grammar review sessions include a version, stable question IDs and course revisions. Incompatible or malformed sessions are discarded; completed lessons and historical scores remain intact. Clearing review resets both kana and grammar review, not normal grammar lessons.
+- Travel bookmarks use stable phrase-card IDs. `favoriteChanges` stores per-card additions/removals; newer changes win, removal wins timestamp ties, and explicit removals beat old backup lists without change metadata. Local changes advance the timestamp when clicks share a millisecond.
+- `preferences.ttsRate` and `preferences.kanaHints` use the existing protected storage writer. Import merges hints per character (local choice wins a conflict); changing a hint does not start a lesson. Failed writes keep the previous saved selection and show the existing storage warning.
+- `lastGrammarId` changes only after meaningful lesson activity, not when opening a first card. The next action resumes that unfinished lesson, otherwise uses teaching order; completed learners can review. Opening a running review again resumes it.
+- User study protocol: [beginner-usability.md](beginner-usability.md). This is a test script, not evidence that real beginners have participated.

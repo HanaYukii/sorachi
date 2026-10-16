@@ -5,7 +5,8 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../dist/study.js', import.meta.url), 'utf8');
 const clone = (value) => JSON.parse(JSON.stringify(value));
-function harness(saved, voices = [], history = []) {
+function harness(saved, voices = [], history = [], options = {}) {
+  let prefs = clone(options.preferences || {}), favorites = clone(options.favorites || []), localWriteBlocked = false;
   let html = '', focused = null, stored = null, currentState;
   const records = [], utterances = [], speechEvents = {};
   const status = { textContent: '' };
@@ -41,6 +42,9 @@ function harness(saved, voices = [], history = []) {
   const render = (hash = location.hash) => { location.hash = hash; app.innerHTML = study.render(hash); return html; };
   study.bind({
     getState: () => currentState,
+    preferences: () => clone(prefs), favorites: () => clone(favorites),
+    savePreferences: value => { if (localWriteBlocked) return false; prefs=clone(value); return true; },
+    saveFavorites: value => { if (localWriteBlocked) return false; favorites=clone(value); return true; },
     save() { saves++; stored = clone(currentState); },
     record(record) {
       // Root record() saves immediately; completion must already be durable.
@@ -52,6 +56,7 @@ function harness(saved, voices = [], history = []) {
   });
   return {
     study, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, slot, speechSynthesis,
+    get preferences() { return clone(prefs); }, get favorites() { return clone(favorites); }, blockLocalWrites() { localWriteBlocked = true; },
     get answers() { return answerNodes; }, get renders() { return renders; }, get saves() { return saves; }, get scrolls() { return scrolls; }, flushTimers() { const jobs = [...timers.values()]; timers.clear(); jobs.forEach(fn => fn()); },
     action(action, data = {}) { return study.handle({ dataset: { action: `study-${action}`, ...data }, disabled: false }); },
     get state() { return currentState; }, set state(value) { currentState = value; }, get html() { return html; }, get stored() { return stored; }, get focused() { return focused; }, get cancels() { return cancels; },
@@ -91,7 +96,7 @@ test('two scripts cover 46 basic and 25 voiced characters each and only one scri
   for (const script of ['h', 'k']) {
     b.render('#kana'); b.action('script', { script });
     // 26 kana rows plus the two special-sound lessons.
-    assert.equal((b.html.match(/data-action="study-open"/g) || []).length, 28);
+    assert.equal((b.html.match(/class="course-row" data-action="study-open"/g) || []).length, 28);
     for (const heading of ['濁音・半濁音', '拗音', '促音・長音']) assert.match(b.html, new RegExp(`<h2 class="course-list-heading">${heading}</h2>`));
     const letters = [];
     for (const key of groupKeys) {
@@ -176,9 +181,9 @@ test('reviewing cards mid-quiz retains original answers and resumes at first inc
 
 test('all grammar courses complete their content-defined cards and questions with stable score semantics', () => {
   const b = harness(); b.render('#grammar');
-  assert.equal((b.html.match(/data-action="study-open"/g) || []).length, b.content.grammar.length);
+  assert.equal((b.html.match(/class="course-row" data-action="study-open"/g) || []).length, b.content.grammar.length);
   assert.deepEqual([...b.html.matchAll(/<h2 class="course-list-heading">([^<]+)<\/h2>/g)].map(m => m[1]), ['基本句子', '時間與數字', '動作與地點', '形容詞與連接', 'て形'], 'One heading per unit, in teaching order');
-  assert.deepEqual([...b.html.matchAll(/data-course="([^"]+)"/g)].map(m => m[1]), [...b.content.grammar.map(lesson => lesson.id)], 'Units keep the teaching order');
+  assert.deepEqual([...b.html.matchAll(/class="course-row" data-action="study-open" data-course="([^"]+)"/g)].map(m => m[1]), [...b.content.grammar.map(lesson => lesson.id)], 'Units keep the teaching order');
   for (const { id } of b.content.grammar) {
     assert.equal(b.study.total(id), b.content.courses[id].questions.length);
     startQuiz(b, id); finishQuiz(b, id, true);
@@ -195,7 +200,7 @@ test('sanitization rejects malformed kana sessions, old versions and skipped una
   legacy.courses['h-a'].completedAt='2026-01-01T00:00:00Z';legacy.courses['h-a'].lastResult={firstCorrect:3,total:5};
   const clean=b.study.sanitize(legacy).courses['h-a'];assert.equal(clean.active,null);assert.equal(clean.lastResult.firstCorrect,3);assert.ok(clean.completedAt);
   const invalid=clone(b.stored);invalid.courses['h-a'].active.practice.questions[0].options[0]='unknown';assert.equal(b.study.sanitize(invalid).courses['h-a'].active,null);
-  assert.deepEqual(clone(b.study.sanitize(null)),{script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null});
+  assert.deepEqual(clone(b.study.sanitize(null)),{script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
 });
 
 test('an unavailable Japanese voice shows visible fallback and never speaks English', () => {
@@ -242,7 +247,7 @@ test('unknown route/course cannot inject markup and unrelated actions pass throu
 test('travel section is separate; each situation shows keywords and playable phrases without a quiz', () => {
   const b = harness(null, [{lang: 'ja-JP'}]);
   b.render('#travel');
-  assert.equal((b.html.match(/href="#travel\//g) || []).length, 11);
+  assert.equal((b.html.match(/href="#travel\//g) || []).length, 12);
   assert.doesNotMatch(b.html, /data-action="study-open"/);
   assert.doesNotMatch(b.html, /data-course="g-identity"/);
   assert.equal(b.study.context('#travel'), '旅遊常用語列表');
@@ -458,7 +463,7 @@ test('delayed success stays removed after completion and reload with the newer h
  assert.equal(history[0].firstCorrect,4);assert.deepEqual(history[0].retryQuestions,[1]);
 });
 
-test('memory hints switch without persisting, speaking, or appearing on a question', () => {
+test('memory hints persist preferences without starting lessons, speaking, or appearing on a question', () => {
  const b=harness(null,[{lang:'ja-JP'}]);b.loadHints();b.action('open',{course:'h-a'});assert.match(b.html,/記憶提示/);const before=b.html,attempt=b.study.currentAttempt('h-a'),cancels=b.cancels;
  b.action('hint');assert.notEqual(b.html,before);assert.equal(b.stored,null);assert.equal(b.utterances.length,0);assert.equal(b.cancels,cancels);assert.deepEqual(clone(b.study.currentAttempt('h-a')),clone(attempt));
  for(let i=0;i<5;i++)b.action('next');assert.doesNotMatch(b.html,/記憶提示|換個記法/);
@@ -625,7 +630,7 @@ function playReview(b, wrongAt = []) {
   return seen;
 }
 
-test('grammar mini-review mixes completed lessons and never saves, records or changes scores', () => {
+test('grammar mini-review mixes completed lessons and saves independently of lesson records and scores', () => {
   const b = harness();
   assert.doesNotMatch(b.render('#grammar'), /grammar-review/, 'No review before two lessons are complete');
   assert.match(b.render('#grammar-review'), /先完成兩課句型/);
@@ -645,9 +650,9 @@ test('grammar mini-review mixes completed lessons and never saves, records or ch
   assert.match(b.html, new RegExp(`data-action="study-open" data-course="${seen[0][0]}"`), 'Links back to the lesson with a mistake');
   assert.equal(b.study.context('#grammar-review'), '句型小複習・完成頁');
   assert.equal(JSON.stringify(b.state.courses), courses, 'Lesson progress and scores stay the same');
-  assert.equal(b.saves, saves, 'Nothing is saved');
+  assert.ok(b.saves > saves, 'Review progress is saved');
   assert.equal(b.records.length, records, 'Nothing is recorded');
-  const reloaded = harness(b.stored); assert.match(reloaded.render('#grammar-review'), /data-action="study-grammar-review">開始複習/, 'A reload starts over');
+  const reloaded = harness(b.stored); assert.match(reloaded.render('#grammar-review'), /複習完成/, 'A reload retains the completed round');
 });
 
 test('grammar mini-review puts first-time mistakes from the latest record first', () => {
@@ -672,7 +677,7 @@ test('grammar mini-review: latest-record mistakes fill the per-lesson cap (3 wit
   const ids = b.content.courses['g-place'].questions.map((q) => q.id);
   const add = (date, retryQuestions) => history.push({ date, courseId: 'g-place', questionIds: ids, total: 3, firstCorrect: 3 - retryQuestions.length, retryQuestions });
   add('2026-10-01T00:00:00.000Z', [1]); add('2026-10-02T00:00:00.000Z', [2, 3]);
-  const fresh = () => { const r = harness(b.stored, [], history); r.render('#grammar-review'); r.action('grammar-review'); return playReview(r); };
+  const fresh = () => { const legacy = clone(b.stored); delete legacy.grammarReview; const r = harness(legacy, [], history); r.render('#grammar-review'); r.action('grammar-review'); return playReview(r); };
   for (let round = 0; round < 5; round++) {
     const seen = fresh();
     assert.equal(seen.length, 5, 'Two lessons of three questions still make five');
@@ -713,9 +718,9 @@ test('grammar mini-review resumes after leaving, ignores stray input and resets 
   assert.match(b.render('#grammar-review'), /✓ 答對了/, 'Coming back shows the same solved question');
   b.action('next'); playReview(b);
   assert.match(b.html, /第一次答對 <strong>5 \/ 5<\/strong> 題/, 'Out-of-range choices never count as a first answer');
-  assert.equal(b.saves, saves);
+  assert.ok(b.saves > saves);
   b.state = clone(b.state);
-  assert.match(b.render('#grammar-review'), /開始複習/, 'A replaced state object (failed clear) starts over');
+  assert.match(b.render('#grammar-review'), /複習完成/, 'Replacing state preserves the saved round');
 });
 
 test('grammar mini-review: 再複習 moves questions answered right last round to the back', () => {
@@ -728,4 +733,83 @@ test('grammar mini-review: 再複習 moves questions answered right last round t
   r.action('grammar-review');
   const second = playReview(r).map(([, q]) => q);
   assert.equal(second.filter((q) => first.includes(q)).length, 0, 'With enough other questions, the next round is all new');
+});
+
+test('grammar review survives reload with exact order, answers and choices, without changing course scores', () => {
+  const b = harness();
+  for (const id of ['g-identity','g-question','g-demo']) { startQuiz(b,id); finishQuiz(b,id); }
+  const lessons = JSON.stringify(b.state.courses);
+  b.render('#grammar-review'); b.action('grammar-review');
+  const {question} = reviewQuestion(b);
+  b.action('answer',{choice:String((question.answer+1)%question.options.length)});
+  const saved = clone(b.stored);
+  assert.ok(saved.grammarReviewSession);
+  b.action("grammar-review");assert.deepEqual(clone(b.state.grammarReviewSession),saved.grammarReviewSession,"Repeated start resumes instead of replacing a round");
+  const r = harness(saved); r.render('#grammar-review');
+  assert.equal(reviewQuestion(r).question.id,question.id);
+  assert.deepEqual(clone(r.state.grammarReviewSession),saved.grammarReviewSession);
+  assert.match(r.html,/正確答案/);
+  r.action('answer',{choice:String(question.answer)});
+  assert.equal(r.state.grammarReview[question.id].wrong,true,'An immediate retry does not erase a first miss');
+  r.action('next'); playReview(r);
+  assert.deepEqual(clone(r.state.courses),JSON.parse(lessons));
+  assert.equal(r.records.length,0);
+  const done = harness(r.stored); assert.match(done.render('#grammar-review'),/複習完成/);
+  done.study.clearReview(); assert.equal(done.state.grammarReviewSession,null);
+  assert.deepEqual(clone(done.state.grammarReview),{});
+});
+
+test('grammar review rejects corrupted, stale and unlearned sessions without losing earned completion', () => {
+  const b = harness();
+  for (const id of ['g-identity','g-question']) { startQuiz(b,id); finishQuiz(b,id); }
+  b.render('#grammar-review'); b.action('grammar-review');
+  for (const corrupt of [s=>s.grammarReviewSession.items[0].courseRevision='old',s=>s.grammarReviewSession.items[0].questionId='unknown',s=>s.grammarReviewSession.items[0].options=[0,0,0],s=>s.grammarReviewSession.done=true,s=>s.grammarReviewSession.cursor=99,s=>s.courses[s.grammarReviewSession.items[0].courseId].completedAt=null]) {
+    const saved=clone(b.stored); corrupt(saved);
+    const r=harness(saved); assert.equal(r.state.grammarReviewSession,null);
+    assert.equal(r.state.courses['g-question'].attempts,1);
+  }
+});
+
+test('resume target follows meaningful grammar activity and ignores merely opened cards', () => {
+  const b=harness(); b.action('open',{course:'g-identity'}); b.action('next');
+  b.action('open',{course:'g-question'});
+  assert.equal(b.study.grammarNext().courseId,'g-identity');
+  b.action('next'); assert.equal(b.study.grammarNext().courseId,'g-question');
+  const r=harness(b.stored); assert.equal(r.study.grammarNext().courseId,'g-question');
+  assert.match(r.render('#grammar'),/接著學/);
+  const finished=harness({courses:Object.fromEntries(b.content.grammar.map(c=>[c.id,{completedAt:'2026-01-01T00:00:00Z',attempts:1}]))});
+  assert.equal(finished.study.grammarNext(),null);
+  assert.match(finished.render('#grammar'),/複習學過的句型/);
+});
+
+test('hint and speed preferences survive reload, affect speech, and failed writes keep the old choice', () => {
+  const b=harness(null,[{lang:'ja-JP'}]);b.loadHints();b.action('open',{course:'h-a'});b.action('hint');
+  assert.equal(b.preferences.kanaHints['あ'],1); assert.equal(b.study.hasProgress('h-a'),false);
+  b.render('#settings');b.action('rate',{rate:'0.65'});
+  const r=harness(null,[{lang:'ja-JP'}],[],{preferences:b.preferences});r.loadHints();r.action('open',{course:'h-a'});
+  assert.match(r.html,/聲音連結/);r.action('audio',{index:'0'});assert.equal(r.utterances.at(-1).rate,0.65);
+  r.render('#travel/t-pay');r.action('travel-audio',{course:'t-pay',index:'0',full:'0'});r.flushTimers();
+  assert.equal(r.utterances.at(-1).rate,0.65);
+  r.blockLocalWrites();r.render('#settings');r.action('rate',{rate:'1'});assert.equal(r.preferences.ttsRate,0.65);
+  r.action('open',{course:'h-a'});r.action('hint');assert.equal(r.preferences.kanaHints['あ'],1);
+});
+
+test('travel favorites are independent of course progress, render saved cards and allow playback and removal', () => {
+  const b=harness(null,[{lang:'ja-JP'}]); const step=b.content.phrasebook.find(p=>p.id==='t-pay').steps[0];
+  b.render('#travel/t-pay');b.action('favorite',{phrase:step.id});
+  assert.deepEqual(b.favorites,[step.id]); assert.equal(b.saves,0); assert.equal(b.records.length,0);
+  const r=harness(null,[{lang:'ja-JP'}],[],{favorites:b.favorites});
+  assert.match(r.render('#travel/favorites'),new RegExp(step.title));
+  r.action('travel-audio',{course:'t-pay',index:'0',full:'0'});assert.equal(r.utterances.length,1);
+  r.action('favorite',{phrase:step.id}); assert.match(r.html,/還沒有收藏/);
+  r.action('favorite',{phrase:'not-real'});assert.deepEqual(r.favorites,[]);
+  r.blockLocalWrites();r.action('favorite',{phrase:step.id});assert.deepEqual(r.favorites,[]);
+});
+
+test('a fresh correct review answer clears an old mistake and a later wrong answer adds it back', () => {
+  const b=harness();for(const id of ['g-identity','g-question']){startQuiz(b,id);finishQuiz(b,id);}
+  b.render('#grammar-review');b.action('grammar-review');
+  const {question}=reviewQuestion(b);b.action('answer',{choice:String((question.answer+1)%question.options.length)});
+  playReview(b); assert.equal(b.state.grammarReview[question.id].wrong,true);
+  b.action('grammar-review');playReview(b);assert.equal(b.state.grammarReview[question.id].wrong,false);
 });

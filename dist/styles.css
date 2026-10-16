@@ -1284,3 +1284,10 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 @media (max-width: 540px) {
   .about-mascot { width: 120px; }
 }
+
+/* Local travel bookmarks share the existing cards and keep the title readable on narrow screens. */
+.travel-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.travel-card-heading h2 { min-width: 0; }
+.favorite-toggle { flex-shrink: 0; min-height: 44px; }
+.favorite-toggle[aria-pressed="true"] { color: var(--purple-deep); background: var(--purple-soft, #f1eafa); border-radius: 12px; padding-inline: 12px; }
+.favorites-entry { margin-top: 20px; }

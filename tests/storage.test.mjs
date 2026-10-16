@@ -367,3 +367,26 @@ test('a clear on either side keeps older mistakes and review sessions from comin
  assert.deepEqual({...study.kanaReview},{},'The backup was cleared after this mistake');
  assert.equal(study.reviewClearedAt,'2026-06-01T00:00:00.000Z');
 });
+
+test('local preferences are validated and merge individual hint choices through backup import',()=>{
+ const a=setup(),b=setup();
+ a.store.savePreferences({ttsRate:0.65,kanaHints:{'あ':1,'い':0,'bad':1,'う':99}});
+ b.store.savePreferences({ttsRate:1,kanaHints:{'あ':0,'え':1}});
+ assert.equal(b.store.importBackup(a.store.exportBackup()),true);
+ assert.deepEqual(JSON.parse(JSON.stringify(b.store.readSnapshot().preferences)),{ttsRate:1,kanaHints:{'あ':0,'い':0,'え':1}});
+ const reload=b.api.create(b.config); assert.equal(reload.readSnapshot().preferences.kanaHints['え'],1);
+ b.block(); assert.equal(b.store.savePreferences({ttsRate:0.8}),false);assert.equal(b.store.readSnapshot().preferences.ttsRate,1);
+});
+
+test('removed favorites do not return from old backups; a later intentional re-add can return',()=>{
+ const a=setup();a.store.saveFavorites(['phrase-a']);const old=JSON.parse(a.store.exportBackup());
+ a.store.saveFavorites([]);const removed=JSON.parse(a.store.exportBackup());
+ removed.favoriteChanges['phrase-a'].updatedAt='2026-10-16T12:00:00.000Z';
+ old.favoriteChanges['phrase-a'].updatedAt='2026-10-16T11:00:00.000Z';
+ for(const [local,incoming] of [[removed,old],[old,removed]]) {
+  const b=setup({[key]:JSON.stringify(local)});assert.equal(b.store.importBackup(JSON.stringify(incoming)),true);assert.deepEqual(JSON.parse(JSON.stringify(b.store.readSnapshot().favorites)),[]);
+  const legacy={...old};delete legacy.favoriteChanges;assert.equal(b.store.importBackup(JSON.stringify(legacy)),true);assert.equal(b.store.readSnapshot().favorites.length,0);
+ }
+ const b=setup({[key]:JSON.stringify(removed)});const readded={...old,favoriteChanges:{'phrase-a':{saved:true,updatedAt:'2026-10-16T13:00:00.000Z'}}};
+ assert.equal(b.store.importBackup(JSON.stringify(readded)),true);assert.equal(b.store.readSnapshot().favorites[0],'phrase-a');
+});
