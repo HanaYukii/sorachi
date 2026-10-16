@@ -659,7 +659,7 @@ test("feedback returns to the current study card with its course title", () => {
 test("home explains the task and sends beginners directly to the first kana group", () => {
   const b = browser();
   assert.match(b.html, /日文入門/);
-  assert.match(b.html, /看字與讀音，再做選擇題/);
+  assert.match(b.html, /入門必學，搭配各式技巧好好記熟/);
   assert.match(b.html, /data-action="study-open" data-course="h-a"/);
   assert.doesNotMatch(b.html, /あ、ア、山/);
   b.study('study-open', {course:'h-a'});
