@@ -167,7 +167,7 @@ test('reordering questions with the same count invalidates saved index-based ans
 });
 
 test('adding a question invalidates the active attempt without rewriting old result total', () => {
-  const changed = load('grammar[0].questions.push({ ...grammar[0].questions[0], id: "g-identity/question/new-example", prompt: "另一個例句，應使用哪個句尾？" });');
+  const changed = load('grammar[0].questions.push({ ...grammar[0].questions[0], id: "g-identity/question/new-example", prompt: "另一個例句，應使用哪個句尾？" }); lessonPlan["g-identity"].review["g-identity/question/new-example"] = "g-identity/card/noun-sentence";');
   assert.deepEqual(plain(changed.content.validate()), []);
   assert.equal(changed.study.total('g-identity'), 3);
   for (const saved of [legacySaved(), versionedSaved()]) {

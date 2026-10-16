@@ -12,7 +12,7 @@ function harness(saved, voices = [], history = []) {
   let renders = 0, scrolls = 0;
   const timers = new Map(); let timerId = 0;
   const makeNode = () => ({ textContent: '', dataset: {}, disabled: false, classList: { toggle() {} }, setAttribute(k,v) { this[k] = v; }, focus() { focused = this.selector; }, scrollIntoView() { scrolls++; }, querySelector() { return this.mark; } });
-  const feedback = makeNode(), next = makeNode(); next.selector = '[data-action="study-next"]';
+  const feedback = makeNode(), next = makeNode(), slot = makeNode(); next.selector = '[data-action="study-next"]'; slot.innerHTML = '';
   let answerNodes = [];
 
   let cancels = 0, voiceReads = 0;
@@ -24,7 +24,7 @@ function harness(saved, voices = [], history = []) {
     },
     querySelector(selector) { return { focus() { focused = selector; } }; },
   };
-  const document = { querySelectorAll() { return answerNodes; }, querySelector(selector) { if (selector === '.study-feedback') return feedback; if (selector === '[data-action="study-next"]') return next; return selector === '#app' ? app : (selector === '.study-audio-status' || selector.startsWith('[data-audio-for=')) ? status : null; } };
+  const document = { querySelectorAll() { return answerNodes; }, querySelector(selector) { if (selector === '.study-feedback') return feedback; if (selector === '[data-action="study-next"]') return next; if (selector === '.look-back-slot') return slot; return selector === '#app' ? app : (selector === '.study-audio-status' || selector.startsWith('[data-audio-for=')) ? status : null; } };
   const location = { hash: '#kana' };
   const speechSynthesis = { speaking: false, pending: false,
     getVoices() { voiceReads++; return voices; },
@@ -51,7 +51,7 @@ function harness(saved, voices = [], history = []) {
     history: () => history, footer: () => '<footer>footer</footer>', warning: () => '', go: render,
   });
   return {
-    study, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, speechSynthesis,
+    study, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, slot, speechSynthesis,
     get answers() { return answerNodes; }, get renders() { return renders; }, get scrolls() { return scrolls; }, flushTimers() { const jobs = [...timers.values()]; timers.clear(); jobs.forEach(fn => fn()); },
     action(action, data = {}) { return study.handle({ dataset: { action: `study-${action}`, ...data }, disabled: false }); },
     get state() { return currentState; }, get html() { return html; }, get stored() { return stored; }, get focused() { return focused; }, get cancels() { return cancels; },
@@ -176,8 +176,8 @@ test('reviewing cards mid-quiz retains original answers and resumes at first inc
 
 test('all grammar courses complete their content-defined cards and questions with stable score semantics', () => {
   const b = harness(); b.render('#grammar');
-  assert.equal((b.html.match(/data-action="study-open"/g) || []).length, 3);
-  for (const id of ['g-identity', 'g-question', 'g-demo']) {
+  assert.equal((b.html.match(/data-action="study-open"/g) || []).length, b.content.grammar.length);
+  for (const { id } of b.content.grammar) {
     assert.equal(b.study.total(id), b.content.courses[id].questions.length);
     startQuiz(b, id); finishQuiz(b, id, true);
     const result = b.records.at(-1);
@@ -343,7 +343,7 @@ test('retry labels use question identity and revision, with safe historical and 
   assert.deepEqual([...b.study.retryLabels({...entry,courseRevision:'old'})],[q.character]);
   assert.deepEqual([...b.study.retryLabels({...entry,questionIds:undefined})],['第 1 題']);
   assert.match(b.html,/第一次答錯/); assert.match(b.html,/下一組/);
-  assert.equal(b.study.nextCourse('h-a'),'h-ka'); assert.equal(b.study.nextCourse('k-a'),'k-ka'); assert.equal(b.study.nextCourse('k-wa'),'k-ga'); assert.equal(b.study.nextCourse('h-pa'),'h-kya'); assert.equal(b.study.nextCourse('h-pya'),null); assert.equal(b.study.nextCourse('k-pya'),null); assert.equal(b.study.nextCourse('g-identity'),null);
+  assert.equal(b.study.nextCourse('h-a'),'h-ka'); assert.equal(b.study.nextCourse('k-a'),'k-ka'); assert.equal(b.study.nextCourse('k-wa'),'k-ga'); assert.equal(b.study.nextCourse('h-pa'),'h-kya'); assert.equal(b.study.nextCourse('h-pya'),null); assert.equal(b.study.nextCourse('k-pya'),null); assert.equal(b.study.nextCourse('g-identity'),'g-question'); assert.equal(b.study.nextCourse('g-kara-made'),null); assert.equal(b.study.nextCourse('s-long'),null);
 });
 
 test('katakana special hints distinguish o from wo by character', () => {
@@ -544,4 +544,51 @@ test('every travel situation except help links to the help situation', () => {
     if (category.id === 'basics') assert.doesNotMatch(b.html, /需要幫忙時/);
     else assert.match(b.html, /<a class="text-button" href="#travel\/basics">需要幫忙時<\/a>/, category.id);
   }
+});
+
+test('a wrong grammar answer links to its explanation card and returns to the same question without changing the score', () => {
+  const b = harness();
+  startQuiz(b, 'g-place');
+  const active = b.state.courses['g-place'].active;
+  const q = active.order[active.cursor];
+  const question = b.content.courses['g-place'].questions[q];
+  const wrong = question.options.findIndex((_, i) => i !== question.answer);
+  b.action('answer', { choice: String(wrong) });
+  const cardId = b.content.lessonPlan['g-place'].review[question.id];
+  const index = b.content.courses['g-place'].steps.findIndex((s) => s.id === cardId);
+  assert.match(b.slot.innerHTML, new RegExp(`data-action="study-look" data-card="${index}">回看說明：`), 'A wrong answer fills the link in place');
+  assert.match(b.render(`#study/g-place`), new RegExp(`data-action="study-look" data-card="${index}">回看說明：`));
+  b.action('look', { card: String(index) });
+  assert.equal(active.phase, 'cards'); assert.equal(active.cursor, index);
+  assert.match(b.html, /data-action="study-resume">回到題目/);
+  const reloaded = harness(b.stored); reloaded.render('#study/g-place');
+  assert.match(reloaded.html, /回到題目/, 'Looking back survives a reload');
+  b.action('resume');
+  assert.equal(active.phase, 'quiz'); assert.equal(active.order[active.cursor], q);
+  assert.equal(active.first[q], false, 'The first answer stays wrong');
+  assert.equal(b.records.length, 0, 'Looking back never records a completion');
+  b.action('answer', { choice: String(question.answer) });
+  assert.equal(b.slot.innerHTML, '', 'Solving clears the link in place');
+  assert.doesNotMatch(b.render('#study/g-place'), /data-action="study-look"/, 'No look-back link once solved');
+});
+
+test('the last card leads back to the question once the quiz has answers', () => {
+  const b = harness();
+  startQuiz(b, 'g-place');
+  const active = b.state.courses['g-place'].active;
+  const question = b.content.courses['g-place'].questions[active.order[active.cursor]];
+  b.action('answer', { choice: String(question.options.findIndex((_, i) => i !== question.answer)) });
+  const last = b.content.courses['g-place'].steps.length - 1;
+  b.action('look', { card: String(last) });
+  assert.equal(active.cursor, last);
+  assert.match(b.html, /<button class="primary" data-action="study-resume">回到題目<\/button><\/div>/);
+  assert.doesNotMatch(b.html, /開始練習|data-action="study-next"/, 'Only one way forward on the last card');
+  b.action('prev');
+  assert.match(b.html, /<button class="text-button" data-action="study-resume">回到題目<\/button><button class="primary" data-action="study-next">下一張 →/);
+});
+
+test('the grammar result page offers the next lesson', () => {
+  const b = harness();
+  startQuiz(b, 'g-identity'); finishQuiz(b, 'g-identity');
+  assert.match(b.html, /data-action="study-open" data-course="g-question">下一課：疑問句：〜ですか/);
 });

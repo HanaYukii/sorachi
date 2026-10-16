@@ -1187,6 +1187,7 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .travel-card .text-button + .reading-label { display: inline-block; margin: 0 0 0 10px; font-size: 12px; color: var(--muted); letter-spacing: 0; }
 .travel-card .study-nav, .study-main > .study-nav { flex-wrap: wrap; }
 .study-nav > * { white-space: nowrap; }
+.study-result .study-nav > .primary { white-space: normal; }
 @media (max-width: 400px) {
   .site-header .prototype { display: none; }
 }
