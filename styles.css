@@ -1257,7 +1257,7 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
   .home .welcome { margin-bottom: 18px; }
   .lesson-hero { display: block; border-radius: 24px; }
   .hero-copy { padding: 20px 20px 12px; }
-  .hero-copy h2 { font-size: 21px; max-width: calc(100% - 95px); min-height: 64px; display: flex; align-items: center; }
+  .hero-copy h2 { font-size: 21px; max-width: calc(100% - 95px); min-height: 64px; display: flex; flex-wrap: wrap; align-items: center; align-content: center; }
   .hero-art { position: absolute; top: 32px; right: 12px; width: 112px; height: 112px; }
   .hero-art img { width: 112px; }
   .hero-art:before { width: 106px; height: 106px; }

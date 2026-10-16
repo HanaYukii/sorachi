@@ -79,6 +79,18 @@ const warningMessage = () =>
 
 const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
 
+// Where a lesson or review was opened from (#82): home, the kana table or the grammar list decides where 回 leads.
+// It is kept in the history entry, so a reload and the browser's back and forward keep it. A page opened on the way
+// (the next group, feedback) keeps the earlier source; a direct link has none.
+const exits = ["#home", "#kana", "#grammar"];
+let cameFrom = null, leftCourse = null;
+function arrive(event) {
+  const old = event?.oldURL ? new URL(event.oldURL).hash || "#home" : null;
+  leftCourse = old?.match(/^#study\/(.+)$/)?.[1] ?? null;
+  if (old && window.history.state?.from === undefined) window.history.replaceState({ from: exits.includes(old) ? old : cameFrom }, "");
+  route();
+}
+
 Study.bind({
   getState: () => progress.study,
   history: () => progress.history,
@@ -92,6 +104,7 @@ Study.bind({
     save();
   },
   escape: escapeHTML, friend, icons, footer, warning, go,
+  from: () => cameFrom,
 });
 
 function home() {
@@ -110,28 +123,28 @@ function home() {
   const kanaPath = [...kanaIds, ...soundIds];
   const nextKana = kanaPath.find(unfinished) || kanaPath.find((id) => !progress.study.courses[id]?.completedAt) || "h-a";
   const sound = soundIds.includes(nextKana);
-  const soundsDone = soundIds.filter((id) => progress.study.courses[id]?.completedAt).length;
   const kanaTitle = Study.title(nextKana), kanaName = sound ? kanaTitle.split("：")[0] : kanaTitle;
   const review = Study.reviewSummary();
   const reviewEntry = review.availableCount ? `<section class="review-entry" aria-label="五十音複習"><div><h2>${review.canResume ? "還有一輪沒練完" : "複習學過的字"}</h2>${review.wrongCount ? `<p>有 ${review.wrongCount} 個字上次答錯，這輪會優先練。</p>` : ""}</div><button class="text-button" data-action="study-review-start">${review.canResume ? "繼續複習" : `複習 ${Math.min(5, review.availableCount)} 個字`}${icons.arrow}</button></section>` : "";
-  const scriptName = nextKana.startsWith("h-") ? "平假名" : "片假名";
-  const scriptCompleted = kanaIds.filter((id) => id[0] === nextKana[0] && progress.study.courses[id]?.completedAt).length;
   const kanaOpen = unfinished(nextKana);
-  const kanaAction = kanaOpen ? (sound ? "接著學" : "接著練五十音") : progress.study.courses[nextKana]?.completedAt ? "再練一次五十音" : sound ? "開始這一課" : "開始學五十音";
   const saved = Study.dashboardSummary().savedPhrases;
   const newVisitor = !progress.completed && !progress.inProgress && !progress.history.length && !saved && !Object.keys(progress.study.courses).some(id => Study.hasProgress(id) || progress.study.courses[id]?.completedAt);
   const allKanaDone = kanaPath.every((id) => progress.study.courses[id]?.completedAt);
-  // Once both scripts are done, the main card leads to grammar instead of replaying kana.
+  // Once both scripts and the 促音・長音 lessons are done, the main card leads to grammar.
   const grammarHero = !newVisitor && allKanaDone && !kanaOpen && grammarNext;
   // Returning learners read where to go next, unfinished work first; no "today" wording, so no daily pressure.
   const plan = [kanaOpen && `${sound ? "接著學" : "接著練"}${kanaName}`, grammarNext?.resume && `把「${grammarNext.title}」學完`, !kanaOpen && !allKanaDone && `${sound ? "學" : "練"}${kanaName}`, grammarStarted && grammarNext && !grammarNext.resume && `學「${grammarNext.title}」`].filter(Boolean).slice(0, 2);
   const welcome = newVisitor ? "零基礎也可以用。學五十音、練句型，旅行時查常用語。" : plan.length ? `接下來可以：${escapeHTML(plan.join("，或"))}。` : "歡迎回來。";
-  const kanaLine = sound ? `促音・長音已完成 ${soundsDone} / ${soundIds.length} 課` : `${scriptName}已完成 ${scriptCompleted} / ${Content.rows.length} 組 · 這組 ${Study.total(nextKana)} 個字`;
-  const kanaHero = `<section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">五十音</span><span>${kanaOpen ? "接著練習" : progress.study.courses[nextKana]?.completedAt ? "複習" : sound ? "下一課" : "下一組"}</span></div><h2 id="course-title">${escapeHTML(kanaName)}</h2><p class="hero-description">${sound ? `${escapeHTML(kanaTitle.slice(kanaName.length + 1)) || "學過基本字後，再練「停一下」和「拉長音」"}。` : "入門必學，搭配各式技巧好好記熟。"}</p><p class="kana-progress">${kanaLine}</p><button class="primary" data-action="study-open" data-course="${nextKana}">${kanaAction}${icons.arrow}</button><div><button class="text-button course-map-link" data-action="kana">查看全部五十音分組</button></div></div><div class="hero-art" aria-hidden="true">${friend("", "", "cloud-kana", 210, "(max-width: 540px) 112px, 210px")}</div>${reviewEntry}</section>`;
+  // The kana card always leads to the table (#82); its other way in is the short review, or あ行 before any kana is
+  // learned. Where to carry on is listed under 接著做, so the card never turns into a lesson or a quiz by itself.
+  const kanaHero = `<section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">五十音</span></div><h2 id="course-title"><span>平假名</span><span>與片假名</span></h2><p class="hero-description">看字表、聽讀音，選一行開始。</p><button class="primary" data-action="kana">學五十音${icons.arrow}</button></div><div class="hero-art" aria-hidden="true">${friend("", "", "cloud-kana", 210, "(max-width: 540px) 112px, 210px")}</div>${reviewEntry || `<section class="review-entry"><div><h2>從第一組開始</h2><p>先學あ行的五個字：看字、聽讀音，再做練習。</p></div><button class="text-button" data-action="study-open" data-course="h-a">先學あ行${icons.arrow}</button></section>`}</section>`;
+  // Once kana has begun, carrying on with it is listed under 接著做.
+  const kanaStarted = kanaPath.some((id) => progress.study.courses[id]?.completedAt || unfinished(id));
+  const kanaNext = kanaStarted && (kanaOpen || !allKanaDone) ? { id: nextKana, title: kanaTitle, open: kanaOpen, sound } : null;
   const grammarDone = Content.grammar.filter((course) => progress.study.courses[course.id]?.completedAt).length;
   const hero = grammarHero ? `<section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">基礎句型</span><span>${grammarNext.resume ? "接著學" : "下一課"}</span></div><h2 id="course-title">${escapeHTML(grammarNext.title)}</h2><p class="hero-description">${escapeHTML(Content.lessonPlan[grammarNext.courseId]?.unit || "")}</p><p class="kana-progress">句型已完成 ${grammarDone} / ${Content.grammar.length} 課</p><button class="primary" data-action="study-open" data-course="${grammarNext.courseId}">${grammarNext.resume ? "接著學" : "開始這一課"}${icons.arrow}</button><div><button class="text-button course-map-link" data-action="grammar">查看全部句型</button></div></div><div class="hero-art" aria-hidden="true">${friend("", "", "cloud-complete", 210, "(max-width: 540px) 112px, 210px")}</div>${reviewEntry}</section>` : kanaHero;
   // New visitors get one clear way in; returning learners get a dashboard of what is next and how far they are.
-  const below = newVisitor ? `<section class="learning-path" aria-label="學習與旅遊"><div class="path-cards"><article class="path-card grammar-entry">${friend("path-art", "", "cloud-complete", 100, "(max-width: 540px) 66px, 100px")}<div class="path-copy"><span class="path-number aqua-label">說明與練習</span><h2>基礎句型</h2><p>日文基本的句子架構。</p><button class="text-button" data-action="grammar">看句型${icons.arrow}</button></div></article><article class="path-card travel-entry">${friend("path-art", "", "cloud-travel", 100, "(max-width: 540px) 66px, 100px")}<div class="path-copy"><span class="path-number">依情境查閱</span><h2>旅遊常用語</h2><p>記好這些關鍵字，不用完整句，也能清楚表達意思。</p><button class="text-button" data-action="travel">查常用語${icons.arrow}</button></div></article></div></section><div class="script-supplement intro-entry"><button class="text-button" data-action="start">認識三種日文寫法${icons.arrow}</button><p>平假名、片假名與漢字的用法。</p></div>` : homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review, saved, otherSounds: soundIds.filter((id) => id !== nextKana && unfinished(id)) });
+  const below = newVisitor ? `<section class="learning-path" aria-label="學習與旅遊"><div class="path-cards"><article class="path-card grammar-entry">${friend("path-art", "", "cloud-complete", 100, "(max-width: 540px) 66px, 100px")}<div class="path-copy"><span class="path-number aqua-label">說明與練習</span><h2>基礎句型</h2><p>日文基本的句子架構。</p><button class="text-button" data-action="grammar">看句型${icons.arrow}</button></div></article><article class="path-card travel-entry">${friend("path-art", "", "cloud-travel", 100, "(max-width: 540px) 66px, 100px")}<div class="path-copy"><span class="path-number">依情境查閱</span><h2>旅遊常用語</h2><p>記好這些關鍵字，不用完整句，也能清楚表達意思。</p><button class="text-button" data-action="travel">查常用語${icons.arrow}</button></div></article></div></section><div class="script-supplement intro-entry"><button class="text-button" data-action="start">認識三種日文寫法${icons.arrow}</button><p>平假名、片假名與漢字的用法。</p></div>` : homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review, saved, kanaNext, otherSounds: soundIds.filter((id) => id !== nextKana && unfinished(id)) });
   app.innerHTML = `<div class="shell">
     <header class="site-header home-header"><a class="brand" href="#home" aria-label="SoraChi 首頁">${friend("", "", "cloud-friend", 42)}<span class="brand-word">SoraChi<span class="brand-dot">.</span></span></a></header>
     <main id="main" tabindex="-1" class="home"><section class="welcome"><h1 class="focus-heading" tabindex="-1">日文入門</h1><p>${welcome}</p></section>
@@ -142,7 +155,7 @@ function home() {
 
 // Returning learners: what to do next, everything on offer, and progress kept in this browser.
 // No streaks or points: the numbers only describe what has been learned, and each appears once.
-function homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review, saved, otherSounds }) {
+function homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review, saved, kanaNext, otherSounds }) {
   const courses = progress.study.courses, done = (id) => Boolean(courses[id]?.completedAt);
   const kanaIds = (script) => Object.values(Content.rowGroups).flat().map((row) => `${script}-${row}`);
   const chars = (ids) => ids.reduce((sum, id) => sum + Study.total(id), 0);
@@ -162,10 +175,16 @@ function homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review
   const introNext = begun || (!progress.completed && !hasRecord);
   const intro = row('data-action="start"', "日文的三種文字", begun ? `接著學，上次學到第 ${progress.step + 1} 步` : "平假名、片假名與漢字的用法", introNext ? "" : progress.completed ? "已完成" : "還沒看");
   const unitOf = (id) => escapeHTML(Content.lessonPlan[id]?.unit || "");
+  const kanaRow = kanaNext ? row(`data-action="study-open" data-course="${kanaNext.id}"`, "五十音", `${kanaNext.open ? "接著學" : kanaNext.sound ? "下一課" : "下一組"}：${escapeHTML(kanaNext.title)}`) : "";
+  const grammarRow = grammarNext && !grammarHero ? grammarStarted ? row(`data-action="study-open" data-course="${grammarNext.courseId}"`, "基礎句型", `${grammarNext.resume ? "接著學" : "下一課"}：${escapeHTML(grammarNext.title)}`, unitOf(grammarNext.courseId)) : row("#grammar", "基礎句型", `從第一課開始：${escapeHTML(grammarNext.title)}`, unitOf(grammarNext.courseId)) : "";
+  // Unfinished lessons first, in the order of the welcome line, then what comes next.
   const next = [
-    // An unfinished 促音・長音 lesson that the main card does not show.
+    kanaNext?.open ? kanaRow : "",
+    // An unfinished 促音・長音 lesson other than the one above.
     ...otherSounds.map((id) => row(`data-action="study-open" data-course="${id}"`, "促音・長音", `接著學「${escapeHTML(Study.title(id))}」`)),
-    grammarNext && !grammarHero ? grammarStarted ? row(`data-action="study-open" data-course="${grammarNext.courseId}"`, "基礎句型", `${grammarNext.resume ? "接著學" : "下一課"}：${escapeHTML(grammarNext.title)}`, unitOf(grammarNext.courseId)) : row("#grammar", "基礎句型", `從第一課開始：${escapeHTML(grammarNext.title)}`, unitOf(grammarNext.courseId)) : "",
+    grammarNext?.resume ? grammarRow : "",
+    kanaNext?.open ? "" : kanaRow,
+    grammarNext?.resume ? "" : grammarRow,
     grammarReviewSize ? row('data-action="study-grammar-review"', "句型小複習", "從完成的課裡挑幾題混在一起練", grammarReviewResume ? "繼續" : `${grammarReviewSize} 題`) : "",
     saved ? row("#travel/favorites", "我的常用語", "收藏的旅遊用語", `${saved} 張`) : "",
     introNext ? intro : "",
@@ -382,6 +401,9 @@ function aboutPage() {
 }
 function route() {
   Study.stopAudio();
+  cameFrom = exits.includes(window.history.state?.from) ? window.history.state.from : null;
+  const left = Study.title(leftCourse) ? leftCourse : null;
+  leftCourse = null;
   // A historical completion URL must never claim an active replay is finished.
   if (location.hash === "#done" && progress.inProgress) {
     replaceRoute("#lesson");
@@ -400,6 +422,9 @@ function route() {
     document.title = `${location.hash === "#kana-review" ? "五十音複習" : location.hash === "#kana" ? "五十音練習" : location.hash === "#travel" ? "旅遊常用語" : location.hash === "#grammar" ? "基礎句型" : location.hash === "#grammar-review" ? "句型小複習" : location.hash === "#settings" ? "學習設定" : (location.hash.startsWith("#travel/") ? Study.travelTitle(location.hash.slice(8)) : Study.title(location.hash.slice(7))) || "找不到頁面"}｜SoraChi`;
     app.innerHTML = studyPage;
     focusHeading();
+    // Back on the kana table from a lesson, that lesson's row is in view and has focus.
+    const row = location.hash === "#kana" && left ? app.querySelector(`[data-course="${left}"]`) : null;
+    if (row) { row.focus({ preventScroll: true }); row.scrollIntoView?.({ block: "center" }); }
     return;
   }
   if (location.hash === "#lesson") {
@@ -576,5 +601,5 @@ window.addEventListener("storage", (event) => {
   canStore = dataStore.canPersist();
   updateStorageWarning();
 });
-window.addEventListener("hashchange", route);
+window.addEventListener("hashchange", arrive);
 route();
