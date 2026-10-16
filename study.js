@@ -233,6 +233,10 @@ const Study = (() => {
     for (const id of Object.keys(courses)) if(courses[id].type==='kana') {if(data.courses[id])data.courses[id].active=null;drafts.delete(id);}
   }
   function currentPractice() {
+    if (location.hash === "#kana-random") {
+      const q = randomRound && !randomRound.done ? randomRound.items[randomRound.cursor] : null;
+      return q ? {courseId:KanaPractice.entry(q.id).courseId,questionId:q.id,direction:q.direction,round:"random",practiceVersion:KanaPractice.VERSION} : null;
+    }
     const review=location.hash==='#kana-review';
     const course=review?null:courses[currentId()];
     const active=course?peekAttempt(course.id):null;
@@ -415,6 +419,59 @@ const Study = (() => {
     const resumable = course.type === "grammar" && Object.keys(active.first || {}).length > 0;
     return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : course.home === "kana" ? "發音說明" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button>${resumable && i < cards(course) - 1 ? '<button class="text-button" data-action="study-resume">回到題目</button>' : ""}${resumable && i === cards(course) - 1 ? '<button class="primary" data-action="study-resume">回到題目</button>' : `<button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button>`}</div>`;
   }
+  // 五十音隨機練習 (#82): five basic-hiragana questions drawn at random, for anyone, with or without records. A round
+  // lives in this page only: it records nothing and never touches course completion, review rounds or the mistake
+  // list, and a reload starts a new round. Each question is asked once; a miss shows the answer and the round goes on.
+  const RANDOM_SIZE = 5;
+  let randomRound = null;
+  function newRandomRound() {
+    const pool = KanaPractice.entries.filter((item) => item.script === "h" && Content.rowGroups.basic.includes(item.courseId.slice(2)));
+    const items = shuffle(pool.length).slice(0, RANDOM_SIZE).map((i) => {
+      const item = pool[i], others = [];
+      // Options never share the answer's reading, or each other's, so お and を are never both right.
+      for (const j of shuffle(pool.length)) {
+        const other = pool[j];
+        if (other.reading !== item.reading && !others.some((o) => o.reading === other.reading)) others.push(other);
+        if (others.length === 3) break;
+      }
+      const options = [item, ...others];
+      return { id: item.id, direction: Math.random() < 0.5 ? "reading" : "character", options: shuffle(options.length).map((k) => options[k].id) };
+    });
+    return { items, cursor: 0, answers: [], done: false };
+  }
+  const randomExit = () => api.from?.() === "#kana" ? ["#kana", "回五十音表"] : ["#home", "回首頁"];
+  function randomFeedback(round) {
+    const q = round.items[round.cursor], choice = round.answers[round.cursor];
+    if (choice === undefined) return "";
+    const item = KanaPractice.entry(q.id);
+    return `${q.options[choice] === q.id ? "答對了" : "正確答案"}：${item.character}＝${item.reading}`;
+  }
+  function randomPage() {
+    randomRound ||= newRandomRound();
+    const round = randomRound, [exit, exitLabel] = randomExit(), total = round.items.length;
+    const table = exit === "#kana" ? "" : '<a class="text-button" href="#kana">看五十音表</a>';
+    let body;
+    if (round.done) {
+      const missed = round.items.filter((q, i) => q.options[round.answers[i]] !== q.id).map((q) => KanaPractice.entry(q.id));
+      body = `<section class="study-card study-result"><h2>${missed.length ? "練習完成" : "全部答對"}</h2><p>這輪答對 <strong>${total - missed.length} / ${total}</strong> 題</p>${missed.length ? `<p class="study-note">答錯的字：${missed.map((item) => escape(`${item.character}（${item.reading}）`)).join("、")}</p>` : ""}<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a><button class="text-button" data-action="study-random-again">再練 ${RANDOM_SIZE} 題</button></div></section>`;
+    } else {
+      const q = round.items[round.cursor], item = KanaPractice.entry(q.id), chosen = round.answers[round.cursor], answered = chosen !== undefined, correct = answered && q.options[chosen] === q.id;
+      body = `<p class="reading-label">基本平假名 · ${round.cursor + 1} / ${total} · 選一個答案</p><section class="study-card study-quiz"><h2>${q.direction === "reading" ? "這個讀音，對應哪個字？" : "這個字，讀音是哪一個？"}</h2><div class="kana-character"${q.direction === "character" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? item.reading : item.character)}</div><div class="study-options kana-options" role="group" aria-label="答案選項">${q.options.map((id, index) => { const option = KanaPractice.entry(id); return `<button class="answer${answered && chosen === index ? (correct ? " correct" : " wrong") : ""}" data-action="study-answer" data-choice="${index}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}${q.direction === "reading" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? option.character : option.reading)}<span class="answer-status">${answered && chosen === index ? (correct ? " ✓ 答對了" : " ✕ 答錯了") : ""}</span></button>`; }).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(randomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${round.cursor + 1 === total ? "看結果 →" : "下一題 →"}</button></div>`;
+    }
+    return wrap(`<h1 class="focus-heading" tabindex="-1">五十音隨機練習</h1>${body}<p class="study-note">從 46 個基本平假名隨機出題，不用先學過；這裡的作答不會記成成績，也不會改變複習。</p><div class="lesson-utilities">${table}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
+  }
+  // Like updatePractice: the answer is marked in place, so a screen reader hears the feedback and focus moves on.
+  function paintRandom(round) {
+    const q = round.items[round.cursor], choice = round.answers[round.cursor], correct = q.options[choice] === q.id;
+    for (const node of document.querySelectorAll('[data-action="study-answer"]')) {
+      const selected = Number(node.dataset.choice) === choice;
+      node.classList.toggle("correct", selected && correct); node.classList.toggle("wrong", selected && !correct); node.setAttribute("aria-disabled", "true"); node.setAttribute("tabindex", "-1");
+      const mark = node.querySelector(".answer-status"); if (mark) mark.textContent = selected ? (correct ? " ✓ 答對了" : " ✕ 答錯了") : "";
+    }
+    const feedback = document.querySelector(".study-feedback");
+    if (feedback) { feedback.textContent = randomFeedback(round); feedback.classList.toggle("wrong", !correct); }
+    const next = document.querySelector('[data-action="study-next"]'); if (next) { next.disabled = false; next.focus({ preventScroll: true }); }
+  }
   function practiceFeedback(session) {
     if(!KanaPractice.answered(session))return '';
     const q=KanaPractice.current(session), answers=session.round==='retry'?session.retryAnswers:session.answers;
@@ -546,6 +603,7 @@ const Study = (() => {
   function render(hash) {
     if (hash === "#kana") return kanaPage();
     if (hash === "#kana-review") return reviewPage();
+    if (hash === "#kana-random") return randomPage();
     if (hash === "#grammar") return grammarPage();
     if (hash === "#grammar-review") return grammarReviewPage();
     if (hash === "#settings") return settingsPage();
@@ -704,6 +762,21 @@ const Study = (() => {
       return true;
     }
     // The review page owns only answer and next; study-open, study-script and the like go to the handlers below.
+    // A new random round starts from home every time; on the page itself, answers mark in place and 下一題 moves on.
+    if (action === "study-kana-random") { randomRound = newRandomRound(); if (location.hash === "#kana-random") redraw(); else api.go("#kana-random"); return true; }
+    if (location.hash === "#kana-random" && ["study-answer", "study-next", "study-random-again"].includes(action)) {
+      if (action === "study-random-again") { randomRound = newRandomRound(); redraw(); return true; }
+      const round = randomRound;
+      if (!round || round.done) return true;
+      if (action === "study-answer") {
+        const choice = Number(button.dataset.choice);
+        if (round.answers[round.cursor] === undefined && Number.isInteger(choice) && round.items[round.cursor].options[choice]) { round.answers[round.cursor] = choice; paintRandom(round); }
+      } else if (round.answers[round.cursor] !== undefined) {
+        if (round.cursor + 1 < round.items.length) round.cursor++; else round.done = true;
+        redraw();
+      }
+      return true;
+    }
     if(location.hash==='#kana-review'&&(action==='study-answer'||action==='study-next')){
       const session=state().reviewSession;
       if(!session||session.round==='done')return true;
@@ -838,6 +911,7 @@ const Study = (() => {
   }
   function context(hash) {
     if (hash === "#kana") return "五十音表";
+    if (hash === "#kana-random") return randomRound ? randomRound.done ? "五十音隨機練習・結果" : `五十音隨機練習・第 ${randomRound.cursor + 1} 題` : "五十音隨機練習";
     if (hash === "#kana-review") return state().reviewSession?.round==='done'?'五十音複習・完成頁':`五十音複習${state().reviewSession?`・${state().reviewSession.round==='retry'?'再試一次':'練習'}第 ${state().reviewSession.cursor+1} 步`:''}`;
     if (hash === "#settings") return "學習設定";
     if (hash === "#travel/favorites") return "我的常用語";
