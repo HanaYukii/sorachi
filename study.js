@@ -366,15 +366,37 @@ const Study = (() => {
       const saved = savedPhrases();
       return wrap(`<h1 class="focus-heading" tabindex="-1">我的常用語</h1><p class="study-note">收藏的詞存在這個瀏覽器，旅行時可以直接來這裡找。</p>${saved.length ? saved.map(({item,step,index}) => travelCard(item,step,index)).join("") : '<section class="study-card"><h2>還沒有收藏</h2><p>在旅遊用語卡上按「收藏」，就會出現在這裡。</p><a class="text-button" href="#travel">找旅遊常用語 →</a></section>'}`,"#travel","回旅遊常用語");
     }
-    if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span>${savedPhrases().length} 張收藏 →</span></a><nav class="travel-categories" aria-label="旅遊情境">${PHRASEBOOK.map(item => `<a class="course-row" href="#travel/${item.id}"><span><strong>${escape(item.title)}</strong><span class="reading-label">${escape(item.subtitle)}</span><span class="travel-keywords" lang="ja">${escape(travelKeywords(item))}</span></span><span aria-hidden="true">→</span></a>`).join("")}</nav>`);
+    if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span>${savedPhrases().length} 張收藏 →</span></a>${travelGroups()}`);
     const item = travelItem(id);
     if (!item) return wrap('<h1 class="focus-heading" tabindex="-1">找不到這個情境</h1><a class="text-button" href="#travel">回旅遊常用語</a>');
     return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(item.title)}</h1><p class="study-note">先看關鍵字與意思，需要時再展開例句。</p>${item.steps.map((step, index) => travelCard(item,step,index)).join("")}<div class="study-nav"><a class="text-button" href="#travel">← 換個情境</a>${item.id === "basics" ? "" : '<a class="text-button" href="#travel/basics">需要幫忙時</a>'}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#travel", "回旅遊常用語");
   }
-  // Up to six keywords per situation (two per card, readings dropped, generic words and amounts skipped)
-  // so a situation can be found again by its Japanese.
-  const genericWords = new Set(["お願いします", "どこ"]);
-  const travelKeywords = (item) => [...new Set(item.steps.flatMap((step) => step.keywords.map(([word]) => word.replace(/（.*?）/u, "")).filter((word) => !genericWords.has(word) && !/^[0-9０-９]/.test(word)).slice(0, 2)))].slice(0, 6).join("・");
+  // The travel list in a few groups, each with a plain Chinese line, so a situation is found without reading Japanese
+  // (#79). A situation missing here still shows, in a last group.
+  const TRAVEL_GROUPS = [
+    { title: "隨時用得到", note: "叫人、聽不懂、東西不見", tone: "purple", ids: ["basics"] },
+    { title: "吃飯與購物", note: "點餐、內用外帶、結帳、買東西", tone: "orange", ids: ["t-order", "dining", "t-pay", "shopping"] },
+    { title: "搭車與找路", note: "買票、月台、加值、找廁所和置物櫃", tone: "aqua", ids: ["transit", "t-charge", "t-place"] },
+    { title: "住宿與景點", note: "飯店、排隊、入場與活動", tone: "deep", ids: ["hotel", "lines", "live"] },
+  ];
+  // Up to three words per situation, one per card, with what they mean; generic words, amounts and a meaning already
+  // shown are left out. The Chinese comes first: the Japanese is the thing to say once the situation is found.
+  const genericWords = new Set(["お願いします", "どこ", "これ"]);
+  function travelWords(item) {
+    const picked = [];
+    for (const step of item.steps) {
+      const found = step.keywords.map(([word, , meaning]) => ({ word: word.replace(/（.*?）/u, ""), meaning: meaning.split("／")[0] }))
+        .find(({ word, meaning }) => !genericWords.has(word) && !/^[0-9０-９]/.test(word) && !picked.some((p) => p.meaning === meaning));
+      if (found) picked.push(found);
+      if (picked.length === 3) break;
+    }
+    return picked.map(({ word, meaning }) => `<span class="travel-word">${escape(meaning)}<span lang="ja">${escape(word)}</span></span>`).join("");
+  }
+  function travelGroups() {
+    const grouped = new Set(TRAVEL_GROUPS.flatMap((group) => group.ids)), rest = PHRASEBOOK.filter((item) => !grouped.has(item.id));
+    const groups = [...TRAVEL_GROUPS, ...(rest.length ? [{ title: "其他", note: "", tone: "purple", ids: rest.map((item) => item.id) }] : [])];
+    return `<nav class="travel-groups" aria-label="旅遊情境">${groups.map((group, n) => `<section class="travel-group tone-${group.tone}" aria-labelledby="travel-group-${n}"><h2 id="travel-group-${n}">${escape(group.title)}</h2>${group.note ? `<p>${escape(group.note)}</p>` : ""}<div class="travel-categories">${group.ids.map(travelItem).filter(Boolean).map((item) => `<a class="course-row" href="#travel/${item.id}"><span><strong>${escape(item.title)}</strong><span class="reading-label">${escape(item.subtitle)}</span><span class="travel-words">${travelWords(item)}</span></span><span aria-hidden="true">→</span></a>`).join("")}</div></section>`).join("")}</nav>`;
+  }
   // Travel cards have a short phrase and, sometimes, a fuller form; each gets its own button and status.
   // A speaker button whose name says which Japanese it plays (#78); the status line stays empty unless audio cannot play.
   const speaker = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';

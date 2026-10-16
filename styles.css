@@ -1106,7 +1106,18 @@ button svg {
 .phrase-more .reading-label { font-size: 12px; text-align: left; letter-spacing: 0; margin: 4px 0; overflow-wrap: anywhere; }
 @media (max-width: 400px) { .keyword-box { padding: 14px; } .keyword-box dt strong { font-size: 16px; } }
 
-.travel-categories { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+/* Travel situations in a few groups: a heading with a coloured strip and a plain Chinese line mark each group. */
+.travel-groups { display: grid; gap: 26px; margin: 24px 0; }
+.travel-group { --tone: var(--purple); }
+.travel-group.tone-orange { --tone: var(--orange); }
+.travel-group.tone-aqua { --tone: var(--aqua-ink); }
+.travel-group.tone-deep { --tone: var(--purple-deep); }
+.travel-group > h2 { font-size: 17px; margin: 0; padding-left: 10px; border-left: 4px solid var(--tone); line-height: 1.4; }
+.travel-group > p { font-size: 13px; color: var(--muted); margin: 4px 0 12px 14px; }
+.travel-categories { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.travel-words { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.travel-word { display: inline-flex; align-items: baseline; gap: 6px; max-width: 100%; padding: 3px 10px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: 13px; color: var(--ink); overflow-wrap: anywhere; }
+.travel-word [lang="ja"] { font-family: "Noto Sans JP", sans-serif; color: var(--muted); }
 .travel-categories a { text-decoration: none; color: inherit; }
 .travel-categories .reading-label { font-size: 13px; color: var(--muted); }
 .travel-card h2 { font-size: 19px; }
@@ -1201,7 +1212,6 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .staff-asks-label { font-size: 12px; font-weight: 600; }
 .staff-asks [lang="ja"] { font-size: 16px; color: var(--ink); }
 .staff-asks-reading { font-size: 14px; }
-.travel-keywords { display: block; font-size: 14px; color: var(--ink); margin-top: 4px; }
 .kw-kana { white-space: nowrap; }
 .phrase-short { margin: 14px 0 0; }
 .phrase-short p[lang="ja"] { font-size: 20px; color: var(--purple-deep); margin: 4px 0 0; }
