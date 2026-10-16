@@ -1060,12 +1060,20 @@ test('damaged data points to the record page instead of claiming there is nothin
   assert.match(b.html, /data-action="download-raw"/);
 });
 
+test('an empty history leads to the kana table, named as the table', () => {
+  const b = browser({ hash: '#history' });
+  assert.match(b.html, /完成任一組練習後，紀錄會顯示在這裡。<\/p><button class="primary" data-action="kana">看五十音表/);
+  b.action('kana');
+  assert.equal(b.hash, '#kana');
+  assert.match(b.html, /<h1 class="focus-heading" tabindex="-1">五十音表<\/h1>/);
+});
+
 test('newer data leads with refresh, warns that restart hides it from the new site, and ignores clicks while reloading', () => {
   const b = browser({ raw: JSON.stringify({ schemaVersion: 3 }), hash: '#history' });
   assert.match(b.html, /先重新整理這個頁面/);
   assert.match(b.html, /<button class="text-button" data-action="reload">重新整理<\/button><button class="text-button" data-action="download-raw">/);
   assert.match(b.html, /<textarea class="raw-data" readonly[^>]*>\{&quot;schemaVersion&quot;:3\}<\/textarea>/);
-  assert.doesNotMatch(b.html, /選擇五十音練習/);
+  assert.doesNotMatch(b.html, /data-action="kana"/, 'No way into lessons while newer data is protected');
   b.action('restart-protected');
   assert.match(b.html, /之後新版網站也不會顯示這份資料/);
   b.action('confirm-restart');

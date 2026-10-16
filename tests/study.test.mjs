@@ -997,7 +997,7 @@ test('resume target follows meaningful grammar activity and ignores merely opene
 
 test('speed preferences survive reload and affect speech; a hint choice saved by an older version changes nothing', () => {
   const b=harness(null,[{lang:'ja-JP'}]);b.loadHints();
-  b.render('#settings');b.action('rate',{rate:'0.65'});
+  b.render('#settings');assert.doesNotMatch(b.html,/記法/,'No hint choice is left to remember');b.action('rate',{rate:'0.65'});
   const r=harness(null,[{lang:'ja-JP'}],[],{preferences:{...b.preferences,kanaHints:{'あ':1}}});r.loadHints();r.action('open',{course:'h-a'});
   assert.match(r.html,/<dt>字源<\/dt>[\s\S]*<dt>比一比<\/dt>[\s\S]*<dt>例子<\/dt>/,'Every hint shows, whatever the old choice was');
   r.action('audio',{index:'0'});assert.equal(r.utterances.at(-1).rate,0.65);

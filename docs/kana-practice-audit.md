@@ -24,31 +24,31 @@ issue 列的情境逐一寫成測試。「舊程式會失敗」表示修正前�
 
 | 情境 | 測試 | 結論 |
 | --- | --- | --- |
-| 每一步都重新載入；重考時按「回去看看」；連點 | `kana-review-audit.test.mjs:29`、`flow.test.mjs:1545`「on the review page a forced 回去看看 changes nothing…」 | 不跳題、成績不變；重考時按「回去看看」沒有作用。複習頁原本會吞掉切換假名、開課等按鈕，已修（舊程式會失敗） |
-| 複習進行中，在課程頁答同一個字 | `flow.test.mjs:1321` | 錯字狀態以最後一次作答為準，複習那一輪不受影響 |
-| 答對後錯字又出現 | `storage.test.mjs:371`、`study.test.mjs:863` | 備份匯入時每個字取較晚的作答；答對移出、之後答錯再進 |
-| 清除後草稿、複習、歷史、v1 復活 | `flow.test.mjs:1365`、`flow.test.mjs:892` | 都不會復活。例外是設計如此：匯入清除前的備份，成績紀錄會合併回來，錯字、複習和未完成練習不會 |
-| 作答、下一題、完成、清除時寫入失敗 | `flow.test.mjs:1400`、`flow.test.mjs:872` | 保留上次成功存的內容並警告，恢復後存一次、只記 1 筆。清除失敗會整個回滾 |
-| 兩個分頁同時練習 | `flow.test.mjs:1446` | 後寫的分頁被拒並警告；過時分頁不能撤銷另一邊的清除 |
-| 只有 1–2 個字可以複習 | `flow.test.mjs:1484` | 題數跟著縮短，兩種方向都有，不產生紀錄 |
-| や／わ 行沒有其他已完成的行 | `kana-practice.test.mjs:171` | 每題都是該行的 3 個字。原本 `study.test.mjs:118` 的同行檢查是空檢查（參數名稱蓋掉外層變數），已修 |
-| 複習頁與重考時的回報內容 | `flow.test.mjs:1511`、`diagnostics.test.mjs:178` | 附上題目、方向與回合，完成頁不附題目；回報原本缺 study.js、storage.js 的版本，已補（舊程式會失敗） |
-| 時鐘倒退 | `flow.test.mjs:1573` | 五十音作答的時間原本可能早於上次清除，還原備份時會被丟掉；改成和句型複習同一條規則（舊程式會失敗） |
-| 完成頁文案 | `study.test.mjs:479` | 第一輪答錯、重考才答對時，原本顯示「這次的字都答對了」；改成「第一次答錯 N 個字，再考一次都答對了」（舊程式會失敗） |
+| 每一步都重新載入；重考時按「回去看看」；連點 | `kana-review-audit.test.mjs`「every intermediate first/retry state can reload without changing results or skipping work」、`flow.test.mjs`「on the review page a forced 回去看看 changes nothing, while switching script and opening a course still work」 | 不跳題、成績不變；重考時按「回去看看」沒有作用。複習頁原本會吞掉切換假名、開課等按鈕，已修（舊程式會失敗） |
+| 複習進行中，在課程頁答同一個字 | `flow.test.mjs`「a course answer during an unfinished review updates the mistake list but never the review round, also after reload」 | 錯字狀態以最後一次作答為準，複習那一輪不受影響 |
+| 答對後錯字又出現 | `storage.test.mjs`「backup import keeps the later answer for each kana character in both directions, and this browser's answer on the same lastSeen」、`study.test.mjs`「a fresh correct review answer clears an old mistake and a later wrong answer adds it back」 | 備份匯入時每個字取較晚的作答；答對移出、之後答錯再進 |
+| 清除後草稿、複習、歷史、v1 復活 | `flow.test.mjs`「clearing records drops an untouched kana draft; restoring a pre-clear backup brings back its history records by design, but not mistakes, the review round or unfinished kana practice」、`flow.test.mjs`「clearing review-only data explains unfinished practice, persists atomically, and rolls back on write failure」 | 都不會復活。例外是設計如此：匯入清除前的備份，成績紀錄會合併回來，錯字、複習和未完成練習不會 |
+| 作答、下一題、完成、清除時寫入失敗 | `flow.test.mjs`「when only saving fails, answers, next, completion and review keep the last stored snapshot and warn; after recovery one save writes everything with exactly one record」、`flow.test.mjs`「short review is reachable from home, clears a recent mistake, and leaves first-attempt history intact」 | 保留上次成功存的內容並警告，恢復後存一次、只記 1 筆。清除失敗會整個回滾 |
+| 兩個分頁同時練習 | `flow.test.mjs`「two tabs on one storage: the later writer is refused and warned, a storage event warns at once, and a stale tab cannot undo a clear」 | 後寫的分頁被拒並警告；過時分頁不能撤銷另一邊的清除 |
+| 只有 1–2 個字可以複習 | `flow.test.mjs`「a review of exactly two characters says 複習 2 個字, mixes both directions with three same-row options, and ends with 再複習 2 個字 without a record」 | 題數跟著縮短，兩種方向都有，不產生紀錄 |
+| や／わ 行沒有其他已完成的行 | `kana-practice.test.mjs`「や and わ rows with no other learned row: every first and retry question offers exactly the three kana of the row」 | 每題都是該行的 3 個字。原本 `study.test.mjs`「each kana appears once with mixed directions; choices and order persist after reload」 的同行檢查是空檢查（參數名稱蓋掉外層變數），已修 |
+| 複習頁與重考時的回報內容 | `flow.test.mjs`「feedback from a retry round names the retried question and round, in a course and in the review; completion pages name no question」、`diagnostics.test.mjs`「study and storage asset hashes are reported too, since review, retry and saving live there」 | 附上題目、方向與回合，完成頁不附題目；回報原本缺 study.js、storage.js 的版本，已補（舊程式會失敗） |
+| 時鐘倒退 | `flow.test.mjs`「with a clock that went backwards, a kana answer is still dated after the last clear and the previous answer, so a backup restore keeps it」 | 五十音作答的時間原本可能早於上次清除，還原備份時會被丟掉；改成和句型複習同一條規則（舊程式會失敗） |
+| 完成頁文案 | `study.test.mjs`「the kana review done page says when first answers were wrong, even if the retry fixed them all」 | 第一輪答錯、重考才答對時，原本顯示「這次的字都答對了」；改成「第一次答錯 N 個字，再考一次都答對了」（舊程式會失敗） |
 | 存檔裡有極端日期（年份超過四位數） | `study.test.mjs` 最後一個測試「extreme saved dates are dropped…」 | 這種日期只會來自手動改過的資料，但會讓作答時的時間計算拋錯；現在讀取時直接丟掉（舊程式會失敗） |
 
 #8 的 8 項說法：
-1. 每輪最多 5 字、錯字優先（等最久的先），答對一次就移出，沒有冷卻期：`kana-review-audit.test.mjs:51`、`study.test.mjs:863`。
-2. 一輪混合兩種方向，排除同讀音：`kana-practice.test.mjs:187` 點名 お／を、オ／ヲ、じ／ぢ、ず／づ、ジ／ヂ、ズ／ヅ。
-3. 重考不改第一次的成績：`kana-practice.test.mjs:24`。
-4. 複習不產生完成紀錄、可重新載入：`flow.test.mjs:1484`、`study.test.mjs:446`。
-5. 只留最近 200 筆，清除會結束未完成的五十音：`storage.test.mjs:17`、`kana-review-audit.test.mjs:102`。「存檔失敗回復記憶體」只適用於清除；作答失敗是保留上次存的內容，見上表。
-6. 練習有獨立版本號，舊格式安全重開：`study.test.mjs:199`、`study.test.mjs:210`。
-7. 每個字的狀態只在缺少時才從歷史補：`kana-review-audit.test.mjs:22`。
-8. 跨分頁比對原文，不是交易、不自動合併：`flow.test.mjs:1446`、`storage.test.mjs:163`。
+1. 每輪最多 5 字、錯字優先（等最久的先），答對一次就移出，沒有冷卻期：`kana-review-audit.test.mjs`「review puts mistakes first, longest-waiting first, then oldest learned, at most five unique characters」、`study.test.mjs`「a fresh correct review answer clears an old mistake and a later wrong answer adds it back」。
+2. 一輪混合兩種方向，排除同讀音：`kana-practice.test.mjs`「same-reading pairs never appear as answer and distractor in one question: お／を、オ／ヲ、じ／ぢ、ず／づ、ジ／ヂ、ズ／ヅ」 點名 お／を、オ／ヲ、じ／ぢ、ず／づ、ジ／ヂ、ズ／ヅ。
+3. 重考不改第一次的成績：`kana-practice.test.mjs`「wrong first answers advance once, return only after the first round and never rewrite score」。
+4. 複習不產生完成紀錄、可重新載入：`flow.test.mjs`「a review of exactly two characters says 複習 2 個字, mixes both directions with three same-row options, and ends with 再複習 2 個字 without a record」、`study.test.mjs`「sanitization preserves touched kana cards and discards persisted untouched drafts」。
+5. 只留最近 200 筆，清除會結束未完成的五十音：`storage.test.mjs`「retains the latest 200 completed rounds through write, reload and backup import」、`kana-review-audit.test.mjs`「clear ends active course and review sessions without reviving old mistakes on reload」。「存檔失敗回復記憶體」只適用於清除；作答失敗是保留上次存的內容，見上表。
+6. 練習有獨立版本號，舊格式安全重開：`study.test.mjs`「sanitization rejects malformed kana sessions, old versions and skipped unanswered questions」、`study.test.mjs`「old or malformed kana review rounds restart empty while completions and kana mistakes stay」。
+7. 每個字的狀態只在缺少時才從歷史補：`kana-review-audit.test.mjs`「history seeding tolerates damaged records and cannot mark unknown IDs for review」。
+8. 跨分頁比對原文，不是交易、不自動合併：`flow.test.mjs`「two tabs on one storage: the later writer is refused and warned, a storage event warns at once, and a stale tab cannot undo a clear」、`storage.test.mjs`「every mutation rejects an outdated tab without replacing the newer raw data」。
 
 ## Jabiko 移植的改善與測試（#37）
 
-- 形近字：補上 ま／も、ク／フ、ク／ワ（`kana-practice.js:11`）。測試：`kana-practice.test.mjs:78`（舊程式會失敗）。
-- 固定 seed：測試裡用 mulberry32 取代 Math.random，在幾個固定 seed 上掃過全部課程的選項規則；失敗時可以重現（`kana-practice.test.mjs:144`）。不改正式版的亂數。
+- 形近字：補上 ま／も、ク／フ、ク／ワ（`kana-practice.js:11`）。測試：`kana-practice.test.mjs`「Jabiko look-alikes always meet: ま with も in their row, ク with フ or ワ from a learned row」（舊程式會失敗）。
+- 固定 seed：測試裡用 mulberry32 取代 Math.random，在幾個固定 seed 上掃過全部課程的選項規則；失敗時可以重現（`kana-practice.test.mjs`「every kana course with any learned rows yields legal options over fixed seeds: one answer, distinct readings, same script, 2–5 choices, two same-row peers」）。不改正式版的亂數。
 - 移植的測試：同讀音不同題（對應 Jabiko `kanaDrill.test.ts:46-61`）、答對移出後再錯會再進（`srs.test.ts:122-129`）、形近字優先（`kanaDrill.test.ts:76-81`）。
