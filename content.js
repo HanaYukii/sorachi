@@ -193,6 +193,215 @@ const Content = (() => {
         "pe",
         "po"
       ]
+    ],
+    [
+      "kya",
+      "きゃ・きゅ・きょ",
+      [
+        "きゃ",
+        "きゅ",
+        "きょ"
+      ],
+      [
+        "キャ",
+        "キュ",
+        "キョ"
+      ],
+      [
+        "kya",
+        "kyu",
+        "kyo"
+      ]
+    ],
+    [
+      "sha",
+      "しゃ・しゅ・しょ",
+      [
+        "しゃ",
+        "しゅ",
+        "しょ"
+      ],
+      [
+        "シャ",
+        "シュ",
+        "ショ"
+      ],
+      [
+        "sha",
+        "shu",
+        "sho"
+      ]
+    ],
+    [
+      "cha",
+      "ちゃ・ちゅ・ちょ",
+      [
+        "ちゃ",
+        "ちゅ",
+        "ちょ"
+      ],
+      [
+        "チャ",
+        "チュ",
+        "チョ"
+      ],
+      [
+        "cha",
+        "chu",
+        "cho"
+      ]
+    ],
+    [
+      "nya",
+      "にゃ・にゅ・にょ",
+      [
+        "にゃ",
+        "にゅ",
+        "にょ"
+      ],
+      [
+        "ニャ",
+        "ニュ",
+        "ニョ"
+      ],
+      [
+        "nya",
+        "nyu",
+        "nyo"
+      ]
+    ],
+    [
+      "hya",
+      "ひゃ・ひゅ・ひょ",
+      [
+        "ひゃ",
+        "ひゅ",
+        "ひょ"
+      ],
+      [
+        "ヒャ",
+        "ヒュ",
+        "ヒョ"
+      ],
+      [
+        "hya",
+        "hyu",
+        "hyo"
+      ]
+    ],
+    [
+      "mya",
+      "みゃ・みゅ・みょ",
+      [
+        "みゃ",
+        "みゅ",
+        "みょ"
+      ],
+      [
+        "ミャ",
+        "ミュ",
+        "ミョ"
+      ],
+      [
+        "mya",
+        "myu",
+        "myo"
+      ]
+    ],
+    [
+      "rya",
+      "りゃ・りゅ・りょ",
+      [
+        "りゃ",
+        "りゅ",
+        "りょ"
+      ],
+      [
+        "リャ",
+        "リュ",
+        "リョ"
+      ],
+      [
+        "rya",
+        "ryu",
+        "ryo"
+      ]
+    ],
+    [
+      "gya",
+      "ぎゃ・ぎゅ・ぎょ",
+      [
+        "ぎゃ",
+        "ぎゅ",
+        "ぎょ"
+      ],
+      [
+        "ギャ",
+        "ギュ",
+        "ギョ"
+      ],
+      [
+        "gya",
+        "gyu",
+        "gyo"
+      ]
+    ],
+    [
+      "ja",
+      "じゃ・じゅ・じょ",
+      [
+        "じゃ",
+        "じゅ",
+        "じょ"
+      ],
+      [
+        "ジャ",
+        "ジュ",
+        "ジョ"
+      ],
+      [
+        "ja",
+        "ju",
+        "jo"
+      ]
+    ],
+    [
+      "bya",
+      "びゃ・びゅ・びょ",
+      [
+        "びゃ",
+        "びゅ",
+        "びょ"
+      ],
+      [
+        "ビャ",
+        "ビュ",
+        "ビョ"
+      ],
+      [
+        "bya",
+        "byu",
+        "byo"
+      ]
+    ],
+    [
+      "pya",
+      "ぴゃ・ぴゅ・ぴょ",
+      [
+        "ぴゃ",
+        "ぴゅ",
+        "ぴょ"
+      ],
+      [
+        "ピャ",
+        "ピュ",
+        "ピョ"
+      ],
+      [
+        "pya",
+        "pyu",
+        "pyo"
+      ]
     ]
   ];
   const grammar = [
@@ -377,6 +586,145 @@ const Content = (() => {
           "answer": 2,
           "explanation": "麵包靠近聽你說話的朋友、離你較遠，所以用「それ」。",
           "id": "g-demo/question/listener-item"
+        }
+      ]
+    }
+  ];
+  // Special sounds that are not separate characters, taught on the kana page.
+  const sounds = [
+    {
+      "id": "s-sokuon",
+      "type": "grammar",
+      "home": "kana",
+      "title": "促音：小的 っ 停一拍",
+      "subtitle": "きっぷ・おと／おっと・ネット",
+      "steps": [
+        {
+          "title": "小的 っ：停一拍",
+          "example": "きっぷ",
+          "reading": "kippu",
+          "meaning": "車票",
+          "body": "小字的「っ」本身不發音，在下一個音之前停一拍。羅馬字把下一個子音寫兩次：ki-p-pu。",
+          "id": "s-sokuon/card/kippu"
+        },
+        {
+          "title": "有沒有停頓，意思不同",
+          "example": "おと ／ おっと",
+          "reading": "oto / otto",
+          "meaning": "聲音 ／ 丈夫",
+          "body": "「おと」念兩拍；「おっと」在 と 之前多停一拍，變成三拍，意思也跟著不同。",
+          "id": "s-sokuon/card/oto-otto"
+        },
+        {
+          "title": "片假名也用小的 ッ",
+          "example": "ベッド ／ ネット",
+          "reading": "beddo / netto",
+          "meaning": "床 ／ 網路",
+          "body": "片假名寫成小的「ッ」，用法一樣：在下一個音之前停一拍。",
+          "id": "s-sokuon/card/katakana"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「きっぷ」（車票）的羅馬字是哪一個？",
+          "options": [
+            "kippu",
+            "kipu",
+            "kiipu"
+          ],
+          "answer": 0,
+          "explanation": "小的 っ 讓下一個子音寫兩次：kippu。kipu 少了停頓；kiipu 是把 き 拉長，那是長音。",
+          "id": "s-sokuon/question/kippu"
+        },
+        {
+          "prompt": "「おっと」（丈夫）和「おと」（聲音）念起來差在哪裡？",
+          "options": [
+            "中間多停一拍",
+            "最後一個音拉長",
+            "念法完全一樣"
+          ],
+          "answer": 0,
+          "explanation": "小的 っ 讓 と 之前多停一拍，所以「おっと」是三拍；把音拉長是長音，不是促音。",
+          "id": "s-sokuon/question/oto-otto"
+        },
+        {
+          "prompt": "「ネット」（網路）的羅馬字是哪一個？",
+          "options": [
+            "netto",
+            "neto",
+            "neeto"
+          ],
+          "answer": 0,
+          "explanation": "小的 ッ 讓 ト 之前停一拍，羅馬字寫成 tt：netto。neeto 是長音的寫法。",
+          "id": "s-sokuon/question/netto"
+        }
+      ]
+    },
+    {
+      "id": "s-long",
+      "type": "grammar",
+      "home": "kana",
+      "title": "長音：把音拉長一拍",
+      "subtitle": "おばあさん・コーヒー",
+      "steps": [
+        {
+          "title": "重複母音就是拉長",
+          "example": "おばさん ／ おばあさん",
+          "reading": "obasan / obaasan",
+          "meaning": "阿姨 ／ 奶奶",
+          "body": "「おばあさん」在 ば 後面多一個 あ，把 ba 拉長成 baa，多一拍，意思就從阿姨變成奶奶。羅馬字把母音寫兩次：obaasan。",
+          "id": "s-long/card/obaasan"
+        },
+        {
+          "title": "ei、ou 通常念成長音",
+          "example": "がくせい ／ ありがとう",
+          "reading": "gakusei / arigatou",
+          "meaning": "學生 ／ 謝謝",
+          "body": "e 結尾的字後面接 い、o 結尾的字後面接 う 時，通常念成拉長的 ee、oo：ga-ku-see、a-ri-ga-too。本站羅馬字照假名寫成 ei、ou。",
+          "id": "s-long/card/ei-ou"
+        },
+        {
+          "title": "片假名用「ー」",
+          "example": "コーヒー ／ ケーキ",
+          "reading": "koohii / keeki",
+          "meaning": "咖啡 ／ 蛋糕",
+          "body": "片假名用長音符號「ー」把前一個音拉長，羅馬字寫成兩個母音。",
+          "id": "s-long/card/katakana"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "「おばあさん」（奶奶）的羅馬字是哪一個？",
+          "options": [
+            "obaasan",
+            "obasan",
+            "obbasan"
+          ],
+          "answer": 0,
+          "explanation": "ば 後面多一個 あ，要拉長一拍：obaasan。obasan 是「おばさん」（阿姨）；obbasan 是在 ば 之前停一拍，那是促音。",
+          "id": "s-long/question/obaasan"
+        },
+        {
+          "prompt": "片假名「コーヒー」裡的「ー」表示什麼？",
+          "options": [
+            "把前一個音拉長",
+            "在下一個音之前停一拍",
+            "這個符號不用發音"
+          ],
+          "answer": 0,
+          "explanation": "「ー」是長音符號，要把前一個音多拉長一拍（koohii），不能省略不念。在下一個音之前停一拍的是小的 ッ。",
+          "id": "s-long/question/bar"
+        },
+        {
+          "prompt": "「ありがとう」最後的「とう」通常怎麼念？",
+          "options": [
+            "拉長成 too",
+            "分開念成 to-u",
+            "停一拍念成 tto"
+          ],
+          "answer": 0,
+          "explanation": "と（to）後面接 う，通常念成拉長的 oo：a-ri-ga-too。羅馬字照假名寫成 arigatou。",
+          "id": "s-long/question/arigatou"
         }
       ]
     }
@@ -1297,22 +1645,26 @@ const Content = (() => {
   }
   function buildCourses(source) {
     const registry = Object.create(null);
-    for (const course of source.grammar) registry[course.id] = course;
+    for (const course of [...source.grammar, ...source.sounds]) registry[course.id] = course;
+    // Contracted sounds (きゃ) are two characters, so their rows list items instead of one string,
+    // and their IDs join every code point (single characters keep their original u3042-style IDs).
+    const items = (value) => [...value];
+    const code = (character) => [...character].map((part) => part.codePointAt(0).toString(16)).join('-');
     for (const script of ['h', 'k']) {
       for (const [key, row, hiragana, katakana, readings] of source.rows) {
         const id = `${script}-${key}`;
-        const letters = [...(script === 'h' ? hiragana : katakana)];
+        const letters = items(script === 'h' ? hiragana : katakana);
         const cards = letters.map((character, i) => ({
-          id: `${id}/card/u${character.codePointAt(0).toString(16)}`,
-          character, reading: readings[i], spoken: [...hiragana][i],
+          id: `${id}/card/u${code(character)}`,
+          character, reading: readings[i], spoken: items(hiragana)[i],
         }));
         registry[id] = {
           id, type: 'kana', script, row,
           title: `${script === 'h' ? '平假名' : '片假名'}・${row}`,
-          letters, spoken: [...hiragana], readings,
+          letters, spoken: items(hiragana), readings,
           cards,
           questions: cards.map((card, i) => ({
-            id: `${id}/question/u${card.character.codePointAt(0).toString(16)}`,
+            id: `${id}/question/u${code(card.character)}`,
             character: card.character, reading: card.reading,
             options: [...readings], answer: i,
           })),
@@ -1321,13 +1673,25 @@ const Content = (() => {
     }
     return registry;
   }
-  const data = { rows, grammar, phrasebook, intro };
+  const data = { rows, grammar, sounds, phrasebook, intro };
+  // Kana row groups in teaching order; the kana page and home recommendation follow them.
+  const rowGroups = Object.freeze({
+    basic: Object.freeze(['a', 'ka', 'sa', 'ta', 'na', 'ha', 'ma', 'ya', 'ra', 'wa']),
+    voiced: Object.freeze(['ga', 'za', 'da', 'ba', 'pa']),
+    youon: Object.freeze(["kya", "sha", "cha", "nya", "hya", "mya", "rya", "gya", "ja", "bya", "pya"]),
+  });
   // Titles of the retired #study/t-* courses, for history records saved without a title.
   // Their content now lives only in the phrasebook under the same ids.
   const retiredTitles = Object.freeze({"t-place":"問位置：廁所、車站","t-order":"點餐：品項、數量、冷熱與份量","t-pay":"結帳：請店員算錢","t-charge":"交通卡加值"});
   const courses = buildCourses(data);
   const getCourse = id => Object.hasOwn(courses, id) ? courses[id] : null;
-  const courseRevision = id => id === 'intro' ? revisionOf({ id: 'intro', ...intro }) : revisionOf(getCourse(id));
+  // Content is frozen, so each revision is hashed once; reloading kana rounds compares many of them.
+  const revisions = new Map();
+  const courseRevision = id => {
+    if (id !== 'intro' && !Object.hasOwn(courses, id)) return null;
+    if (!revisions.has(id)) revisions.set(id, id === 'intro' ? revisionOf({ id: 'intro', ...intro }) : revisionOf(courses[id]));
+    return revisions.get(id);
+  };
 
   // Immutable v1 migration baseline. Do not regenerate this map when content changes.
   const legacyCourseRevision = Object.freeze({
@@ -1441,9 +1805,23 @@ const Content = (() => {
       ['ga','がぎぐげご','ガギグゲゴ','ga gi gu ge go'], ['za','ざじずぜぞ','ザジズゼゾ','za ji zu ze zo'],
       ['da','だぢづでど','ダヂヅデド','da ji zu de do'], ['ba','ばびぶべぼ','バビブベボ','ba bi bu be bo'],
       ['pa','ぱぴぷぺぽ','パピプペポ','pa pi pu pe po'],
+      // Contracted sounds: a small ゃ／ゅ／ょ joins the i-column kana into one beat.
+      ['kya','きゃ きゅ きょ','キャ キュ キョ','kya kyu kyo'],
+      ['sha','しゃ しゅ しょ','シャ シュ ショ','sha shu sho'],
+      ['cha','ちゃ ちゅ ちょ','チャ チュ チョ','cha chu cho'],
+      ['nya','にゃ にゅ にょ','ニャ ニュ ニョ','nya nyu nyo'],
+      ['hya','ひゃ ひゅ ひょ','ヒャ ヒュ ヒョ','hya hyu hyo'],
+      ['mya','みゃ みゅ みょ','ミャ ミュ ミョ','mya myu myo'],
+      ['rya','りゃ りゅ りょ','リャ リュ リョ','rya ryu ryo'],
+      ['gya','ぎゃ ぎゅ ぎょ','ギャ ギュ ギョ','gya gyu gyo'],
+      ['ja','じゃ じゅ じょ','ジャ ジュ ジョ','ja ju jo'],
+      ['bya','びゃ びゅ びょ','ビャ ビュ ビョ','bya byu byo'],
+      ['pya','ぴゃ ぴゅ ぴょ','ピャ ピュ ピョ','pya pyu pyo'],
     ];
+    // Contracted rows list each two-character sound; the other rows are one string of single kana.
+    const sameKana = (value, reference) => reference.includes(' ') ? Array.isArray(value) && value.join(' ') === reference : value === reference;
     const sourceRows = list(candidate.rows, 'rows');
-    if (sourceRows.length !== expected.length) fail('rows', 'kana coverage requires fifteen rows per script');
+    if (sourceRows.length !== expected.length) fail('rows', 'kana coverage requires twenty-six rows per script');
     const rowIds = new Set();
     sourceRows.forEach((row, i) => {
       if (!Array.isArray(row) || row.length !== 5) { fail(`rows[${i}]`, 'invalid kana row tuple'); return; }
@@ -1451,26 +1829,27 @@ const Content = (() => {
       text(row[1], `rows[${i}].label`, 'ja');
       const reference = expected.find(item => item[0] === row[0]);
       if (!reference) { fail(`rows[${i}]`, 'unknown kana row'); return; }
-      if (row[2] !== reference[1] || row[3] !== reference[2]) fail(`rows[${i}]`, 'kana coverage/order must match the basic chart');
+      if (!sameKana(row[2], reference[1]) || !sameKana(row[3], reference[2])) fail(`rows[${i}]`, 'kana coverage/order must match the basic chart');
       if (!Array.isArray(row[4]) || row[4].join(' ') !== reference[3]) fail(`rows[${i}].readings`, 'kana readings must match the basic chart');
     });
     // Generated kana IDs occupy the same registry as authored courses.
     const courseIds = new Set(expected.flatMap(([key]) => [`h-${key}`, `k-${key}`]));
     const cardIds = new Set(), questionIds = new Set();
-    for (const group of ['grammar']) {
+    for (const group of ['grammar', 'sounds']) {
       list(candidate[group], group).forEach((course, i) => {
         const path = `${group}[${i}]`;
         if (!record(course)) { fail(path, 'invalid course object'); return; }
         identifier(course.id, `${path}.id`, courseIds, 'course');
         if (course.type !== 'grammar') fail(`${path}.type`, 'course type must be grammar');
         if (course.group !== undefined) fail(`${path}.group`, 'travel content belongs in the phrasebook');
+        if (group === 'sounds' ? course.home !== 'kana' : course.home !== undefined) fail(`${path}.home`, 'only special-sound lessons live on the kana page');
         // Storage treats h-*/k-* ids as kana rows when a records clear ends unfinished rounds.
         if (typeof course.id === 'string' && /^[hk]-/.test(course.id)) fail(`${path}.id`, 'h- and k- ids are reserved for kana rows');
         text(course.title, `${path}.title`, 'zh'); text(course.subtitle, `${path}.subtitle`);
         list(course.steps, `${path}.steps`).forEach((step, j) => card(step, `${path}.steps[${j}]`, cardIds));
         list(course.questions, `${path}.questions`).forEach((q, j) => question(q, `${path}.questions[${j}]`, questionIds));
         // Grammar lessons are open before kana practice, so kana options carry romaji (Chinese options need none).
-        if (group === 'grammar' && Array.isArray(course.questions)) course.questions.forEach((q, j) => { if (record(q) && Array.isArray(q.options) && q.options.some(option => /[぀-ヿ]/u.test(option)) && q.readings === undefined) fail(`${path}.questions[${j}].readings`, 'Japanese options require readings'); });
+        if (Array.isArray(course.questions)) course.questions.forEach((q, j) => { if (record(q) && Array.isArray(q.options) && q.options.some(option => /[぀-ヿ]/u.test(option)) && q.readings === undefined) fail(`${path}.questions[${j}].readings`, 'Japanese options require readings'); });
       });
     }
     const categoryIds = new Set(), phraseIds = new Set();
@@ -1509,5 +1888,5 @@ const Content = (() => {
     return value;
   }
   deepFreeze(data); deepFreeze(courses);
-  return Object.freeze({ rows, grammar, phrasebook, intro, retiredTitles, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
+  return Object.freeze({ rows, rowGroups, grammar, sounds, phrasebook, intro, retiredTitles, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
 })();

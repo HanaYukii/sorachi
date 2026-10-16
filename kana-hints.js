@@ -137,6 +137,25 @@ const KanaHints = (() => {
       ]);
     });
   });
+  // Contracted sounds (拗音): a small ゃ／ゅ／ょ joins the i-column kana into one beat.
+  const contracted = [
+    ['き', 'ki', 'kya kyu kyo'], ['し', 'shi', 'sha shu sho'], ['ち', 'chi', 'cha chu cho'], ['に', 'ni', 'nya nyu nyo'],
+    ['ひ', 'hi', 'hya hyu hyo'], ['み', 'mi', 'mya myu myo'], ['り', 'ri', 'rya ryu ryo'], ['ぎ', 'gi', 'gya gyu gyo'],
+    ['じ', 'ji', 'ja ju jo'], ['び', 'bi', 'bya byu byo'], ['ぴ', 'pi', 'pya pyu pyo'],
+  ];
+  const smalls = [['ゃ', 'や', 'ya'], ['ゅ', 'ゆ', 'yu'], ['ょ', 'よ', 'yo']];
+  const toKatakana = (text) => [...text].map((ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60)).join('');
+  for (const [plain, baseReading, readings] of contracted) {
+    const to = readings.split(' ');
+    for (const katakana of [false, true]) smalls.forEach(([small, big, smallReading], i) => {
+      const kana = (text) => katakana ? toKatakana(text) : text;
+      const base = kana(plain), mark = kana(small), full = kana(big);
+      data[base + mark] = Object.freeze([
+        Object.freeze({ label: '字形聯想', text: `${base} 後面接一個小的 ${mark}；寫成大的 ${full} 就是 ${base}、${full} 兩個音。` }),
+        Object.freeze({ label: '聲音連結', text: `${base}（${baseReading}）和小 ${mark}（${smallReading}）合成一拍，讀 ${to[i]}。` }),
+      ]);
+    });
+  }
   Object.freeze(data);
   const empty = Object.freeze([]);
   return Object.freeze({

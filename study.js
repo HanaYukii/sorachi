@@ -145,7 +145,9 @@ const Study = (() => {
   }
   const save = () => api.save();
   const currentId = () => location.hash.startsWith("#study/") ? location.hash.slice(7) : null;
-  const backHash = (course) => course.type === "kana" ? "#kana" : "#grammar";
+  // Special-sound lessons are grammar-style courses that belong with the kana.
+  const kanaArea = (course) => course.type === "kana" || course.home === "kana";
+  const backHash = (course) => kanaArea(course) ? "#kana" : "#grammar";
   const footer = () => api.footer ? api.footer() : "";
   const warning = () => api.warning ? api.warning() : "";
   const wasEarlierDay = (date) => date && new Date(date).toDateString() !== new Date().toDateString();
@@ -163,10 +165,9 @@ const Study = (() => {
   }
   function row(course) {
     const learned = state().courses[course.id];
-    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span><strong${course.type === "kana" ? ' lang="ja"' : ""}>${escape(course.type === "kana" ? course.row : course.title)}</strong><span class="${course.type === "kana" ? "reading-label" : "course-subtitle"}"${course.type === "kana" ? ' lang="ja"' : ""}>${escape(course.type === "kana" ? course.letters.join("　") : course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span></span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
+    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span><strong${course.type === "kana" ? ' lang="ja"' : ""}>${escape(course.type === "kana" ? course.row : course.title)}</strong><span class="${course.type === "kana" ? "reading-label" : "course-subtitle"}"${course.type === "kana" || course.home === "kana" ? ' lang="ja"' : ""}>${escape(course.type === "kana" ? course.letters.join("　") : course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span></span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
   }
-  const voicedRows = new Set(["ga", "za", "da", "ba", "pa"]);
-  const kanaRows = (script, voiced) => Object.values(courses).filter((c) => c.type === "kana" && c.script === script && voicedRows.has(c.id.slice(2)) === voiced);
+  const kanaRows = (script, group) => Content.rowGroups[group].map((key) => courses[`${script}-${key}`]).filter(Boolean);
   function reviewSummary() {
     const data = state();
     // Same order as KanaPractice.selectReview, so the listed characters are the ones the next round practices.
@@ -194,7 +195,7 @@ const Study = (() => {
   function kanaPage() {
     const script = state().script;
     const learnedBefore = Object.values(state().courses).some((c) => wasEarlierDay(c.completedAt));
-    return wrap(`<h1 class="focus-heading" tabindex="-1">五十音練習</h1><p class="study-note">每組 3–5 個字，包含認字、讀音與選擇題。羅馬字只作讀音提示，不是照英文拼字唸。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div>${reviewEntry()}${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${kanaRows(script, false).map(row).join("")}</div><h2 class="course-list-heading">濁音・半濁音</h2><p class="study-note">在字的右上加兩點（濁點）或小圈（半濁點），讀音會改變，例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list">${kanaRows(script, true).map(row).join("")}</div><p class="study-note">每種假名先練 46 個基本字，再練 25 個濁音・半濁音。拗音（きゃ）、促音（小っ）與長音之後再學。</p>`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">五十音練習</h1><p class="study-note">每組 3–5 個字，包含認字、讀音與選擇題。羅馬字只作讀音提示，不是照英文拼字唸。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div>${reviewEntry()}${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${kanaRows(script, "basic").map(row).join("")}</div><h2 class="course-list-heading">濁音・半濁音</h2><p class="study-note">在字的右上加兩點（濁點）或小圈（半濁點），讀音會改變，例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list">${kanaRows(script, "voiced").map(row).join("")}</div><h2 class="course-list-heading">促音・長音</h2><p class="study-note">小的 っ 表示停一拍；長音把音拉長一拍。這兩個不是新的字，各用一堂小課說明。</p><div class="course-list">${Content.sounds.map(row).join("")}</div><h2 class="course-list-heading">拗音</h2><p class="study-note">き、し、ち 這類 i 結尾的字，後面加上小的 ゃ、ゅ、ょ，合成一拍，例如 き＋ゃ → きゃ kya。</p><div class="course-list">${kanaRows(script, "youon").map(row).join("")}</div><p class="study-note">每種假名先練 46 個基本字，再練 25 個濁音・半濁音和 33 個拗音。</p>`);
   }
   function grammarPage() {
     return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">每課介紹一個句型，再用選擇題確認理解。例句附中文意思、羅馬字與語音。羅馬字裡的 ou、ei 和 aa、ii、uu、ee、oo 通常是拉長的音，例如 gakusei 唸成「ga-ku-see」。</p><div class="course-list">${GRAMMAR.map(row).join("")}</div>`);
@@ -242,7 +243,7 @@ const Study = (() => {
       const supplement = extra ? `<details class="phrase-more"><summary>${escape(extra.title)}</summary>${keywordBox(extra.keywords)}<p lang="ja">${escape(extra.example)}</p><p class="reading-label">${escape(extra.reading)}</p><p>${escape(extra.meaning)}</p><p class="study-note">${escape(extra.body)}</p></details>` : "";
       body = `<h2>${escape(step.title)}</h2>${keywords}${step.keywords ? '<h3 class="phrase-label">可以這樣說</h3>' : ""}<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="reading-label">${escape(step.reading)}</p>` : ""}<p>${escape(step.meaning)}</p>${audioButton(course, i)}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>較完整的說法</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p></details>` : ""}${supplement}`;
     }
-    return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button><button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button></div>`;
+    return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : course.home === "kana" ? "發音說明" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button><button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button></div>`;
   }
   function practiceFeedback(session) {
     if(!KanaPractice.answered(session))return '';
@@ -311,11 +312,12 @@ const Study = (() => {
         const question = course.questions.find(item => item.id === id);
         if (question?.character && question?.reading) return `${question.character}（${question.reading}）`;
       }
-      // A stable kana ID records the old character, never the current reading.
-      const match = typeof id === "string" && id.startsWith(`${entry.courseId}/question/`) && id.match(/^[hk]-[a-z]+\/question\/u([0-9a-f]{4})$/);
+      // A stable kana ID records the old character, never the current reading; contracted sounds join two code points (u304d-3083 is きゃ).
+      const match = typeof id === "string" && id.startsWith(`${entry.courseId}/question/`) && id.match(/^[hk]-[a-z]+\/question\/u([0-9a-f]{4}(?:-[0-9a-f]{4})?)$/);
       if (match) {
-        const point = parseInt(match[1], 16);
-        if ((id.startsWith('h-') && point >= 0x3041 && point <= 0x3096) || (id.startsWith('k-') && point >= 0x30a1 && point <= 0x30fa)) return String.fromCodePoint(point);
+        const points = match[1].split("-").map((hex) => parseInt(hex, 16));
+        const [low, high] = id.startsWith("h-") ? [0x3041, 0x3096] : [0x30a1, 0x30fa];
+        if (points.every((point) => point >= low && point <= high)) return String.fromCodePoint(...points);
       }
       return `第 ${number} 題`;
     });
@@ -324,7 +326,7 @@ const Study = (() => {
     const score = saved.lastResult, active = peekAttempt(course.id);
     const retries = retryLabels({ courseId: course.id, courseRevision: active.courseRevision, questionIds: active.order.map(q => active.questionIds[q]), retryQuestions: active.order.flatMap((q, index) => active.first[q] === false ? [index + 1] : []) });
     const next = nextCourse(course.id);
-    return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p>第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}${retries.length ? `<p class="study-note">第一次答錯：${retries.map(escape).join("、")}</p>` : ""}<p class="study-note">${course.type === "kana" ? "可重練本組，或返回選擇其他組。" : "可重練本課，或返回選擇其他句型。"}</p><p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><div class="study-nav">${next ? `<button class="primary" data-action="study-open" data-course="${next}">下一組：${escape(courses[next].row)}</button>` : ""}<button class="${next ? "text-button" : "primary"}" data-action="study-restart">重新練習</button><a class="text-button" href="${backHash(course)}">回到${course.type === "kana" ? "五十音" : "句型列表"}</a></div></section>`;
+    return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p>第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}${retries.length ? `<p class="study-note">第一次答錯：${retries.map(escape).join("、")}</p>` : ""}<p class="study-note">${course.type === "kana" ? "可重練本組，或返回選擇其他組。" : course.home === "kana" ? "可重練本課，或回五十音繼續。" : "可重練本課，或返回選擇其他句型。"}</p><p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><div class="study-nav">${next ? `<button class="primary" data-action="study-open" data-course="${next}">下一組：${escape(courses[next].row)}</button>` : ""}<button class="${next ? "text-button" : "primary"}" data-action="study-restart">重新練習</button><a class="text-button" href="${backHash(course)}">回到${kanaArea(course) ? "五十音" : "句型列表"}</a></div></section>`;
   }
   function updateAnswer(course, active) {
     const q = active.order[active.cursor], solved = active.solved[q] === true;
@@ -349,7 +351,7 @@ const Study = (() => {
   function coursePage(course) {
     const saved = courseState(course.id);
     const active = peekAttempt(course.id) || draftAttempt(course, saved);
-    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(course.title)}</h1>${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, backHash(course), course.type === "kana" ? "回五十音" : "回句型列表");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(course.title)}</h1>${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, backHash(course), kanaArea(course) ? "回五十音" : "回句型列表");
   }
   function render(hash) {
     if (hash === "#kana") return kanaPage();
