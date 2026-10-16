@@ -1106,6 +1106,13 @@ button svg {
 .phrase-more .reading-label { font-size: 12px; text-align: left; letter-spacing: 0; margin: 4px 0; overflow-wrap: anywhere; }
 @media (max-width: 400px) { .keyword-box { padding: 14px; } .keyword-box dt strong { font-size: 16px; } }
 
+/* Travel search: a plain box above the list; results reuse the home rows. 16px keeps phones from zooming in. */
+.travel-search { display: grid; gap: 6px; margin: 22px 0 4px; }
+.travel-search label { font-size: 14px; font-weight: 600; }
+.travel-search input { width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); color: var(--ink); font: inherit; font-size: 16px; }
+.travel-search input:focus-visible { outline: 3px solid var(--purple); outline-offset: 2px; }
+.travel-results { margin: 14px 0 6px; }
+.travel-results h2 { font-size: 16px; margin: 0 0 4px; }
 /* Travel situations in a few groups: a heading with a coloured strip and a plain Chinese line mark each group. */
 .travel-groups { display: grid; gap: 26px; margin: 24px 0; }
 .travel-group { --tone: var(--purple); }

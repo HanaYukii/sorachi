@@ -359,17 +359,48 @@ const Study = (() => {
     } else body = reviewSize() ? `<p>從完成的句型課挑 ${reviewSize()} 題混在一起練，最近答錯、還沒獨立答對的題目會優先出現。答錯時會顯示正確答案和說明，可以再選一次。</p><button class="primary" data-action="study-grammar-review">開始複習</button>` : '<p>先完成兩課句型，就可以在這裡複習。</p><a class="primary" href="#grammar">看基礎句型</a>';
     return wrap(`<h1 class="focus-heading" tabindex="-1">句型小複習</h1>${body}<p class="study-note">複習進度會保存在這個瀏覽器，下次可以接著練；不會改變各課的完成紀錄和成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
-  function travelCard(item,step,index) { return `<section class="study-card travel-card"><div class="travel-card-heading"><h2>${escape(step.title)}</h2><button class="text-button favorite-toggle" data-action="study-favorite" data-phrase="${step.id}" aria-pressed="${favoriteIds().includes(step.id)}" aria-label="${escape(step.title)}：收藏">${favoriteIds().includes(step.id) ? "已收藏" : "收藏"}</button></div>${keywordBox(step.keywords)}<div class="phrase-short"><h3 class="phrase-label">可以這樣說</h3><p lang="ja">${escape(step.example)}</p><p class="reading-label">${escape(step.reading)}</p><p>${escape(step.meaning)}</p>${audioButton(item, index, true, false)}</div>${step.staffAsks ? `<p class="staff-asks"><span class="staff-asks-label">店員可能會問</span><span lang="ja">${escape(step.staffAsks.example)}</span><span class="staff-asks-reading">${escape(step.staffAsks.reading)}</span><span>${escape(step.staffAsks.meaning)}</span></p>` : ""}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>看完整說法與讀音</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p>${audioButton(item, index, true, true)}</details>` : ""}${step.extra ? `<details class="phrase-more"><summary>${escape(step.extra.title)}</summary>${keywordBox(step.extra.keywords)}<p lang="ja">${escape(step.extra.example)}</p><p class="reading-label">${escape(step.extra.reading)}</p><p>${escape(step.extra.meaning)}</p><p class="study-note">${escape(step.extra.body)}</p></details>` : ""}</section>`; }
+  // A card opened from a search result is marked, so it gets focus and comes into view.
+  function travelCard(item,step,index,found=false) { return `<section class="study-card travel-card${found ? " travel-found" : ""}"${found ? ' tabindex="-1"' : ""}><div class="travel-card-heading"><h2>${escape(step.title)}</h2><button class="text-button favorite-toggle" data-action="study-favorite" data-phrase="${step.id}" aria-pressed="${favoriteIds().includes(step.id)}" aria-label="${escape(step.title)}：收藏">${favoriteIds().includes(step.id) ? "已收藏" : "收藏"}</button></div>${keywordBox(step.keywords)}<div class="phrase-short"><h3 class="phrase-label">可以這樣說</h3><p lang="ja">${escape(step.example)}</p><p class="reading-label">${escape(step.reading)}</p><p>${escape(step.meaning)}</p>${audioButton(item, index, true, false)}</div>${step.staffAsks ? `<p class="staff-asks"><span class="staff-asks-label">店員可能會問</span><span lang="ja">${escape(step.staffAsks.example)}</span><span class="staff-asks-reading">${escape(step.staffAsks.reading)}</span><span>${escape(step.staffAsks.meaning)}</span></p>` : ""}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>看完整說法與讀音</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p>${audioButton(item, index, true, true)}</details>` : ""}${step.extra ? `<details class="phrase-more"><summary>${escape(step.extra.title)}</summary>${keywordBox(step.extra.keywords)}<p lang="ja">${escape(step.extra.example)}</p><p class="reading-label">${escape(step.extra.reading)}</p><p>${escape(step.extra.meaning)}</p><p class="study-note">${escape(step.extra.body)}</p></details>` : ""}</section>`; }
   const savedPhrases = () => favoriteIds().flatMap(id => PHRASEBOOK.flatMap(item => item.steps.flatMap((step,index) => step.id === id ? [{item,step,index}] : [])));
   function travelPage(id) {
     if (id === "favorites") {
       const saved = savedPhrases();
       return wrap(`<h1 class="focus-heading" tabindex="-1">我的常用語</h1><p class="study-note">收藏的詞存在這個瀏覽器，旅行時可以直接來這裡找。</p>${saved.length ? saved.map(({item,step,index}) => travelCard(item,step,index)).join("") : '<section class="study-card"><h2>還沒有收藏</h2><p>在旅遊用語卡上按「收藏」，就會出現在這裡。</p><a class="text-button" href="#travel">找旅遊常用語 →</a></section>'}`,"#travel","回旅遊常用語");
     }
-    if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span>${savedPhrases().length} 張收藏 →</span></a>${travelGroups()}`);
-    const item = travelItem(id);
+    if (!id) return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<div class="travel-search" role="search"><label for="travel-search">找詞或情境</label><input id="travel-search" type="search" value="${escape(travelQuery)}" placeholder="例如：結帳、Suica、寄放行李" autocomplete="off" enterkeyhint="search"></div><div id="travel-results" aria-live="polite">${travelResults()}</div><a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span>${savedPhrases().length} 張收藏 →</span></a>${travelGroups()}`);
+    const item = travelItem(id), found = travelFound;
+    travelFound = null;
     if (!item) return wrap('<h1 class="focus-heading" tabindex="-1">找不到這個情境</h1><a class="text-button" href="#travel">回旅遊常用語</a>');
-    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(item.title)}</h1><p class="study-note">先看關鍵字與意思，需要時再展開例句。</p>${item.steps.map((step, index) => travelCard(item,step,index)).join("")}<div class="study-nav"><a class="text-button" href="#travel">← 換個情境</a>${item.id === "basics" ? "" : '<a class="text-button" href="#travel/basics">需要幫忙時</a>'}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#travel", "回旅遊常用語");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(item.title)}</h1><p class="study-note">先看關鍵字與意思，需要時再展開例句。</p>${item.steps.map((step, index) => travelCard(item,step,index,step.id === found)).join("")}<div class="study-nav"><a class="text-button" href="#travel">← 換個情境</a>${item.id === "basics" ? "" : '<a class="text-button" href="#travel/basics">需要幫忙時</a>'}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#travel", "回旅遊常用語");
+  }
+  // Travel search (#75): every card with what a traveller might type, its title and situation, keywords with their
+  // readings and meanings, and the short and full phrases with romaji and meaning. Width, case, spaces, punctuation
+  // and katakana versus hiragana are ignored; a few everyday Chinese words lead to the ones the cards use. The query
+  // lives only in this page: nothing is saved or sent.
+  let travelQuery = "", travelFound = null, travelIndex = null;
+  const fold = (text) => String(text).normalize("NFKC").toLowerCase().replace(/[ァ-ヶ]/gu, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60)).replace(/[\s・、。，,.!?！？「」『』（）()〜~'’\-／/]/gu, "");
+  const TRAVEL_ALIASES = [["寄物櫃", "置物櫃"], ["寄物", "寄放"], ["洗手間", "廁所"], ["化妝室", "廁所"], ["買單", "結帳"], ["埋單", "結帳"], ["打包", "外帶"], ["儲值", "加值"], ["icoca", "交通ic卡"], ["pasmo", "交通ic卡"]];
+  // Cards whose own words match come first; only when none does, a match on a situation's name lists its cards.
+  function travelMatches(query) {
+    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: fold([step.title, ...step.keywords.flat(), step.example, step.reading, step.meaning, step.polite, step.politeReading, step.politeMeaning].filter(Boolean).join(" ")), situation: fold(`${item.title} ${item.subtitle}`) })));
+    const q = fold(query);
+    if (!q) return [];
+    const terms = [q, ...TRAVEL_ALIASES.filter(([alias]) => q.includes(fold(alias))).map(([alias, word]) => q.replace(fold(alias), fold(word)))];
+    const own = travelIndex.filter((entry) => terms.some((term) => entry.own.includes(term)));
+    return own.length ? own : travelIndex.filter((entry) => terms.some((term) => entry.situation.includes(term)));
+  }
+  function travelResults() {
+    if (!fold(travelQuery)) return "";
+    const found = travelMatches(travelQuery);
+    if (!found.length) return `<section class="travel-results"><h2>找不到「${escape(travelQuery.trim())}」</h2><p class="study-note">換個說法試試，或從下面的情境找。</p><button class="text-button" data-action="study-travel-clear">清除搜尋</button></section>`;
+    return `<section class="travel-results"><h2>找到 ${found.length} 張卡</h2><ul class="dash-list">${found.map(({ item, step }) => `<li><button class="dash-row" data-action="study-travel-open" data-situation="${item.id}" data-step="${escape(step.id)}"><span class="dash-row-main"><strong>${escape(step.title)}</strong><span><span lang="ja">${escape(step.example)}</span>　${escape(step.meaning)}</span></span><span class="dash-row-meta">${escape(item.title.split(/[：、（]/u)[0])}</span>${api.icons?.arrow || "→"}</button></li>`).join("")}</ul></section>`;
+  }
+  // While a word is still being composed with an input method, the results wait, so the composition is not broken.
+  function searchTravel(value, composing = false) {
+    travelQuery = String(value || "");
+    if (composing || location.hash !== "#travel") return;
+    const results = document.querySelector("#travel-results");
+    if (results) results.innerHTML = travelResults();
   }
   // The travel list in a few groups, each with a plain Chinese line, so a situation is found without reading Japanese
   // (#79). A situation missing here still shows, in a last group.
@@ -805,6 +836,13 @@ const Study = (() => {
       if ([0.65,0.8,1].includes(rate) && api.savePreferences?.({...preferences(),ttsRate:rate})) { stopAudio(); redraw(`[data-rate="${rate}"]`); }
       return true;
     }
+    // A search result opens its situation with that card in view; clearing puts the cursor back in the box.
+    if (action === "study-travel-open") {
+      const item = travelItem(button.dataset.situation);
+      if (item?.steps.some((step) => step.id === button.dataset.step)) { travelFound = button.dataset.step; api.go(`#travel/${item.id}`); }
+      return true;
+    }
+    if (action === "study-travel-clear") { travelQuery = ""; if (location.hash === "#travel") redraw("#travel-search"); return true; }
     if (action === "study-favorite") {
       const id = button.dataset.phrase;
       if (!location.hash.startsWith("#travel/") || !PHRASEBOOK.some(item => item.steps.some(step => step.id === id))) return true;
@@ -1005,5 +1043,5 @@ const Study = (() => {
     if(course.type==='kana'&&active?.phase==='quiz'&&active.practice.round==='retry')return `${course.title}・再試一次第 ${active.practice.cursor+1} 步`;
     return `${course.title}${active ? active.phase === "done" ? "・完成頁" : `・${active.phase === "cards" ? "認識" : "練習"}第 ${active.cursor + 1} 步` : ""}`;
   }
-  return { sanitize, bind, render, handle, context, stopAudio, title, travelTitle, total, retryLabels, nextCourse, hasProgress, currentAttempt, reviewSummary, clearReview, currentPractice, currentReview, grammarNext, grammarUnits, dashboardSummary };
+  return { sanitize, bind, render, handle, context, stopAudio, searchTravel, title, travelTitle, total, retryLabels, nextCourse, hasProgress, currentAttempt, reviewSummary, clearReview, currentPractice, currentReview, grammarNext, grammarUnits, dashboardSummary };
 })();

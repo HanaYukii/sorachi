@@ -323,6 +323,15 @@ function browser({
       querySelector('#feedback-message').value = message;
       dispatch(app._listeners, 'submit', {target:{id:'feedback-form'}, preventDefault() {}});
     },
+    // Typing in the travel search box; `composing` is true while an input method is still composing.
+    typeSearch(value, composing = false) {
+      dispatch(app._listeners, 'input', { target: { id: 'travel-search', value }, isComposing: composing });
+      flush();
+    },
+    endComposition(value) {
+      dispatch(app._listeners, 'compositionend', { target: { id: 'travel-search', value } });
+      flush();
+    },
     inputFeedback(category, message) {
       querySelector('#feedback-category').value = category;
       querySelector('#feedback-message').value = message;
@@ -2190,4 +2199,43 @@ test('random rounds: reports name the question, a double click never answers, re
   assert.match(past.html, /data-action="study-kana-random">練 5 題/);
   past.study('study-kana-random');
   assert.match(past.html, /<a class="exit" href="#kana">← 回五十音表<\/a>/);
+});
+
+test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, opens the card, and keeps nothing', () => {
+  const b = browser({ hash: '#travel' });
+  const before = b.stored;
+  assert.match(b.html, /<label for="travel-search">找詞或情境<\/label><input id="travel-search" type="search"/);
+  const found = (query) => {
+    b.typeSearch(query);
+    return [...b.node('#travel-results').innerHTML.matchAll(/data-step="([^"]+)"/g)].map((m) => m[1]);
+  };
+  // What the issue lists, with spaces, case, width and kana type ignored.
+  for (const [query, step] of [
+    ['結帳', 'phrase/t-pay/bill'], ['kaikei', 'phrase/t-pay/bill'], ['お会計', 'phrase/t-pay/bill'],
+    ['Suica', 'phrase/t-pay/suica'], ['  SUICA ', 'phrase/t-pay/suica'], ['西瓜卡', 'phrase/t-pay/suica'], ['すいか', 'phrase/t-pay/suica'], ['ＳＵＩＣＡ', 'phrase/t-pay/suica'],
+    ['寄放行李', 'phrase/hotel/luggage'], ['寄物', 'phrase/hotel/luggage'], ['月台', 'phrase/transit/platform'], ['ほーむ', 'phrase/transit/platform'],
+    ['洗手間', 'phrase/t-place/toilet'], ['刷卡', 'phrase/t-pay/credit-cash'], ['買單', 'phrase/t-pay/bill'],
+  ]) assert.ok(found(query).includes(step), `${query} → ${step}`);
+  assert.match(b.node('#travel-results').innerHTML, /找到 \d+ 張卡/);
+  // Nothing found: a clear message and a way to clear the box.
+  assert.deepEqual(found('zzzz'), []);
+  assert.match(b.node('#travel-results').innerHTML, /找不到「zzzz」[\s\S]*data-action="study-travel-clear"/);
+  // While an input method is still composing, the results wait for the word to be finished.
+  b.typeSearch('');
+  b.typeSearch('けっさい', true);
+  assert.equal(b.node('#travel-results').innerHTML, '');
+  b.endComposition('お会計');
+  assert.match(b.node('#travel-results').innerHTML, /data-step="phrase\/t-pay\/bill"/);
+  // A result opens its situation with that card focused; back returns to the same search.
+  b.study('study-travel-open', { situation: 't-pay', step: 'phrase/t-pay/bill' });
+  assert.equal(b.hash, '#travel/t-pay');
+  assert.equal(b.focused, '.travel-found');
+  assert.match(b.html, /<section class="study-card travel-card travel-found" tabindex="-1">[\s\S]*?吃完後要結帳/);
+  b.back();
+  assert.equal(b.hash, '#travel');
+  assert.match(b.html, /value="お会計"/);
+  assert.match(b.html, /<div id="travel-results" aria-live="polite"><section class="travel-results"><h2>找到/);
+  b.study('study-travel-clear');
+  assert.doesNotMatch(b.html, /class="travel-results"/);
+  assert.equal(b.stored, before, 'Searching saves nothing');
 });
