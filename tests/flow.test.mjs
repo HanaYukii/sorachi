@@ -347,9 +347,10 @@ function browser({
       dispatch(app._listeners, 'compositionend', { target: { id: 'travel-search', value } });
       flush();
     },
-    // A key pressed in a field; `target` stands for the field.
-    keydown(key, target, composing = false) {
-      const event = { key, target, isComposing: composing, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+    // A key pressed in a field; `target` stands for the field. Safari sends the Enter that ends an input method's word
+    // after compositionend, as keyCode 229 with isComposing false.
+    keydown(key, target, composing = false, keyCode = 0) {
+      const event = { key, target, isComposing: composing, keyCode, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
       dispatch(app._listeners, 'keydown', event);
       flush();
       return event;
@@ -1058,6 +1059,23 @@ test('damaged data points to the record page instead of claiming there is nothin
   b.action('history');
   assert.match(b.html, /損壞或缺少欄位/);
   assert.match(b.html, /data-action="download-raw"/);
+});
+
+test('kana lesson options mark only the kana as Japanese, so 答對了 beside it is not read in a Japanese voice', () => {
+  const b = browser({ hash: '#study/h-a' });
+  for (let i = 0; i < 5; i++) b.study('study-next');
+  let characterOptions = 0;
+  for (let n = 0; n < 12 && /data-action="study-answer"/.test(b.html); n++) {
+    assert.doesNotMatch(b.html, /<button[^>]*data-action="study-answer"[^>]*lang="ja"/);
+    if (/這個讀音，對應哪個字？/.test(b.html)) {
+      characterOptions++;
+      const options = (b.html.match(/data-action="study-answer"/g) || []).length;
+      assert.ok(options >= 3);
+      assert.equal((b.html.match(/data-action="study-answer"[^>]*><span lang="ja">[ぁ-ゖ]+<\/span><span class="answer-status">/g) || []).length, options);
+    }
+    b.study('study-answer', { choice: 0 }); b.study('study-next');
+  }
+  assert.ok(characterOptions > 0, 'A round asks for the character at least once');
 });
 
 test('an empty history leads to the kana table, named as the table', () => {
@@ -2263,6 +2281,14 @@ test('回 follows the entry, not the address: same-address jumps, older feedback
   h.action('feedback-back');
   assert.equal(h.hash, '#study/h-ka');
   assert.deepEqual(exit(h), ['#home', '回首頁']);
+  // Two feedback entries about the same step are the same page: going between them draws nothing again.
+  const same = browser();
+  same.study('study-open', { course: 'h-ka' });
+  same.action('feedback'); same.action('feedback-back'); same.action('feedback');
+  const draws = same.renderCount;
+  same.go(-2);
+  assert.equal(same.hash, '#feedback');
+  assert.equal(same.renderCount, draws);
   // A redirected entry is marked as having no source, so a later visit back cannot give it one.
   const r = browser({ hash: '#study/t-pay' });
   assert.equal(r.hash, '#travel/t-pay');
@@ -2289,6 +2315,9 @@ test('random rounds: reports name the question, a double click never answers, re
   assert.equal(d.node('[data-action="study-next"]').disabled, true, 'Still unanswered');
   d.study('study-answer', { choice: 0 }, 1);
   assert.equal(d.node('[data-action="study-next"]').disabled, false);
+  // A second click that lands on the option just answered hands focus back to 下一題, so Enter goes on.
+  d.click('[data-action="study-answer"]', { detail: 2 });
+  assert.equal(d.focused, '[data-action="study-next"]');
   // Enter or Space on an option (no click count) answers too.
   d.study('study-next');
   d.study('study-answer', { choice: 0 }, 0);
@@ -2349,7 +2378,13 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['刷卡', ['t-pay/credit-cash']], ['kaado', ['t-pay/credit-cash']], ['kado', ['t-pay/credit-cash']], ['erebeta', ['t-place/facilities']],
     // What staff may ask and an extra part are found too.
     ['お召し上がり', ['dining/takeout']], ['ロック', ['t-order/drink-temperature']],
+    // Romaji typed without the card's spaces is found from the start of a word (chekkuin → chekku in).
+    ['chekkuin', ['hotel/check-in']], ['korekudasai', ['shopping/this-one']], ['senen', ['t-charge/amount']], ['okaikeionegaishimasu', ['t-pay/bill']], ['o kaikei', ['t-pay/bill']],
   ]) assert.deepEqual(found(query), steps, query);
+  assert.ok(found('dokodesuka').includes('t-place/toilet'));
+  // Long romaji vowels fold either way.
+  assert.deepEqual(found('kyouto'), found('kyoto'));
+  assert.ok(found('kyoto').includes('transit/transfer'));
   // Every alias leads to the card it stands for.
   for (const [query, step] of [
     ['寄物櫃', 't-place/locker'], ['寄物', 'hotel/luggage'], ['寄行李', 'hotel/luggage'], ['行李寄放', 'hotel/luggage'], ['洗手間', 't-place/toilet'], ['化妝室', 't-place/toilet'],
@@ -2357,18 +2392,32 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['交通卡', 't-pay/suica'], ['icoca', 't-pay/suica'], ['pasmo', 't-pay/suica'], ['發票', 'shopping/receipt'], ['不用', 'dining/decline'], ['不要', 'dining/decline'],
     ['來回票', 'transit/ticket'], ['月臺', 'transit/platform'],
   ]) assert.ok(found(query).includes(step), `${query} → ${step}`);
-  // A situation's name lists its cards when none of them matches by itself; several words rank cards by how many match.
-  assert.deepEqual(found('點餐'), ['t-order/menu-item', 't-order/quantity', 't-order/drink-temperature', 't-order/noodle-temperature', 't-order/portion']);
+  // A situation's title or Chinese line lists its cards when none of them matches by itself.
+  const order = ['t-order/menu-item', 't-order/quantity', 't-order/drink-temperature', 't-order/noodle-temperature', 't-order/portion'];
+  assert.deepEqual(found('點餐'), order);
+  assert.deepEqual(found('一般份或大份'), order);
+  assert.deepEqual(found('請店員加值'), ['t-charge/top-up', 't-charge/amount']);
+  const help = found('叫店員');
+  assert.ok(help.length >= 5 && help.every((step) => step.startsWith('basics/')), help.join());
   assert.ok(found('交通').includes('transit/platform'));
-  assert.deepEqual(found('Suica 加值').slice(0, 1), ['t-pay/suica']);
-  assert.ok(found('Suica 加值').includes('t-charge/top-up'));
-  assert.ok(['hotel/check-out', 'hotel/luggage'].every((step) => found('退房 行李').includes(step)));
-  // Words never match across two romaji words or two fields (rokkaa doko).
+  // Several words: the cards holding the most of them, rarer words first; a one-letter romaji word does not count.
+  assert.deepEqual(found('toire doko'), ['t-place/toilet']);
+  assert.deepEqual(found('退房 行李'), ['hotel/luggage']);
+  assert.deepEqual(found('chekkuin onegaishimasu'), ['hotel/check-in']);
+  assert.deepEqual(found('mizu o kudasai'), ['dining/water', 'basics/slowly', 'shopping/this-one']);
+  assert.deepEqual(found('Suica 加值'), ['t-charge/top-up', 't-charge/amount', 't-pay/suica']);
+  // Romaji never matches from inside a word across a space (rokkaa doko).
   assert.ok(!found('kaado').includes('t-place/locker'));
   // Only the count is announced; nothing found shows a clear message and a way to clear the box.
   found('suica');
   assert.equal(b.node('#travel-status').textContent, '找到 1 張卡');
-  assert.match(b.node('#travel-results').innerHTML, /<h2>找到 1 張卡<\/h2><button class="text-button" data-action="study-travel-clear">清除搜尋<\/button>/);
+  assert.match(b.node('#travel-results').innerHTML, /<h2 tabindex="-1">找到 1 張卡<\/h2><button class="text-button" data-action="study-travel-clear">清除搜尋<\/button>/);
+  // Typing that changes nothing draws and announces nothing again.
+  const list = b.node('#travel-results');
+  list.innerHTML = 'as before'; b.node('#travel-status').textContent = 'quiet';
+  b.typeSearch('Suica ');
+  assert.equal(list.innerHTML, 'as before');
+  assert.equal(b.node('#travel-status').textContent, 'quiet');
   assert.deepEqual(found('zzzz'), []);
   assert.equal(b.node('#travel-status').textContent, '找不到符合的卡');
   assert.match(b.node('#travel-results').innerHTML, /找不到「zzzz」[\s\S]*data-action="study-travel-clear"/);
@@ -2378,13 +2427,14 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   assert.equal(b.node('#travel-results').innerHTML, '');
   b.endComposition('お会計');
   assert.match(b.node('#travel-results').innerHTML, /data-step="phrase\/t-pay\/bill"/);
-  // Enter closes a phone keyboard instead of doing nothing; the Enter that finishes an input method's word does not.
-  let blurred = false;
-  const field = { id: 'travel-search', blur() { blurred = true; } };
+  // Enter moves to the results heading: a phone keyboard closes and a keyboard user keeps their place. The Enter that
+  // finishes an input method's word stays, whether the browser says it is composing or sends keyCode 229 (Safari).
+  const field = { id: 'travel-search' };
   assert.equal(b.keydown('Enter', field, true).defaultPrevented, false);
-  assert.equal(blurred, false);
+  assert.equal(b.keydown('Enter', field, false, 229).defaultPrevented, false);
+  assert.notEqual(b.focused, '#travel-results h2');
   assert.equal(b.keydown('Enter', field).defaultPrevented, true);
-  assert.ok(blurred);
+  assert.equal(b.focused, '#travel-results h2');
   // A result opens its situation with that card focused; back returns to the same search with that result focused.
   b.study('study-travel-open', { situation: 't-pay', step: 'phrase/t-pay/bill' });
   assert.equal(b.hash, '#travel/t-pay');
@@ -2395,7 +2445,7 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   b.back();
   assert.equal(b.hash, '#travel');
   assert.match(b.html, /value="お会計"/);
-  assert.match(b.html, /<div id="travel-results"><section class="travel-results"><div class="travel-results-head"><h2>找到/);
+  assert.match(b.html, /<div id="travel-results"><section class="travel-results"><div class="travel-results-head"><h2 tabindex="-1">找到/);
   assert.equal(b.focused, '.return-focus');
   assert.match(b.html, /class="dash-row return-focus" data-action="study-travel-open" data-situation="t-pay" data-step="phrase\/t-pay\/bill"/);
   // A later visit keeps the search but starts at the heading again.

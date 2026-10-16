@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), 'afc860502a0c7af7e39f4893be5dc16209affebabf70a918da5e98fcee6e1700');
+  assert.equal(createHash('sha256').update(original).digest('hex'), 'c2ecc8b0042d9df122136cc842e5460b868d7381ccb13de23562f7384c7b3309');
   assert.deepEqual(plain(Content.validate()), []);
 });
 

@@ -186,8 +186,9 @@ test('reviewing cards mid-quiz retains original answers and resumes at first inc
 });
 
 test('the grammar list opens the unit with the next lesson, says what each unit teaches and how far the learner is', () => {
-  const sections = (html) => [...html.matchAll(/<details class="unit-section"( open)?><summary><h2 class="unit-title">([^<]+)<\/h2><span class="unit-goal">([^<]*)<\/span><span class="unit-count">已完成 (\d+) \/ (\d+) 課<\/span><\/summary>/g)]
-    .map(([, open, title, goal, done, total]) => ({ open: Boolean(open), title, goal, done: Number(done), total: Number(total) }));
+  // A goal line may hold kana examples, each tagged as Japanese.
+  const sections = (html) => [...html.matchAll(/<details class="unit-section"( open)?><summary><h2 class="unit-title">([^<]+)<\/h2><span class="unit-goal">((?:[^<]|<span lang="ja">[^<]+<\/span>)*)<\/span><span class="unit-count">已完成 (\d+) \/ (\d+) 課<\/span><\/summary>/g)]
+    .map(([, open, title, goal, done, total]) => ({ open: Boolean(open), title, goal: goal.replace(/<\/?span[^>]*>/g, ''), markup: goal, done: Number(done), total: Number(total) }));
   const openUnits = (html) => sections(html).filter((unit) => unit.open).map((unit) => unit.title);
   const done = (ids) => ({ courses: Object.fromEntries(ids.map((id) => [id, { completedAt: '2026-10-01T00:00:00.000Z', attempts: 1 }])) });
   // A first visit: only 基本句子 is open; the next lesson and the units come before practice without a lesson, so a
@@ -200,7 +201,9 @@ test('the grammar list opens the unit with the next lesson, says what each unit 
   first.forEach((unit, i) => {
     assert.equal(unit.goal, b.content.lessonPlan[units[i].lessons[0].id].unitGoal, unit.title);
     assert.equal(unit.done, 0);
+    assert.doesNotMatch(unit.markup.replace(/<span lang="ja">[^<]+<\/span>/g, ''), /[ぁ-ゖァ-ヺ]/, `${unit.title}: every kana is tagged`);
   });
+  assert.match(first[4].markup, /<span lang="ja">のむ<\/span>、<span lang="ja">たべる<\/span>/);
   assert.ok(b.html.indexOf('data-course="g-identity"') < b.html.indexOf('data-course="g-question"'));
   assert.ok(b.html.indexOf('<h2>下一課</h2>') < b.html.indexOf('<details class="unit-section"'));
   assert.ok(b.html.lastIndexOf('</details>') < b.html.indexOf('<h2>句型隨機練習</h2>'));
@@ -235,10 +238,11 @@ test('unit goals live with the lesson plan: one per unit, in Chinese, on its fir
   assert.match(check((copy) => { delete copy.lessonPlan['g-days'].unitGoal; }), /lessonPlan\.g-days\.unitGoal: required nonempty text/);
   assert.match(check((copy) => { copy.lessonPlan['g-question'].unitGoal = '問是不是'; }), /lessonPlan\.g-question\.unitGoal: only the first lesson of a unit has the unit goal/);
   assert.match(check((copy) => { copy.lessonPlan['g-identity'].unitGoal = 'AはBです'; }), /lessonPlan\.g-identity\.unitGoal: required Chinese text/);
-  // Goals give examples, not only grammar terms, and never start by repeating the unit's own name.
+  // Goals are plain Chinese with examples: no pattern notation (AはBです, 〜て), and they never start by repeating the
+  // unit's own name. Whether each line is true to its lessons is a review question, not a test one.
   for (const unit of b.study.grammarUnits()) {
     const goal = plan[unit.lessons[0].id].unitGoal;
-    assert.match(goal, /「|（|、/, unit.title);
+    assert.doesNotMatch(goal, /[A-Za-z]|〜/, unit.title);
     assert.ok(!goal.startsWith(unit.title.slice(0, 2)), unit.title);
   }
 });
@@ -714,7 +718,8 @@ test('travel pages show staff questions and Japanese keywords; other pages link 
     assert.match(cards[0], new RegExp(`aria-labelledby="travel-${item.id}-name travel-${item.id}-note"><span><strong id="travel-${item.id}-name">`));
     assert.doesNotMatch(item.subtitle, /^[぀-ヿ]/, `${item.id}: the Chinese line starts in Chinese`);
     const words = [...cards[0].matchAll(/<span class="travel-word">([^<]+)<span lang="ja">([^<]+)<\/span><\/span>/g)].map(([, meaning, word]) => ({ meaning, word }));
-    assert.ok(words.length >= 2 && words.length <= 3, `${item.id}: ${words.length} words`);
+    // Three words a card (two for 交通卡加值, which has only two to show): a misspelt pick would quietly drop one.
+    assert.equal(words.length, item.id === 't-charge' ? 2 : 3, `${item.id}: ${words.length} words`);
     const keywords = item.steps.flatMap((step) => step.keywords);
     for (const { meaning, word } of words) {
       assert.notEqual(meaning, word, `${item.id}: ${word}`);

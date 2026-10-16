@@ -983,6 +983,7 @@ button svg {
 .travel-search input:focus-visible { outline: 3px solid var(--purple); outline-offset: 2px; }
 .travel-results { margin: 14px 0 6px; }
 .travel-results h2 { font-size: 16px; margin: 0 0 4px; }
+.travel-results h2:focus { outline: none; }
 .travel-results-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 12px; }
 .travel-results-head .text-button { min-height: 44px; font-size: 13px; }
 /* Travel situations in a few groups: a heading with a coloured strip and a plain Chinese line mark each group. */
