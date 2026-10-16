@@ -1073,9 +1073,11 @@ test('a change in saving state is announced once outside the page, not on every 
   assert.doesNotMatch(b.html, /storage-warning[^>]*role="status"/);
 });
 
-test('home and utility pages reach the travel phrases in one tap', () => {
+test('home uses the travel card while utility pages keep their travel shortcut', () => {
   const b = browser();
-  assert.match(b.html, /<a class="header-link" href="#travel">旅遊常用語<\/a>/);
+  assert.doesNotMatch(b.html.match(/<header[\s\S]*?<\/header>/)[0], /href="#travel"/);
+  b.action("travel");
+  assert.equal(b.hash, "#travel");
   for (const hash of ['#history', '#about', '#feedback', '#lesson']) {
     b.navigate(hash);
     assert.match(b.html, /<a class="header-link" href="#travel">旅遊常用語<\/a>/, hash);
