@@ -277,7 +277,7 @@ const Study = (() => {
     const open = Content.lessonPlan[grammarNext()?.courseId]?.unit;
     return grammarUnits().map((unit) => {
       const done = unit.lessons.filter((course) => state().courses[course.id]?.completedAt).length;
-      return `<details class="unit-section"${unit.title === open ? " open" : ""}><summary><h2 class="unit-title">${escape(unit.title)}</h2><span class="unit-goal">${escape(unit.goal)}</span><span class="unit-count">已完成 ${done} / ${unit.lessons.length} 課</span></summary><div class="course-list">${unit.lessons.map(row).join("")}</div></details>`;
+      return `<details class="unit-section"${unit.title === open ? " open" : ""}><summary><h2 class="unit-title">${escape(unit.title)}</h2><span class="unit-goal">${japaneseRuns(unit.goal)}</span><span class="unit-count">已完成 ${done} / ${unit.lessons.length} 課</span></summary><div class="course-list">${unit.lessons.map(row).join("")}</div></details>`;
     }).join("");
   }
   // The next lesson and the units come first, so a phone shows where to start; practice without a lesson follows.
@@ -392,39 +392,54 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(item.title)}</h1><p class="study-note">先看關鍵字與意思，需要時再展開例句。</p>${item.steps.map((step, index) => travelCard(item,step,index,step.id === found)).join("")}<div class="study-nav"><a class="text-button" href="#travel">← 換個情境</a>${item.id === "basics" ? "" : '<a class="text-button" href="#travel/basics">需要幫忙時</a>'}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, "#travel", "回旅遊常用語");
   }
   // Travel search (#75): every card with what a traveller might type: its title, keywords with their readings and
-  // meanings, the short and full phrases, what staff may ask and any extra part, each with romaji and meaning. Width,
-  // case, spaces, punctuation, katakana versus hiragana, 臺／台 and long vowels in romaji (hoomu, homu, toukyou) are
-  // ignored, and a few everyday words lead to the ones the cards use. The query lives only in this page: nothing is
-  // saved or sent.
+  // meanings, the short and full phrases, what staff may ask and any extra part, each with romaji and meaning; and
+  // each situation's title and Chinese line. Width, case, punctuation, katakana versus hiragana, 臺／台 and long vowels
+  // in romaji (hoomu, homu, toukyou) are ignored, and a few everyday words lead to the ones the cards use. The query
+  // lives only in this page: nothing is saved or sent.
   let travelQuery = "", travelFound = null, travelReturn = null, travelIndex = null, travelShown = null;
-  // Romaji words keep a boundary (rokkaa | doko), so a query never matches across two words or two fields.
-  const fold = (text) => String(text).normalize("NFKC").toLowerCase().replace(/\|/gu, "").replace(/臺/gu, "台").replace(/[ァ-ヶ]/gu, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60))
+  // Spaces vanish, except between romaji words, which keep a boundary (rokkaa|doko); fields are joined by line breaks.
+  const fold = (text) => String(text).normalize("NFKC").toLowerCase().replace(/[|\n]/gu, "").replace(/臺/gu, "台").replace(/[ァ-ヶ]/gu, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60))
     .replace(/([a-z])[\s,.!?'’\-/]+(?=[a-z])/gu, "$1|").replace(/[\s・、。，,.!?！？「」『』（）()〜~'’\-／/]/gu, "").replace(/ou/gu, "o").replace(/([aiueo])\1+/gu, "$1");
+  // A term matches text as it is; romaji may also run across word boundaries when it starts a word, so chekkuin
+  // finds chekku in and dokodesuka finds doko desu ka. Romaji never starts inside a word, so kaado misses rokkaa doko.
+  const matcher = (term) => {
+    const letters = term.replace(/\|/gu, "");
+    const loose = /^[a-z]+$/u.test(letters) ? new RegExp(`(?:^|[|\\n])${[...letters].join("\\|?")}`, "u") : null;
+    return (text) => text.includes(term) || Boolean(loose?.test(text));
+  };
   const TRAVEL_ALIASES = [["寄物櫃", "置物櫃"], ["寄物", "寄放"], ["寄行李", "寄放行李"], ["行李寄放", "寄放行李"], ["洗手間", "廁所"], ["化妝室", "廁所"], ["買單", "結帳"], ["埋單", "結帳"], ["會計", "会計"], ["付款", "付現", "結帳"], ["打包", "外帶"], ["儲值", "加值"], ["交通卡", "交通ic卡"], ["icoca", "交通ic卡"], ["pasmo", "交通ic卡"], ["發票", "收據"], ["不用", "不需要"], ["不要", "不需要"], ["來回票", "來回"]];
   const fields = (part) => part ? [part.title, ...(part.keywords || []).flat(), part.example, part.reading, part.meaning, part.polite, part.politeReading, part.politeMeaning].filter(Boolean).map(fold) : [];
   const variants = (q) => [q, ...TRAVEL_ALIASES.filter(([alias]) => q.includes(fold(alias))).flatMap(([alias, ...words]) => words.map((word) => q.replace(fold(alias), fold(word))))];
   function travelMatches(query) {
-    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: [...fields(step), ...fields(step.staffAsks), ...fields(step.extra)].join("|"), situation: fold(item.title) })));
+    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: [...fields(step), ...fields(step.staffAsks), ...fields(step.extra)].join("\n"), situation: [item.title, item.subtitle].filter(Boolean).map(fold).join("\n") })));
     const q = fold(query);
     if (!q) return [];
-    const inCard = (entry, word) => variants(word).some((term) => entry.own.includes(term));
-    const inSituation = (entry, word) => variants(word).some((term) => entry.situation.includes(term));
-    // Cards whose own words match; then every card of a situation whose name matches, when none of its own did.
+    const matchers = new Map(), found = (term, text) => { if (!matchers.has(term)) matchers.set(term, matcher(term)); return matchers.get(term)(text); };
+    const inCard = (entry, word) => variants(word).some((term) => found(term, entry.own));
+    const inSituation = (entry, word) => variants(word).some((term) => found(term, entry.situation));
+    // Cards whose own words match; then every card of a situation whose name or line matches, when none of its own did.
     const own = travelIndex.filter((entry) => inCard(entry, q));
     const named = travelIndex.filter((entry) => !own.some((match) => match.item === entry.item) && inSituation(entry, q));
     if (own.length || named.length) return [...own, ...named];
-    // Several words that never appear together: the cards matching more of them come first.
-    const words = String(query).trim().split(/\s+/u).map(fold).filter(Boolean);
+    // Several words that never appear together: keep the cards holding the most of them (in their own text, or else
+    // in their situation's name), rarer words first, so 退房 行李 finds the luggage card and mizu o kudasai the water
+    // card before others that only say kudasai. A one-letter romaji word (that o) is in nearly every card: not counted.
+    const words = String(query).trim().split(/\s+/u);
     if (words.length < 2) return [];
-    return travelIndex.map((entry) => ({ entry, score: words.filter((word) => inCard(entry, word) || inSituation(entry, word)).length }))
-      .filter(({ score }) => score).sort((a, b) => b.score - a.score).map(({ entry }) => entry);
+    const counted = words.map(fold).filter((word) => word && !/^[a-z]$/u.test(word));
+    const scored = travelIndex.map((entry) => ({ entry, own: counted.filter((word) => inCard(entry, word)), named: counted.filter((word) => inSituation(entry, word)) }));
+    const reach = new Map(counted.map((word) => [word, scored.filter(({ own, named }) => own.includes(word) || named.includes(word)).length]));
+    const weight = (list) => list.reduce((sum, word) => sum + 1 / reach.get(word), 0);
+    const most = Math.max(0, ...scored.map(({ own }) => own.length));
+    const kept = most ? scored.filter(({ own }) => own.length === most) : scored.filter(({ named }) => named.length);
+    return kept.sort((a, b) => weight(b.own) - weight(a.own) || weight(b.named) - weight(a.named)).map(({ entry }) => entry);
   }
   // The row of the card just looked at is marked, so coming back puts focus on it.
   function travelResults(back = null) {
     if (!fold(travelQuery)) return "";
     const found = travelMatches(travelQuery);
-    if (!found.length) return `<section class="travel-results"><h2>找不到「${escape(travelQuery.trim())}」</h2><p class="study-note">換個說法試試，或從下面的情境找。</p><button class="text-button" data-action="study-travel-clear">清除搜尋</button></section>`;
-    return `<section class="travel-results"><div class="travel-results-head"><h2>找到 ${found.length} 張卡</h2><button class="text-button" data-action="study-travel-clear">清除搜尋</button></div><ul class="dash-list">${found.map(({ item, step }) => `<li><button class="dash-row${step.id === back ? " return-focus" : ""}" data-action="study-travel-open" data-situation="${item.id}" data-step="${escape(step.id)}"><span class="dash-row-main"><strong>${escape(step.title)}</strong><span><span lang="ja">${escape(step.example)}</span>　${escape(step.meaning)}</span></span><span class="dash-row-meta">${escape(item.title.split("（")[0])}</span>${api.icons?.arrow || "→"}</button></li>`).join("")}</ul></section>`;
+    if (!found.length) return `<section class="travel-results"><h2 tabindex="-1">找不到「${escape(travelQuery.trim())}」</h2><p class="study-note">換個說法試試，或從下面的情境找。</p><button class="text-button" data-action="study-travel-clear">清除搜尋</button></section>`;
+    return `<section class="travel-results"><div class="travel-results-head"><h2 tabindex="-1">找到 ${found.length} 張卡</h2><button class="text-button" data-action="study-travel-clear">清除搜尋</button></div><ul class="dash-list">${found.map(({ item, step }) => `<li><button class="dash-row${step.id === back ? " return-focus" : ""}" data-action="study-travel-open" data-situation="${item.id}" data-step="${escape(step.id)}"><span class="dash-row-main"><strong>${escape(step.title)}</strong><span><span lang="ja">${escape(step.example)}</span>　${escape(step.meaning)}</span></span><span class="dash-row-meta">${escape(item.title.split("（")[0])}</span>${api.icons?.arrow || "→"}</button></li>`).join("")}</ul></section>`;
   }
   // Only the count is announced; the list itself is not a live region, so typing is not read out row by row.
   const travelStatus = () => { if (!fold(travelQuery)) return ""; const n = travelMatches(travelQuery).length; return n ? `找到 ${n} 張卡` : "找不到符合的卡"; };
@@ -449,8 +464,8 @@ const Study = (() => {
     { title: "住宿與景點", note: "飯店、排隊、入場與活動", tone: "rose", ids: ["hotel", "lines", "live"] },
   ];
   // Words that show what a situation covers, picked by hand from its cards: a pair stays together (內用、外帶) and a
-  // word that reads the same in Chinese (出口) is left out. The Chinese comes first: the Japanese is the thing to say
-  // once the situation is found.
+  // word written exactly like its Chinese meaning (出口) is left out; close ones such as 袋／袋子 stay. The Chinese
+  // comes first: the Japanese is the thing to say once the situation is found.
   const TRAVEL_WORDS = {
     basics: ["すみません", "もう一度", "わかりません"],
     "t-order": ["ひとつ", "アイス", "大盛"],
@@ -588,10 +603,11 @@ const Study = (() => {
   // 句型隨機練習 (#83): five questions from the noun-sentence lessons that open 基本句子, for anyone, with or without
   // records. Like 五十音隨機練習 a round lives in this page only and records nothing; each question is asked once,
   // and a miss shows the answer with its reading and explanation.
-  // Each question was checked for a learner starting from zero: it says in Chinese what to say or what is asked, and
-  // every Japanese option has its reading, so it can be answered without a lesson; a first try may be a guess, and the
-  // explanation teaches the point. Questions asking the meaning of Japanese shown without a reading stay out, as does
-  // one whose sentence has no Chinese meaning (これと それです); a question added to these lessons later does not join.
+  // The pool is picked by hand, question by question, for a learner starting from zero: each says in Chinese what to
+  // say or what is asked, and every Japanese option has its reading, so it can be answered without a lesson; a first
+  // try may be a guess, and the explanation teaches the point. Left out: questions asking the meaning of Japanese
+  // shown without a reading, and g-to/question/point, whose Chinese never says what これと それです means (a test can
+  // check readings and the rest, not that). A question added to these lessons later does not join by itself.
   const GRAMMAR_RANDOM_POOL = ["g-identity/question/topic-reading", "g-question/question/question-ending", "g-demo/question/held-item", "g-demo/question/distant-item", "g-demo/question/listener-item", "g-negative/question/ja-nai", "g-negative/question/answer", "g-no/question/my-bread", "g-mo/question/me-too", "g-to/question/and"];
   let grammarRandomRound = null;
   function newGrammarRandomRound() {
@@ -632,7 +648,7 @@ const Study = (() => {
     const q=KanaPractice.current(session), item=KanaPractice.entry(q.id), answered=KanaPractice.answered(session);
     const answers=session.round==='retry'?session.retryAnswers:session.answers, chosen=answers[session.cursor], correct=answered && q.options[chosen]===q.id;
     const count=session.round==='retry'?session.retryQuestions.length:session.questions.length;
-    return `<p class="reading-label">${session.round==='retry'?'再試一次':'練習'} · ${session.cursor+1} / ${count} · 選一個答案</p><section class="study-card study-quiz"><h2>${q.direction==='reading'?'這個讀音，對應哪個字？':'這個字，讀音是哪一個？'}</h2><div class="kana-character"${q.direction==='character'?' lang="ja"':''}>${escape(q.direction==='reading'?item.reading:item.character)}</div><div class="study-options kana-options" role="group" aria-label="答案選項">${q.options.map((id,index)=>{const option=KanaPractice.entry(id);return `<button class="answer${answered&&chosen===index?(correct?' correct':' wrong'):''}" data-action="study-answer" data-choice="${index}" aria-disabled="${answered}"${answered?' tabindex="-1"':''}${q.direction==='reading'?' lang="ja"':''}>${escape(q.direction==='reading'?option.character:option.reading)}<span class="answer-status">${answered&&chosen===index?(correct?' ✓ 答對了':session.round==='retry'?' ✕ 下次再練':' ✕ 稍後再考'):''}</span></button>`;}).join('')}</div><p class="study-feedback${answered&&!correct?' wrong':''}" role="status" aria-live="polite">${escape(practiceFeedback(session))}</p></section><div class="study-nav">${!review&&session.round==='first'?'<button class="text-button" data-action="study-review">回去看看</button>':''}<button class="primary" data-action="study-next"${answered?'':' disabled'}>${session.cursor+1===count?(session.round==='retry'?'完成練習':'繼續 →'):'下一題 →'}</button></div><p class="study-note">${session.round==='retry'?'憑記憶再答一次；這次不會改變第一次作答的成績。':'答錯可直接往下，這一輪最後會再考一次。'}</p>`;
+    return `<p class="reading-label">${session.round==='retry'?'再試一次':'練習'} · ${session.cursor+1} / ${count} · 選一個答案</p><section class="study-card study-quiz"><h2>${q.direction==='reading'?'這個讀音，對應哪個字？':'這個字，讀音是哪一個？'}</h2><div class="kana-character"${q.direction==='character'?' lang="ja"':''}>${escape(q.direction==='reading'?item.reading:item.character)}</div><div class="study-options kana-options" role="group" aria-label="答案選項">${q.options.map((id,index)=>{const option=KanaPractice.entry(id);return `<button class="answer${answered&&chosen===index?(correct?' correct':' wrong'):''}" data-action="study-answer" data-choice="${index}" aria-disabled="${answered}"${answered?' tabindex="-1"':''}>${q.direction==='reading'?`<span lang="ja">${escape(option.character)}</span>`:escape(option.reading)}<span class="answer-status">${answered&&chosen===index?(correct?' ✓ 答對了':session.round==='retry'?' ✕ 下次再練':' ✕ 稍後再考'):''}</span></button>`;}).join('')}</div><p class="study-feedback${answered&&!correct?' wrong':''}" role="status" aria-live="polite">${escape(practiceFeedback(session))}</p></section><div class="study-nav">${!review&&session.round==='first'?'<button class="text-button" data-action="study-review">回去看看</button>':''}<button class="primary" data-action="study-next"${answered?'':' disabled'}>${session.cursor+1===count?(session.round==='retry'?'完成練習':'繼續 →'):'下一題 →'}</button></div><p class="study-note">${session.round==='retry'?'憑記憶再答一次；這次不會改變第一次作答的成績。':'答錯可直接往下，這一輪最後會再考一次。'}</p>`;
   }
   function updatePractice(session) {
     const q=KanaPractice.current(session), answers=session.round==='retry'?session.retryAnswers:session.answers, choice=answers[session.cursor], correct=q.options[choice]===q.id;

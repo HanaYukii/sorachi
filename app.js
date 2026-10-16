@@ -361,10 +361,13 @@ app.addEventListener("input", (event) => {
   feedbackDraft = {category: app.querySelector("#feedback-category").value, message: app.querySelector("#feedback-message").value};
   app.querySelector("#feedback-ready").replaceChildren();
 });
-// A word finished with an input method searches once, when it is done. Enter in the search box closes a phone
-// keyboard: the results are already there.
+// A word finished with an input method searches once, when it is done. Enter in the search box moves to the results
+// heading: the results are already there, a phone keyboard closes and a keyboard user keeps their place. The Enter
+// that finishes an input method's word does not move (Safari sends it after compositionend, with keyCode 229).
 app.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.isComposing && event.target?.id === "travel-search") { event.preventDefault(); event.target.blur?.(); }
+  if (event.key !== "Enter" || event.isComposing || event.keyCode === 229 || event.target?.id !== "travel-search") return;
+  const heading = app.querySelector("#travel-results")?.querySelector("h2");
+  if (heading) { event.preventDefault(); heading.focus(); }
 });
 app.addEventListener("compositionend", (event) => {
   if (event.target?.id === "travel-search") Study.searchTravel(event.target.value);
@@ -491,7 +494,12 @@ app.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button || button.disabled || restarting) return;
   // The second click of a double click never answers: after 再練, 下一題 or 開始練習 a new option can sit under the pointer.
-  if (event.detail > 1 && (button.dataset.action === "study-answer" || button.dataset.answer !== undefined)) return;
+  // When it lands on an option already answered, focus goes back to 下一題, where the answer had put it.
+  if (event.detail > 1 && (button.dataset.action === "study-answer" || button.dataset.answer !== undefined)) {
+    const next = button.dataset.action === "study-answer" ? app.querySelector('[data-action="study-next"]') : null;
+    if (next && !next.disabled) next.focus({ preventScroll: true });
+    return;
+  }
   if (Study.handle(button)) return;
   if (button.dataset.answer !== undefined) {
     const answer = Number(button.dataset.answer);
