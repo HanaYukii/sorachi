@@ -444,7 +444,11 @@ const Content = (() => {
             "わ",
             "です"
           ],
-          "readings": ["wa","wa","desu"],
+          "readings": [
+            "wa",
+            "wa",
+            "desu"
+          ],
           "answer": 0,
           "explanation": "「は」標出主題「わたし」：わたしは がくせいです。這裡念 wa，但要寫「は」。",
           "id": "g-identity/question/sentence-ending"
@@ -512,7 +516,11 @@ const Content = (() => {
             "がくせいは わたしです",
             "がくせいですか"
           ],
-          "readings": ["watashi wa gakusei desu","gakusei wa watashi desu","gakusei desu ka"],
+          "readings": [
+            "watashi wa gakusei desu",
+            "gakusei wa watashi desu",
+            "gakusei desu ka"
+          ],
           "answer": 2,
           "explanation": "「がくせいですか」用句尾的「か」表示疑問。其他兩句是在說明，沒有「か」。",
           "id": "g-question/question/question-ending"
@@ -558,7 +566,11 @@ const Content = (() => {
             "これ",
             "あれ"
           ],
-          "readings": ["sore","kore","are"],
+          "readings": [
+            "sore",
+            "kore",
+            "are"
+          ],
           "answer": 1,
           "explanation": "麵包就在說話的你手上，靠近你自己，所以用「これ」。",
           "id": "g-demo/question/held-item"
@@ -570,7 +582,11 @@ const Content = (() => {
             "それ",
             "これ"
           ],
-          "readings": ["are","sore","kore"],
+          "readings": [
+            "are",
+            "sore",
+            "kore"
+          ],
           "answer": 0,
           "explanation": "麵包離說話的你和聽話的朋友都遠，所以用「あれ」。",
           "id": "g-demo/question/distant-item"
@@ -582,14 +598,858 @@ const Content = (() => {
             "あれ",
             "それ"
           ],
-          "readings": ["kore","are","sore"],
+          "readings": [
+            "kore",
+            "are",
+            "sore"
+          ],
           "answer": 2,
           "explanation": "麵包靠近聽你說話的朋友、離你較遠，所以用「それ」。",
           "id": "g-demo/question/listener-item"
         }
       ]
+    },
+    {
+      "id": "g-place",
+      "type": "grammar",
+      "title": "地點：ここ・そこ・あそこ・どこ",
+      "subtitle": "問地點、回答在哪裡",
+      "steps": [
+        {
+          "title": "四個地點詞",
+          "example": "ここ ／ そこ ／ あそこ ／ どこ",
+          "reading": "koko / soko / asoko / doko",
+          "meaning": "這裡 ／ 那裡（你那邊）／ 那裡（遠處）／ 哪裡",
+          "body": "ここ 是說話的人這邊，そこ 是聽的人那邊，あそこ 是離兩個人都遠的地方，どこ 用來問「哪裡」。分法和 これ／それ／あれ 一樣。",
+          "id": "g-place/card/words"
+        },
+        {
+          "title": "問在哪裡",
+          "example": "すみません、トイレは どこですか。",
+          "reading": "sumimasen, toire wa doko desu ka",
+          "meaning": "不好意思，廁所在哪裡？",
+          "body": "把要找的東西放在「は」前面，後面接「どこですか」。車站是「えき」（eki）：えきは どこですか。",
+          "id": "g-place/card/question"
+        },
+        {
+          "title": "回答在哪裡",
+          "example": "あそこです。",
+          "reading": "asoko desu",
+          "meaning": "在那裡（遠處）。",
+          "body": "回答時把 どこ 換成 ここ、そこ 或 あそこ。兩個人站在一起時，也可能用 ここ 指你們所在的這一帶；先記住基本分法就好。",
+          "id": "g-place/card/answer"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "你和朋友站在一起，廁所在離你們兩人都遠的地方。你指著說：トイレは＿＿です。",
+          "options": [
+            "あそこ",
+            "ここ",
+            "そこ"
+          ],
+          "readings": [
+            "asoko",
+            "koko",
+            "soko"
+          ],
+          "answer": 0,
+          "explanation": "離說話的你和聽的朋友都遠，用「あそこ」。「ここ」是自己這邊，「そこ」是對方那邊。",
+          "id": "g-place/question/far"
+        },
+        {
+          "prompt": "想問車站在哪裡：えき（車站）は＿＿ですか。",
+          "options": [
+            "どこ",
+            "ここ",
+            "あそこ"
+          ],
+          "readings": [
+            "doko",
+            "koko",
+            "asoko"
+          ],
+          "answer": 0,
+          "explanation": "問「哪裡」用「どこ」：えきは どこですか。「ここ」「あそこ」是指出地點，不是在問。",
+          "id": "g-place/question/ask"
+        },
+        {
+          "prompt": "店員站在離你幾步外，指著自己腳邊說「ここです」。你對店員說那個地方時，要用哪一個？",
+          "options": [
+            "そこ",
+            "ここ",
+            "どこ"
+          ],
+          "readings": [
+            "soko",
+            "koko",
+            "doko"
+          ],
+          "answer": 0,
+          "explanation": "對店員來說是自己這邊（ここ）；對你來說是對方那邊，所以是「そこ」。",
+          "id": "g-place/question/listener"
+        }
+      ]
+    },
+    {
+      "id": "g-kono",
+      "type": "grammar",
+      "title": "指示詞：この・その・あの・どの",
+      "subtitle": "後面接名詞的指示詞",
+      "steps": [
+        {
+          "title": "これ 和 この",
+          "example": "これは パンです。 ／ この パンです。",
+          "reading": "kore wa pan desu / kono pan desu",
+          "meaning": "這是麵包。／ 是這個麵包。",
+          "body": "「これ」可以單獨用；「この」不能單獨用，要放在名詞前面，例如「この パン」。それ／その、あれ／あの 也一樣。",
+          "id": "g-kono/card/kore-kono"
+        },
+        {
+          "title": "問哪一個：どれ、どの",
+          "example": "どれですか。 ／ どの パンですか。",
+          "reading": "dore desu ka / dono pan desu ka",
+          "meaning": "哪一個？／ 哪一個麵包？",
+          "body": "「どれ」單獨問哪一個；「どの」後面接名詞。指著東西回答「これです」或「この パンです」就可以。",
+          "id": "g-kono/card/which"
+        },
+        {
+          "title": "遠近和 これ 系列一樣",
+          "example": "その パン ／ あの パン",
+          "reading": "sono pan / ano pan",
+          "meaning": "那個麵包（你那邊）／ 那個麵包（遠處）",
+          "body": "「その」指對方那邊的東西，「あの」指離兩個人都遠的東西，和 それ、あれ 的分法相同。",
+          "id": "g-kono/card/distance"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "店員指著三個麵包，問你要哪一個：＿＿パンですか。",
+          "options": [
+            "どの",
+            "どれ",
+            "どこ"
+          ],
+          "readings": [
+            "dono",
+            "dore",
+            "doko"
+          ],
+          "answer": 0,
+          "explanation": "後面接著名詞「パン」，要用「どの」：どの パンですか。「どれ」不接名詞，「どこ」是問地點。",
+          "id": "g-kono/question/dono"
+        },
+        {
+          "prompt": "你手上拿著麵包，對朋友說：＿＿は パンです。",
+          "options": [
+            "これ",
+            "この"
+          ],
+          "readings": [
+            "kore",
+            "kono"
+          ],
+          "answer": 0,
+          "explanation": "空格後面接的是「は」，不是名詞，所以用可以單獨用的「これ」。",
+          "id": "g-kono/question/kore"
+        },
+        {
+          "prompt": "店員指著三個麵包，問你要哪一個：＿＿ですか。",
+          "options": [
+            "どれ",
+            "どの",
+            "どこ"
+          ],
+          "readings": [
+            "dore",
+            "dono",
+            "doko"
+          ],
+          "answer": 0,
+          "explanation": "後面沒有名詞，單獨問「哪一個」用「どれ」。「どの」後面一定要接名詞，「どこ」是問地點。",
+          "id": "g-kono/question/dore"
+        }
+      ]
+    },
+    {
+      "id": "g-who",
+      "type": "grammar",
+      "title": "疑問詞：だれ・なに・どこ",
+      "subtitle": "問人、問東西、問地點",
+      "steps": [
+        {
+          "title": "問人：だれ",
+          "example": "あの ひとは だれですか。",
+          "reading": "ano hito wa dare desu ka",
+          "meaning": "那個人是誰？",
+          "body": "問「誰」用「だれ」。回答時把 だれ 換成名字或身分，例如「がくせいです」。",
+          "id": "g-who/card/dare"
+        },
+        {
+          "title": "問東西：なん（なに）",
+          "example": "これは なんですか。",
+          "reading": "kore wa nan desu ka",
+          "meaning": "這是什麼？",
+          "body": "「何」在「です」前面念 なん：なんですか＝是什麼？其他位置有時念 なに、有時念 なん，之後遇到再學。",
+          "id": "g-who/card/nan"
+        },
+        {
+          "title": "四個疑問詞",
+          "example": "だれ ／ なに ／ どこ ／ いつ",
+          "reading": "dare / nani / doko / itsu",
+          "meaning": "誰 ／ 什麼 ／ 哪裡 ／ 什麼時候",
+          "body": "問人、東西、地點、時間各用不同的詞。「いつ」的回答要用到時間詞，之後的課再練。",
+          "id": "g-who/card/words"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "選出適合的詞：すみません、トイレは ＿＿ ですか。",
+          "options": [
+            "どこ",
+            "だれ",
+            "いつ",
+            "なに"
+          ],
+          "readings": [
+            "doko",
+            "dare",
+            "itsu",
+            "nani"
+          ],
+          "answer": 0,
+          "explanation": "問廁所在哪裡要問地點，「どこ（哪裡）」是問地點的疑問詞。「だれ（誰）」問人，廁所不是人；「いつ（什麼時候）」問時間，和位置無關；「なに（什麼）」問東西，在「です」前面念 なん，「トイレは なんですか」變成問廁所是什麼東西，意思不通。",
+          "id": "g-who/question/jabiko-doko"
+        },
+        {
+          "prompt": "朋友拿著一個你沒看過的東西。你問：それは ＿＿ ですか。",
+          "options": [
+            "なん",
+            "だれ",
+            "どこ"
+          ],
+          "readings": [
+            "nan",
+            "dare",
+            "doko"
+          ],
+          "answer": 0,
+          "explanation": "問東西用「なん」：それは なんですか。東西在朋友手上，所以用「それ」。「だれ」問人，「どこ」問地點。",
+          "id": "g-who/question/nan"
+        },
+        {
+          "prompt": "門口站著一位你不認識的人。你小聲問朋友：あの ひとは ＿＿ ですか。",
+          "options": [
+            "だれ",
+            "なん",
+            "どこ"
+          ],
+          "readings": [
+            "dare",
+            "nan",
+            "doko"
+          ],
+          "answer": 0,
+          "explanation": "問人用「だれ」：あの ひとは だれですか。「あの ひとは どこですか」是問那個人在哪裡，但人就站在門口；「なん」問東西。",
+          "id": "g-who/question/dare"
+        }
+      ]
+    },
+    {
+      "id": "g-negative",
+      "type": "grammar",
+      "title": "名詞句否定：〜じゃないです",
+      "subtitle": "說「不是…」",
+      "steps": [
+        {
+          "title": "不是…：じゃないです",
+          "example": "わたしは がくせいじゃないです。",
+          "reading": "watashi wa gakusei ja nai desu",
+          "meaning": "我不是學生。",
+          "body": "名詞後面接「じゃないです」就是「不是…」。這課只練名詞句；形容詞、動詞的否定方式不一定一樣，之後再學。",
+          "id": "g-negative/card/ja-nai"
+        },
+        {
+          "title": "比較正式：じゃありません",
+          "example": "これは パンじゃありません。",
+          "reading": "kore wa pan ja arimasen",
+          "meaning": "這不是麵包。",
+          "body": "「じゃありません」和「じゃないです」意思一樣，聽起來比較正式一點，兩種都常聽到。",
+          "id": "g-negative/card/ja-arimasen"
+        },
+        {
+          "title": "回答「是不是」",
+          "example": "がくせいですか。 ／ いいえ、がくせいじゃないです。",
+          "reading": "gakusei desu ka / iie, gakusei ja nai desu",
+          "meaning": "是學生嗎？／ 不，不是學生。",
+          "body": "被問「〜ですか」時，不是就先說「いいえ」，再接「〜じゃないです」。",
+          "id": "g-negative/card/answer"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "你不是學生，想說「我不是學生」：わたしは がくせい＿＿。",
+          "options": [
+            "じゃないです",
+            "です",
+            "ですか"
+          ],
+          "readings": [
+            "ja nai desu",
+            "desu",
+            "desu ka"
+          ],
+          "answer": 0,
+          "explanation": "「不是…」用「じゃないです」：がくせいじゃないです。「です」是「是…」，「ですか」是在問。",
+          "id": "g-negative/question/ja-nai"
+        },
+        {
+          "prompt": "朋友指著一樣東西問「パンですか」。那不是麵包，你回答：いいえ、パン＿＿。",
+          "options": [
+            "じゃありません",
+            "です",
+            "ですか"
+          ],
+          "readings": [
+            "ja arimasen",
+            "desu",
+            "desu ka"
+          ],
+          "answer": 0,
+          "explanation": "說「不是麵包」用「パンじゃありません」。「いいえ、パンです」前面說不是、後面又說是麵包，前後矛盾；「ですか」是在發問。",
+          "id": "g-negative/question/answer"
+        },
+        {
+          "prompt": "「これは パンじゃありません。」是什麼意思？",
+          "options": [
+            "這不是麵包。",
+            "這是麵包。",
+            "這是麵包嗎？"
+          ],
+          "answer": 0,
+          "explanation": "「じゃありません」是「不是…」：這不是麵包。",
+          "id": "g-negative/question/meaning"
+        }
+      ]
+    },
+    {
+      "id": "g-no",
+      "type": "grammar",
+      "title": "名詞連接：AのB",
+      "subtitle": "我的傘、日文書",
+      "steps": [
+        {
+          "title": "AのB：A 的 B",
+          "example": "わたしの かさ",
+          "reading": "watashi no kasa",
+          "meaning": "我的傘",
+          "body": "「の」把兩個名詞連起來，前面的名詞說明後面的名詞：わたしの かさ＝我的傘。",
+          "id": "g-no/card/a-no-b"
+        },
+        {
+          "title": "放進句子裡",
+          "example": "これは わたしの かさです。",
+          "reading": "kore wa watashi no kasa desu",
+          "meaning": "這是我的傘。",
+          "body": "「わたしの かさ」整個當作一個名詞，後面照樣接「です」。",
+          "id": "g-no/card/sentence"
+        },
+        {
+          "title": "の 不一定翻成「的」",
+          "example": "にほんごの ほん",
+          "reading": "nihongo no hon",
+          "meaning": "日文書",
+          "body": "「の」表示所屬、內容等關係，中文不一定翻成「的」：にほんごの ほん 是「日文書」。",
+          "id": "g-no/card/not-always-de"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "選出適合的詞：これは わたし ＿＿ かさです。",
+          "options": [
+            "の",
+            "は",
+            "を",
+            "へ"
+          ],
+          "readings": [
+            "no",
+            "wa",
+            "o",
+            "e"
+          ],
+          "answer": 0,
+          "explanation": "「Ａの Ｂ」用「の」表示所屬，「わたしの かさ」＝我的傘。「は」標出主題，「わたしは かさです」變成「我是傘」，意思不通；「を」標動作的對象，句中沒有動作；「へ」表示方向，句中沒有移動。名詞接名詞表示所屬，只有「の」成立。",
+          "id": "g-no/question/jabiko-no"
+        },
+        {
+          "prompt": "想說「我的麵包」：わたし＿＿パン",
+          "options": [
+            "の",
+            "は",
+            "です"
+          ],
+          "readings": [
+            "no",
+            "wa",
+            "desu"
+          ],
+          "answer": 0,
+          "explanation": "兩個名詞連在一起用「の」：わたしの パン。「は」會變成句子的主題；「です」放在句尾，不放在兩個名詞中間。",
+          "id": "g-no/question/my-bread"
+        },
+        {
+          "prompt": "「にほんごの ほん」最自然的意思是？",
+          "options": [
+            "日文書",
+            "日本人",
+            "我的書"
+          ],
+          "answer": 0,
+          "explanation": "「にほんご」是日文，「ほん」是書；「の」在這裡表示內容，所以是「日文書」，不必翻成「日文的書」。",
+          "id": "g-no/question/meaning"
+        }
+      ]
+    },
+    {
+      "id": "g-mo",
+      "type": "grammar",
+      "title": "也：〜も",
+      "subtitle": "我也是學生",
+      "steps": [
+        {
+          "title": "名字後面的 さん",
+          "example": "たなかさん",
+          "reading": "tanaka san",
+          "meaning": "田中先生／小姐",
+          "body": "「さん」接在別人的名字後面，男女都可以用；說自己的名字時不加。",
+          "id": "g-mo/card/san"
+        },
+        {
+          "title": "も：也",
+          "example": "たなかさんは がくせいです。 ／ わたしも がくせいです。",
+          "reading": "tanaka san wa gakusei desu / watashi mo gakusei desu",
+          "meaning": "田中先生是學生。／ 我也是學生。",
+          "body": "前面說過「Aは …です」，換成「Bも …です」就是「B 也是…」。「も」取代「は」，不會寫成「はも」。",
+          "id": "g-mo/card/mo"
+        },
+        {
+          "title": "東西也一樣",
+          "example": "これも パンです。",
+          "reading": "kore mo pan desu",
+          "meaning": "這也是麵包。",
+          "body": "指著另一樣東西說「これも」，表示和前面說的一樣。",
+          "id": "g-mo/card/thing"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "朋友說「わたしは がくせいです」。你也是學生：わたし＿＿ がくせいです。",
+          "options": [
+            "も",
+            "は",
+            "の"
+          ],
+          "readings": [
+            "mo",
+            "wa",
+            "no"
+          ],
+          "answer": 0,
+          "explanation": "和對方一樣，用「も」：わたしも がくせいです。用「は」只是在說自己，沒有「也」的意思；選「の」會變成「わたしの がくせいです」（是我的學生）。",
+          "id": "g-mo/question/me-too"
+        },
+        {
+          "prompt": "「これも パンです。」是什麼意思？",
+          "options": [
+            "這也是麵包。",
+            "這是麵包。",
+            "這不是麵包。"
+          ],
+          "answer": 0,
+          "explanation": "「も」是「也」：這也是麵包。",
+          "id": "g-mo/question/meaning"
+        },
+        {
+          "prompt": "朋友說「これは パンです」。你指著朋友那邊的另一個麵包說：それ＿＿ パンです。",
+          "options": [
+            "も",
+            "の",
+            "か"
+          ],
+          "readings": [
+            "mo",
+            "no",
+            "ka"
+          ],
+          "answer": 0,
+          "explanation": "和前面說的一樣，用「も」：それも パンです。",
+          "id": "g-mo/question/that-too"
+        }
+      ]
+    },
+    {
+      "id": "g-to",
+      "type": "grammar",
+      "title": "和：AとB",
+      "subtitle": "把名詞一個一個列出來",
+      "steps": [
+        {
+          "title": "と：A 和 B",
+          "example": "パンと みず",
+          "reading": "pan to mizu",
+          "meaning": "麵包和水",
+          "body": "「と」把名詞連起來，像中文的「和」。當「和」用時只連名詞，不能用來連兩個句子（「と」還有其他用法，之後再學）。",
+          "id": "g-to/card/to"
+        },
+        {
+          "title": "指著東西說",
+          "example": "これと それです。",
+          "reading": "kore to sore desu",
+          "meaning": "是這個和那個。",
+          "body": "買東西時指著兩樣東西說，店員就知道你要哪些。",
+          "id": "g-to/card/point"
+        },
+        {
+          "title": "人也可以連",
+          "example": "わたしと たなかさんは がくせいです。",
+          "reading": "watashi to tanaka san wa gakusei desu",
+          "meaning": "我和田中先生是學生。",
+          "body": "「わたしと たなかさん」整個當作句子的主題，後面照樣接「は」。",
+          "id": "g-to/card/people"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「麵包和水」：パン＿＿みず",
+          "options": [
+            "と",
+            "の",
+            "も"
+          ],
+          "readings": [
+            "to",
+            "no",
+            "mo"
+          ],
+          "answer": 0,
+          "explanation": "把兩個名詞列出來用「と」：パンと みず。「パンの みず」變成「麵包的水」；「も」是「也」，不是「和」。",
+          "id": "g-to/question/and"
+        },
+        {
+          "prompt": "「パンと みず」是什麼意思？",
+          "options": [
+            "麵包和水",
+            "麵包的水",
+            "麵包也是水"
+          ],
+          "answer": 0,
+          "explanation": "「と」是「和」：麵包和水。",
+          "id": "g-to/question/meaning"
+        },
+        {
+          "prompt": "指著兩樣東西告訴店員：これ＿＿それです。",
+          "options": [
+            "と",
+            "も",
+            "の"
+          ],
+          "readings": [
+            "to",
+            "mo",
+            "no"
+          ],
+          "answer": 0,
+          "explanation": "要這個和那個，用「と」連起來：これと それです。「も」是「也」，不是「和」；「の」是「的」。",
+          "id": "g-to/question/point"
+        }
+      ]
+    },
+    {
+      "id": "g-kara-made",
+      "type": "grammar",
+      "title": "從哪裡到哪裡：から・まで",
+      "subtitle": "起點和終點",
+      "steps": [
+        {
+          "title": "から：起點",
+          "example": "とうきょうから",
+          "reading": "toukyou kara",
+          "meaning": "從東京",
+          "body": "「から」放在地點後面，表示從那裡出發。",
+          "id": "g-kara-made/card/kara"
+        },
+        {
+          "title": "まで：終點",
+          "example": "きょうとまで",
+          "reading": "kyouto made",
+          "meaning": "到京都",
+          "body": "「まで」放在地點後面，表示到那裡為止。買車票時說「京都まで」就是這個用法。",
+          "id": "g-kara-made/card/made"
+        },
+        {
+          "title": "從哪裡到哪裡",
+          "example": "ここから えきまで",
+          "reading": "koko kara eki made",
+          "meaning": "從這裡到車站",
+          "body": "起點用「から」、終點用「まで」，順序和中文的「從…到…」一樣。時間的「幾點到幾點」也用這兩個詞，學過時間之後再練。「から」接在地點後面是「從」；它也有「因為」的意思，那是接在句子後面，之後再學。",
+          "id": "g-kara-made/card/both"
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "想說「從東京」：とうきょう＿＿",
+          "options": [
+            "から",
+            "まで",
+            "の"
+          ],
+          "readings": [
+            "kara",
+            "made",
+            "no"
+          ],
+          "answer": 0,
+          "explanation": "起點用「から」：とうきょうから。「まで」是終點，「とうきょうの」是「東京的」。",
+          "id": "g-kara-made/question/kara"
+        },
+        {
+          "prompt": "想說「到京都」：きょうと＿＿",
+          "options": [
+            "まで",
+            "から",
+            "の"
+          ],
+          "readings": [
+            "made",
+            "kara",
+            "no"
+          ],
+          "answer": 0,
+          "explanation": "終點用「まで」：きょうとまで。「から」是起點，「きょうとの」是「京都的」。",
+          "id": "g-kara-made/question/made"
+        },
+        {
+          "prompt": "「えきから ここまで」是什麼意思？",
+          "options": [
+            "從車站到這裡",
+            "從這裡到車站",
+            "因為車站在這裡"
+          ],
+          "answer": 0,
+          "explanation": "「えきから」是從車站，「ここまで」是到這裡：從車站到這裡。這裡的「から」不是「因為」。",
+          "id": "g-kara-made/question/meaning"
+        }
+      ]
     }
   ];
+  // Grammar lessons are taught in array order. The plan lists what each lesson introduces and needs
+  // (validate() checks examples only use taught words), which card to revisit after a wrong answer,
+  // and where a ported question came from.
+  const lessonPlan = {
+    "g-identity": {
+      "requires": [],
+      "words": [
+        "わたし",
+        "がくせい"
+      ],
+      "grammar": [
+        "は",
+        "です"
+      ],
+      "review": {
+        "g-identity/question/sentence-ending": "g-identity/card/noun-sentence",
+        "g-identity/question/topic-reading": "g-identity/card/topic-reading"
+      }
+    },
+    "g-question": {
+      "requires": [
+        "g-identity"
+      ],
+      "words": [],
+      "grammar": [
+        "か"
+      ],
+      "review": {
+        "g-question/question/question-meaning": "g-question/card/implicit-person",
+        "g-question/question/question-ending": "g-question/card/question-particle"
+      }
+    },
+    "g-demo": {
+      "requires": [
+        "g-identity"
+      ],
+      "words": [
+        "これ",
+        "それ",
+        "あれ",
+        "パン"
+      ],
+      "grammar": [],
+      "review": {
+        "g-demo/question/held-item": "g-demo/card/near-speaker",
+        "g-demo/question/distant-item": "g-demo/card/far-from-both",
+        "g-demo/question/listener-item": "g-demo/card/near-listener"
+      }
+    },
+    "g-place": {
+      "requires": [
+        "g-question",
+        "g-demo"
+      ],
+      "words": [
+        "ここ",
+        "そこ",
+        "あそこ",
+        "どこ",
+        "トイレ",
+        "えき",
+        "すみません"
+      ],
+      "grammar": [],
+      "review": {
+        "g-place/question/far": "g-place/card/words",
+        "g-place/question/ask": "g-place/card/question",
+        "g-place/question/listener": "g-place/card/words"
+      }
+    },
+    "g-kono": {
+      "requires": [
+        "g-demo",
+        "g-question",
+        "g-place"
+      ],
+      "words": [
+        "この",
+        "その",
+        "あの",
+        "どの",
+        "どれ"
+      ],
+      "grammar": [],
+      "review": {
+        "g-kono/question/dono": "g-kono/card/which",
+        "g-kono/question/kore": "g-kono/card/kore-kono",
+        "g-kono/question/dore": "g-kono/card/which"
+      }
+    },
+    "g-who": {
+      "requires": [
+        "g-place",
+        "g-kono"
+      ],
+      "words": [
+        "だれ",
+        "なに",
+        "なん",
+        "いつ",
+        "ひと"
+      ],
+      "grammar": [],
+      "review": {
+        "g-who/question/jabiko-doko": "g-who/card/words",
+        "g-who/question/nan": "g-who/card/nan",
+        "g-who/question/dare": "g-who/card/dare"
+      },
+      "sources": {
+        "g-who/question/jabiko-doko": "Jabiko src/domain/exam/items/n5.ts n5-grammar-doko @31c96ab"
+      }
+    },
+    "g-negative": {
+      "requires": [
+        "g-question",
+        "g-demo"
+      ],
+      "words": [
+        "いいえ"
+      ],
+      "grammar": [
+        "じゃないです",
+        "じゃありません"
+      ],
+      "review": {
+        "g-negative/question/ja-nai": "g-negative/card/ja-nai",
+        "g-negative/question/answer": "g-negative/card/answer",
+        "g-negative/question/meaning": "g-negative/card/ja-arimasen"
+      }
+    },
+    "g-no": {
+      "requires": [
+        "g-demo"
+      ],
+      "words": [
+        "かさ",
+        "にほんご",
+        "ほん"
+      ],
+      "grammar": [
+        "の"
+      ],
+      "review": {
+        "g-no/question/jabiko-no": "g-no/card/a-no-b",
+        "g-no/question/my-bread": "g-no/card/a-no-b",
+        "g-no/question/meaning": "g-no/card/not-always-de"
+      },
+      "sources": {
+        "g-no/question/jabiko-no": "Jabiko src/domain/exam/items/n5.ts n5-grammar-no @31c96ab"
+      }
+    },
+    "g-mo": {
+      "requires": [
+        "g-demo",
+        "g-no",
+        "g-question"
+      ],
+      "words": [
+        "たなか",
+        "さん"
+      ],
+      "grammar": [
+        "も"
+      ],
+      "review": {
+        "g-mo/question/me-too": "g-mo/card/mo",
+        "g-mo/question/meaning": "g-mo/card/thing",
+        "g-mo/question/that-too": "g-mo/card/thing"
+      }
+    },
+    "g-to": {
+      "requires": [
+        "g-mo",
+        "g-no"
+      ],
+      "words": [
+        "みず"
+      ],
+      "grammar": [
+        "と"
+      ],
+      "review": {
+        "g-to/question/and": "g-to/card/to",
+        "g-to/question/meaning": "g-to/card/to",
+        "g-to/question/point": "g-to/card/point"
+      }
+    },
+    "g-kara-made": {
+      "requires": [
+        "g-place",
+        "g-no"
+      ],
+      "words": [
+        "とうきょう",
+        "きょうと"
+      ],
+      "grammar": [
+        "から",
+        "まで"
+      ],
+      "review": {
+        "g-kara-made/question/kara": "g-kara-made/card/kara",
+        "g-kara-made/question/made": "g-kara-made/card/made",
+        "g-kara-made/question/meaning": "g-kara-made/card/both"
+      }
+    }
+  };
   // Special sounds that are not separate characters, taught on the kana page.
   const sounds = [
     {
@@ -2119,7 +2979,7 @@ const Content = (() => {
     }
     return registry;
   }
-  const data = { rows, grammar, sounds, phrasebook, intro };
+  const data = { rows, grammar, lessonPlan, sounds, phrasebook, intro };
   // Kana row groups in teaching order; the kana page and home recommendation follow them.
   const rowGroups = Object.freeze({
     basic: Object.freeze(['a', 'ka', 'sa', 'ta', 'na', 'ha', 'ma', 'ya', 'ra', 'wa']),
@@ -2300,6 +3160,51 @@ const Content = (() => {
         if (Array.isArray(course.questions)) course.questions.forEach((q, j) => { if (record(q) && Array.isArray(q.options) && q.options.some(option => /[぀-ヿ]/u.test(option)) && q.readings === undefined) fail(`${path}.questions[${j}].readings`, 'Japanese options require readings'); });
       });
     }
+    // Lesson plan: every grammar lesson lists what it introduces and only uses taught words in its
+    // examples and quoted prompts; requirements point to earlier lessons; review cards exist.
+    const plan = record(candidate.lessonPlan) ? candidate.lessonPlan : (fail('lessonPlan', 'invalid lesson plan'), {});
+    const lessonsInOrder = Array.isArray(candidate.grammar) ? candidate.grammar.filter(record) : [];
+    const tokens = (id, seen = new Set()) => {
+      if (seen.has(id) || !record(plan[id])) return [];
+      seen.add(id);
+      const own = [...(Array.isArray(plan[id].words) ? plan[id].words : []), ...(Array.isArray(plan[id].grammar) ? plan[id].grammar : [])];
+      return [...own, ...(Array.isArray(plan[id].requires) ? plan[id].requires : []).flatMap(req => tokens(req, seen))];
+    };
+    lessonsInOrder.forEach((course, index) => {
+      const entry = plan[course.id], path = `lessonPlan.${course.id}`;
+      if (!record(entry)) { fail(path, 'every grammar lesson needs a plan entry'); return; }
+      for (const key of ['requires', 'words', 'grammar']) if (!Array.isArray(entry[key])) fail(`${path}.${key}`, 'required array');
+      for (const req of entry.requires || []) {
+        const at = lessonsInOrder.findIndex(item => item.id === req);
+        if (at < 0 || at >= index) fail(`${path}.requires`, `${req} must be an earlier lesson`);
+      }
+      const steps = Array.isArray(course.steps) ? course.steps : [], questions = Array.isArray(course.questions) ? course.questions : [];
+      const cardsHere = new Set(steps.map(step => step?.id)), questionsHere = new Set(questions.map(item => item?.id));
+      if (!record(entry.review)) fail(`${path}.review`, 'required review map');
+      else {
+        for (const id of questionsHere) if (!cardsHere.has(entry.review[id])) fail(`${path}.review`, `${id} needs a card to revisit`);
+        for (const id of Object.keys(entry.review)) if (!questionsHere.has(id)) fail(`${path}.review`, `unknown question ${id}`);
+      }
+      if (entry.sources !== undefined && (!record(entry.sources) || Object.keys(entry.sources).some(id => !questionsHere.has(id) || !text(entry.sources[id], `${path}.sources`)))) fail(`${path}.sources`, 'sources must name this lesson\'s questions');
+      const allowed = [...new Set(tokens(course.id))].sort((x, y) => y.length - x.length);
+      const untaught = (value) => {
+        let rest = String(value);
+        for (const token of allowed) rest = rest.split(token).join(' ');
+        return rest.replace(/[\s　、。？！「」（）／・〜…＿-]/gu, '');
+      };
+      // Examples and the correct option must use taught words only; distractors may show wrong forms.
+      const texts = [...steps.flatMap(step => [step?.example, step?.polite]), ...questions.map(item => Array.isArray(item?.options) ? item.options[item.answer] : null)];
+      for (const value of texts.filter(value => typeof value === 'string')) {
+        const rest = untaught(value);
+        if (/[\u3040-\u30ff\u3400-\u9fff]/u.test(rest) && /[\u3040-\u30ff]/u.test(value)) fail(`${path}`, `"${value}" uses words this lesson has not taught: ${rest}`);
+      }
+      // Prompts mix Chinese and Japanese, so only leftover kana counts there.
+      for (const item of questions) {
+        const kana = untaught(item?.prompt || '').replace(/[^\u3040-\u30ff]/gu, '');
+        if (kana) fail(`${path}`, `"${item.prompt}" uses words this lesson has not taught: ${kana}`);
+      }
+    });
+    for (const id of Object.keys(plan)) if (!lessonsInOrder.some(course => course.id === id)) fail(`lessonPlan.${id}`, 'unknown lesson');
     const categoryIds = new Set(), phraseIds = new Set();
     list(candidate.phrasebook, 'phrasebook').forEach((category, i) => {
       const path = `phrasebook[${i}]`;
@@ -2336,5 +3241,5 @@ const Content = (() => {
     return value;
   }
   deepFreeze(data); deepFreeze(courses);
-  return Object.freeze({ rows, rowGroups, grammar, sounds, phrasebook, intro, retiredTitles, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
+  return Object.freeze({ rows, rowGroups, grammar, lessonPlan, sounds, phrasebook, intro, retiredTitles, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
 })();
