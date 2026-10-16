@@ -139,6 +139,9 @@ function browser({
       match = html.match(
         new RegExp(`<button\\b[^>]*data-${name}="${value}"[^>]*>`),
       );
+    } else if (/^\[data-course=/.test(selector)) {
+      const [, value] = selector.match(/^\[data-course=["']([^"']+)["']\]$/) || [];
+      match = html.match(new RegExp(`<button\\b[^>]*data-course="${value}"[^>]*>`));
     } else if (selector.startsWith("#"))
       match = (html + index).match(
         new RegExp(`<[^>]+id="${selector.slice(1)}"[^>]*>`),
@@ -1736,7 +1739,7 @@ test('returning learners get a home dashboard of next steps, everything on offer
   b.study('study-favorite', { phrase: 'phrase/hotel/check-in' });
   b.navigate('#home');
   const html = b.html, section = (name) => html.match(new RegExp(`<section class="${name}"[\\s\\S]*?</section>`))[0];
-  assert.match(html, /<p>接下來可以：練平假名・か行，或學「指示詞：これ・それ・あれ」。<\/p>/, 'Where to go next, without "today" pressure');
+  assert.match(html, /<p>接下來可以：學平假名・か行，或學「指示詞：これ・それ・あれ」。<\/p>/, 'Where to go next, without "today" pressure');
   const progress = section('dash-progress');
   assert.match(progress, /<dt>平假名<\/dt><dd><strong>5<\/strong> \/ 104 字<\/dd>/);
   assert.match(progress, new RegExp(`<dt>基礎句型</dt><dd><strong>2</strong> / ${grammarCount} 課</dd>`));
@@ -1858,7 +1861,7 @@ test('home resumes the 促音 and 長音 lessons where they stopped and offers t
   both.study('study-open', { course: 's-long' }); both.study('study-next');
   both.study('study-open', { course: 'h-a' }); both.study('study-next');
   both.navigate('#home');
-  assert.match(section(both, 'dash-next'), /data-course="h-a"[\s\S]*?接著學：平假名・あ行[\s\S]*?data-course="s-long"[\s\S]*?接著學「長音：把音拉長一拍」/);
+  assert.match(section(both, 'dash-next'), /data-course="h-a"[\s\S]*?<strong>五十音<\/strong><span>接著學：平假名・あ行[\s\S]*?data-course="s-long"[\s\S]*?<strong>五十音<\/strong><span>接著學：長音：把音拉長一拍/);
   // A katakana-first learner keeps the unfinished lesson too.
   const katakana = browser({ hash: '#study/k-a' });
   for (let i = 0; i < 5; i++) katakana.study('study-next');
@@ -1938,6 +1941,39 @@ test('回 leads back to where a lesson or review was opened, through the next gr
   assert.deepEqual(exit(g), ['#grammar', '回句型列表']);
   g.navigate('#home'); g.study('study-open', { course: 'g-identity' });
   assert.deepEqual(exit(g), ['#home', '回首頁']);
+  // Back on a list, the lesson just left has focus.
+  table.click('.exit');
+  assert.equal(table.hash, '#kana');
+  assert.equal(table.focused, '[data-course="h-ka"]');
+  const list = browser({ hash: '#grammar' });
+  list.study('study-open', { course: 'g-question' });
+  list.back();
+  assert.equal(list.hash, '#grammar');
+  assert.equal(list.focused, '[data-course="g-question"]');
+});
+
+test('the grammar review leads back by source, and odd or missing history state never changes where 回 leads', () => {
+  const exit = (b) => b.html.match(/<a class="exit" href="([^"]+)">← ([^<]+)<\/a>/)?.slice(1);
+  const g = completedGrammarBrowser();
+  g.navigate('#home'); g.study('study-grammar-review');
+  assert.deepEqual(exit(g), ['#home', '回首頁']);
+  g.navigate('#grammar'); g.navigate('#grammar-review');
+  assert.deepEqual(exit(g), ['#grammar', '回句型列表']);
+  // Saved state from elsewhere or from older versions falls back to the list; it never becomes a link.
+  for (const historyState of [{ from: 'https://example.com/' }, { from: '#travel' }, { from: 42 }, { from: ['#home'] }, 'junk', null]) {
+    assert.deepEqual(exit(browser({ hash: '#study/h-ka', historyState })), ['#kana', '回五十音表'], JSON.stringify(historyState));
+  }
+  // A direct link keeps its plain way back even after going home and coming back with the back button.
+  const direct = browser({ hash: '#study/h-a' });
+  direct.navigate('#home');
+  direct.back();
+  assert.equal(direct.hash, '#study/h-a');
+  assert.deepEqual(exit(direct), ['#kana', '回五十音表']);
+  // An address that shows home counts as home.
+  const odd = browser({ hash: '#nowhere' });
+  assert.match(odd.html, /日文入門/);
+  odd.study('study-open', { course: 'h-a' });
+  assert.deepEqual(exit(odd), ['#home', '回首頁']);
 });
 
 test('the kana card always leads to the table: its other way in is あ行 before anything is learned, then the short review', () => {
@@ -1945,12 +1981,20 @@ test('the kana card always leads to the table: its other way in is あ行 before
   const fresh = browser();
   assert.match(card(fresh), /<button class="primary" data-action="kana">學五十音/);
   assert.match(card(fresh), /data-action="study-open" data-course="h-a">先學あ行/);
-  // Begun but nothing learned yet: the card stays the same, and carrying on is listed under 接著做.
+  // Begun but nothing learned yet: the card only leads to the table, and carrying on is listed once, under 接著做.
   const begun = browser();
   begun.study('study-open', { course: 'h-a' }); begun.study('study-next');
   begun.navigate('#home');
-  assert.equal(card(begun), card(fresh));
+  assert.match(card(begun), /<button class="primary" data-action="kana">學五十音/);
+  assert.doesNotMatch(card(begun), /data-action="study-open"|先學あ行/);
+  assert.equal((begun.html.match(/data-course="h-a"/g) || []).length, 1);
   assert.match(begun.html, /<section class="dash-next"[\s\S]*?data-course="h-a"[\s\S]*?接著學：平假名・あ行/);
+  // The same for a learner who began with katakana: no hiragana あ行 box, the katakana lesson under 接著做.
+  const katakana = browser();
+  katakana.study('study-open', { course: 'k-a' }); katakana.study('study-next');
+  katakana.navigate('#home');
+  assert.doesNotMatch(card(katakana), /先學あ行/);
+  assert.match(katakana.html, /data-course="k-a"[\s\S]*?接著學：片假名・あ行/);
   // Something learned: the short review replaces あ行; the card never opens a lesson itself.
   const learned = browser({ hash: '#study/h-a' });
   for (let i = 0; i < 5; i++) learned.study('study-next');

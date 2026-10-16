@@ -287,7 +287,7 @@ test('unknown route/course cannot inject markup and unrelated actions pass throu
   assert.match(b.render('#study/__proto__'), /找不到/);
   assert.match(b.render('#study/constructor'), /找不到/);
   assert.equal(b.study.total('__proto__'), 0);
-  assert.equal(b.study.context('#kana'), '五十音學習路線');
+  assert.equal(b.study.context('#kana'), '五十音表');
 });
 
 test('travel section is separate; each situation shows keywords and playable phrases without a quiz', () => {

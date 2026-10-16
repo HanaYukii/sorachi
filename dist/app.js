@@ -80,14 +80,14 @@ const warningMessage = () =>
 const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
 
 // Where a lesson or review was opened from (#82): home, the kana table or the grammar list decides where 回 leads.
-// It is kept in the history entry, so a reload and the browser's back and forward keep it. A page opened on the way
-// (the next group, feedback) keeps the earlier source; a direct link has none.
+// It is kept in the history entry, so a reload and the browser's back and forward keep it. A lesson opened from a
+// lesson or review (the next group), or after feedback, keeps the earlier source; anything else, such as a direct
+// link, has none. An entry gets its source once, when it is first shown, so going back to it never changes it.
 const exits = ["#home", "#kana", "#grammar"];
-let cameFrom = null, leftCourse = null;
-function arrive(event) {
-  const old = event?.oldURL ? new URL(event.oldURL).hash || "#home" : null;
-  leftCourse = old?.match(/^#study\/(.+)$/)?.[1] ?? null;
-  if (old && window.history.state?.from === undefined) window.history.replaceState({ from: exits.includes(old) ? old : cameFrom }, "");
+const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|feedback$)/.test(page || "");
+let cameFrom = null, shown = null;
+function arrive() {
+  if (window.history.state?.from === undefined) window.history.replaceState({ from: exits.includes(shown) ? shown : passesOn(shown) ? cameFrom : null }, "");
   route();
 }
 
@@ -133,13 +133,14 @@ function home() {
   // Once both scripts and the 促音・長音 lessons are done, the main card leads to grammar.
   const grammarHero = !newVisitor && allKanaDone && !kanaOpen && grammarNext;
   // Returning learners read where to go next, unfinished work first; no "today" wording, so no daily pressure.
-  const plan = [kanaOpen && `${sound ? "接著學" : "接著練"}${kanaName}`, grammarNext?.resume && `把「${grammarNext.title}」學完`, !kanaOpen && !allKanaDone && `${sound ? "學" : "練"}${kanaName}`, grammarStarted && grammarNext && !grammarNext.resume && `學「${grammarNext.title}」`].filter(Boolean).slice(0, 2);
+  const plan = [kanaOpen && `接著學${kanaName}`, grammarNext?.resume && `把「${grammarNext.title}」學完`, !kanaOpen && !allKanaDone && `學${kanaName}`, grammarStarted && grammarNext && !grammarNext.resume && `學「${grammarNext.title}」`].filter(Boolean).slice(0, 2);
   const welcome = newVisitor ? "零基礎也可以用。學五十音、練句型，旅行時查常用語。" : plan.length ? `接下來可以：${escapeHTML(plan.join("，或"))}。` : "歡迎回來。";
   // The kana card always leads to the table (#82); its other way in is the short review, or あ行 before any kana is
   // learned. Where to carry on is listed under 接著做, so the card never turns into a lesson or a quiz by itself.
-  const kanaHero = `<section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">五十音</span></div><h2 id="course-title"><span>平假名</span><span>與片假名</span></h2><p class="hero-description">看字表、聽讀音，選一行開始。</p><button class="primary" data-action="kana">學五十音${icons.arrow}</button></div><div class="hero-art" aria-hidden="true">${friend("", "", "cloud-kana", 210, "(max-width: 540px) 112px, 210px")}</div>${reviewEntry || `<section class="review-entry"><div><h2>從第一組開始</h2><p>先學あ行的五個字：看字、聽讀音，再做練習。</p></div><button class="text-button" data-action="study-open" data-course="h-a">先學あ行${icons.arrow}</button></section>`}</section>`;
-  // Once kana has begun, carrying on with it is listed under 接著做.
+  // あ行 is offered only before any kana lesson has begun; after that, carrying on is listed under 接著做.
   const kanaStarted = kanaPath.some((id) => progress.study.courses[id]?.completedAt || unfinished(id));
+  const firstGroup = kanaStarted ? "" : `<section class="review-entry" aria-label="從第一組開始"><div><h2>從第一組開始</h2><p>先學あ行的五個字：看字、聽讀音，再做練習。</p></div><button class="text-button" data-action="study-open" data-course="h-a">先學あ行${icons.arrow}</button></section>`;
+  const kanaHero = `<section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">五十音</span></div><h2 id="course-title"><span>平假名</span><span>與片假名</span></h2><p class="hero-description">看字表、聽讀音，選一行開始。</p><button class="primary" data-action="kana">學五十音${icons.arrow}</button></div><div class="hero-art" aria-hidden="true">${friend("", "", "cloud-kana", 210, "(max-width: 540px) 112px, 210px")}</div>${reviewEntry || firstGroup}</section>`;
   const kanaNext = kanaStarted && (kanaOpen || !allKanaDone) ? { id: nextKana, title: kanaTitle, open: kanaOpen, sound } : null;
   const grammarDone = Content.grammar.filter((course) => progress.study.courses[course.id]?.completedAt).length;
   const hero = grammarHero ? `<section class="lesson-hero" aria-labelledby="course-title"><div class="hero-copy"><div class="lesson-label"><span class="number">基礎句型</span><span>${grammarNext.resume ? "接著學" : "下一課"}</span></div><h2 id="course-title">${escapeHTML(grammarNext.title)}</h2><p class="hero-description">${escapeHTML(Content.lessonPlan[grammarNext.courseId]?.unit || "")}</p><p class="kana-progress">句型已完成 ${grammarDone} / ${Content.grammar.length} 課</p><button class="primary" data-action="study-open" data-course="${grammarNext.courseId}">${grammarNext.resume ? "接著學" : "開始這一課"}${icons.arrow}</button><div><button class="text-button course-map-link" data-action="grammar">查看全部句型</button></div></div><div class="hero-art" aria-hidden="true">${friend("", "", "cloud-complete", 210, "(max-width: 540px) 112px, 210px")}</div>${reviewEntry}</section>` : kanaHero;
@@ -181,7 +182,7 @@ function homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review
   const next = [
     kanaNext?.open ? kanaRow : "",
     // An unfinished 促音・長音 lesson other than the one above.
-    ...otherSounds.map((id) => row(`data-action="study-open" data-course="${id}"`, "促音・長音", `接著學「${escapeHTML(Study.title(id))}」`)),
+    ...otherSounds.map((id) => row(`data-action="study-open" data-course="${id}"`, "五十音", `接著學：${escapeHTML(Study.title(id))}`)),
     grammarNext?.resume ? grammarRow : "",
     kanaNext?.open ? "" : kanaRow,
     grammarNext?.resume ? "" : grammarRow,
@@ -402,8 +403,8 @@ function aboutPage() {
 function route() {
   Study.stopAudio();
   cameFrom = exits.includes(window.history.state?.from) ? window.history.state.from : null;
-  const left = Study.title(leftCourse) ? leftCourse : null;
-  leftCourse = null;
+  // The lesson on screen until now, so its list can bring that row back into view.
+  const leaving = shown?.startsWith("#study/") ? shown.slice(7) : null, left = Study.title(leaving) ? leaving : null;
   // A historical completion URL must never claim an active replay is finished.
   if (location.hash === "#done" && progress.inProgress) {
     replaceRoute("#lesson");
@@ -418,12 +419,14 @@ function route() {
   selectedWrong = null;
   window.scrollTo({ top: 0, behavior: "instant" });
   const studyPage = Study.render(location.hash);
+  // Pages without a route of their own show home.
+  shown = studyPage !== null || ["#lesson", "#history", "#feedback", "#about"].includes(location.hash) || location.hash === "#done" && progress.completed ? location.hash : "#home";
   if (studyPage !== null) {
-    document.title = `${location.hash === "#kana-review" ? "五十音複習" : location.hash === "#kana" ? "五十音練習" : location.hash === "#travel" ? "旅遊常用語" : location.hash === "#grammar" ? "基礎句型" : location.hash === "#grammar-review" ? "句型小複習" : location.hash === "#settings" ? "學習設定" : (location.hash.startsWith("#travel/") ? Study.travelTitle(location.hash.slice(8)) : Study.title(location.hash.slice(7))) || "找不到頁面"}｜SoraChi`;
+    document.title = `${location.hash === "#kana-review" ? "五十音複習" : location.hash === "#kana" ? "五十音表" : location.hash === "#travel" ? "旅遊常用語" : location.hash === "#grammar" ? "基礎句型" : location.hash === "#grammar-review" ? "句型小複習" : location.hash === "#settings" ? "學習設定" : (location.hash.startsWith("#travel/") ? Study.travelTitle(location.hash.slice(8)) : Study.title(location.hash.slice(7))) || "找不到頁面"}｜SoraChi`;
     app.innerHTML = studyPage;
     focusHeading();
-    // Back on the kana table from a lesson, that lesson's row is in view and has focus.
-    const row = location.hash === "#kana" && left ? app.querySelector(`[data-course="${left}"]`) : null;
+    // Back on the kana table or the grammar list from a lesson, that lesson's row is in view and has focus.
+    const row = (location.hash === "#kana" || location.hash === "#grammar") && left ? app.querySelector(`[data-course="${left}"]`) : null;
     if (row) { row.focus({ preventScroll: true }); row.scrollIntoView?.({ block: "center" }); }
     return;
   }
@@ -450,7 +453,7 @@ function route() {
   }
 }
 function replaceRoute(hash) {
-  window.history.replaceState(null, "", hash);
+  window.history.replaceState({ from: null }, "", hash);
   route();
 }
 function go(hash) {
@@ -602,4 +605,6 @@ window.addEventListener("storage", (event) => {
   updateStorageWarning();
 });
 window.addEventListener("hashchange", arrive);
+// The page opened first has no source; marking it keeps a later visit back from giving it one.
+if (window.history.state?.from === undefined) window.history.replaceState({ from: null }, "");
 route();
