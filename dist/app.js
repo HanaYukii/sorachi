@@ -307,8 +307,9 @@ function focusHeading() {
 function aboutPage() {
   document.title = "關於 SoraChi｜SoraChi";
   app.innerHTML = `<div class="lesson-shell"><header class="lesson-header"><a class="exit" href="#home">← 回首頁</a><a class="header-link" href="#travel">旅遊常用語</a></header><main id="main" tabindex="-1" class="utility-main info-page"><h1 class="focus-heading" tabindex="-1">關於 SoraChi</h1>
-    <section class="info-section"><h2>給剛開始學日文的人</h2><p>SoraChi 從五十音和基礎句型開始，也提供旅行時可直接查用的常用語。每次只練少量內容，學過的字可以回來混合複習。</p><p>這個專案的方向是新手入門、N5／N4 準備與簡單旅遊日文；目前的內容仍在逐步補齊。</p></section>
-    <section class="info-section"><h2>作者</h2><p class="author-name">花雪（HanaYukii）</p><p>程式競賽選手出身，碩士畢業後進入 Google，任職三年，目前在 AI 新創擔任 Tech Lead。</p><p>以前考過日檢 N2，2024 年重新追起日系偶像後又開始使用日文，也製作過大量偶像相關翻譯素材。</p><p>我從自己的學習需求做了日文練習網站 Jabiko，持續開發練習功能與整理題庫。SoraChi 則從零基礎出發，把五十音、基本句型和旅遊關鍵字整理成適合新手使用的版本。</p><a class="text-button" href="https://hanayukii.dev/about" target="_blank" rel="noopener noreferrer">作者的個人網站 ↗</a></section>
+    <section class="info-section"><h2>緣起</h2><p>把 Jabiko 分享出去後，我發現完全沒有日文基礎的人，其實很難直接使用。五十音還不熟，就要面對單字、句型和題目，往往不知道從哪裡開始。所以另外做了 SoraChi，從五十音和基本句子架構開始，讓零基礎的人也能用。</p><p>後來又想到，這些剛入門的人，也常有去日本旅遊的需求。點餐、結帳、買票、寄放行李，記得幾個簡單的關鍵字，就能處理不少事情，不一定要先學會完整句子。因此 SoraChi 把旅遊常用語獨立成一區，需要時可以直接查，也能在出發前先記熟。</p><p>學習內容會逐步往 N5／N4 延伸，目前先把入門基礎整理好。</p></section>
+    <section class="info-section"><h2>吉祥物：雲朵精靈</h2><p>Sora（そら）在日文裡是「天空」，和雲朵的形象相呼應。SoraChi 的吉祥物是一隻頭上有淡紫色葉子、繫著淡黃色圍巾的雲朵精靈，在不同區塊會拿著不同的小物出現。</p><div class="mascot-poses"><figure>${friend("", "拿著あ字卡的雲朵精靈", "cloud-kana", 100, "(max-width: 540px) 64px, 100px")}<figcaption>五十音</figcaption></figure><figure>${friend("", "抱著書的雲朵精靈", "cloud-complete", 100, "(max-width: 540px) 64px, 100px")}<figcaption>基礎句型</figcaption></figure><figure>${friend("", "帶著旅行箱的雲朵精靈", "cloud-travel", 100, "(max-width: 540px) 64px, 100px")}<figcaption>旅遊常用語</figcaption></figure></div></section>
+    <section class="info-section"><h2>作者</h2><p class="author-name">花雪（HanaYukii）</p><p>程式競賽選手出身，碩士畢業後進入 Google，任職三年，目前在 AI 新創擔任 Tech Lead。</p><p>以前考過日檢 N2，2024 年重新追起日系偶像後又開始使用日文，也製作過大量偶像相關翻譯素材。</p><p>除了翻譯，也持續開發日文練習網站 Jabiko 與 SoraChi，整理教材、練習功能與題庫。</p><a class="text-button" href="https://hanayukii.dev/about" target="_blank" rel="noopener noreferrer">作者的個人網站 ↗</a></section>
     </main>${footer()}</div>`;
   focusHeading();
 }
