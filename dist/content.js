@@ -6935,6 +6935,8 @@ const Content = (() => {
       if (value.extra !== undefined) card(value.extra, `${path}.extra`, seen, kind);
       for (const key of ['speech', 'politeSpeech']) if (value[key] !== undefined && (typeof value[key] !== 'string' || !/^[\u3040-\u30ff\u3000-\u303f\uff01-\uff1f\s、。？！ー]+$/u.test(value[key]))) fail(`${path}.${key}`, 'speech text must be kana only');
       if (value.politeSpeech !== undefined && value.polite === undefined) fail(`${path}.politeSpeech`, 'politeSpeech needs polite');
+      // Keywords, a fuller form, staff questions and an extra part belong to travel cards; a lesson card never shows them.
+      if (kind === 'card') for (const key of ['keywords', 'polite', 'politeReading', 'politeMeaning', 'politeSpeech', 'staffAsks', 'extra']) if (value[key] !== undefined) fail(`${path}.${key}`, 'only travel cards have this part');
       if (value.staffAsks !== undefined) {
         if (!record(value.staffAsks)) fail(`${path}.staffAsks`, 'invalid staff question');
         else { text(value.staffAsks.example, `${path}.staffAsks.example`, 'ja'); text(value.staffAsks.reading, `${path}.staffAsks.reading`, 'reading'); text(value.staffAsks.meaning, `${path}.staffAsks.meaning`, 'zh'); }

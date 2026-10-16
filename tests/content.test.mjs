@@ -140,6 +140,12 @@ test('schema guards reject missing Japanese, readings, Chinese and partial polit
   assert.match(errors(d => d.grammar[0].steps[0].meaning = ''), /meaning/i);
   assert.match(errors(d => d.phrasebook[0].steps[0].politeReading = ''), /politeReading/i);
   assert.match(errors(d => d.phrasebook[0].steps[0].keywords[0][1] = ''), /reading/i);
+  // A lesson card shows no travel-only part, so content with one is refused instead of being dropped silently.
+  for (const [key, value] of [['keywords', [['わたし', 'watashi', '我']]], ['polite', 'わたしです'], ['staffAsks', { example: 'なんですか', reading: 'nan desu ka', meaning: '是什麼' }], ['extra', {}]]) {
+    assert.match(errors(d => { d.grammar[0].steps[0][key] = value; }), new RegExp(`steps\\[0\\]\\.${key}: only travel cards have this part`), key);
+    assert.match(errors(d => { d.sounds[0].steps[0][key] = value; }), new RegExp(`steps\\[0\\]\\.${key}: only travel cards have this part`), `sounds ${key}`);
+  }
+  assert.doesNotMatch(errors(d => { d.phrasebook[0].steps[0].polite = 'すみません、おねがいします'; d.phrasebook[0].steps[0].politeReading = 'sumimasen onegaishimasu'; d.phrasebook[0].steps[0].politeMeaning = '不好意思，麻煩你'; }), /only travel cards/);
 });
 
 test('options must be distinct nonempty strings and the correct index must exist', () => {
