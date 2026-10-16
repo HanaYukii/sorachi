@@ -732,8 +732,8 @@ const Content = (() => {
   const phrasebook = [
     {
       "id": "basics",
-      "title": "找人幫忙、聽不懂時",
-      "subtitle": "叫店員・再說一次・慢一點",
+      "title": "找人幫忙、聽不懂、忘了東西",
+      "subtitle": "叫店員・再說一次・慢一點・指畫面・忘了東西",
       "steps": [
         {
           "title": "叫一下店員",
@@ -779,6 +779,82 @@ const Content = (() => {
           "reading": "yukkuri hanashite kudasai",
           "meaning": "請慢一點說。",
           "id": "phrase/basics/slowly"
+        },
+        {
+          "title": "聽不懂時",
+          "keywords": [
+            [
+              "わかりません",
+              "wakarimasen",
+              "聽不懂／不知道"
+            ]
+          ],
+          "body": "聽不懂時直接說，再接著請對方「もう一度」（再說一次）或「ゆっくり」（慢一點）。",
+          "example": "すみません、わかりません。",
+          "reading": "sumimasen, wakarimasen",
+          "meaning": "不好意思，我聽不懂。",
+          "polite": "すみません、日本語がよくわかりません。",
+          "politeReading": "sumimasen, nihongo ga yoku wakarimasen",
+          "politeMeaning": "不好意思，我不太懂日文。",
+          "id": "phrase/basics/not-understood"
+        },
+        {
+          "title": "指著手機畫面說",
+          "keywords": [
+            [
+              "これです",
+              "kore desu",
+              "就是這個"
+            ]
+          ],
+          "body": "指著手機上的地址、商品照片或訂單畫面說「これです」。找商品時可以說「これ、ありますか？」（kore, arimasu ka，有這個嗎？）。只說名詞，對方不一定知道你要做什麼，所以畫面要先給對方看。",
+          "example": "これです。",
+          "reading": "kore desu",
+          "meaning": "就是這個。",
+          "polite": "すみません、これはどこですか？",
+          "politeReading": "sumimasen, kore wa doko desu ka",
+          "politeMeaning": "不好意思，這個（地方）在哪裡？",
+          "id": "phrase/basics/point"
+        },
+        {
+          "title": "東西忘在車上或店裡",
+          "keywords": [
+            [
+              "忘れ物（わすれもの）",
+              "wasuremono",
+              "遺失物"
+            ],
+            [
+              "財布（さいふ）",
+              "saifu",
+              "錢包"
+            ],
+            [
+              "スマホ",
+              "sumaho",
+              "手機"
+            ]
+          ],
+          "body": "知道忘在哪裡時，用這句說地點和東西。給站務員或店員看搭車的時間、方向或照片，再補充顏色，比較容易找到。",
+          "example": "電車に財布を忘れました。",
+          "reading": "densha ni saifu o wasuremashita",
+          "meaning": "我把錢包忘在電車上了。",
+          "id": "phrase/basics/left-behind"
+        },
+        {
+          "title": "不知道掉在哪裡",
+          "keywords": [
+            [
+              "なくしました",
+              "nakushimashita",
+              "弄丟了"
+            ]
+          ],
+          "body": "不確定在哪裡弄丟時用這句；知道忘在哪裡，改說「〇〇に忘れました」。可以向車站、店家或派出所（交番，kouban）詢問。",
+          "example": "財布をなくしました。",
+          "reading": "saifu o nakushimashita",
+          "meaning": "我把錢包弄丟了。",
+          "id": "phrase/basics/lost"
         },
         {
           "title": "回應與道謝",
@@ -1116,7 +1192,7 @@ const Content = (() => {
     {
       "id": "shopping",
       "title": "買東西",
-      "subtitle": "價格・袋子・收據・試穿",
+      "subtitle": "價格・試穿・尺寸・決定・袋子・收據",
       "steps": [
         {
           "title": "問價格",
@@ -1132,6 +1208,67 @@ const Content = (() => {
           "reading": "kore wa ikura desu ka",
           "meaning": "這個多少錢？",
           "id": "phrase/shopping/price"
+        },
+        {
+          "title": "想試穿",
+          "keywords": [
+            [
+              "試着（しちゃく）",
+              "shichaku",
+              "試穿"
+            ]
+          ],
+          "body": "拿著想試的衣服問店員。",
+          "example": "試着、いいですか？",
+          "reading": "shichaku, ii desu ka",
+          "meaning": "可以試穿嗎？",
+          "polite": "試着してもいいですか？",
+          "politeReading": "shichaku shite mo ii desu ka",
+          "politeMeaning": "我可以試穿嗎？",
+          "id": "phrase/shopping/try-on"
+        },
+        {
+          "title": "尺寸：大一點、小一點",
+          "keywords": [
+            [
+              "サイズ",
+              "saizu",
+              "尺寸"
+            ],
+            [
+              "大きい（おおきい）",
+              "ookii",
+              "大"
+            ],
+            [
+              "小さい（ちいさい）",
+              "chiisai",
+              "小"
+            ]
+          ],
+          "body": "想換大一號，就問「大きいサイズ、ありますか？」。試穿後覺得太大，可以說「ちょっと大きいです」（chotto ookii desu，有點大），再把「大きい」換成「小さい」，問有沒有小一號的。",
+          "example": "大きいサイズ、ありますか？",
+          "reading": "ookii saizu, arimasu ka",
+          "meaning": "有大一點的尺寸嗎？",
+          "polite": "もう少し大きいサイズはありますか？",
+          "politeReading": "mou sukoshi ookii saizu wa arimasu ka",
+          "politeMeaning": "有再大一點的尺寸嗎？",
+          "id": "phrase/shopping/size"
+        },
+        {
+          "title": "決定買這個",
+          "keywords": [
+            [
+              "これください",
+              "kore kudasai",
+              "我要這個"
+            ]
+          ],
+          "body": "指著商品說就可以。",
+          "example": "これ、ください。",
+          "reading": "kore, kudasai",
+          "meaning": "我要這個。",
+          "id": "phrase/shopping/this-one"
         },
         {
           "title": "需要袋子",
@@ -1167,28 +1304,136 @@ const Content = (() => {
           "reading": "reshiito o onegaishimasu",
           "meaning": "麻煩給我收據。",
           "id": "phrase/shopping/receipt"
-        },
+        }
+      ]
+    },
+    {
+      "id": "lines",
+      "title": "排隊、營業時間與景點入場",
+      "subtitle": "排隊・等多久・到幾點・當日票・入口・拍照",
+      "steps": [
         {
-          "title": "想試穿",
+          "title": "這是在排隊嗎",
           "keywords": [
             [
-              "試着（しちゃく）",
-              "shichaku",
-              "試穿"
+              "並んでますか（ならんでますか）",
+              "narandemasu ka",
+              "在排隊嗎"
+            ],
+            [
+              "最後尾（さいこうび）",
+              "saikoubi",
+              "隊伍最後面"
             ]
           ],
-          "body": "拿著想試的衣服問店員。說「試着、いいですか？」就能表達想試穿。",
-          "example": "試着してもいいですか？",
-          "reading": "shichaku shite mo ii desu ka",
-          "meaning": "可以試穿嗎？",
-          "id": "phrase/shopping/try-on"
+          "body": "看到人群不確定是不是隊伍時問。有些店要先取號或在名單上登記，先看門口的說明；隊伍最後面常有「最後尾」的牌子。",
+          "example": "並んでますか？",
+          "reading": "narandemasu ka",
+          "meaning": "這是在排隊嗎？",
+          "polite": "すみません、並んでいますか？",
+          "politeReading": "sumimasen, narande imasu ka",
+          "politeMeaning": "不好意思，請問是在排隊嗎？",
+          "id": "phrase/lines/queue"
+        },
+        {
+          "title": "要等多久",
+          "keywords": [
+            [
+              "何分（なんぷん）",
+              "nanpun",
+              "幾分鐘"
+            ],
+            [
+              "待ちます（まちます）",
+              "machimasu",
+              "等"
+            ]
+          ],
+          "body": "對方可能回「5分」（gofun，5 分鐘）這類時間。聽不懂數字時，可以請對方寫下來：「書いてください」（kaite kudasai）。",
+          "example": "何分くらい待ちますか？",
+          "reading": "nanpun kurai machimasu ka",
+          "meaning": "大概要等幾分鐘？",
+          "id": "phrase/lines/wait"
+        },
+        {
+          "title": "營業到幾點",
+          "keywords": [
+            [
+              "何時まで（なんじまで）",
+              "nanji made",
+              "到幾點"
+            ]
+          ],
+          "body": "問店家或景點營業到幾點，對方可能回「8時まで」（hachiji made，到 8 點）。和「要等多久」不同，這是問結束的時間。",
+          "example": "何時までですか？",
+          "reading": "nanji made desu ka",
+          "meaning": "營業到幾點？",
+          "id": "phrase/lines/hours"
+        },
+        {
+          "title": "當日票與預約",
+          "keywords": [
+            [
+              "当日券（とうじつけん）",
+              "toujitsuken",
+              "當日票"
+            ],
+            [
+              "予約（よやく）",
+              "yoyaku",
+              "預約"
+            ]
+          ],
+          "body": "沒有先買票時問這句；已經預約的話，直接出示預約畫面。要不要預約、票價多少，依景點而定。",
+          "example": "当日券、ありますか？",
+          "reading": "toujitsuken, arimasu ka",
+          "meaning": "有當日票嗎？",
+          "id": "phrase/lines/same-day"
+        },
+        {
+          "title": "找入口",
+          "keywords": [
+            [
+              "入口（いりぐち）",
+              "iriguchi",
+              "入口"
+            ]
+          ],
+          "body": "漢字和中文一樣，但讀音不同：入口是 iriguchi，出口是 deguchi。",
+          "example": "入口はどこですか？",
+          "reading": "iriguchi wa doko desu ka",
+          "meaning": "入口在哪裡？",
+          "id": "phrase/lines/entrance"
+        },
+        {
+          "title": "拍照前先問",
+          "keywords": [
+            [
+              "写真（しゃしん）",
+              "shashin",
+              "照片"
+            ],
+            [
+              "いいですか",
+              "ii desu ka",
+              "可以嗎"
+            ]
+          ],
+          "body": "可以拍照不代表可以錄影或錄音，以現場標示和工作人員的回答為準。標示寫「撮影禁止」（satsuei kinshi）就是禁止拍攝。",
+          "example": "写真、いいですか？",
+          "reading": "shashin, ii desu ka",
+          "meaning": "可以拍照嗎？",
+          "polite": "写真を撮ってもいいですか？",
+          "politeReading": "shashin o totte mo ii desu ka",
+          "politeMeaning": "請問可以拍照嗎？",
+          "id": "phrase/lines/photo"
         }
       ]
     },
     {
       "id": "t-place",
       "title": "找廁所、問位置",
-      "subtitle": "廁所・車站・出口・電梯",
+      "subtitle": "廁所・車站・出口・電梯・置物櫃",
       "steps": [
         {
           "title": "找廁所",
@@ -1260,6 +1505,54 @@ const Content = (() => {
           "reading": "erebeetaa wa doko desu ka",
           "meaning": "電梯在哪裡？",
           "id": "phrase/t-place/facilities"
+        },
+        {
+          "title": "找置物櫃",
+          "keywords": [
+            [
+              "ロッカー",
+              "rokkaa",
+              "置物櫃"
+            ],
+            [
+              "空き（あき）",
+              "aki",
+              "空的、可使用"
+            ]
+          ],
+          "body": "車站常寫「コインロッカー」，標「空き」的是空櫃。大小、價格、付款方式和能放多久依設備而定，先看櫃子上的說明。想把行李寄在飯店，見「飯店與預約」。",
+          "example": "ロッカー、どこですか？",
+          "reading": "rokkaa, doko desu ka",
+          "meaning": "置物櫃在哪裡？",
+          "polite": "コインロッカーはどこですか？",
+          "politeReading": "koin rokkaa wa doko desu ka",
+          "politeMeaning": "投幣式置物櫃在哪裡？",
+          "id": "phrase/t-place/locker"
+        },
+        {
+          "title": "置物櫃打不開",
+          "keywords": [
+            [
+              "開きません（あきません）",
+              "akimasen",
+              "打不開"
+            ],
+            [
+              "鍵（かぎ）",
+              "kagi",
+              "鑰匙"
+            ]
+          ],
+          "body": "指著櫃子或櫃號說這句。可以找附近的站務員，或看櫃子上寫的管理公司聯絡方式；把鑰匙、收據或上鎖時用的交通卡一起拿給對方看。",
+          "example": "すみません、開きません。",
+          "reading": "sumimasen, akimasen",
+          "meaning": "不好意思，打不開。",
+          "speech": "すみません、あきません。",
+          "polite": "すみません、ロッカーが開きません。",
+          "politeReading": "sumimasen, rokkaa ga akimasen",
+          "politeMeaning": "不好意思，置物櫃打不開。",
+          "politeSpeech": "すみません、ロッカーが あきません。",
+          "id": "phrase/t-place/locker-stuck"
         }
       ]
     },
@@ -1428,6 +1721,8 @@ const Content = (() => {
           "polite": "京都行きは何番線ですか？",
           "politeReading": "kyouto yuki wa nanbansen desu ka",
           "politeMeaning": "往京都的車在幾號月台？",
+          "speech": "きょうとゆき、なんばんせん？",
+          "politeSpeech": "きょうとゆきは なんばんせんですか？",
           "id": "phrase/transit/platform"
         },
         {
@@ -1496,7 +1791,7 @@ const Content = (() => {
     {
       "id": "hotel",
       "title": "飯店與預約",
-      "subtitle": "入住・已預約・寄放行李",
+      "subtitle": "入住・預約・退房・寄放與領回行李",
       "steps": [
         {
           "title": "辦理入住",
@@ -1527,14 +1822,39 @@ const Content = (() => {
               "預約／訂位"
             ]
           ],
-          "body": "在飯店或餐廳，說完已有預約，再告訴對方名字或出示訂單。",
+          "body": "在飯店或餐廳，說完已有預約，再報名字或出示預約畫面。報名字時說「予約した〇〇です」（yoyaku shita 〇〇 desu，我是預約的〇〇）。",
           "example": "予約しています。",
           "reading": "yoyaku shite imasu",
           "meaning": "我有預約。",
+          "staffAsks": {
+            "example": "お名前をお願いします。",
+            "reading": "onamae o onegaishimasu",
+            "meaning": "麻煩告訴我您的名字。"
+          },
           "id": "phrase/hotel/reservation"
         },
         {
-          "title": "想寄放行李",
+          "title": "退房、問退房時間",
+          "keywords": [
+            [
+              "チェックアウト",
+              "chekku auto",
+              "退房"
+            ],
+            [
+              "何時（なんじ）",
+              "nanji",
+              "幾點"
+            ]
+          ],
+          "body": "退房時到櫃檯說「チェックアウト、お願いします」。想先確認時間，就用這句問。",
+          "example": "チェックアウトは何時ですか？",
+          "reading": "chekku auto wa nanji desu ka",
+          "meaning": "幾點要退房？",
+          "id": "phrase/hotel/check-out"
+        },
+        {
+          "title": "寄放行李：入住前、退房後",
           "keywords": [
             [
               "荷物（にもつ）",
@@ -1547,11 +1867,137 @@ const Content = (() => {
               "想寄放"
             ]
           ],
-          "body": "指著行李說「荷物、預けたいです」，表達想寄放。單說「荷物」還沒有說明你需要什麼協助。",
-          "example": "荷物を預けてもいいですか？",
-          "reading": "nimotsu o azukete mo ii desu ka",
-          "meaning": "可以寄放行李嗎？",
+          "body": "入住前要寄放，把完整說法的「チェックアウト後」（chekku auto go，退房後）換成「チェックイン前」（chekku in mae，入住前）。能不能寄放、要不要收費、幾點前要領回，依飯店而定。",
+          "example": "荷物、預けたいです。",
+          "reading": "nimotsu, azuketai desu",
+          "meaning": "我想寄放行李。",
+          "polite": "チェックアウト後、荷物を預けられますか？",
+          "politeReading": "chekku auto go, nimotsu o azukeraremasu ka",
+          "politeMeaning": "退房後可以寄放行李嗎？",
+          "politeSpeech": "チェックアウトご、にもつを あずけられますか？",
           "id": "phrase/hotel/luggage"
+        },
+        {
+          "title": "領回寄放的行李",
+          "keywords": [
+            [
+              "受け取りたい（うけとりたい）",
+              "uketoritai",
+              "想領回"
+            ]
+          ],
+          "body": "把寄物牌或收據給櫃檯看，再說這句。",
+          "example": "荷物を受け取りたいです。",
+          "reading": "nimotsu o uketoritai desu",
+          "meaning": "我想領回行李。",
+          "id": "phrase/hotel/pick-up"
+        }
+      ]
+    },
+    {
+      "id": "live",
+      "title": "演唱會、活動現場（選用）",
+      "subtitle": "開場・整理番號・周邊販售・再入場・飲料費",
+      "steps": [
+        {
+          "title": "開場和開演不一樣",
+          "keywords": [
+            [
+              "開場（かいじょう）",
+              "kaijou",
+              "開放入場"
+            ],
+            [
+              "開演（かいえん）",
+              "kaien",
+              "演出開始"
+            ]
+          ],
+          "body": "日文的「開場」是開門讓人進場，和中文的「開場」（表演開始）不同；演出開始是「開演」。開場在前、開演在後，實際時間以主辦公告為準。",
+          "example": "開場は何時ですか？",
+          "reading": "kaijou wa nanji desu ka",
+          "meaning": "幾點開放入場？",
+          "id": "phrase/live/doors"
+        },
+        {
+          "title": "整理番號：入場順序",
+          "keywords": [
+            [
+              "整理番号（せいりばんごう）",
+              "seiri bangou",
+              "入場順序號碼"
+            ],
+            [
+              "チケット",
+              "chiketto",
+              "票"
+            ]
+          ],
+          "body": "整理番號是入場的排隊順序，不是座位號碼。指著票上的號碼問工作人員要排在哪裡。",
+          "example": "この番号は、どこに並べばいいですか？",
+          "reading": "kono bangou wa, doko ni narabeba ii desu ka",
+          "meaning": "這個號碼要在哪裡排隊？",
+          "id": "phrase/live/number"
+        },
+        {
+          "title": "周邊販售排隊",
+          "keywords": [
+            [
+              "物販（ぶっぱん）",
+              "buppan",
+              "周邊販售"
+            ],
+            [
+              "最後尾（さいこうび）",
+              "saikoubi",
+              "隊伍最後面"
+            ],
+            [
+              "売り切れ（うりきれ）",
+              "urikire",
+              "賣完"
+            ]
+          ],
+          "body": "先找隊伍最後面再排；牌子寫「売り切れ」就是賣完了。想買的東西指著說「これ、ください」；付款方式見「結帳與付款」。",
+          "example": "物販の最後尾はどこですか？",
+          "reading": "buppan no saikoubi wa doko desu ka",
+          "meaning": "周邊販售的隊伍最後面在哪裡？",
+          "id": "phrase/live/merch"
+        },
+        {
+          "title": "可以再入場嗎",
+          "keywords": [
+            [
+              "再入場（さいにゅうじょう）",
+              "sainyuujou",
+              "再次入場"
+            ]
+          ],
+          "body": "離場前先問。能不能再入場依每場規定。",
+          "example": "再入場できますか？",
+          "reading": "sainyuujou dekimasu ka",
+          "meaning": "可以再次入場嗎？",
+          "id": "phrase/live/re-entry"
+        },
+        {
+          "title": "入場時的飲料費",
+          "keywords": [
+            [
+              "ドリンク代（ドリンクだい）",
+              "dorinku dai",
+              "飲料費"
+            ],
+            [
+              "ドリンクチケット",
+              "dorinku chiketto",
+              "飲料券"
+            ]
+          ],
+          "body": "Live house 等場地入場時常另收飲料費，付了會拿到飲料券或代幣，再到吧台換飲料；不是每場都有，金額也依場地而定。",
+          "example": "ドリンク代、いくらですか？",
+          "reading": "dorinku dai, ikura desu ka",
+          "meaning": "飲料費多少錢？",
+          "id": "phrase/live/drink"
         }
       ]
     }
@@ -1772,6 +2218,8 @@ const Content = (() => {
         text(value.politeMeaning, `${path}.politeMeaning`, 'zh');
       }
       if (value.extra !== undefined) card(value.extra, `${path}.extra`, seen, kind);
+      for (const key of ['speech', 'politeSpeech']) if (value[key] !== undefined && (typeof value[key] !== 'string' || !/^[\u3040-\u30ff\u3000-\u303f\uff01-\uff1f\s、。？！ー]+$/u.test(value[key]))) fail(`${path}.${key}`, 'speech text must be kana only');
+      if (value.politeSpeech !== undefined && value.polite === undefined) fail(`${path}.politeSpeech`, 'politeSpeech needs polite');
       if (value.staffAsks !== undefined) {
         if (!record(value.staffAsks)) fail(`${path}.staffAsks`, 'invalid staff question');
         else { text(value.staffAsks.example, `${path}.staffAsks.example`, 'ja'); text(value.staffAsks.reading, `${path}.staffAsks.reading`, 'reading'); text(value.staffAsks.meaning, `${path}.staffAsks.meaning`, 'zh'); }

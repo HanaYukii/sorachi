@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '693a824bd2a10f3401818111054173a79f51b6e1bd692b99bf79ad895a7b7cbd');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '00cdd9c8a5fdb002dbed33d6ca46597180d0c927212d5b93d4a33463f77cc19c');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -267,4 +267,42 @@ test('contracted sounds are two-character kana rows with joined IDs, and special
   assert.match(errors(d => { d.rows[15][2] = 'きゃ きゅ きょ'; }), /coverage/, 'A contracted row written as one string would split into single kana');
   assert.equal(Content.courseRevision('h-kya'), Content.courseRevision('h-kya'));
   assert.equal(Content.courseRevision('nope'), null);
+});
+
+test('travel additions fill existing situations and keep events optional', () => {
+  const phrase = (cat, slug) => Content.phrasebook.find(c => c.id === cat).steps.find(s => s.id === `phrase/${cat}/${slug}`);
+  // #27 hotel: check-out, luggage before/after, pick-up, name.
+  assert.equal(phrase('hotel', 'check-out').example, 'チェックアウトは何時ですか？');
+  assert.match(phrase('hotel', 'luggage').polite, /チェックアウト後/);
+  assert.match(phrase('hotel', 'luggage').body, /依飯店而定/);
+  assert.equal(phrase('hotel', 'pick-up').example, '荷物を受け取りたいです。');
+  assert.equal(phrase('hotel', 'reservation').staffAsks.example, 'お名前をお願いします。');
+  // #28 + #32 help: not understood, pointing at a screen, left behind vs lost.
+  assert.equal(phrase('basics', 'not-understood').keywords[0][0], 'わかりません');
+  assert.match(phrase('basics', 'point').body, /畫面/);
+  assert.match(phrase('basics', 'left-behind').example, /忘れました/);
+  assert.match(phrase('basics', 'lost').example, /なくしました/);
+  // #29 lockers, #31 size and choosing.
+  assert.equal(phrase('t-place', 'locker').keywords[0][0], 'ロッカー');
+  assert.match(phrase('t-place', 'locker-stuck').example, /開きません/);
+  assert.match(phrase('shopping', 'size').polite, /大きいサイズ/);
+  assert.equal(phrase('shopping', 'this-one').example, 'これ、ください。');
+  // #30 + #33 in one situation; photos do not imply video.
+  assert.match(phrase('lines', 'queue').body, /取號|登記/);
+  assert.match(phrase('lines', 'photo').body, /不代表可以錄影/);
+  // #34 stays last and is labelled optional.
+  const live = Content.phrasebook.at(-1);
+  assert.equal(live.id, 'live');
+  assert.match(live.title, /選用/);
+  assert.match(phrase('live', 'number').body, /不是座位號碼/);
+  for (const category of Content.phrasebook) for (const step of category.steps) assert.ok(step.keywords.length <= 3, step.id);
+});
+
+test('speech text is kana only and fixes readings device voices may get wrong', () => {
+  const step = (cat, slug) => Content.phrasebook.find(c => c.id === cat).steps.find(s => s.id === `phrase/${cat}/${slug}`);
+  assert.equal(step('t-place', 'locker-stuck').speech, 'すみません、あきません。');
+  assert.match(step('hotel', 'luggage').politeSpeech, /^チェックアウトご、/);
+  assert.match(step('transit', 'platform').speech, /きょうとゆき/);
+  assert.match(errors(d => { d.phrasebook[0].steps[0].speech = 'sumimasen'; }), /kana only/);
+  assert.match(errors(d => { d.phrasebook[0].steps[0].politeSpeech = 'すみません'; }), /needs polite/);
 });

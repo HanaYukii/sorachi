@@ -240,7 +240,7 @@ test('unknown route/course cannot inject markup and unrelated actions pass throu
 test('travel section is separate; each situation shows keywords and playable phrases without a quiz', () => {
   const b = harness(null, [{lang: 'ja-JP'}]);
   b.render('#travel');
-  assert.equal((b.html.match(/href="#travel\//g) || []).length, 9);
+  assert.equal((b.html.match(/href="#travel\//g) || []).length, 11);
   assert.doesNotMatch(b.html, /data-action="study-open"/);
   assert.doesNotMatch(b.html, /data-course="g-identity"/);
   assert.equal(b.study.context('#travel'), '旅遊常用語列表');
@@ -263,26 +263,34 @@ test('phrasebook freely shows keywords without changing learning progress, and a
   const b = harness(null, [{lang:'ja-JP'}]);
   b.action('open', {course:'h-a'}); b.action('next');
   const before = clone(b.state);
-  for (const id of ['basics','t-order','dining','t-pay','shopping','t-place','t-charge','hotel']) {
+  for (const id of ['basics','t-order','dining','t-pay','shopping','lines','t-place','t-charge','transit','hotel','live']) {
     b.render(`#travel/${id}`);
     assert.match(b.html, /關鍵字/);
-    assert.match(b.html, /看完整說法與讀音/);
+    // The short phrase is visible; only a fuller form sits behind the expander.
+    assert.match(b.html, /<div class="phrase-short"><h3 class="phrase-label">可以這樣說<\/h3>/);
     assert.doesNotMatch(b.html, /data-action="study-next"|開始練習|data-action="study-answer"/);
     assert.deepEqual(clone(b.state), before);
     assert.equal(b.records.length, 0);
   }
   b.render('#travel/t-pay');
   assert.match(b.html, /カード/); assert.match(b.html, /現金/);
-  assert.match(b.html, /Suica（スイカ）/);
+  assert.match(b.html, /Suica<span class="kw-kana">（スイカ）<\/span>/);
   assert.match(b.html, /suika wa tsukaemasu ka/);
   b.render('#travel/t-order');
   assert.match(b.html, /ひとつ/); assert.match(b.html, /並盛/);
   b.action('travel-audio', {course:'t-order',index:'2'});
   assert.equal(b.utterances.at(-1).text, 'アイスでお願いします。');
   assert.match(b.status.textContent, /正在播放/);
+  b.action('travel-audio', {course:'t-order',index:'2',full:'0'});
+  assert.equal(b.utterances.at(-1).text, 'アイス。', 'The short phrase plays on its own');
+  b.render('#travel/t-place');
+  const stuck = b.content.phrasebook.find(c => c.id === 't-place').steps.findIndex(s => s.id.endsWith('locker-stuck'));
+  b.action('travel-audio', {course:'t-place',index:String(stuck),full:'0'});
+  assert.equal(b.utterances.at(-1).text, 'すみません、あきません。', 'Kana speech text avoids the ひらきません misreading');
+  b.render('#travel/t-order');
   b.action('travel-audio', {course:'t-order',index:'99'});
   b.action('travel-audio', {course:'hotel',index:'0'});
-  assert.equal(b.utterances.length, 1);
+  assert.equal(b.utterances.length, 3);
   assert.deepEqual(clone(b.state), before);
   assert.match(b.render('#travel/__proto__'), /找不到這個情境/);
   assert.equal(b.study.context('#travel/__proto__'), null);
@@ -527,4 +535,13 @@ test('history labels decode contracted-sound question IDs even after the course 
   const entry = { courseId: 'h-kya', courseRevision: 'old', total: 3, firstCorrect: 1, retryQuestions: [1, 3], questionIds: ['h-kya/question/u304d-3083', 'h-kya/question/u304d-3085', 'h-kya/question/u304d-3087'] };
   assert.deepEqual([...b.study.retryLabels(entry)], ['きゃ', 'きょ']);
   assert.deepEqual([...b.study.retryLabels({ ...entry, questionIds: ['h-kya/question/u30ad-3083', 'x', 'y'] })], ['第 1 題', '第 3 題'], 'Katakana code points in a hiragana course are not trusted');
+});
+
+test('every travel situation except help links to the help situation', () => {
+  const b = harness();
+  for (const category of b.content.phrasebook) {
+    b.render(`#travel/${category.id}`);
+    if (category.id === 'basics') assert.doesNotMatch(b.html, /需要幫忙時/);
+    else assert.match(b.html, /<a class="text-button" href="#travel\/basics">需要幫忙時<\/a>/, category.id);
+  }
 });
