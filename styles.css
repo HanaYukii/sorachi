@@ -1271,11 +1271,13 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .path-card:has(.text-button:not(.path-secondary):focus-visible) { outline: 3px solid var(--purple); outline-offset: 4px; }
 .path-card .text-button:not(.path-secondary):focus-visible { outline: none; }
 /* A card's second action sits above the card-wide link of its first one, so each keeps its own click area. */
-.path-card .path-secondary { position: relative; z-index: 1; display: flex; font-weight: 600; }
+.path-card .text-button.path-secondary { position: relative; z-index: 1; display: flex; font-size: 13px; font-weight: 500; }
 @media (hover: hover) {
   .path-card:hover { border-color: var(--aqua-ink); }
   .travel-entry:hover { border-color: var(--orange-ink); }
   .path-card:hover .text-button:not(.path-secondary) { text-decoration: underline; }
+  .path-card:has(.path-secondary:hover) .text-button:not(.path-secondary) { text-decoration: none; }
+  .path-card .path-secondary:hover { text-decoration: underline; }
 }
 .path-art { width: 100px; height: auto; flex-shrink: 0; }
 .path-copy { min-width: 0; }

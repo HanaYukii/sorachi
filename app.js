@@ -198,7 +198,7 @@ function homeDashboard({ grammarNext, grammarStarted, grammarHero, begun, review
   return `<div class="home-dashboard">
     ${next ? `<section class="dash-next" aria-labelledby="dash-next-title"><h2 id="dash-next-title">接著做</h2><ul class="dash-list">${next}</ul></section>` : ""}
     <section class="dash-progress" aria-labelledby="dash-progress-title"><h2 id="dash-progress-title">你的進度</h2>${progressPanel}</section>
-    <section class="dash-all" aria-labelledby="dash-all-title"><h2 id="dash-all-title">全部內容</h2><ul class="dash-list">${row("#kana", "五十音", "平假名、片假名，濁音、拗音、促音與長音", `各 ${kanaIds("h").length} 組`)}${row('data-action="study-kana-random"', "五十音隨機練習", "基本平假名，不用先學過", "5 題")}${row("#grammar", "基礎句型", "從句子架構開始，每課只用前面教過的詞", `${Content.grammar.length} 課`)}${row('data-action="study-grammar-random"', "句型隨機練習", "入門句型，不用先學過", "5 題")}${row("#travel", "旅遊常用語", "依情境查關鍵字，可以收藏", `${Content.phrasebook.length} 種情境`)}${introNext ? "" : intro}${row("#history", "學習紀錄", "完成時間與第一次作答的成績", records)}</ul></section>
+    <section class="dash-all" aria-labelledby="dash-all-title"><h2 id="dash-all-title">全部內容</h2><ul class="dash-list">${row("#kana", "五十音", "平假名、片假名，濁音、拗音、促音與長音", `各 ${kanaIds("h").length} 組`)}${grammarHero ? row('data-action="study-kana-random"', "五十音隨機練習", "基本平假名，不用先學過", "5 題") : ""}${row("#grammar", "基礎句型", "從句子架構開始，每課只用前面教過的詞", `${Content.grammar.length} 課`)}${grammarHero ? "" : row('data-action="study-grammar-random"', "句型隨機練習", "入門句型，不用先學過", "5 題")}${row("#travel", "旅遊常用語", "依情境查關鍵字，可以收藏", `${Content.phrasebook.length} 種情境`)}${introNext ? "" : intro}${row("#history", "學習紀錄", "完成時間與第一次作答的成績", records)}</ul></section>
   </div>`;
 }
 
