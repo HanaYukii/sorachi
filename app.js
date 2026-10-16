@@ -435,7 +435,7 @@ function route() {
     app.innerHTML = studyPage;
     focusHeading();
     // Back on the kana table or the grammar list from a lesson, that lesson's row is in view and has focus.
-    const row = (location.hash === "#kana" || location.hash === "#grammar") && left ? app.querySelector(`[data-course="${left}"]`) : null;
+    const row = (location.hash === "#kana" || location.hash === "#grammar") && left ? app.querySelector(`.course-row[data-course="${left}"]`) : null;
     if (row) { const unit = row.closest?.("details"); if (unit) unit.open = true; row.focus({ preventScroll: true }); row.scrollIntoView?.({ block: "center" }); }
     // A travel card opened from a search result, or back on the search, the result that was opened.
     const found = app.querySelector(".travel-found") || app.querySelector(".return-focus");

@@ -1020,7 +1020,8 @@ button svg {
 .unit-section > summary { cursor: pointer; padding: 14px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--white); list-style-position: inside; }
 .unit-section > summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; }
 .unit-section[open] > summary { border-color: var(--purple); }
-.unit-title { font-size: 17px; font-weight: 700; }
+/* An inline heading keeps the disclosure marker on the same line as the unit name. */
+.unit-title { display: inline; margin: 0; font-size: 17px; font-weight: 700; line-height: 1.5; }
 .unit-goal, .unit-count { display: block; margin-top: 4px; font-size: 13px; color: var(--muted); line-height: 1.7; }
 .unit-count { font-size: 12px; }
 .unit-section > .course-list { margin-top: 10px; }

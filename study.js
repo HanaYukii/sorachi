@@ -269,32 +269,26 @@ const Study = (() => {
     const next = grammarNext();
     return next ? `<section class="study-review-entry"><h2>${next.resume ? "接著學" : "下一課"}</h2><button class="text-button" data-action="study-open" data-course="${next.courseId}">${escape(next.title)} →</button></section>` : "";
   }
-  // The lessons in their units (#76), each a section that opens, with a plain line of what it teaches and how far the
-  // learner is. The unit with the next lesson starts open (the first one on a first visit), so nobody has to scan all
-  // the lessons; every lesson stays one click away.
-  const UNIT_GOALS = {
-    "基本句子": "用「AはBです」說是什麼、問是不是，指著東西說這個、那個、這裡。",
-    "時間與數字": "今天、明天、星期幾，數字、價錢、人數，幾點幾分和日期。",
-    "動作與地點": "吃、喝、去等動作，去哪裡、在哪裡做、搭什麼車，有沒有、在哪裡。",
-    "形容詞與連接": "大、貴、冷、方便，用「而且、可是、因為」把句子接起來。",
-    "動詞原形與て形": "動詞原形和て形，說「請…」「先…再…」「正在…」「可以…嗎」。",
-  };
+  // The lessons in their units (#76), each a section that opens, with a plain line of what it teaches (kept in the
+  // lesson plan) and how far the learner is. The unit with the next lesson starts open (the first one on a first
+  // visit), so nobody has to scan all the lessons; every lesson stays one click away. The unit names stay headings.
   function grammarUnitList() {
     const open = Content.lessonPlan[grammarNext()?.courseId]?.unit;
     return grammarUnits().map((unit) => {
       const done = unit.lessons.filter((course) => state().courses[course.id]?.completedAt).length;
-      return `<details class="unit-section"${unit.title === open ? " open" : ""}><summary><span class="unit-title">${escape(unit.title)}</span><span class="unit-goal">${escape(UNIT_GOALS[unit.title] || "")}</span><span class="unit-count">已完成 ${done} / ${unit.lessons.length} 課</span></summary><div class="course-list">${unit.lessons.map(row).join("")}</div></details>`;
+      return `<details class="unit-section"${unit.title === open ? " open" : ""}><summary><h2 class="unit-title">${escape(unit.title)}</h2><span class="unit-goal">${escape(unit.goal)}</span><span class="unit-count">已完成 ${done} / ${unit.lessons.length} 課</span></summary><div class="course-list">${unit.lessons.map(row).join("")}</div></details>`;
     }).join("");
   }
+  // The next lesson and the units come first, so a phone shows where to start; practice without a lesson follows.
   function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按喇叭跟著念。</p>${readingHelp()}${grammarNextEntry()}${grammarReviewEntry()}<section class="study-review-entry"><h2>句型隨機練習</h2><p class="study-note">入門句型・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-grammar-random">練 5 題 →</button></section>${grammarUnitList()}`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按喇叭跟著念。</p>${readingHelp()}${grammarNextEntry()}${grammarUnitList()}${grammarReviewEntry()}<section class="study-review-entry"><h2>句型隨機練習</h2><p class="study-note">入門句型・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-grammar-random">練 5 題 →</button></section>`);
   }
-  // Consecutive lessons with the same unit share one heading, in teaching order.
+  // Consecutive lessons with the same unit share one heading, in teaching order; the first lesson has the unit's goal.
   function grammarUnits() {
     const units = [];
     for (const course of GRAMMAR) {
-      const title = Content.lessonPlan[course.id]?.unit || "其他";
-      if (!units.length || units[units.length - 1].title !== title) units.push({ title, lessons: [] });
+      const plan = Content.lessonPlan[course.id], title = plan?.unit || "其他";
+      if (!units.length || units[units.length - 1].title !== title) units.push({ title, goal: plan?.unitGoal || "", lessons: [] });
       units[units.length - 1].lessons.push(course);
     }
     return units;
@@ -372,7 +366,7 @@ const Study = (() => {
       body = `<section class="study-card study-result"><h2>複習完成</h2><p>第一次答對 <strong>${firstCorrect} / ${round.items.length}</strong> 題</p>${missed.length ? `<p class="study-note">可以回這幾課再看看：</p><ul class="review-lessons">${missed.map(id => `<li><button class="text-button" data-action="study-open" data-course="${id}">${escape(courses[id].title)} →</button></li>`).join("")}</ul>` : '<p class="study-note">這次都答對了。</p>'}<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a><button class="text-button" data-action="study-grammar-review">再複習 ${reviewSize()} 題</button></div></section>`;
     } else if (round) {
       const { item, course, question } = reviewItem(round), solved = round.solved[round.cursor] === true;
-      body = `<p class="reading-label">複習 · ${round.cursor + 1} / ${round.items.length} · ${escape(course.title)}</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map(choice => `<button class="answer${solved && choice === question.answer ? " correct" : round.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${solved && choice === question.answer ? " ✓ 答對了" : round.wrong === choice ? " ✕ 再試一次" : ""}</span></button>`).join("")}</div><p class="study-feedback${!solved && round.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarReviewFeedback(round))}</p><div class="look-back-slot">${grammarReviewLook(round)}</div></section><div class="study-nav"><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${round.cursor === round.items.length - 1 ? "完成複習" : "下一題 →"}</button></div>`;
+      body = `<p class="reading-label">複習 · ${round.cursor + 1} / ${round.items.length} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map(choice => `<button class="answer${solved && choice === question.answer ? " correct" : round.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${solved && choice === question.answer ? " ✓ 答對了" : round.wrong === choice ? " ✕ 再試一次" : ""}</span></button>`).join("")}</div><p class="study-feedback${!solved && round.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarReviewFeedback(round))}</p><div class="look-back-slot">${grammarReviewLook(round)}</div></section><div class="study-nav"><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${round.cursor === round.items.length - 1 ? "完成複習" : "下一題 →"}</button></div>`;
     } else body = reviewSize() ? `<p>從完成的句型課挑 ${reviewSize()} 題混在一起練，最近答錯、還沒獨立答對的題目會優先出現。答錯時會顯示正確答案和說明，可以再選一次。</p><button class="primary" data-action="study-grammar-review">開始複習</button>` : '<p>先完成兩課句型，就可以在這裡複習。</p><a class="primary" href="#grammar">看基礎句型</a>';
     return wrap(`<h1 class="focus-heading" tabindex="-1">句型小複習</h1>${body}<p class="study-note">複習進度會保存在這個瀏覽器，下次可以接著練；不會改變各課的完成紀錄和成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
@@ -568,7 +562,7 @@ const Study = (() => {
       body = `<section class="study-card study-result"><h2>${missed.length ? "練習完成" : "全部答對"}</h2><p>這輪答對 <strong>${total - missed.length} / ${total}</strong> 題</p>${missed.length ? `<p class="study-note">答錯的字：${missed.map((item) => escape(`${item.character}（${item.reading}）`)).join("、")}</p>` : ""}<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a><button class="text-button" data-action="study-random-again">再練 ${RANDOM_SIZE} 題</button></div></section>`;
     } else {
       const q = round.items[round.cursor], item = KanaPractice.entry(q.id), chosen = round.answers[round.cursor], answered = chosen !== undefined, correct = answered && q.options[chosen] === q.id;
-      body = `<p class="reading-label">基本平假名 · ${round.cursor + 1} / ${total} · 選一個答案</p><section class="study-card study-quiz"><h2>${q.direction === "reading" ? "這個讀音，對應哪個字？" : "這個字，讀音是哪一個？"}</h2><div class="kana-character"${q.direction === "character" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? item.reading : item.character)}</div><div class="study-options kana-options" role="group" aria-label="答案選項">${q.options.map((id, index) => { const option = KanaPractice.entry(id); return `<button class="answer${answered && id === q.id ? " correct" : answered && chosen === index ? " wrong" : ""}" data-action="study-answer" data-choice="${index}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}${q.direction === "reading" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? option.character : option.reading)}<span class="answer-status">${answered ? answerMark(chosen === index, id === q.id, correct) : ""}</span></button>`; }).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(randomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${round.cursor + 1 === total ? "看結果 →" : "下一題 →"}</button></div>`;
+      body = `<p class="reading-label">基本平假名 · ${round.cursor + 1} / ${total} · 選一個答案</p><section class="study-card study-quiz"><h2>${q.direction === "reading" ? "這個讀音，對應哪個字？" : "這個字，讀音是哪一個？"}</h2><div class="kana-character"${q.direction === "character" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? item.reading : item.character)}</div><div class="study-options kana-options" role="group" aria-label="答案選項">${q.options.map((id, index) => { const option = KanaPractice.entry(id); return `<button class="answer${answered && id === q.id ? " correct" : answered && chosen === index ? " wrong" : ""}" data-action="study-answer" data-choice="${index}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}>${q.direction === "reading" ? `<span lang="ja">${escape(option.character)}</span>` : escape(option.reading)}<span class="answer-status">${answered ? answerMark(chosen === index, id === q.id, correct) : ""}</span></button>`; }).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(randomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${round.cursor + 1 === total ? "看結果 →" : "下一題 →"}</button></div>`;
     }
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音隨機練習</h1>${body}<p class="study-note">從 46 個基本平假名隨機出題，不用先學過；這裡的作答不會記成成績，也不會改變複習。</p><div class="lesson-utilities">${table}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
@@ -592,11 +586,12 @@ const Study = (() => {
   }
   // 句型隨機練習 (#83): five questions from the noun-sentence lessons that open 基本句子, for anyone, with or without
   // records. Like 五十音隨機練習 a round lives in this page only and records nothing; each question is asked once,
-  // and a miss shows the answer with its explanation.
-  // Each question was checked for a learner starting from zero: it gives its meaning or situation in Chinese and
-  // readings for its Japanese options. Questions that need a lesson first, or ask the meaning of Japanese shown
-  // without a reading, stay out; a question added to these lessons later does not join by itself.
-  const GRAMMAR_RANDOM_POOL = ["g-identity/question/topic-reading", "g-question/question/question-ending", "g-demo/question/held-item", "g-demo/question/distant-item", "g-demo/question/listener-item", "g-negative/question/ja-nai", "g-negative/question/answer", "g-no/question/my-bread", "g-mo/question/me-too", "g-to/question/and", "g-to/question/point"];
+  // and a miss shows the answer with its reading and explanation.
+  // Each question was checked for a learner starting from zero: it says in Chinese what to say or what is asked, and
+  // every Japanese option has its reading, so it can be answered without a lesson; a first try may be a guess, and the
+  // explanation teaches the point. Questions asking the meaning of Japanese shown without a reading stay out, as does
+  // one whose sentence has no Chinese meaning (これと それです); a question added to these lessons later does not join.
+  const GRAMMAR_RANDOM_POOL = ["g-identity/question/topic-reading", "g-question/question/question-ending", "g-demo/question/held-item", "g-demo/question/distant-item", "g-demo/question/listener-item", "g-negative/question/ja-nai", "g-negative/question/answer", "g-no/question/my-bread", "g-mo/question/me-too", "g-to/question/and"];
   let grammarRandomRound = null;
   function newGrammarRandomRound() {
     const pool = GRAMMAR_RANDOM_POOL.map((id) => { const courseId = id.split("/")[0]; return { courseId, q: courses[courseId]?.questions.findIndex((question) => question.id === id) ?? -1 }; }).filter(({ q }) => q >= 0);
@@ -690,7 +685,7 @@ const Study = (() => {
     const correct = question ? question.answer : q;
     const options = question ? question.options : active.direction === "reading" ? course.letters : course.readings;
     const feedback = answerFeedback(course, active);
-    return `<p class="reading-label">練習 · ${active.cursor + 1} / ${size(course)} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(prompt)}</h2>${question ? "" : `<div class="kana-character"${active.direction === "character" ? ' lang="ja"' : ""}>${escape(active.direction === "reading" ? course.readings[q] : course.letters[q])}</div>`}<div class="study-options${course.type === "kana" ? " kana-options" : ""}" role="group" aria-label="答案選項">${active.options[q].map((choice) => `<button class="answer${solved && choice === correct ? " correct" : active.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}${course.type === "kana" && active.direction === "reading" ? ' lang="ja"' : ""}>${question?.readings ? `<span lang="ja">${escape(options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(options[choice])}<span class="answer-status">${solved && choice === correct ? ' ✓ 答對了' : active.wrong === choice ? ' ✕ 再試一次' : ''}</span></button>`).join("")}</div><p class="study-feedback${!solved && active.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(feedback)}</p><div class="look-back-slot">${lookBack(course, active)}</div></section><div class="study-nav"><button class="text-button" data-action="study-review">回去看看</button><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${active.cursor === size(course) - 1 ? "完成這一輪" : "下一題 →"}</button></div><p class="study-note">答錯可以重試；第一次的答案會留下紀錄，重試不會改寫第一次作答的成績。</p>`;
+    return `<p class="reading-label">練習 · ${active.cursor + 1} / ${size(course)} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(prompt)}</h2>${question ? "" : `<div class="kana-character"${active.direction === "character" ? ' lang="ja"' : ""}>${escape(active.direction === "reading" ? course.readings[q] : course.letters[q])}</div>`}<div class="study-options${course.type === "kana" ? " kana-options" : ""}" role="group" aria-label="答案選項">${active.options[q].map((choice) => `<button class="answer${solved && choice === correct ? " correct" : active.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question?.readings ? `<span lang="ja">${escape(options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : course.type === "kana" && active.direction === "reading" ? `<span lang="ja">${escape(options[choice])}</span>` : escape(options[choice])}<span class="answer-status">${solved && choice === correct ? ' ✓ 答對了' : active.wrong === choice ? ' ✕ 再試一次' : ''}</span></button>`).join("")}</div><p class="study-feedback${!solved && active.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(feedback)}</p><div class="look-back-slot">${lookBack(course, active)}</div></section><div class="study-nav"><button class="text-button" data-action="study-review">回去看看</button><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${active.cursor === size(course) - 1 ? "完成這一輪" : "下一題 →"}</button></div><p class="study-note">答錯可以重試；第一次的答案會留下紀錄，重試不會改寫第一次作答的成績。</p>`;
   }
   function nextCourse(id) {
     const course = courses[id];
