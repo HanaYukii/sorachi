@@ -1314,8 +1314,8 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .grammar-overview .study-note { margin-top: 0; font-size: 14px; }
 .grammar-overview .study-review-entry { margin: 0; }
 .grammar-catalog .unit-section { --unit-tint: var(--lilac); --unit-border: var(--rule-border); margin-top: 22px; }
-.grammar-catalog .unit-section:nth-of-type(3n + 2) { --unit-tint: var(--aqua); --unit-border: var(--example-border); }
-.grammar-catalog .unit-section:nth-of-type(3n) { --unit-tint: #fff0e5; --unit-border: #dbaf90; }
+.grammar-catalog .unit-group:nth-of-type(3n + 2) .unit-section { --unit-tint: var(--aqua); --unit-border: var(--example-border); }
+.grammar-catalog .unit-group:nth-of-type(3n) .unit-section { --unit-tint: #fff0e5; --unit-border: #dbaf90; }
 .grammar-catalog .unit-section > summary { border: 2px solid var(--unit-border); background: var(--unit-tint); padding: 18px 22px; }
 .grammar-catalog .unit-goal { max-width: 76ch; color: var(--ink); }
 .grammar-catalog .course-list { gap: 14px; margin: 14px 0 24px; }
@@ -1328,7 +1328,21 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
   .grammar-overview { grid-template-columns: minmax(0, 1fr) minmax(260px, .55fr); gap: 40px; }
   .grammar-catalog .course-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grammar-catalog .unit-section > summary { position: relative; padding-right: 180px; }
-  .grammar-catalog .unit-count { position: absolute; right: 22px; top: 18px; }
+  .grammar-catalog .unit-count { position: static; }
+}
+
+.unit-group { position: relative; margin-top: 22px; }
+.grammar-catalog .unit-group .unit-section { margin-top: 0; }
+.unit-random { position: absolute; z-index: 1; top: 14px; right: 20px; min-height: 44px; padding: 10px 14px; background: white; border: 1px solid var(--rule-border); border-radius: 12px; font-size: 14px; }
+.grammar-catalog .unit-group .unit-section > summary { padding-right: 190px; }
+.random-lesson-next { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+.random-lesson-next span { font-size: 13px; color: var(--muted); }
+.update-notice { position: sticky; top: 0; z-index: 20; text-align: center; padding: 8px 16px; background: var(--lilac); border-bottom: 1px solid var(--rule-border); }
+.update-notice[hidden] { display: none; }
+.update-notice button { min-height: 44px; padding: 8px 18px; border: 1px solid var(--purple); border-radius: 12px; color: var(--purple-deep); background: white; font-size: 14px; font-weight: 600; }
+@media (max-width: 600px) {
+  .grammar-catalog .unit-group .unit-section > summary { padding: 70px 16px 16px; }
+  .unit-random { top: 14px; right: 16px; }
 }
 @media (max-width: 600px) {
   .grammar-catalog .unit-section > summary, .grammar-catalog .course-row { padding: 16px; }

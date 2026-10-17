@@ -277,7 +277,7 @@ const Study = (() => {
     const open = Content.lessonPlan[grammarNext()?.courseId]?.unit;
     return grammarUnits().map((unit) => {
       const done = unit.lessons.filter((course) => state().courses[course.id]?.completedAt).length;
-      return `<details class="unit-section"${unit.title === open ? " open" : ""}><summary><h2 class="unit-title">${escape(unit.title)}</h2><span class="unit-goal">${japaneseRuns(unit.goal)}</span><span class="unit-count">已完成 ${done} / ${unit.lessons.length} 課</span></summary><div class="course-list">${unit.lessons.map(row).join("")}</div></details>`;
+      return `<div class="unit-group"><button class="unit-random text-button" data-action="study-random-lesson" data-unit="${unit.lessons[0].id}" aria-label="${escape(unit.title)}：隨機進一課">隨機進一課 →</button><details class="unit-section"${unit.title === open ? " open" : ""}><summary><h2 class="unit-title">${escape(unit.title)}</h2><span class="unit-goal">${japaneseRuns(unit.goal)}</span><span class="unit-count">已完成 ${done} / ${unit.lessons.length} 課</span></summary><div class="course-list">${unit.lessons.map(row).join("")}</div></details></div>`;
     }).join("");
   }
   // The next lesson and the units come first, so a phone shows where to start; practice without a lesson follows.
@@ -703,7 +703,7 @@ const Study = (() => {
     const resumable = course.type === "grammar" && Object.keys(active.first || {}).length > 0;
     const resumeAt = active.order.findIndex(q => !active.solved[q]);
     const resumeLabel = `回到第 ${resumeAt < 0 ? size(course) : resumeAt + 1} 題`;
-    return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : course.home === "kana" ? "發音說明" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card${course.type === "kana" ? "" : " lesson-card"}">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button>${resumable && i < cards(course) - 1 ? `<button class="text-button" data-action="study-resume">${resumeLabel}</button>` : ""}${resumable && i === cards(course) - 1 ? `<button class="primary" data-action="study-resume">${resumeLabel}</button>` : `<button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button>`}</div>`;
+    return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : course.home === "kana" ? "發音說明" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card${course.type === "kana" ? "" : " lesson-card"}">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button>${resumable && i < cards(course) - 1 ? `<button class="text-button" data-action="study-resume">${resumeLabel}</button>` : ""}${resumable && i === cards(course) - 1 ? `<button class="primary" data-action="study-resume">${resumeLabel}</button>` : `<button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button>`}</div>${i === cards(course) - 1 ? randomLessonNext(course) : ""}`;
   }
   // 五十音隨機練習 (#82): five basic-hiragana questions drawn at random, for anyone, with or without records. A round
   // lives in this page only: it records nothing and never touches course completion, review rounds or the mistake
@@ -885,6 +885,10 @@ const Study = (() => {
       return `第 ${number} 題`;
     });
   }
+  function randomLessonNext(course) {
+    const unit = grammarUnits().find(unit => unit.lessons.some(item => item.id === course.id));
+    return unit ? `<div class="random-lesson-next"><button class="text-button" data-action="study-random-lesson" data-unit="${unit.lessons[0].id}">再隨機進一課 →</button><span>從「${escape(unit.title)}」選另一課，先看說明。</span></div>` : "";
+  }
   function resultActions(exit, exitLabel, secondary, extra = "") {
     return `<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a>${secondary}</div>${extra ? `<details class="result-extra"><summary>其他練習選項</summary>${extra}</details>` : ""}`;
   }
@@ -893,7 +897,7 @@ const Study = (() => {
     const retries = retryLabels({ courseId: course.id, courseRevision: active.courseRevision, questionIds: active.order.map(q => active.questionIds[q]), retryQuestions: active.order.flatMap((q, index) => active.first[q] === false ? [index + 1] : []) });
     // The way back comes first; the next group and a fresh round are the quieter choices (#82).
     const next = nextCourse(course.id), [exit, exitLabel] = exitTo(backHash(course));
-    return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p class="result-score">第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}${retries.length ? `<p class="study-note">第一次答錯：${retries.map(escape).join("、")}</p>` : ""}<p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><p class="result-scope">課後練習會記錄第一次作答的成績。</p>${resultActions(exit, exitLabel, next ? `<button class="text-button" data-action="study-open" data-course="${next}">${courses[next].type === "kana" ? `下一組：${escape(courses[next].row)}` : `下一課：${escape(Content.displayTitle(next))}`}</button>` : '<button class="text-button" data-action="study-restart">重新練習</button>', next ? '<button class="text-button" data-action="study-restart">重新練習</button>' : "")}</section>`;
+    return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p class="result-score">第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}${retries.length ? `<p class="study-note">第一次答錯：${retries.map(escape).join("、")}</p>` : ""}<p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><p class="result-scope">課後練習會記錄第一次作答的成績。</p>${resultActions(exit, exitLabel, next ? `<button class="text-button" data-action="study-open" data-course="${next}">${courses[next].type === "kana" ? `下一組：${escape(courses[next].row)}` : `下一課：${escape(Content.displayTitle(next))}`}</button>` : '<button class="text-button" data-action="study-restart">重新練習</button>', next ? '<button class="text-button" data-action="study-restart">重新練習</button>' : "")}${randomLessonNext(course)}</section>`;
   }
   function updateAnswer(course, active) {
     const q = active.order[active.cursor];
@@ -1055,10 +1059,27 @@ const Study = (() => {
     api.record({ date, courseId: course.id, courseTitle: course.title, courseRevision: active.courseRevision, questionIds: active.order.map(q => course.questions[q].id), total: size(course), firstCorrect, retryQuestions: active.order.flatMap((q, position) => active.first[q] === false ? [position + 1] : []) });
     save();
   }
+  const lastRandomLesson = new Map();
   function handle(button) {
     const action = button.dataset.action;
     if (!action?.startsWith("study-")) return false;
     if (button.disabled) return true;
+    if (action === "study-random-lesson") {
+      const unit = grammarUnits().find(unit => unit.lessons[0].id === button.dataset.unit);
+      if (!unit) return true;
+      const others = unit.lessons.filter(course => course.id !== currentId() && course.id !== lastRandomLesson.get(button.dataset.unit));
+      const pool = others.length ? others : unit.lessons;
+      const course = pool[shuffle(pool.length)[0]], saved = courseState(course.id);
+      let active = peekAttempt(course.id);
+      if (!active || active.phase === "done") active = draftAttempt(course, saved);
+      else if (active.phase === "quiz") {
+        // Open the explanation without throwing away the saved question order or first answers.
+        active.phase = "cards"; active.cursor = 0; active.wrong = null; save();
+      }
+      lastRandomLesson.set(button.dataset.unit, course.id);
+      api.go(`#study/${course.id}`);
+      return true;
+    }
     if (action === "study-rate") {
       const rate = Number(button.dataset.rate);
       if ([0.65,0.8,1].includes(rate) && api.savePreferences?.({...preferences(),ttsRate:rate})) { stopAudio(); redraw(`[data-rate="${rate}"]`); }
