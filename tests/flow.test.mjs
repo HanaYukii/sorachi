@@ -24,6 +24,8 @@ function browser({
   storageBlocked = false,
   sharedStorage = null,
   historyState = null,
+  feedbackService = null,
+  authClient = null,
 } = {}) {
   let initialKey = key;
   try { if (JSON.parse(raw)?.schemaVersion) initialKey = "sorachi:data:v2"; } catch {}
@@ -209,7 +211,7 @@ function browser({
       add(documentListeners, type, fn);
     },
   };
-  const location = { reload() { reloads++; } };
+  const location = { pathname: "/", search: "", reload() { reloads++; } };
   Object.defineProperty(location, "hash", {
     get() {
       return currentHash;
@@ -244,7 +246,7 @@ function browser({
         get state() { return entries[at].state; },
         // A browser keeps a copy of the state, not the object itself.
         replaceState(state, _title, hash) {
-          entries[at] = { hash: hash ?? entries[at].hash, state: state == null ? null : structuredClone(state) };
+          entries[at] = { hash: hash == null ? entries[at].hash : new URL(hash, "http://localhost/").hash, state: state == null ? null : structuredClone(state) };
           currentHash = entries[at].hash;
         },
       },
@@ -269,15 +271,19 @@ function browser({
       },
     },
     setTimeout(fn) {
+      if(authClient) return setTimeout(fn,50);
       pending.push(fn);
       return pending.length;
     },
-    clearTimeout() {},
+    clearTimeout(timer) { if(authClient) clearTimeout(timer); },
     requestAnimationFrame(fn) {
       pending.push(fn);
     },
     console,
     URL,
+    crypto,
+    feedbackService,
+    authClient,
   });
   const flush = () => {
     while (pending.length) pending.shift()();
@@ -287,6 +293,11 @@ function browser({
   vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/diagnostics.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/update-notice.js", import.meta.url), "utf8"), context);
+  // Network integrations are tested separately. Ordinary flow checks remain offline.
+  vm.runInContext('const CloudConfig = {url:authClient?"test-only":"",publishableKey:authClient?"test-only":"",turnstileSiteKey:feedbackService?"test-only":""};',context);
+  for (const file of ["cloud", "feedback-challenge", "account"]) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`, import.meta.url), "utf8"), context);
+  if(feedbackService) vm.runInContext('Account.create = () => ({start(){},configured:()=>true,user:()=>null,service:()=>feedbackService}); FeedbackChallenge.mount=()=>{}; FeedbackChallenge.token=()=>"test-only";',context);
+  if(authClient) vm.runInContext('Cloud.load=async()=>authClient;',context);
   vm.runInContext(source, context, { filename: "dist/app.js" });
   flush();
   // `detail` is the click count: 2 is the second click of a double click, 0 a key press.
@@ -649,6 +660,41 @@ test("feedback creates a correctly encoded draft link without publishing or leak
   assert.doesNotMatch(b.html, /<script>alert/);
 });
 
+test('direct feedback blocks double submission, preserves failures and retries the same ID',async()=>{
+  const sent=[];let resolve,reject;
+  const feedbackService={sendFeedback:input=>{sent.push(input);return new Promise((a,b)=>{resolve=a;reject=b;});}};
+  const b=browser({hash:'#grammar',feedbackService});b.action('feedback');
+  b.inputFeedback('問題回報','這句不太懂');b.submitFeedback('問題回報','這句不太懂');b.submitFeedback('問題回報','這句不太懂');
+  assert.equal(sent.length,1);reject(Error('offline'));await new Promise(setImmediate);
+  assert.match(b.html,/這句不太懂/);assert.match(b.html,/內容已保留/);
+  b.submitFeedback('問題回報','這句不太懂');assert.equal(sent[0].id,sent[1].id);
+  resolve({ok:true});await new Promise(setImmediate);
+  assert.match(b.html,/已收到你的回報/);assert.doesNotMatch(b.html,/textarea/);
+});
+
+test('navigating during feedback submission keeps the original report context',async()=>{
+  let resolve,sent;
+  const b=browser({hash:'#grammar',feedbackService:{sendFeedback:input=>{sent=input;return new Promise(r=>{resolve=r;});}}});
+  b.action('feedback');b.submitFeedback('問題回報','說明不太懂');
+  b.navigate('#kana');b.action('feedback');assert.match(b.html,/基礎句型/);
+  assert.equal(sent.context,'基礎句型');resolve({ok:true});await new Promise(setImmediate);
+  b.action('feedback-back');assert.equal(b.hash,'#grammar');
+});
+
+test('opening a lesson waits for the account before saving; guest data stays untouched',async()=>{
+  const id='11111111-1111-4111-8111-111111111111';let finish,event;
+  const authClient={auth:{onAuthStateChange(fn){event=fn;return {data:{subscription:{unsubscribe(){}}}};},getSession:()=>new Promise(resolve=>{finish=resolve;})}};
+  const b=browser({hash:'#study/h-a',authClient});const guestBefore=b.stored;
+  await new Promise(setImmediate);
+  assert.equal(b.run('accountLoading'),true);assert.equal(b.stored,guestBefore);
+  finish({data:{session:{user:{id}}}});await new Promise(setImmediate);
+  assert.equal(b.run('accountLoading'),false);
+  assert.equal(b.run('dataStore.key'),`sorachi:acct:${id}:v1`);
+  assert.equal(b.stored,guestBefore,'opening the lesson must not write guest progress before resolving identity');
+  assert.match(b.html,/あ/);
+  event('SIGNED_OUT',null);assert.equal(b.run('restarting'),true);
+});
+
 test("history keeps two hundred completions and compatible partial attempts with missing first answers remain unscored", () => {
   const history = Array.from({length:205}, (_,i) => ({date:new Date(2026,0,i+1).toISOString(),firstCorrect:2,retryQuestions:[]}));
   const b = browser({saved:{step:5,inProgress:true,answers:{4:true},history,contentRevision:introRevision}, hash:'#lesson'});
@@ -881,7 +927,7 @@ test("the writing-system introduction stays available after the main learning an
   b.navigate('#home');
   assert.doesNotMatch(b.html, /intro-entry/);
   assert.equal((b.html.match(/data-action="start"/g) || []).length, 1);
-  assert.match(b.html, /不用登入；進度只存在這個瀏覽器/);
+  assert.match(b.html, /不用登入也能學/);
 });
 
 test("feedback captures the displayed shuffled question and loaded asset versions without private learning data", () => {
@@ -1979,7 +2025,7 @@ test('回 leads back to where a lesson or review was opened, through the next gr
   assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-open" data-course="h-ka">下一組：か行<\/button><\/div><details class="result-extra"><summary>其他練習選項<\/summary><button class="text-button" data-action="study-restart">重新練習<\/button><\/details>/);
   assert.equal(b.hash, '#study/h-a', 'Answers and the done page add no history entries');
   b.back();
-  assert.equal(b.hash, '#home');
+  assert.equal(b.hash, '');
   b.forward();
   assert.equal(b.hash, '#study/h-a');
   assert.deepEqual(exit(b), ['#home', '回首頁']);
@@ -2133,7 +2179,7 @@ test('五十音隨機練習: one click from home, five different basic hiragana,
   b.study('study-random-again');
   assert.match(b.html, /基本平假名 · 1 \/ 5/);
   // Back to home and forward again keeps the round; a reload starts a new one, never an empty page.
-  b.back(); assert.equal(b.hash, '#home');
+  b.back(); assert.equal(b.hash, '');
   b.forward(); assert.match(b.html, /基本平假名 · 1 \/ 5/);
   assert.match(browser({ raw: b.stored, hash: '#kana-random' }).html, /基本平假名 · 1 \/ 5/);
   assert.equal(b.run('Study.context("#kana-random")'), '五十音隨機練習・第 1 題');
@@ -2720,4 +2766,30 @@ test('the old origin offers a manual backup path without redirecting or sharing 
   b.run('location.hostname="sorachi.app"');
   b.navigate('#home');
   assert.doesNotMatch(b.html, /domain-move/);
+});
+
+
+test('home uses the root URL while preserving back/forward and lesson return context', () => {
+  const b = browser({hash:'#home'});
+  assert.equal(b.hash, '');
+  assert.match(b.html, /日文入門/);
+  b.navigate('#kana'); b.navigate('#home');
+  assert.equal(b.hash, '');
+  b.back(); assert.equal(b.hash, '#kana');
+  b.forward(); assert.equal(b.hash, '');
+  b.study('study-open', {course:'h-a'});
+  assert.equal(b.historyState.from, '#home');
+});
+
+test('every section has a visible header feedback entry and reports its own context', () => {
+  for (const hash of ['', '#kana', '#grammar', '#travel', '#drill', '#study/g-identity', '#settings', '#about']) {
+    const b = browser({hash});
+    assert.match(b.html.match(/<header[\s\S]*?<\/header>/)[0], /data-action="feedback"/);
+    b.action('feedback');
+    assert.equal(b.hash, '#feedback');
+    assert.equal(b.historyState.feedback.back, hash || '#home');
+    if (hash === '#settings') assert.equal(b.historyState.feedback.context, '學習設定');
+    if (hash === '#about') assert.equal(b.historyState.feedback.context, '關於 SoraChi');
+    b.action('feedback-back'); assert.equal(b.hash, hash);
+  }
 });

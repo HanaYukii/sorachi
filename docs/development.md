@@ -91,6 +91,8 @@ Cloudflare DNS：四筆 GitHub Pages A（185.199.108–111.153）、四筆 AAAA�
 - `dist/kana-practice.js`、`dist/kana-hints.js`：五十音練習與複習、記憶提示。
 - `dist/storage.js`：本機資料、遷移、鎖定與備份合併。
 - `dist/diagnostics.js`：回報附帶的版本與教材 ID。
+- `dist/account.js`、`dist/cloud.js`：選用 Google 登入、分帳號本機資料與手動雲端備份；詳細權限、部署與限制見 [supabase/README.md](../supabase/README.md)。
+- `dist/feedback-challenge.js`：站內回報的 Turnstile 驗證；秘密金鑰僅存在後端，`dist/cloud-config.js` 只放公開設定。
 - `art/`：角色原圖與生成提示（不發佈）；`dist/assets/` 是轉出的 WebP 與圖示。
 - 定期盤點程式與文件的步驟、一定要保留的相容處理：[maintenance.md](maintenance.md)。
 

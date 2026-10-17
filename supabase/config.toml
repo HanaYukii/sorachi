@@ -1,0 +1,4 @@
+[functions.sorachi-feedback]
+# Guests can send feedback. The handler requires an allowed origin and Turnstile;
+# authenticated requests additionally validate their user token with Auth.
+verify_jwt = false

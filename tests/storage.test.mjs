@@ -403,3 +403,50 @@ test('removed favorites do not return from old backups; a later intentional re-a
  const b=setup({[key]:JSON.stringify(removed)});const readded={...old,favoriteChanges:{'phrase-a':{saved:true,updatedAt:'2026-10-16T13:00:00.000Z'}}};
  assert.equal(b.store.importBackup(JSON.stringify(readded)),true);assert.equal(b.store.readSnapshot().favorites[0],'phrase-a');
 });
+
+test('account stores never migrate guest data or read another account namespace', () => {
+  const aId='11111111-1111-4111-8111-111111111111', bId='22222222-2222-4222-8222-222222222222';
+  const b=setup({[legacyKey]:JSON.stringify(old)}), guest=b.store.exportBackup();
+  const a=b.api.create({...b.config,accountId:aId});
+  assert.equal(a.readProgress().history.length,0);
+  assert.equal(a.readSnapshot().owner.kind,'account');
+  assert.equal(a.key,`sorachi:acct:${aId}:v1`);
+  assert.equal(a.importBackup(guest),true);
+  assert.equal(a.importBackup(guest),true);
+  assert.equal(a.readProgress().history.length,1);
+  assert.equal(b.map.get(key),JSON.stringify(JSON.parse(guest)));
+  const other=b.api.create({...b.config,accountId:bId});
+  assert.equal(other.importBackup(a.exportBackup()),false);
+  assert.equal(other.readProgress().history.length,0);
+  b.map.set(other.key,a.exportBackup());
+  const invalid=b.api.create({...b.config,accountId:bId});
+  assert.equal(invalid.isProtected(),true);
+  assert.throws(()=>b.api.create({...b.config,accountId:'../invalid'}));
+});
+
+test('logout removal includes only this account and its quarantine copies', () => {
+  const id='11111111-1111-4111-8111-111111111111', prefix=`sorachi:acct:${id}:v1`;
+  const b=setup({[prefix]:'main',[`${prefix}:quarantine:a`]:'damaged-a',[`${prefix}:quarantine:b`]:'damaged-b',
+    [`${prefix}:other`]:'unrelated', 'sorachi:acct:22222222-2222-4222-8222-222222222222:v1':'other-user', [legacyKey]:'legacy'});
+  const before=new Map(b.map);
+  const storage={get length(){return b.map.size;},key:i=>[...b.map.keys()][i],getItem:k=>b.map.get(k)??null,removeItem:k=>b.map.delete(k)};
+  assert.throws(()=>b.api.removeAccountData(storage,'invalid'));
+  assert.deepEqual(b.map,before);
+  b.api.removeAccountData(storage,id);
+  const expected=new Map([...before].filter(([k])=>k!==prefix&&!k.startsWith(`${prefix}:quarantine:`)));
+  assert.deepEqual(b.map,expected);
+  b.api.removeAccountData(storage,id);
+  assert.deepEqual(b.map,expected,'Repeated removal leaves unrelated data untouched');
+});
+
+test('logout removal reports blocked deletions and still removes other matching copies', () => {
+  const id='11111111-1111-4111-8111-111111111111', prefix=`sorachi:acct:${id}:v1`;
+  for (const mode of ['throw','silent']) {
+    const b=setup({[prefix]:'main',[`${prefix}:quarantine:a`]:'damaged'});
+    const storage={get length(){return b.map.size;},key:i=>[...b.map.keys()][i],getItem:k=>b.map.get(k)??null,
+      removeItem(k){if(k===prefix){if(mode==='throw') throw Error('denied');return;}b.map.delete(k);}};
+    assert.throws(()=>b.api.removeAccountData(storage,id));
+    assert.equal(b.map.get(prefix),'main');
+    assert.equal(b.map.has(`${prefix}:quarantine:a`),false);
+  }
+});
