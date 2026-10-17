@@ -81,7 +81,7 @@ const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
 // lesson or review (the next group), or after feedback, keeps the earlier source; anything else, such as a direct
 // link, has none. An entry gets its source once, when it is first shown, so going back to it never changes it.
 const exits = ["#home", "#kana", "#grammar"];
-const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|kana-random$|grammar-random$|feedback$)/.test(page || "");
+const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|kana-random$|grammar-random$|drill$|feedback$)/.test(page || "");
 let cameFrom = null, shown = null, shownHash = null, shownFeedback = null;
 function arrive() {
   if (window.history.state?.from === undefined) window.history.replaceState({ from: exits.includes(shown) ? shown : passesOn(shown) ? cameFrom : null }, "");
@@ -130,7 +130,7 @@ function home() {
   const kanaNext = kanaStarted && (kanaOpen || !allKanaDone) ? { id: nextKana, title: kanaTitle, open: kanaOpen, sound } : null;
   const entry = (kind, image, title, description, label, action) => `<article class="home-entry ${kind}-entry">${friend("home-entry-art", "", image, 170, "(max-width: 600px) 112px, 170px")}<div class="home-entry-copy"><h2>${title}</h2><p>${description}</p><button class="primary" data-action="${action}">${label}${icons.arrow}</button></div></article>`;
   const shortcuts = `<section class="home-shortcuts" aria-labelledby="quick-title"><div><h2 id="quick-title">隨機練習</h2><p>每輪 5 題，從最基礎的內容開始。不記成績。</p></div><div class="quick-actions"><button class="text-button" data-action="study-kana-random">五十音隨機練習${icons.arrow}</button><button class="text-button" data-action="study-grammar-random">句型隨機練習${icons.arrow}</button></div></section>`;
-  const entries = `<section class="home-entries" aria-label="學習與旅遊">${entry("kana", "cloud-kana", "五十音", "入門必學，搭配各式技巧好好記熟。", "學五十音", "kana")}${entry("grammar", "cloud-complete", "基礎句型", "日文基本的句子架構。", "學基礎句型", "grammar")}${entry("travel", "cloud-travel", "旅遊常用語", "記好這些關鍵字，不用完整句，也能清楚表達意思。", "查常用語", "travel")}</section>`;
+  const entries = `<section class="home-entries" aria-label="學習與旅遊">${entry("kana", "cloud-kana", "五十音", "入門必學，搭配各式技巧好好記熟。", "學五十音", "kana")}${entry("grammar", "cloud-complete", "基礎句型", "日文基本的句子架構。", "學基礎句型", "grammar")}${entry("travel", "cloud-travel", "旅遊常用語", "記好這些關鍵字，不用完整句，也能清楚表達意思。", "查常用語", "travel")}${entry("drill", "cloud-friend", "基礎刷題", "練習日文基礎，也可作為 N5、N4 的準備。", "開始刷題", "study-drill")}</section>`;
   const below = newVisitor ? `<div class="script-supplement intro-entry"><button class="text-button" data-action="start">認識三種日文寫法${icons.arrow}</button><p>平假名、片假名與漢字的用法。</p></div>` : homeDashboard({ grammarNext, grammarStarted, begun, review, saved, kanaNext, otherSounds: soundIds.filter((id) => id !== nextKana && unfinished(id)) });
   app.innerHTML = `<div class="shell">
     <header class="site-header home-header"><a class="brand" href="#home" aria-label="SoraChi 首頁">${friend("", "", "cloud-friend", 42)}<span class="brand-word">SoraChi<span class="brand-dot">.</span></span></a></header>
@@ -639,7 +639,7 @@ function beforeUpdateReload() {
   const draft = app.querySelector("#feedback-message")?.value ?? feedbackDraft.message;
   const warning = !canStore ? "目前有進度無法儲存，更新後可能無法接續。要現在更新嗎？"
     : draft.trim() ? "更新會清除尚未送出的回報內容。要現在更新嗎？"
-    : /^#(?:kana|grammar)-random$/.test(location.hash) ? "這輪隨機練習不會保存，更新後會重新開始。要現在更新嗎？" : "";
+    : /^#(?:(?:kana|grammar)-random|drill)$/.test(location.hash) ? "這輪隨機練習不會保存，更新後會重新開始。要現在更新嗎？" : "";
   if (warning && !window.confirm(warning)) return false;
   restarting = true;
   Study.stopAudio();

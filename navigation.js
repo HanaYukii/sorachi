@@ -2,7 +2,7 @@
 
 // Presentation metadata only. History/source tracking and study state stay in their existing owners.
 const Navigation = (() => {
-  const sections = [["#kana", "五十音"], ["#grammar", "基礎句型"], ["#travel", "旅遊常用語"]];
+  const sections = [["#kana", "五十音"], ["#grammar", "基礎句型"], ["#travel", "旅遊常用語"], ["#drill", "基礎刷題"]];
   const pages = {
     "#home": ["日文入門", null, "home"],
     "#kana": ["五十音表", "#kana", "overview"],
@@ -10,6 +10,7 @@ const Navigation = (() => {
     "#travel": ["旅遊常用語", "#travel", "overview"],
     "#travel/favorites": ["我的常用語", "#travel", "overview"],
     "#kana-random": ["五十音隨機練習", "#kana", "practice"],
+    "#drill": ["基礎刷題", "#drill", "practice"],
     "#grammar-random": ["句型隨機練習", "#grammar", "practice"],
     "#kana-review": ["五十音複習", "#kana", "practice"],
     "#grammar-review": ["句型小複習", "#grammar", "practice"],
