@@ -64,7 +64,7 @@ const friend = (className = "", alt = "", asset = "cloud-friend", size = 252, si
   return `<img class="${className}" src="./assets/${asset}-${fallback}.webp" srcset="${widths.map((width) => `./assets/${asset}-${width}.webp ${width}w`).join(", ")}" sizes="${sizes}" alt="${alt}" width="${width}" height="${height}">`;
 };
 const footer = () =>
-  '<footer class="footer"><span>SoraChi · 日文入門<br><a class="author-credit" href="#about">花雪（HanaYukii）製作</a></span><nav class="quiet-links" aria-label="小工具"><a class="text-button" href="#about">關於 SoraChi</a><button class="text-button" data-action="history">學習紀錄</button><a class="text-button" href="#settings">學習設定</a><button class="text-button" data-action="feedback">問題與建議</button></nav></footer>';
+  (location.hostname === "hanayukii.github.io" ? '<aside class="domain-move"><strong>SoraChi 新網址：<a href="https://sorachi.app/">sorachi.app</a></strong><p>這裡保留舊版和原本的進度。要搬到新站，先在「學習紀錄」下載備份，再到新站的「學習紀錄」從備份檔還原。</p><button class="text-button" data-action="history">學習紀錄與備份 →</button></aside>' : '') + '<footer class="footer"><span>SoraChi · 日文入門<br><a class="author-credit" href="#about">花雪（HanaYukii）製作</a></span><nav class="quiet-links" aria-label="小工具"><a class="text-button" href="#about">關於 SoraChi</a><button class="text-button" data-action="history">學習紀錄</button><a class="text-button" href="#settings">學習設定</a><button class="text-button" data-action="feedback">問題與建議</button></nav></footer>';
 const warningMessage = () =>
   canStore
     ? ""
