@@ -784,9 +784,9 @@ test('a wrong grammar answer links to its explanation card and returns to the sa
   assert.match(b.render(`#study/g-place`), new RegExp(`data-action="study-look" data-card="${index}">回看說明：`));
   b.action('look', { card: String(index) });
   assert.equal(active.phase, 'cards'); assert.equal(active.cursor, index);
-  assert.match(b.html, /data-action="study-resume">回到題目/);
+  assert.match(b.html, /data-action="study-resume">回到第 \d+ 題/);
   const reloaded = harness(b.stored); reloaded.render('#study/g-place');
-  assert.match(reloaded.html, /回到題目/, 'Looking back survives a reload');
+  assert.match(reloaded.html, /回到第 \d+ 題/, 'Looking back survives a reload');
   b.action('resume');
   assert.equal(active.phase, 'quiz'); assert.equal(active.order[active.cursor], q);
   assert.equal(active.first[q], false, 'The first answer stays wrong');
@@ -805,10 +805,10 @@ test('the last card leads back to the question once the quiz has answers', () =>
   const last = b.content.courses['g-place'].steps.length - 1;
   b.action('look', { card: String(last) });
   assert.equal(active.cursor, last);
-  assert.match(b.html, /<button class="primary" data-action="study-resume">回到題目<\/button><\/div>/);
+  assert.match(b.html, /<button class="primary" data-action="study-resume">回到第 \d+ 題<\/button><\/div>/);
   assert.doesNotMatch(b.html, /開始練習|data-action="study-next"/, 'Only one way forward on the last card');
   b.action('prev');
-  assert.match(b.html, /<button class="text-button" data-action="study-resume">回到題目<\/button><button class="primary" data-action="study-next">下一張 →/);
+  assert.match(b.html, /<button class="text-button" data-action="study-resume">回到第 \d+ 題<\/button><button class="primary" data-action="study-next">下一張 →/);
 });
 
 test('the grammar result page offers the next lesson', () => {
@@ -1102,4 +1102,22 @@ test('display annotations pair authored words with readings without changing cou
   b.action('open', { course: 'g-question' });
   assert.match(b.html, /class="grammar-example" lang="ja"/);
   assert.match(b.html, /class="example-reading"/);
+});
+
+test('grammar retry explains the next action and reveals the right choice without changing the first score', () => {
+  const b = harness(); startQuiz(b, 'g-identity');
+  const active=b.state.courses['g-identity'].active, q=active.order[active.cursor], question=b.content.courses['g-identity'].questions[q];
+  assert.doesNotMatch(b.html,/✓ 正確答案|請選一次正確答案/,'Never leak the answer before an attempt');
+  b.action('answer',{choice:String(question.options.findIndex((_,i)=>i!==question.answer))});
+  assert.match(b.feedback.textContent,/請選一次正確答案，再繼續/);
+  assert.equal(b.next.disabled,true);
+  const right=b.answers.find(n=>Number(n.dataset.choice)===question.answer);
+  assert.match(right.mark.textContent,/✓ 正確答案/);
+  const reloaded=harness(b.stored); reloaded.render('#study/g-identity');
+  assert.doesNotMatch(reloaded.html,/✓ 正確答案/, "Reload resets temporary hints, but retains the first score");
+  assert.equal(reloaded.state.courses['g-identity'].active.first[q],false);
+  assert.match(reloaded.html,/data-action="study-next" disabled/);
+  reloaded.action('answer',{choice:String(question.answer)});
+  assert.equal(reloaded.next.disabled,false);
+  assert.equal(reloaded.state.courses['g-identity'].active.first[q],false);
 });

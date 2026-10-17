@@ -1209,7 +1209,7 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .home-dashboard { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-areas: "next side" "all side"; gap: 26px 32px; align-items: start; margin-top: 28px; }
 .home-dashboard h2 { font-size: 18px; margin: 0 0 10px; }
 .dash-next { grid-area: next; }
-.dash-all { grid-area: all; }
+.dash-tools { grid-area: all; }
 .dash-progress { grid-area: side; padding: 20px 22px 18px; background: var(--white); border: 1px solid var(--line); border-radius: 24px; }
 .dash-units { margin-top: 18px; }
 .dash-units summary { cursor: pointer; font-size: 14px; font-weight: 700; color: var(--purple-deep); padding: 11px 0; }
@@ -1321,3 +1321,8 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .section-nav a { min-height: 44px; display: flex; align-items: center; padding: 10px 16px; border: 1px solid var(--line); border-radius: 12px; text-decoration: none; background: white; font-size: 14px; }
 .section-nav a[aria-current="page"] { background: var(--lilac); color: var(--purple-deep); border: 2px solid var(--rule-border); padding: 9px 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 5px; }
 @media (max-width: 400px) { .section-nav { gap: 6px; } .section-nav a { padding: 10px; } .section-nav a[aria-current="page"] { padding: 9px; } }
+
+/* Answer feedback is distinct from the lilac teaching notes and apricot actions. */
+.study-feedback:not(:empty) { padding: 16px 18px; border: 2px solid #81aa9b; border-radius: 14px; background: #edf6f1; color: #315c4a; line-height: 1.8; }
+.study-feedback.wrong:not(:empty) { border-color: #c49b9b; background: #fff2f2; color: #763c43; }
+.study-options .answer.correct { border-width: 2px; }

@@ -1082,7 +1082,7 @@ test('kana lesson options mark only the kana as Japanese, so 答對了 beside it
 
 test('an empty history leads to the kana table, named as the table', () => {
   const b = browser({ hash: '#history' });
-  assert.match(b.html, /完成任一組練習後，紀錄會顯示在這裡。<\/p><button class="primary" data-action="kana">看五十音表/);
+  assert.match(b.html, /完成一堂課的課後練習，紀錄就會顯示在這裡。<\/p><button class="primary" data-action="kana">看五十音表/);
   b.action('kana');
   assert.equal(b.hash, '#kana');
   assert.match(b.html, /<h1 class="focus-heading" tabindex="-1">五十音表<\/h1>/);
