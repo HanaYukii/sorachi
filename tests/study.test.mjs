@@ -1305,7 +1305,8 @@ test('every grammar entry and explanation card states its own teaching scope', (
   for(let i=0;i<course.steps.length;i++){
    const step=course.steps[i],focus=p.cardFocus[step.id];cards++;
    assert.ok(focus.length===2 && focus.every(x=>typeof x==='string' && x.trim()),step.id);
-   assert.ok(text(b.html.match(/<p class="lesson-topic">(.*?)<\/p>/s)[1]).includes('本課'+p.focus[0]+p.focus[1]));
+   assert.equal(text(b.html.match(/<h1[^>]*>(.*?)<\/h1>/s)[1]),course.title);
+   assert.ok(text(b.html.match(/<p class="lesson-topic">(.*?)<\/p>/s)[1]).includes(b.content.displayTitle(course.id)));
    assert.equal(text(b.html.match(/<p class="card-focus"[^>]*>(.*?)<\/p>/s)[1]),focus.join(''),step.id);
    if(i<course.steps.length-1)b.action('next');
   }
