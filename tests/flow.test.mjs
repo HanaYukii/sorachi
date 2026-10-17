@@ -2399,7 +2399,8 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['ひとり', 'dining/party-size'], ['兩個人', 'dining/party-size'], ['一個人', 'dining/party-size'], ['大號', 'shopping/size'], ['切符', 'transit/ticket'],
     ['拿行李', 'hotel/pick-up'], ['領行李', 'hotel/pick-up'], ['取行李', 'hotel/pick-up'], ['checkin', 'hotel/check-in'], ['checkout', 'hotel/check-out'],
     ['tearai', 't-place/toilet'], ['加大', 't-order/portion'], ['開水', 'dining/water'], ['冰水', 'dining/water'], ['門票', 'lines/same-day'],
-    ['再進去', 'live/re-entry'], ['再進場', 'live/re-entry'], ['千円', 't-charge/amount'],
+    ['再進去', 'live/re-entry'], ['再進場', 'live/re-entry'], ['千円', 't-charge/amount'], ['開かない', 't-place/locker-stuck'],
+    ['すみません開けられない', 't-place/locker-stuck'],
   ]) assert.equal(found(query)[0], step, `${query} → ${step}`);
   // Without their aliases these would also list other cards.
   assert.deepEqual(found('寄行李'), ['hotel/luggage']);
@@ -2439,6 +2440,8 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['這樣就好', []], ['大家好的日文', []],
     // ございました is an ending like ございます (just the thanks card).
     ['ありがとうございました', ['basics/thanks']],
+    // ございます alone is an ending too, and a one-character query never lists a situation by its name (飯 of 飯店).
+    ['おはようございます', []], ['飯', []],
   ]) assert.deepEqual(found(query), steps, query);
   // A pasted page of text answers at once, without an error, and the box takes 80 characters.
   assert.doesNotThrow(() => found('kippukudasai'.repeat(400)));

@@ -413,7 +413,7 @@ const Study = (() => {
   const TRAVEL_ALIASES = [["寄物櫃", "置物櫃"], ["寄物", "寄放"], ["寄行李", "寄放行李"], ["行李寄放", "寄放行李"], ["洗手間", "廁所"], ["化妝室", "廁所"], ["買單", "結帳"], ["埋單", "結帳"], ["會計", "会計"], ["付款", "付現", "結帳"], ["打包", "外帶"], ["儲值", "加值"], ["千円", "1000円"], ["交通卡", "交通ic卡"], ["icoca", "交通ic卡"], ["pasmo", "交通ic卡"], ["發票", "收據"], ["不用", "不需要"], ["不要", "不需要"], ["來回票", "來回"], ["關門", "營業"], ["打烊", "營業"],
     ["剪票口", "驗票閘門"], ["轉車", "轉乘"], ["換車", "轉乘"], ["劃位", "對號座"], ["熱飲", "熱的"], ["冰飲", "冰的"], ["大碗", "大份"], ["加大", "大份"], ["幾個人", "幾位"], ["兩位", "幾位"],
     ["帶走", "外帶"], ["開水", "水"], ["冰水", "水"], ["怎麼賣", "多少錢"], ["試衣間", "試穿"], ["塑膠袋", "袋子"], ["當天票", "當日票"], ["門票", "當日票"], ["現場票", "當日票"], ["服務生", "店員"],
-    ["出去再進來", "再入場"], ["再進去", "再入場"], ["再進場", "再入場"], ["日文不好", "不太懂日文"], ["日語不好", "不太懂日文"], ["女廁", "廁所"], ["男廁", "廁所"], ["上小號", "廁所"], ["上大號", "廁所"], ["futari", "nanmeisama"], ["hitori", "nanmeisama"], ["ふたり", "何名様"], ["ひとり", "何名様"], ["兩個人", "幾位"], ["一個人", "幾位"], ["小號", "尺寸"], ["大號", "尺寸"], ["手洗い", "トイレ"], ["otearai", "toire"], ["tearai", "toire"], ["切符", "きっぷ"], ["拿行李", "領回"], ["領行李", "領回"], ["取行李", "領回"], ["checkin", "chekkuin"], ["check in", "chekku in"], ["checkout", "chekkuauto"], ["check out", "chekku auto"]];
+    ["出去再進來", "再入場"], ["再進去", "再入場"], ["再進場", "再入場"], ["日文不好", "不太懂日文"], ["日語不好", "不太懂日文"], ["女廁", "廁所"], ["男廁", "廁所"], ["上小號", "廁所"], ["上大號", "廁所"], ["futari", "nanmeisama"], ["hitori", "nanmeisama"], ["ふたり", "何名様"], ["ひとり", "何名様"], ["兩個人", "幾位"], ["一個人", "幾位"], ["小號", "尺寸"], ["大號", "尺寸"], ["手洗い", "トイレ"], ["otearai", "toire"], ["tearai", "toire"], ["切符", "きっぷ"], ["開かない", "開きません"], ["開けられない", "開きません"], ["拿行李", "領回"], ["領行李", "領回"], ["取行李", "領回"], ["checkin", "chekkuin"], ["check in", "chekku in"], ["checkout", "chekkuauto"], ["check out", "chekku auto"]];
   const fields = (part) => part ? [part.title, ...(part.keywords || []).flat(), part.example, part.reading, part.meaning, part.polite, part.politeReading, part.politeMeaning].filter(Boolean).map(fold) : [];
   // The aliases are folded once; a term holding one also tries the words the cards use.
   let travelAliases = null;
@@ -489,9 +489,9 @@ const Study = (() => {
     const byOverlap = (list) => list.map((entry) => ({ entry, n: pieces.filter((piece) => has(entry.own, piece)).length })).sort((a, b) => b.n - a.n).map(({ entry }) => entry);
     // Cards whose own words match, the ones where the query is a keyword or in the title first (袋 → the bag card);
     // then every card of a situation whose name or line matches, when none of its own did, the cards sharing most of
-    // the query first (退房 寄放 → the luggage card).
+    // the query first (退房 寄放 → the luggage card). One character is too little to name a situation (飯 of 飯店).
     const own = travelIndex.filter((entry) => has(entry.own, q)).map((entry) => ({ entry, n: standing(entry, q) })).sort((a, b) => b.n - a.n).map(({ entry }) => entry);
-    const named = travelIndex.filter((entry) => !own.some((match) => match.item === entry.item) && has(entry.situation, q));
+    const named = [...q].length < 2 ? [] : travelIndex.filter((entry) => !own.some((match) => match.item === entry.item) && has(entry.situation, q));
     if (own.length || named.length) return [...own, ...byOverlap(named)];
     // From here a romaji word of three letters or fewer must be a whole word (iku is not ikura, in is not genkin).
     const inText = (text, word) => /^[a-z]{1,3}$/u.test(word) ? new RegExp(`(?:^|[^a-z])${word}(?![a-z])`, "u").test(text) : has(text, word);
