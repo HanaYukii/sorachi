@@ -1,6 +1,6 @@
 # Jabiko 題目盤點（#39、#89）
 
-目前基準：2026-10-17，SoraChi 48 堂句型、150 題課內題，加上 18 題獨立刷題題目。下方 #39 的 35 課盤點保留作歷史紀錄；最新判斷以本文件末尾 #89 為準。
+目前基準：2026-10-17，SoraChi 48 堂句型、150 題課內題，加上 50 題獨立刷題題目，共 200 題。下方 #39 的 35 課盤點保留作歷史紀錄；最新判斷以本文件末尾 #89 為準。
 
 - 來源：Jabiko（唯讀參考）`src/domain/exam/items/n5.ts`，commit `31c96ab`（2026-10-11）。
 - 授權：Jabiko repo 沒有授權檔。它的文件說明這些題目是自撰的，參考公開資料只取題型與範圍，沒有複製題幹。使用者在 2026-10-16 允許移植最基礎的題目。所以只搬自撰題，並在 `content.js` 的 `lessonPlan.<課>.sources` 記錄原題 ID。
@@ -137,3 +137,43 @@
 - N4 抽選基礎候選如 たことがある、たほうがいい、なければならない、ながら、のに、たら；本站尚未教完整形式與所需詞彙，暫緩，不因標 N4 就先搬。未逐題審完 Jabiko 全部 N4 題庫。
 - 漢字讀音題不直接移植：本站重點先辨識詞義與基本句子；以漢字附假名呈現新題，不把未教漢字當門檻。
 - #41 詞彙小課保留自身驗收範圍；本批只新增已教考點的刷題題目。
+
+
+## 第二批：200 題目標
+
+使用者在第一批上線後要求補到 200 題。本批新增 32 題，均為本站自撰，來源批次 `2026-10-17-200`；沒有再直接移植 Jabiko 題幹。先核對既有 48 課的 lessonPlan 和 168 題，優先補尚未練到的基本讀音或不同問法。逐題核對語意、唯一正解、日文讀音與中文解釋；不加入尚未教的文法。
+
+| ID（drill/basic/） | 關聯課 | 本題考點／情境 |
+| --- | --- | --- |
+| sore-listener-view | g-demo | 朋友站在離你幾步外，指著你手上的麵包說「それ」。他指的是哪一個？ |
+| kono-before-noun | g-kono | 你拿著一本書，想說「這本書」。哪個說法可以直接放在「本」前面？ |
+| dare-answer-person | g-who | 朋友問「あの 人（ひと）は 誰（だれ）ですか」。哪個回答是在說那個人是誰？ |
+| two-negative-forms | g-negative | 哪一句和「学生（がくせい）じゃありません」意思相同？ |
+| to-lists-two-items | g-to | 想把麵包和水列在一起，哪個說法表示「麵包和水」？ |
+| ima-now | g-days | 「今（いま）」指的是什麼時候？ |
+| weekday-answer | g-weekdays | 對方問「何曜日（なんようび）ですか」。哪個回答是在說星期幾？ |
+| zero-reading | g-numbers | 「ゼロ」是哪個數字？ |
+| thousand-yen | g-prices | 「千円（せんえん）」是多少日圓？ |
+| three-things | g-counting | 買三個麵包，先說「三個」要用哪個詞？ |
+| seven-thirty | g-clock | 「七時半（しちじはん）」是幾點？ |
+| one-minute | g-minutes | 「1 分」的讀音是哪一個？ |
+| september-reading | g-dates | 「9 月」的讀音是哪一個？ |
+| fourth-date | g-dates-2 | 每月的「4 日」怎麼念？ |
+| june-sixth | g-dates-3 | 「6 月 6 日」怎麼念？ |
+| decline-drink | g-masen | 朋友問你要不要喝咖啡。你想說「我不喝」，選哪一句？ |
+| past-negative-meaning | g-mashita | 「昨日（きのう）、行（い）きませんでした。」是什麼意思？ |
+| ni-and-de-two-roles | g-ni-de | 想說「去車站，在車站買車票」。兩個空格依序放什麼？駅（えき）＿＿行（い）きます。駅（えき）＿＿切符（きっぷ）を 買（か）います。 |
+| imasu-living-thing | g-arimasu | 想說「車站有一隻貓」。空格放哪一個？駅（えき）に＿＿が います。 |
+| under-the-desk | g-position | 「机（つくえ）の 下（した）」是哪個位置？ |
+| not-big | g-adj-neg | 「この 部屋（へや）は 大（おお）きくないです。」是什麼意思？ |
+| na-sentence-ending | g-adj-na | 想說「這個房間很安靜」，句尾哪個說法正確？この 部屋（へや）は＿＿。 |
+| how-to-get-there | g-who-2 | 朋友回答「バスで 行（い）きます」。你剛才是在問「怎麼去」，哪句合適？ |
+| soshite-two-good-points | g-soshite-demo | 談到一個麵包，朋友說「安（やす）いです。そして、おいしいです」。他覺得怎麼樣？ |
+| reason-before-kara | g-kara-reason | 「寒（さむ）いですから、うちに います。」待在家的原因是什麼？ |
+| node-because | g-dakara | 「寒（さむ）いですので、うちに います。」裡的「ので」連接了哪種關係？ |
+| kedo-small-convenient | g-kedo | 「この 部屋（へや）は 小（ちい）さいですけど、便利（べんり）です。」意思是？ |
+| kuru-dictionary-form | g-verb-forms | 「来（き）ます」（來）的原形是哪一個？ |
+| kite-te-form | g-te-forms | 「来（き）ます」（來）的て形是哪一個？ |
+| kudasai-request-marker | g-te-kudasai | 「ちょっと 待（ま）ってください。」哪個部分讓這句變成「請你等一下」的請求？ |
+| ongoing-versus-future | g-te-iru | 想明確說「現在正在等」，空格放哪一個？今（いま）、待（ま）って＿＿。 |
+| permission-positive-reply | g-te-mo-ii | 你問可不可以吃這個，對方回答「はい、どうぞ」。意思最接近哪一個？ |

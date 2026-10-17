@@ -41,7 +41,7 @@ function harness(saved, voices = [], history = [], options = {}) {
   vm.runInContext(readFileSync(new URL("../dist/kana-practice.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   for(const file of ["drill-bank","drill"]) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`,import.meta.url),"utf8"),context);
-  vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice; globalThis.moduleDrillPool = Drill.pool(Content.grammar,DrillBank.questions);`, context);
+  vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice; globalThis.moduleDrill = Drill; globalThis.moduleDrillPool = Drill.pool(Content.grammar,DrillBank.questions);`, context);
   const study = context.moduleStudy;
   currentState = study.sanitize(saved);
   const render = (hash = location.hash) => { location.hash = hash; app.innerHTML = study.render(hash); return html; };
@@ -60,7 +60,7 @@ function harness(saved, voices = [], history = [], options = {}) {
     history: () => history, footer: () => '<footer>footer</footer>', warning: () => '', go: render,
   });
   return {
-    study, drillPool: context.moduleDrillPool, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, slot, speechSynthesis,
+    study, drillEngine: context.moduleDrill, drillPool: context.moduleDrillPool, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, slot, speechSynthesis,
     get preferences() { return clone(prefs); }, get favorites() { return clone(favorites); }, blockLocalWrites() { localWriteBlocked = true; },
     get answers() { return answerNodes; }, get renders() { return renders; }, get saves() { return saves; }, get scrolls() { return scrolls; }, flushTimers() { const jobs = [...timers.values()]; timers.clear(); jobs.forEach(fn => fn()); },
     // The pressed button keeps its classes, so a test can see the speaker that is playing.
@@ -1443,4 +1443,22 @@ test('food keywords can be searched, bookmarked and spoken individually without 
   b.study.searchTravel('炸雞'); b.render('#travel'); assert.match(b.html,/data-step="phrase\/food\/sides"/);
   b.study.searchTravel('onigiri'); b.render('#travel'); assert.match(b.html,/data-step="phrase\/food\/rice"/);
   assert.equal(b.records.length,0);
+});
+
+
+test('all 32 second-batch drill questions render reading aids, explain answers and resume',()=>{
+ const b=harness(), additions=b.drillPool.filter(q=>q.question.source?.batch==='2026-10-17-200');
+ assert.equal(additions.length,32);
+ for(const entry of additions) {
+  b.state.drill=b.drillEngine.start(b.drillEngine.blank(),[entry]);
+  b.render('#drill');
+  assert.ok(b.html.includes(entry.question.prompt),entry.id);
+  for(const reading of entry.question.readings.filter(Boolean))assert.ok(b.html.includes(reading),entry.id);
+  if(entry.question.promptReading)assert.ok(b.html.includes(entry.question.promptReading),entry.id);
+  b.action('answer',{choice:String(entry.question.answer)});
+  assert.ok(b.feedback.textContent.includes(entry.question.explanation),entry.id);
+  const restored=harness(b.stored);restored.render('#drill');
+  assert.equal(restored.study.currentReview().questionId,entry.id);
+  assert.match(restored.html,/✓ 答對了/);
+ }
 });

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {createHash} from 'node:crypto';
 const context=vm.createContext({});
 for(const file of ['content','drill-bank','drill','storage']) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`,import.meta.url),'utf8'),context);
 const {D,B,C,S}=vm.runInContext('({D:Drill,B:DrillBank,C:Content,S:DataStore})',context);
@@ -12,8 +13,8 @@ const current=d=>d.session.items[0];
 const answer=(d,entries=sample)=>D.act(d,entries,'answer',entries.find(e=>e.id===current(d).id).question.answer);
 const store=()=>{const map=new Map();const storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v)};return {map,storage,create:()=>S.create({storage})};};
 
-test('drill uses stable IDs and revision per question; 18 additions do not mutate course question banks',()=>{
- assert.equal(pool.length,168);assert.equal(C.grammar.flatMap(c=>c.questions).length,150);
+test('drill uses stable IDs and revision per question; 50 additions do not mutate course question banks',()=>{
+ assert.equal(pool.length,200);assert.equal(B.questions.length,50);assert.equal(C.grammar.flatMap(c=>c.questions).length,150);
  assert.deepEqual(clone(B.validate(C)),[]);assert.equal(new Set(pool.map(q=>q.id)).size,pool.length);
  assert.equal(B.questions.filter(q=>q.source.kind==='jabiko-adapted').length,6);
  const reversed=D.pool([...C.grammar].reverse(),[...B.questions].reverse());
@@ -81,4 +82,22 @@ test('backup merge keeps the newer whole session and clearing wins in both direc
  const fresh=s.readProgress();fresh.study.drill=answer(D.start(fresh.study.drill,sample));s.writeProgress(fresh);s.importBackup(old);s.importBackup(s.exportBackup());
  assert.equal(other.create().readProgress().study.drill.session.answered,1);
  assert.ok(other.create().readProgress().study.drill.session.startedAt>cleared.clearedAt);
+});
+
+
+test('the 200-question release preserves all 168 previous question revisions and an in-progress pass',()=>{
+ const original=pool.filter(q=>q.question.source?.batch!=='2026-10-17-200');
+ const added=pool.filter(q=>q.question.source?.batch==='2026-10-17-200');
+ assert.equal(original.length,168);assert.equal(added.length,32);
+ assert.equal(createHash('sha256').update(JSON.stringify(original.map(q=>[q.id,q.revision]))).digest('hex'),'f25e0e5a51ff7d00f0ecedf715f940e372c5eba54a780f1e350ac073b6b5688c');
+ let data=answer(D.start(D.blank(),original),original);
+ assert.deepEqual(clone(D.restore(data,pool)),clone(data));
+ for(let i=0;i<original.length;i++) {
+  assert.ok(!added.some(q=>q.id===current(data).id));
+  if(!data.session.answers.length)data=answer(data,pool);
+  data=D.act(data,pool,'next');
+ }
+ const nextPass=[current(data).id,...data.session.deck.map(q=>q.id)];
+ assert.equal(new Set(nextPass).size,200);
+ for(const q of added)assert.ok(nextPass.includes(q.id));
 });
