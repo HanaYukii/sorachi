@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-const source = readFileSync(new URL('../dist/storage.js', import.meta.url),'utf8');
+const source = ['drill','storage'].map(file=>readFileSync(new URL(`../dist/${file}.js`,import.meta.url),'utf8')).join('\n');
 function setup(initial={}, options={}) {
   const map=new Map(Object.entries(initial)); let blocked=false;
   const storage={getItem:k=>map.get(k)??null,setItem(k,v){if(blocked) throw Error('quota'); map.set(k,v);}};

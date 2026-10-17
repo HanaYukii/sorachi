@@ -73,7 +73,7 @@ function load(mutation = '', useBaseline = false) {
   const source = contentSource.replace(marker, `${fixture}\n${mutation}\n${marker}`);
   const context = vm.createContext({});
   vm.runInContext(source, context, { filename: 'dist/content.js' });
-  for (const file of ['kana-practice.js','kana-hints.js']) vm.runInContext(readFileSync(new URL('../dist/' + file, import.meta.url),'utf8'),context);
+  for (const file of ['drill-bank.js','drill.js','kana-practice.js','kana-hints.js']) vm.runInContext(readFileSync(new URL('../dist/' + file, import.meta.url),'utf8'),context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   vm.runInContext(studySource, context, { filename: 'dist/study.js' });
   return {

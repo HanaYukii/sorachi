@@ -10,7 +10,7 @@ const scripts=[{src:'https://example.test/sorachi/content.js?v=0123456789'},{src
 function setup(source=contentSource) {
  const document={scripts};
  const context=vm.createContext({document});
- vm.runInContext(source+'\n'+diagnosticsSource+'\nglobalThis.api={Content,Diagnostics:typeof Diagnostics==="undefined"?null:Diagnostics};',context);
+ vm.runInContext(source+'\n'+['drill-bank','drill'].map(file=>readFileSync(new URL(`../dist/${file}.js`,import.meta.url),'utf8')).join('\n')+'\n'+diagnosticsSource+'\nglobalThis.api={Content,Diagnostics:typeof Diagnostics==="undefined"?null:Diagnostics};',context);
  return context.api;
 }
 function active(Content,id,overrides={}) {
@@ -185,4 +185,15 @@ test('study and storage asset hashes are reported too, since review, retry and s
  assert.doesNotMatch(text,/private|hidden|host|secret|frag/);
  const twice=Diagnostics.capture({scripts:['./study.js?v=fedcba9876','./study.js?v=0123456789']});
  assert.equal(twice.studyVersion,undefined,'Two different study.js builds are ambiguous, like any other script');
+});
+
+test('drill feedback identifies only a registered question and revision, without answers or progress',()=>{
+ const {Diagnostics}=setup();
+ const review={courseId:'g-question',questionId:'drill/basic/student-answer'};
+ const result=Diagnostics.capture({hash:'#drill',review,progress:{secret:'never-share'}});
+ assert.equal(result.questionId,review.questionId);assert.ok(result.drillRevision);
+ assert.match(Diagnostics.format(result),/drillQuestionId: drill\/basic\/student-answer/);
+ assert.doesNotMatch(Diagnostics.format(result),/never-share|answers|answered|correct/);
+ assert.equal(Diagnostics.capture({hash:'#drill',review:{...review,questionId:'private-id'}}).questionId,undefined);
+ assert.doesNotMatch(Diagnostics.format({...result,drillRevision:'wrong',questionId:'private-id'}),/private-id/);
 });

@@ -282,7 +282,7 @@ function browser({
   const flush = () => {
     while (pending.length) pending.shift()();
   };
-  for (const file of ["content.js", "storage.js", "kana-practice.js", "kana-hints.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
+  for (const file of ["content.js", "drill-bank.js", "drill.js", "storage.js", "kana-practice.js", "kana-hints.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/diagnostics.js", import.meta.url), "utf8"), context);
@@ -2650,6 +2650,62 @@ test('fourth home entry opens continuous practice and feedback returns without d
   b.study('study-answer', {choice:0}); const html = b.html;
   b.action('feedback'); b.action('feedback-back');
   assert.equal(b.hash, '#drill'); assert.match(b.html, /第 1 題/);
-  assert.equal(b.stored, stored);
+  assert.notEqual(b.stored, stored);
+  const reloaded = browser({raw:b.stored, hash:"#drill"});
+  assert.deepEqual(JSON.parse(reloaded.stored).learning.study.drill,JSON.parse(b.stored).learning.study.drill);
+  assert.match(reloaded.html,/aria-disabled="true"/);
   b.study('study-drill-stop'); assert.match(b.html, /本次練習/);
+});
+
+test('drill reload preserves wrong first answer, shuffled options, stop and continue without course records',()=>{
+ const b=browser({hash:'#drill'});
+ const item=b.run('progress.study.drill.session.items[0]');
+ const correct=b.run('Drill.pool(Content.grammar,DrillBank.questions).find(q=>q.id===progress.study.drill.session.items[0].id).question.answer');
+ b.study('study-answer',{choice:item.options.find(x=>x!==correct)});
+ b.study('study-answer',{choice:correct});
+ const data=JSON.parse(b.stored).learning.study;
+ assert.equal(data.drill.session.answered,1);assert.equal(data.drill.session.correct,0);
+ assert.deepEqual(data.courses,{});assert.deepEqual(data.grammarReview,{});assert.equal(JSON.parse(b.stored).attempts.length,0);
+ const r=browser({raw:b.stored,hash:'#drill'});
+ assert.deepEqual(JSON.parse(r.stored).learning.study.drill,data.drill);
+ assert.match(r.html,/正確答案/);assert.match(r.html,/aria-disabled="true"/);
+ assert.equal(browser({raw:r.stored,hash:'#drill'}).run('beforeUpdateReload()'),true);
+ r.study('study-drill-stop');const stopped=browser({raw:r.stored,hash:'#drill'});
+ assert.match(stopped.html,/0 \/ 1/);stopped.study('study-drill-continue');assert.match(stopped.html,/第 2 題/);
+});
+
+test('drill write failures warn, preserve the saved round and never overwrite another tab',()=>{
+ const b=browser({hash:'#drill'}), before=b.stored;
+ b.failSetItem();b.study('study-answer',{choice:0});assert.equal(b.stored,before);assert.match(storageWarning(b),/storage-warning/);
+ assert.equal(JSON.parse(browser({raw:b.stored,hash:'#drill'}).stored).learning.study.drill.session.answered,0);
+ b.run('window.confirm=()=>false');assert.equal(b.run('beforeUpdateReload()'),false);
+ b.failSetItem(false);b.study('study-next');assert.equal(JSON.parse(b.stored).learning.study.drill.session.answered,1);
+ const shared=new Map(), a=browser({sharedStorage:shared,hash:'#drill'}), c=browser({sharedStorage:shared,hash:'#drill'});
+ a.study('study-answer',{choice:0});const newest=a.stored;
+ c.study('study-answer',{choice:1});assert.equal(c.stored,newest);assert.match(storageWarning(c),/另一個分頁/);
+});
+
+test('clearing only drill progress works, a failed clear keeps it, and old backups cannot revive it',()=>{
+ const b=browser({hash:'#drill'});b.study('study-answer',{choice:0});
+ const backup=b.run('dataStore.exportBackup()');b.navigate('#history');assert.match(b.html,/data-action="clear-history"/);
+ b.action('clear-history');assert.match(b.html,/基礎刷題/);const before=b.stored;
+ b.failSetItem();b.action('confirm-clear');assert.equal(b.stored,before);assert.ok(b.run('progress.study.drill.session'));
+ b.failSetItem(false);b.action('clear-history');b.action('confirm-clear');assert.equal(b.run('progress.study.drill.session'),null);
+ assert.equal(b.run(`dataStore.importBackup(${JSON.stringify(backup)})`),true);
+ const restored=browser({raw:b.stored});assert.equal(restored.run('progress.study.drill.session'),null);
+ restored.navigate('#drill');assert.match(restored.html,/第 1 題/);
+ assert.ok(restored.run('progress.study.drill.session.startedAt>progress.study.drill.clearedAt'));
+});
+
+test('a changed drill question is explained and a corrupted or future round is protected on reload',()=>{
+ const b=browser({hash:'#drill'});b.study('study-answer',{choice:0});const envelope=JSON.parse(b.stored);
+ envelope.learning.study.drill.session.items[0].revision='older';
+ const updated=browser({raw:JSON.stringify(envelope),hash:'#drill'});
+ assert.match(updated.html,/題目內容已更新/);assert.match(updated.html,/第 1 題/);
+ updated.study('study-answer',{choice:0});assert.equal(JSON.parse(updated.stored).learning.study.drill.session.answered,1);
+ for(const drill of [{version:2},null]) {
+  envelope.learning.study.drill=drill;const raw=JSON.stringify(envelope);
+  const locked=browser({raw,hash:'#drill'});assert.match(locked.html,/storage-warning/);
+  locked.study('study-answer',{choice:0});locked.study('study-next');assert.equal(locked.stored,raw);
+ }
 });

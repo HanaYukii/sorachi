@@ -889,6 +889,7 @@ button svg {
 .unit-goal, .unit-count { display: block; margin-top: 4px; font-size: 13px; color: var(--muted); line-height: 1.7; }
 .unit-count { font-size: 12px; }
 .unit-section > .course-list { margin-top: 10px; }
+.grammar-options .answer { display: block; }
 .option-reading { display: block; font-size: 12px; font-weight: 400; color: var(--muted); letter-spacing: 0.5px; }
 .course-list-heading + .study-note { margin: 8px 0 0; }
 .course-row { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 19px 22px; display: flex; gap: 20px; align-items: center; justify-content: space-between; text-align: left; }

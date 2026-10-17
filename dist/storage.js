@@ -84,7 +84,7 @@ const DataStore = (() => {
     const grammarReviewSession = clearWinner === "local" ? local.grammarReviewSession ?? null
       : clearWinner === "incoming" ? incoming.grammarReviewSession ?? null
       : local.grammarReviewSession ?? incoming.grammarReviewSession ?? null;
-    return {...incoming,...local,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,reviewSession,grammarReview,grammarReviewSession,lastGrammarId:local.lastGrammarId ?? incoming.lastGrammarId ?? null,
+    return {...incoming,...local,drill:Drill.merge(local.drill,incoming.drill),script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,reviewSession,grammarReview,grammarReviewSession,lastGrammarId:local.lastGrammarId ?? incoming.lastGrammarId ?? null,
       ...(clearedAt ? {reviewClearedAt:clearedAt} : {})};
   }
   const emptyIntro = () => ({step:0,completed:false,inProgress:false,answers:{},firstAnswers:{}});
@@ -148,7 +148,7 @@ const DataStore = (() => {
       } catch { protectedData = true; lockReason ||= "unreadable"; writable = false; return false; }
     }
     function commit(next) {
-      if (!checkForUpdates()) return false;
+      if (!checkForUpdates() || Drill.inspect(next.learning?.study?.drill)) return false;
       const candidate = {...next,updatedAt:new Date().toISOString()};
       try {
         const raw = JSON.stringify(candidate);
@@ -165,7 +165,7 @@ const DataStore = (() => {
       if (typeof raw !== "string" || raw.length > MAX_BACKUP_CHARS) return {ok:false,reason:"too-large"};
       let parsed;
       try { parsed = JSON.parse(raw); } catch { return {ok:false,reason:"invalid"}; }
-      if (!validSnapshot(parsed) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) return {ok:false,reason:"invalid"};
+      if (!validSnapshot(parsed) || Drill.inspect(parsed.learning?.study?.drill) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) return {ok:false,reason:"invalid"};
       const incoming = clean(parsed), current = snapshot.learning;
       const localIds = new Set(snapshot.attempts.map((item) => item.id));
       // Count from the whole file (clean() keeps only the newest 200), each id once.
@@ -190,6 +190,8 @@ const DataStore = (() => {
           const parsed = JSON.parse(raw);
           if (object(parsed) && typeof parsed.schemaVersion === "number" && parsed.schemaVersion > 2) { lockReason = "newer"; throw Error("Newer data"); }
           if (!validSnapshot(parsed) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) throw Error("Unsupported data");
+          const drillProblem = Drill.inspect(parsed.learning.study.drill);
+          if (drillProblem) { lockReason = drillProblem; throw Error("Unsupported drill data"); }
           snapshot = clean(parsed);
         }
         catch { protectedData = true; lockReason ||= "invalid"; writable = false; }

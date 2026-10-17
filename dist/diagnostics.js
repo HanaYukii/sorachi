@@ -34,6 +34,10 @@ const Diagnostics = (() => {
 
   function capture({hash = "",progress = {},scripts,attempt,practice,review} = {}) {
     const result = loadedVersions(scripts === undefined && typeof document !== "undefined" ? document.scripts : scripts);
+    if(hash === "#drill") {
+      const entry=Drill.pool(Content.grammar,DrillBank.questions).find(q=>q.id===review?.questionId && q.courseId===review?.courseId);
+      return Object.freeze(entry ? {...result,courseId:entry.courseId,questionId:entry.id,drillRevision:entry.revision} : result);
+    }
     const practiceCourse = course(practice?.courseId);
     const reviewCourse = hash === "#grammar-review" || hash === "#grammar-random" ? course(review?.courseId) : null;
     if (reviewCourse?.type === "grammar" && reviewCourse.questions.some(question => question.id === review.questionId)) {
@@ -97,6 +101,8 @@ const Diagnostics = (() => {
       lines.push(`courseId: ${snapshot.courseId}`);
       const token = revision(snapshot.courseRevision);
       if (token === Content.courseRevision(snapshot.courseId)) lines.push(`courseRevision: ${token}`);
+      const drill=Drill.pool(Content.grammar,DrillBank.questions).find(q=>q.id===snapshot.questionId && q.courseId===snapshot.courseId && q.revision===snapshot.drillRevision);
+      if(drill) lines.push(`drillQuestionId: ${drill.id}`,`drillRevision: ${drill.revision}`);
       const questions = snapshot.courseId === "intro" ? Object.values(current.questions) : current.questions;
       const cards = snapshot.courseId === "intro" ? current.lessons : current.type === "kana" ? current.cards : current.steps;
       if (id(snapshot.questionId) && questions.some(question => question.id === snapshot.questionId)) lines.push(`questionId: ${snapshot.questionId}`);

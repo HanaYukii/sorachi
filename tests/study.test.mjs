@@ -40,7 +40,8 @@ function harness(saved, voices = [], history = [], options = {}) {
   vm.runInContext(readFileSync(new URL("../dist/content.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/kana-practice.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
-  vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice;`, context);
+  for(const file of ["drill-bank","drill"]) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`,import.meta.url),"utf8"),context);
+  vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice; globalThis.moduleDrillPool = Drill.pool(Content.grammar,DrillBank.questions);`, context);
   const study = context.moduleStudy;
   currentState = study.sanitize(saved);
   const render = (hash = location.hash) => { location.hash = hash; app.innerHTML = study.render(hash); return html; };
@@ -59,7 +60,7 @@ function harness(saved, voices = [], history = [], options = {}) {
     history: () => history, footer: () => '<footer>footer</footer>', warning: () => '', go: render,
   });
   return {
-    study, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, slot, speechSynthesis,
+    study, drillPool: context.moduleDrillPool, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, slot, speechSynthesis,
     get preferences() { return clone(prefs); }, get favorites() { return clone(favorites); }, blockLocalWrites() { localWriteBlocked = true; },
     get answers() { return answerNodes; }, get renders() { return renders; }, get saves() { return saves; }, get scrolls() { return scrolls; }, flushTimers() { const jobs = [...timers.values()]; timers.clear(); jobs.forEach(fn => fn()); },
     // The pressed button keeps its classes, so a test can see the speaker that is playing.
@@ -272,7 +273,7 @@ test('sanitization rejects malformed kana sessions, old versions and skipped una
   legacy.courses['h-a'].completedAt='2026-01-01T00:00:00Z';legacy.courses['h-a'].lastResult={firstCorrect:3,total:5};
   const clean=b.study.sanitize(legacy).courses['h-a'];assert.equal(clean.active,null);assert.equal(clean.lastResult.firstCorrect,3);assert.ok(clean.completedAt);
   const invalid=clone(b.stored);invalid.courses['h-a'].active.practice.questions[0].options[0]='unknown';assert.equal(b.study.sanitize(invalid).courses['h-a'].active,null);
-  assert.deepEqual(clone(b.study.sanitize(null)),{script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
+  assert.deepEqual(clone(b.study.sanitize(null)),{drill:{version:1,clearedAt:null,session:null},script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
 });
 
 test('old or malformed kana review rounds restart empty while completions and kana mistakes stay', () => {
@@ -1379,7 +1380,7 @@ test('finishing the explanation can lead to another lesson without doing or comp
 test('continuous practice covers the mixed bank without repeats, then reshuffles without changing learning data', () => {
   const b = harness(); const before = clone(b.state);
   b.action('drill');
-  const pool = b.content.grammar.flatMap(c => c.questions.map(q => q.id));
+  const pool = b.drillPool.map(q => q.id);
   let previous = null;
   for (let pass = 0; pass < 2; pass++) {
     const seen = new Set();
@@ -1387,7 +1388,7 @@ test('continuous practice covers the mixed bank without repeats, then reshuffles
       const current = b.study.currentReview();
       assert.ok(current); assert.notEqual(current.questionId, previous);
       assert.ok(!seen.has(current.questionId)); seen.add(current.questionId);
-      const question = b.content.courses[current.courseId].questions.find(q => q.id === current.questionId);
+      const question = b.drillPool.find(q => q.id === current.questionId).question;
       const unchanged = b.html;
       b.action('next'); b.action('answer', {choice:'999'});
       assert.equal(b.html, unchanged);
@@ -1406,7 +1407,7 @@ test('continuous practice covers the mixed bank without repeats, then reshuffles
   b.action('drill-stop');
   assert.match(b.html, new RegExp(`${Math.ceil(pool.length / 2) * 2} / ${pool.length * 2}`));
   assert.equal(b.study.currentReview(), null);
-  assert.deepEqual(clone(b.state), before); assert.equal(b.saves, 0); assert.equal(b.records.length, 0);
+  assert.deepEqual({...clone(b.state),drill:before.drill}, before); assert.ok(b.saves > 0); assert.equal(b.records.length, 0);
 });
 
 test('continuous practice can stop, resume the same unanswered question and return from feedback', () => {
@@ -1420,8 +1421,9 @@ test('continuous practice can stop, resume the same unanswered question and retu
   b.action('drill-stop'); b.action('drill-continue');
   assert.notDeepEqual(b.study.currentReview(), first);
   assert.match(b.html, /第 2 題/);
-  assert.equal(b.saves, 0);
-  const reloaded = harness(); reloaded.render('#drill'); assert.match(reloaded.html, /第 1 題/);
+  assert.ok(b.saves > 0);
+  const reloaded = harness(b.stored); reloaded.render('#drill'); assert.match(reloaded.html, /第 2 題/);
+  assert.deepEqual(clone(reloaded.state.drill),clone(b.state.drill));
 });
 
 test('food keywords can be searched, bookmarked and spoken individually without quiz records', () => {
