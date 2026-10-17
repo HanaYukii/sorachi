@@ -2408,7 +2408,13 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   for (const [query, steps] of [
     ['toire doko', ['t-place/toilet']], ['chekkuin onegaishimasu', ['hotel/check-in']], ['kippu wa doko', ['transit/ticket']],
     ['kaado de onegaishimasu', ['t-pay/credit-cash']], ['genkin de ii desu ka', ['t-pay/credit-cash']], ['汽車保險', []],
+    // Something no card holds lists nothing, however polite (not every card that shares 有…嗎); romaji trimming
+    // never stops on a fragment inside another word (sat of kaisatsu, den of densha).
+    ['有吸管嗎', []], ['有退稅嗎', []], ['satokudasai', []], ['denwawadokodesuka', []], ['請問一下廁所在哪裡', ['t-place/toilet']],
   ]) assert.deepEqual(found(query), steps, query);
+  // A pasted page of text answers at once, without an error, and the box takes 80 characters.
+  assert.doesNotThrow(() => found('kippukudasai'.repeat(400)));
+  assert.match(b.html, /<input id="travel-search" type="search"[^>]*maxlength="80"/);
   for (const [query, first, also] of [
     ['退房 行李', 'hotel/luggage', ['hotel/check-out', 'hotel/pick-up']], ['入住 退房', 'hotel/luggage', ['hotel/check-in', 'hotel/check-out']],
     ['mizu o kudasai', 'dining/water', []], ['chekkuin wa nanji', 'hotel/check-in', ['hotel/check-out']],
@@ -2423,6 +2429,13 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['kaado、genkin', 't-pay/credit-cash', []],
     // Everyday words lead to the ones the cards use, and the situation breaks a tie (演唱會 → the concert's drink card).
     ['check in', 'hotel/check-in', []], ['轉車', 'transit/transfer', []], ['幾點關門', 'lines/hours', []],
+    // The two characters across a trimmed ending keep a one-character topic (駅は, 站在, 口在).
+    ['新宿駅はどこですか', 't-place/station', []], ['東京站在哪', 't-place/station', []], ['西口在哪裡', 'lines/entrance', []],
+    // "In Japanese" and "how do you say" are trimmed, and alone they count for nothing; inside a phrase they count.
+    ['謝謝的日文', 'basics/thanks', []], ['不好意思 日文', 'basics/attention', []], ['不會日文', 'basics/not-understood', []], ['我要這個的日文', 'shopping/this-one', []],
+    ['domo arigato', 'basics/thanks', []], ['arigatou gozaimashita', 'basics/thanks', []], ['可以嗎的日文', 'lines/photo', []], ['請問一下，可以刷卡嗎', 't-pay/credit-cash', []],
+    // A trimmed word stops at what a card holds, minus a trailing kana particle; aliases apply before pairs.
+    ['袋はありますか', 'shopping/bag', []], ['塑膠袋要錢嗎', 'shopping/bag', []], ['當天票還有嗎', 'lines/same-day', []], ['otearai wa doko desu ka', 't-place/toilet', []],
     ['演唱會 飲料', 'live/drink', ['t-order/drink-temperature']], ['飯店 預約', 'hotel/reservation', []], ['買東西 袋子', 'shopping/bag', []],
     ['水 請給我', 'dining/water', []], ['冰的 熱的', 't-order/drink-temperature', ['t-order/noodle-temperature']],
     ['Suica 加值', 't-pay/suica', ['t-charge/top-up', 't-charge/amount']], ['西瓜卡 加值', 't-pay/suica', ['t-charge/top-up', 't-charge/amount']],
