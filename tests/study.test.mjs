@@ -1375,3 +1375,51 @@ test('finishing the explanation can lead to another lesson without doing or comp
  assert.equal(b.state.courses['g-question'].active.phase,'cards');
  assert.equal(b.state.courses['g-question'].completedAt,null);
 });
+
+test('continuous practice covers the mixed bank without repeats, then reshuffles without changing learning data', () => {
+  const b = harness(); const before = clone(b.state);
+  b.action('drill');
+  const pool = b.content.grammar.flatMap(c => c.questions.map(q => q.id));
+  let previous = null;
+  for (let pass = 0; pass < 2; pass++) {
+    const seen = new Set();
+    for (let i = 0; i < pool.length; i++) {
+      const current = b.study.currentReview();
+      assert.ok(current); assert.notEqual(current.questionId, previous);
+      assert.ok(!seen.has(current.questionId)); seen.add(current.questionId);
+      const question = b.content.courses[current.courseId].questions.find(q => q.id === current.questionId);
+      const unchanged = b.html;
+      b.action('next'); b.action('answer', {choice:'999'});
+      assert.equal(b.html, unchanged);
+      const choice = (i % 2) ? (question.answer + 1) % question.options.length : question.answer;
+      b.action('answer', {choice:String(choice)});
+      assert.ok(b.feedback.textContent.includes(question.explanation));
+      const feedback = b.feedback.textContent;
+      b.action('answer', {choice:String(question.answer)});
+      assert.equal(b.feedback.textContent, feedback, 'Only first answer counts');
+      previous = current.questionId;
+      b.action('next');
+      assert.doesNotMatch(b.html, /看結果 →|練習完成/);
+    }
+    assert.deepEqual([...seen].sort(), [...pool].sort());
+  }
+  b.action('drill-stop');
+  assert.match(b.html, new RegExp(`${Math.ceil(pool.length / 2) * 2} / ${pool.length * 2}`));
+  assert.equal(b.study.currentReview(), null);
+  assert.deepEqual(clone(b.state), before); assert.equal(b.saves, 0); assert.equal(b.records.length, 0);
+});
+
+test('continuous practice can stop, resume the same unanswered question and return from feedback', () => {
+  const b = harness(); b.render('#drill');
+  const first = b.study.currentReview();
+  b.action('drill-stop'); assert.match(b.html, /0 \/ 0/);
+  b.action('next'); b.action('answer', {choice:'0'}); assert.match(b.html, /0 \/ 0/);
+  b.action('drill-continue'); assert.deepEqual(b.study.currentReview(), first);
+  b.action('answer', {choice:'0'}); const answered = b.render('#drill');
+  b.render('#grammar'); assert.equal(b.render('#drill'), answered);
+  b.action('drill-stop'); b.action('drill-continue');
+  assert.notDeepEqual(b.study.currentReview(), first);
+  assert.match(b.html, /第 2 題/);
+  assert.equal(b.saves, 0);
+  const reloaded = harness(); reloaded.render('#drill'); assert.match(reloaded.html, /第 1 題/);
+});

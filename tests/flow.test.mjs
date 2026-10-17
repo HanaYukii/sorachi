@@ -1186,7 +1186,7 @@ test('a change in saving state is announced once outside the page, not on every 
   assert.doesNotMatch(b.html, /storage-warning[^>]*role="status"/);
 });
 
-test('home uses three entry cards while utility and focused pages use a shared return header', () => {
+test('home uses four entry cards while utility and focused pages use a shared return header', () => {
   const b = browser();
   assert.doesNotMatch(b.html.match(/<header[\s\S]*?<\/header>/)[0], /href="#travel"/);
   b.action("travel");
@@ -2581,12 +2581,12 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   assert.deepEqual(saved, original, 'Searching saves nothing besides the favourite');
 });
 
-test('home keeps three identical picture entries for every progress state; quick practice is above them', () => {
+test('home keeps four identical picture entries for every progress state; quick practice is above them', () => {
   const fresh = browser();
   const entries = b => b.html.match(/<section class="home-entries"[\s\S]*?<\/section>/)?.[0];
   const expected = entries(fresh);
   assert.ok(expected);
-  for (const image of ['cloud-kana', 'cloud-complete', 'cloud-travel']) assert.match(expected, new RegExp(image));
+  for (const image of ['cloud-kana', 'cloud-complete', 'cloud-travel', 'cloud-friend']) assert.match(expected, new RegExp(image));
   const scenarios = [fresh];
   const saved = browser({hash:'#travel/hotel'}); saved.study('study-favorite',{phrase:'phrase/hotel/check-in'}); scenarios.push(saved);
   for (const ids of [['h-a'], ['g-identity'], ['h-a','g-identity']]) {
@@ -2600,7 +2600,7 @@ test('home keeps three identical picture entries for every progress state; quick
     assert.equal(entries(b),expected);
     assert.ok(b.html.indexOf('home-shortcuts') < b.html.indexOf('home-entries'));
     if(b.html.includes('home-dashboard')) assert.ok(b.html.indexOf('home-entries') < b.html.indexOf('home-dashboard'));
-    for(const action of ['kana','grammar','travel','study-kana-random','study-grammar-random']) assert.equal((b.html.match(new RegExp(`data-action="${action}"`, 'g'))||[]).length,1);
+    for(const action of ['kana','grammar','travel','study-drill','study-kana-random','study-grammar-random']) assert.equal((b.html.match(new RegExp(`data-action="${action}"`, 'g'))||[]).length,1);
     b.navigate('#home'); assert.equal(b.stored,before,'Rendering the home never writes progress');
   }
 });
@@ -2639,4 +2639,17 @@ test('the update button checks unsaved work and does not overwrite storage on re
   const blocked=browser({hash:'#grammar'});
   blocked.run('canStore=false; window.confirm=()=>false');
   assert.equal(blocked.run('beforeUpdateReload()'),false);
+});
+
+test('fourth home entry opens continuous practice and feedback returns without dropping the question', () => {
+  const b = browser(); const stored = b.stored;
+  assert.equal((b.html.match(/<article class="home-entry /g) || []).length, 4);
+  assert.match(b.html, /練習日文基礎，也可作為 N5、N4 的準備/);
+  b.study('study-drill'); assert.equal(b.hash, '#drill');
+  assert.match(b.html, /第 1 題/); assert.match(b.title, /基礎刷題/);
+  b.study('study-answer', {choice:0}); const html = b.html;
+  b.action('feedback'); b.action('feedback-back');
+  assert.equal(b.hash, '#drill'); assert.match(b.html, /第 1 題/);
+  assert.equal(b.stored, stored);
+  b.study('study-drill-stop'); assert.match(b.html, /本次練習/);
 });
