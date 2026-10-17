@@ -5713,6 +5713,113 @@ const Content = (() => {
       ]
     },
     {
+      "id": "food",
+      "title": "常見食物與菜單",
+      "subtitle": "麵類・飯類・常見菜色・輕食",
+      "steps": [
+        {
+          "title": "麵類：拉麵、烏龍麵、蕎麥麵",
+          "keywords": [
+            [
+              "ラーメン",
+              "raamen",
+              "拉麵"
+            ],
+            [
+              "うどん",
+              "udon",
+              "烏龍麵"
+            ],
+            [
+              "そば",
+              "soba",
+              "蕎麥麵"
+            ]
+          ],
+          "example": "うどん、お願いします。",
+          "reading": "udon, onegaishimasu",
+          "meaning": "我要烏龍麵，麻煩你。",
+          "body": "看到想吃的麵，可以說名稱再加「お願いします」。店員問冷熱時，熱的說「あたたかい」，冷的說「つめたい」。",
+          "id": "phrase/food/noodles"
+        },
+        {
+          "title": "飯類：飯糰、咖哩飯、壽司",
+          "keywords": [
+            [
+              "おにぎり",
+              "onigiri",
+              "飯糰"
+            ],
+            [
+              "カレーライス",
+              "kareeraisu",
+              "咖哩飯"
+            ],
+            [
+              "寿司（すし）",
+              "sushi",
+              "壽司"
+            ]
+          ],
+          "example": "カレーライス、お願いします。",
+          "reading": "kareeraisu, onegaishimasu",
+          "meaning": "我要咖哩飯，麻煩你。",
+          "body": "餐點有不同口味時，指著菜單或商品說「これ、お願いします」（我要這個，麻煩你），比只說種類更清楚。",
+          "id": "phrase/food/rice"
+        },
+        {
+          "title": "常見菜色：炸雞、餃子、炸豬排",
+          "keywords": [
+            [
+              "唐揚げ（からあげ）",
+              "karaage",
+              "日式炸雞"
+            ],
+            [
+              "餃子（ぎょうざ）",
+              "gyouza",
+              "餃子"
+            ],
+            [
+              "とんかつ",
+              "tonkatsu",
+              "炸豬排"
+            ]
+          ],
+          "example": "ぎょうざ、お願いします。",
+          "reading": "gyouza, onegaishimasu",
+          "meaning": "我要餃子，麻煩你。",
+          "body": "菜單上的「唐揚げ」常指日式炸雞；其他食材也可以用這種炸法。看菜名或照片確認後，說出名稱就能點餐。",
+          "id": "phrase/food/sides"
+        },
+        {
+          "title": "輕食：麵包、三明治、便當",
+          "keywords": [
+            [
+              "パン",
+              "pan",
+              "麵包"
+            ],
+            [
+              "サンドイッチ",
+              "sandoicchi",
+              "三明治"
+            ],
+            [
+              "お弁当（おべんとう）",
+              "obentou",
+              "便當"
+            ]
+          ],
+          "example": "これ、お願いします。",
+          "reading": "kore, onegaishimasu",
+          "meaning": "我要這個，麻煩你。",
+          "body": "在麵包店或便當店，指著想要的商品說「これ」。在便利商店，也可以把選好的商品拿到櫃檯結帳。",
+          "id": "phrase/food/takeaway"
+        }
+      ]
+    },
+    {
       "id": "dining",
       "title": "內用外帶、用餐需求",
       "subtitle": "幾位・內用・外帶・水・不需要",

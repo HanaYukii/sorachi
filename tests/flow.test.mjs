@@ -2430,20 +2430,20 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     // A word none of whose pieces any card holds lists nothing, Chinese or romaji; so does a lone character no card
     // has as a keyword (那). The character across a cut never stands in for a word no card holds (んを, 子嗎, 所在).
     ['有吹風機嗎', []], ['便利商店在哪', []], ['sutoroo arimasuka', []], ['那是什麼意思', []],
-    ['ラーメンをください', []], ['お釣りをください', []], ['有筷子嗎', []], ['派出所在哪裡', []], ['我要加點', []], ['請問退稅', []], ['コーヒーがほしいです', []],
+    ['ラーメンをください', ['food/noodles']], ['お釣りをください', []], ['有筷子嗎', []], ['派出所在哪裡', []], ['我要加點', []], ['請問退稅', []], ['コーヒーがほしいです', []],
     // A lone character no card holds stays a word, so it still lists nothing (傘, 藥, 箸); so do a word ending in 票
     // that is not a ticket here (郵票, 機票) and a request or ending around something not here (可以…嗎, できますか).
     ['傘ありますか', []], ['有藥嗎', []], ['箸ください', []], ['郵票', []], ['機票', []], ['可以退稅嗎', []], ['英語できますか', []],
     // 日文的 in front is trimmed like the 的日文 after (日文的謝謝 → just the thanks card).
     ['日文的謝謝', ['basics/thanks']],
-    // A single character never lists a whole situation by its name (飯 of 飯店).
-    ['飯呢', []],
+    // 飯 now finds the food/rice card, but must not list the hotel situation.
+    ['飯呢', ['food/rice']],
     // A last character in many cards (好 of 不好意思) is not tried alone, so a phrase ending in it lists nothing.
     ['這樣就好', []], ['大家好的日文', []],
     // ございました is an ending like ございます (just the thanks card).
     ['ありがとうございました', ['basics/thanks']],
-    // ございます alone is an ending too, and a one-character query never lists a situation by its name (飯 of 飯店).
-    ['おはようございます', []], ['飯', []],
+    // ございます alone is an ending too; 飯 now has an actual food card.
+    ['おはようございます', []], ['飯', ['food/rice']],
   ]) assert.deepEqual(found(query), steps, query);
   // A pasted page of text answers at once, without an error, and the box takes 80 characters.
   assert.doesNotThrow(() => found('kippukudasai'.repeat(400)));
@@ -2481,7 +2481,7 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['futari desu', 'dining/party-size', []], ['ふたりお願いします', 'dining/party-size', []], ['演唱會 現場', 'live/doors', ['live/drink']],
     // A lone character a card holds finds it (冰, 席, 麵); an alias written with a hyphen still counts (check-in), also
     // next to Chinese, where a keyword reached through an alias counts like one typed (幾點check-in).
-    ['有冰嗎', 't-order/drink-temperature', []], ['席ありますか', 'transit/seat', []], ['有麵嗎', 't-order/noodle-temperature', []],
+    ['有冰嗎', 't-order/drink-temperature', []], ['席ありますか', 'transit/seat', []], ['有麵嗎', 'food/noodles', ['t-order/noodle-temperature']],
     ['check-in', 'hotel/check-in', []], ['Check-in time', 'hotel/check-in', []], ['幾點check-in', 'hotel/check-in', ['hotel/check-out']],
     // A keyword as the last character counts alone only when no card holds it with the character before (一杯水 → 水;
     // 開發票 stays 發票). 可以 and できますか are trimmed like other requests; 日文不好 leads to 不太懂日文.
@@ -2586,7 +2586,7 @@ test('home keeps four identical picture entries for every progress state; quick 
   const entries = b => b.html.match(/<section class="home-entries"[\s\S]*?<\/section>/)?.[0];
   const expected = entries(fresh);
   assert.ok(expected);
-  for (const image of ['cloud-kana', 'cloud-complete', 'cloud-travel', 'cloud-friend']) assert.match(expected, new RegExp(image));
+  for (const image of ['cloud-kana', 'cloud-complete', 'cloud-travel', 'cloud-drill']) assert.match(expected, new RegExp(image));
   const scenarios = [fresh];
   const saved = browser({hash:'#travel/hotel'}); saved.study('study-favorite',{phrase:'phrase/hotel/check-in'}); scenarios.push(saved);
   for (const ids of [['h-a'], ['g-identity'], ['h-a','g-identity']]) {
@@ -2644,7 +2644,7 @@ test('the update button checks unsaved work and does not overwrite storage on re
 test('fourth home entry opens continuous practice and feedback returns without dropping the question', () => {
   const b = browser(); const stored = b.stored;
   assert.equal((b.html.match(/<article class="home-entry /g) || []).length, 4);
-  assert.match(b.html, /練習日文基礎，也可作為 N5、N4 的準備/);
+  assert.match(b.html, /練習本站提到的日文基礎，也可作為 N5、N4 的準備/);
   b.study('study-drill'); assert.equal(b.hash, '#drill');
   assert.match(b.html, /第 1 題/); assert.match(b.title, /基礎刷題/);
   b.study('study-answer', {choice:0}); const html = b.html;

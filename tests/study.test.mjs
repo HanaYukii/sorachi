@@ -359,7 +359,7 @@ test('unknown route/course cannot inject markup and unrelated actions pass throu
 test('travel section is separate; each situation shows keywords and playable phrases without a quiz', () => {
   const b = harness(null, [{lang: 'ja-JP'}]);
   b.render('#travel');
-  assert.equal((b.html.match(/href="#travel\//g) || []).length, 12);
+  assert.equal((b.html.match(/href="#travel\//g) || []).length, b.content.phrasebook.length + 1);
   assert.doesNotMatch(b.html, /data-action="study-open"/);
   assert.doesNotMatch(b.html, /data-course="g-identity"/);
   assert.equal(b.study.context('#travel'), '旅遊常用語列表');
@@ -1422,4 +1422,23 @@ test('continuous practice can stop, resume the same unanswered question and retu
   assert.match(b.html, /第 2 題/);
   assert.equal(b.saves, 0);
   const reloaded = harness(); reloaded.render('#drill'); assert.match(reloaded.html, /第 1 題/);
+});
+
+test('food keywords can be searched, bookmarked and spoken individually without quiz records', () => {
+  const b = harness(null, [{lang:'ja-JP',name:'Kyoko'}]);
+  b.render('#travel/food');
+  assert.equal((b.html.match(/data-action="study-food-audio"/g)||[]).length,12);
+  const food = b.content.phrasebook.find(c => c.id === 'food');
+  for (const step of food.steps) for (const [index, word] of step.keywords.entries()) {
+    b.action('food-audio',{phrase:step.id,index:String(index)});
+    assert.equal(b.utterances.at(-1).text,word[0].match(/（(.*?)）/u)?.[1]||word[0]);
+  }
+  const count=b.utterances.length;
+  b.action('food-audio',{phrase:'phrase/food/sides',index:'99'});
+  assert.equal(b.utterances.length,count);
+  b.action('favorite',{phrase:'phrase/food/noodles'});
+  b.render('#travel/favorites'); assert.match(b.html,/麵類：拉麵/);
+  b.study.searchTravel('炸雞'); b.render('#travel'); assert.match(b.html,/data-step="phrase\/food\/sides"/);
+  b.study.searchTravel('onigiri'); b.render('#travel'); assert.match(b.html,/data-step="phrase\/food\/rice"/);
+  assert.equal(b.records.length,0);
 });

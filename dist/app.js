@@ -56,10 +56,10 @@ const icons = {
   book: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5C8 3 5 3 3 4v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-2-1-5-1-9 1Zm0 0v15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 // WebP sizes come from art/*.png; `size` is the largest CSS width the image is shown at.
-const imageWidths = { "cloud-friend": [128, 256, 512, 768], "cloud-complete": [256, 512], "cloud-kana": [128, 256, 512], "cloud-travel": [128, 256] };
+const imageWidths = { "cloud-friend": [128, 256, 512, 768], "cloud-complete": [256, 512], "cloud-kana": [128, 256, 512], "cloud-travel": [128, 256], "cloud-drill": [128, 256, 512] };
 const friend = (className = "", alt = "", asset = "cloud-friend", size = 252, sizes = `${size}px`) => {
   const widths = imageWidths[asset];
-  const [width, height] = asset === "cloud-kana" || asset === "cloud-travel" ? [256, 256] : [1229, 1280];
+  const [width, height] = asset === "cloud-kana" || asset === "cloud-travel" || asset === "cloud-drill" ? [256, 256] : [1229, 1280];
   const fallback = widths.find((width) => width >= size * 2) || widths.at(-1);
   return `<img class="${className}" src="./assets/${asset}-${fallback}.webp" srcset="${widths.map((width) => `./assets/${asset}-${width}.webp ${width}w`).join(", ")}" sizes="${sizes}" alt="${alt}" width="${width}" height="${height}">`;
 };
@@ -130,7 +130,7 @@ function home() {
   const kanaNext = kanaStarted && (kanaOpen || !allKanaDone) ? { id: nextKana, title: kanaTitle, open: kanaOpen, sound } : null;
   const entry = (kind, image, title, description, label, action) => `<article class="home-entry ${kind}-entry">${friend("home-entry-art", "", image, 170, "(max-width: 600px) 112px, 170px")}<div class="home-entry-copy"><h2>${title}</h2><p>${description}</p><button class="primary" data-action="${action}">${label}${icons.arrow}</button></div></article>`;
   const shortcuts = `<section class="home-shortcuts" aria-labelledby="quick-title"><div><h2 id="quick-title">隨機練習</h2><p>每輪 5 題，從最基礎的內容開始。不記成績。</p></div><div class="quick-actions"><button class="text-button" data-action="study-kana-random">五十音隨機練習${icons.arrow}</button><button class="text-button" data-action="study-grammar-random">句型隨機練習${icons.arrow}</button></div></section>`;
-  const entries = `<section class="home-entries" aria-label="學習與旅遊">${entry("kana", "cloud-kana", "五十音", "入門必學，搭配各式技巧好好記熟。", "學五十音", "kana")}${entry("grammar", "cloud-complete", "基礎句型", "日文基本的句子架構。", "學基礎句型", "grammar")}${entry("travel", "cloud-travel", "旅遊常用語", "記好這些關鍵字，不用完整句，也能清楚表達意思。", "查常用語", "travel")}${entry("drill", "cloud-friend", "基礎刷題", "練習日文基礎，也可作為 N5、N4 的準備。", "開始刷題", "study-drill")}</section>`;
+  const entries = `<section class="home-entries" aria-label="學習與旅遊">${entry("kana", "cloud-kana", "五十音", "入門必學，搭配各式技巧好好記熟。", "學五十音", "kana")}${entry("grammar", "cloud-complete", "基礎句型", "日文基本的句子架構。", "學基礎句型", "grammar")}${entry("travel", "cloud-travel", "旅遊常用語", "記好這些關鍵字，不用完整句，也能清楚表達意思。", "查常用語", "travel")}${entry("drill", "cloud-drill", "基礎刷題", "練習本站提到的日文基礎，也可作為 N5、N4 的準備。", "開始刷題", "study-drill")}</section>`;
   const below = newVisitor ? `<div class="script-supplement intro-entry"><button class="text-button" data-action="start">認識三種日文寫法${icons.arrow}</button><p>平假名、片假名與漢字的用法。</p></div>` : homeDashboard({ grammarNext, grammarStarted, begun, review, saved, kanaNext, otherSounds: soundIds.filter((id) => id !== nextKana && unfinished(id)) });
   app.innerHTML = `<div class="shell">
     <header class="site-header home-header"><a class="brand" href="#home" aria-label="SoraChi 首頁">${friend("", "", "cloud-friend", 42)}<span class="brand-word">SoraChi<span class="brand-dot">.</span></span></a></header>
