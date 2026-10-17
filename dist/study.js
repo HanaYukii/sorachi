@@ -195,13 +195,10 @@ const Study = (() => {
   const footer = () => api.footer ? api.footer() : "";
   const warning = () => api.warning ? api.warning() : "";
   const wasEarlierDay = (date) => date && new Date(date).toDateString() !== new Date().toDateString();
-  function header(destination, label) {
-    return `<header class="lesson-header"><a class="exit" href="${destination}">← ${label}</a><span class="lesson-name">SoraChi · 日文入門</span></header>`;
-  }
   // 回 leads back to where a lesson or review was opened (#82): home, or else its own list, also for a direct link.
   const exitTo = (list) => api.from?.() === "#home" ? ["#home", "回首頁"] : list === "#kana" ? ["#kana", "回五十音表"] : ["#grammar", "回基礎句型"];
   function wrap(content, destination = "#home", label = "回首頁", wide = false) {
-    return `<div class="lesson-shell${wide ? " lesson-wide" : ""}">${header(destination, label)}<main id="main" tabindex="-1" class="study-main">${content}${warning()}</main>${footer()}</div>`;
+    return `<div class="lesson-shell${wide ? " lesson-wide" : ""}">${Navigation.header(globalThis.location?.hash || "", destination, label)}<main id="main" tabindex="-1" class="study-main">${content}${warning()}</main>${footer()}</div>`;
   }
   function status(id) {
     const saved = state().courses[id];

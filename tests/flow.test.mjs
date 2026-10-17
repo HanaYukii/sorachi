@@ -283,6 +283,7 @@ function browser({
     while (pending.length) pending.shift()();
   };
   for (const file of ["content.js", "storage.js", "kana-practice.js", "kana-hints.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
+  vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/diagnostics.js", import.meta.url), "utf8"), context);
   vm.runInContext(source, context, { filename: "dist/app.js" });
@@ -740,9 +741,9 @@ test("feedback returns to the current study card with its course title", () => {
 test("home explains the task: the kana card leads to the table, and anyone can start a random round straight away", () => {
   const b = browser();
   assert.match(b.html, /日文入門/);
-  assert.match(b.html, /看字表、聽讀音，選一行開始。/);
+  assert.match(b.html, /入門必學，搭配各式技巧好好記熟。/);
   assert.match(b.html, /<button class="primary" data-action="kana">學五十音/);
-  assert.match(b.html, /<p>基本平假名・5 題，不用先學過。<\/p><\/div><button class="text-button" data-action="study-kana-random">五十音隨機練習/);
+  assert.match(b.html, /每輪 5 題[\s\S]*?data-action="study-kana-random">五十音隨機練習/);
   assert.doesNotMatch(b.html, /data-action="study-review-start"/, 'Nothing to review yet');
   assert.doesNotMatch(b.html, /あ、ア、山/);
   b.action('kana');
@@ -783,7 +784,8 @@ test('home travel entry is separate from grammar and phrasebook feedback returns
   assert.match(b.html, /data-action="travel"/);
   b.action('travel');
   assert.equal(b.hash, '#travel');
-  assert.doesNotMatch(b.html, /基礎句型|data-action="study-open"/);
+  assert.doesNotMatch(b.html, /data-action="study-open"/);
+  assert.match(b.html, /href="#travel" aria-current="page"/);
   assert.deepEqual(Object.keys(b.state.study.courses), []);
   const item = browser({hash:'#travel/hotel'});
   assert.equal(item.title, '飯店與預約｜SoraChi');
@@ -1183,14 +1185,14 @@ test('a change in saving state is announced once outside the page, not on every 
   assert.doesNotMatch(b.html, /storage-warning[^>]*role="status"/);
 });
 
-test('home uses the travel card while utility pages keep their travel shortcut', () => {
+test('home uses three entry cards while utility and focused pages use a shared return header', () => {
   const b = browser();
   assert.doesNotMatch(b.html.match(/<header[\s\S]*?<\/header>/)[0], /href="#travel"/);
   b.action("travel");
   assert.equal(b.hash, "#travel");
   for (const hash of ['#history', '#about', '#feedback', '#lesson']) {
     b.navigate(hash);
-    assert.match(b.html, /<a class="header-link" href="#travel">旅遊常用語<\/a>/, hash);
+    assert.doesNotMatch(b.html.match(/<header[\s\S]*?<\/header>/)[0], /href="#travel"|section-nav/, hash);
   }
 });
 
@@ -1807,7 +1809,7 @@ test('returning learners get a home dashboard of next steps, everything on offer
   b.study('study-favorite', { phrase: 'phrase/hotel/check-in' });
   b.navigate('#home');
   const html = b.html, section = (name) => html.match(new RegExp(`<section class="${name}"[\\s\\S]*?</section>`))[0];
-  assert.match(html, /<p>接下來可以：學平假名・か行，或學「指示詞：これ・それ・あれ」。<\/p>/, 'Where to go next, without "today" pressure');
+  assert.ok(html.indexOf("home-entries") < html.indexOf("home-dashboard"), "Stable picture entries stay above progress");
   const progress = section('dash-progress');
   assert.match(progress, /<dt>平假名<\/dt><dd><strong>5<\/strong> \/ 104 字<\/dd>/);
   assert.match(progress, new RegExp(`<dt>基礎句型</dt><dd><strong>2</strong> / ${grammarCount} 課</dd>`));
@@ -1822,9 +1824,9 @@ test('returning learners get a home dashboard of next steps, everything on offer
   assert.match(next, /data-action="study-open" data-course="g-demo"[\s\S]*?下一課：指示詞：これ・それ・あれ[\s\S]*?基本句子/);
   assert.match(next, /data-action="study-grammar-review"[\s\S]*?4 題/, 'Two finished lessons offer the grammar review');
   assert.match(next, /href="#travel\/favorites"[\s\S]*?1 張/);
-  const everything = section('dash-all');
-  for (const hash of ['#kana', '#grammar', '#travel', '#history']) assert.match(everything, new RegExp(`<a class="dash-row" href="${hash}">`), hash);
-  assert.match(everything, /各 26 組/);
+  const everything = section('dash-tools');
+  assert.match(everything, /href="#history"/);
+  for (const action of ['kana', 'grammar', 'travel']) assert.equal((html.match(new RegExp(`data-action="${action}"`, 'g')) || []).length, 1, action);
   assert.match(everything, /data-action="start"[\s\S]*?還沒看/, 'After practice the introduction waits in 全部內容');
   assert.equal((html.match(/data-action="start"/g) || []).length, 1, 'One way into the writing-system introduction');
   assert.ok(html.indexOf('dash-next') < html.indexOf('dash-progress'), 'What to do next comes first, also for keyboard and screen readers');
@@ -1856,9 +1858,8 @@ test('home dashboard edge cases: paused introduction, saved phrases only, kana f
   for (const id of ['s-sokuon', 's-long']) data.learning.study.courses[id] = { completedAt: '2026-10-01T00:00:00.000Z' };
   data.attempts = [{ id: 'old', courseId: 'h-a', date: '2026-10-01T00:00:00.000Z', total: 5, firstCorrect: null, retryQuestions: [] }];
   const fluent = browser({ raw: JSON.stringify(data) });
-  assert.match(section(fluent, 'lesson-hero'), /<span class="number">基礎句型<\/span>[\s\S]*?data-action="study-open" data-course="g-identity"/);
-  assert.match(section(fluent, 'lesson-hero'), /句型已完成 0 \//);
-  assert.doesNotMatch(section(fluent, 'dash-next'), /基礎句型/, 'Grammar is not offered twice');
+  assert.match(section(fluent, "home-entries"), /cloud-kana-[\s\S]*cloud-complete-[\s\S]*cloud-travel-/);
+  assert.match(section(fluent, "dash-next"), /基礎句型/);
   assert.match(section(fluent, 'dash-progress'), /<dt>平假名<\/dt><dd><strong>104<\/strong> \/ 104 字/);
   assert.match(section(fluent, 'dash-progress'), /<dt>第一次答對<\/dt><dd><strong>還沒有<\/strong><\/dd>/, 'Records without first answers are not scored');
   // An unfinished grammar review round says it continues.
@@ -1902,7 +1903,7 @@ test('home resumes the 促音 and 長音 lessons where they stopped and offers t
   cards.navigate('#home');
   for (const page of [cards, browser({ raw: cards.stored })]) {
     assert.match(section(page, 'dash-next'), /data-course="s-sokuon"[\s\S]*?<strong>五十音<\/strong><span>接著學：促音：小的 っ 停一拍<\/span>/, 'Home offers the unfinished 促音 lesson');
-    assert.match(page.html, /接下來可以：接著學促音。/);
+    assert.match(page.html, /home-entries/);
     assert.doesNotMatch(section(page, 'dash-next'), /個字/, 'A sound lesson is not counted in characters');
     page.study('study-open', { course: 's-sokuon' });
     assert.equal(page.hash, '#study/s-sokuon');
@@ -1950,7 +1951,7 @@ test('home resumes the 促音 and 長音 lessons where they stopped and offers t
   grammarFirst.study('study-open', { course: 'g-identity' }); grammarFirst.study('study-next');
   grammarFirst.navigate('#home');
   assert.match(section(grammarFirst, 'dash-next'), /data-course="g-identity"[\s\S]*?接著學：[\s\S]*?data-course="s-sokuon"[\s\S]*?下一課：促音/);
-  assert.match(grammarFirst.html, /接下來可以：把「[^」]+」學完，或學促音。/);
+  assert.ok(grammarFirst.html.indexOf("home-entries") < grammarFirst.html.indexOf("dash-next"));
   data.learning.study.courses['s-sokuon'] = { completedAt: '2026-10-02T00:00:00.000Z' };
   assert.match(section(browser({ raw: JSON.stringify(data) }), 'dash-next'), /data-course="s-long"[\s\S]*?下一課：長音/);
   data.learning.study.courses['s-long'] = { completedAt: '2026-10-02T00:00:00.000Z' };
@@ -2054,7 +2055,7 @@ test('the grammar review leads back by source, and odd or missing history state 
 });
 
 test('the kana card stays the same whatever the progress: 學五十音 and 五十音隨機練習; carrying on and the review are under 接著做', () => {
-  const card = (b) => (b.html.match(/<section class="lesson-hero"[\s\S]*?<\/section>\s*<\/section>/) || [''])[0];
+  const card = (b) => (b.html.match(/<section class="home-shortcuts"[\s\S]*?<\/section>\s*<section class="home-entries"[\s\S]*?<\/section>/) || [''])[0];
   const fresh = browser();
   assert.match(card(fresh), /<button class="primary" data-action="kana">學五十音/);
   assert.match(card(fresh), /data-action="study-kana-random">五十音隨機練習/);
@@ -2233,7 +2234,7 @@ test('句型隨機練習: one click from home, five different questions from a c
   }
   assert.deepEqual([...seen].sort(), [...pool].sort());
   const fresh = browser();
-  assert.match(fresh.html, /<button class="text-button" data-action="grammar">學基礎句型[\s\S]*?<button class="text-button path-secondary" data-action="study-grammar-random">句型隨機練習/);
+  assert.match(fresh.html, /data-action="study-grammar-random">句型隨機練習[\s\S]*data-action="grammar">學基礎句型/);
   assert.equal(fresh.run('Study.context("#grammar-random")'), '句型隨機練習');
 });
 
@@ -2347,8 +2348,8 @@ test('random rounds: reports name the question, a double click never answers, re
   for (const row of JSON.parse(vm.runInContext('JSON.stringify(Object.values(Content.rowGroups).flat())', contentContext))) for (const script of ['h', 'k']) data.learning.study.courses[`${script}-${row}`] = { completedAt: '2026-10-01T00:00:00.000Z' };
   for (const id of ['s-sokuon', 's-long']) data.learning.study.courses[id] = { completedAt: '2026-10-01T00:00:00.000Z' };
   const past = browser({ raw: JSON.stringify(data) });
-  assert.match(past.html, /<section class="lesson-hero"[\s\S]*?<span class="number">基礎句型<\/span>[\s\S]*?data-action="study-grammar-random"/);
-  assert.match(past.html, /<section class="dash-all"[\s\S]*?data-action="study-kana-random"[\s\S]*?五十音隨機練習/);
+  assert.match(past.html, /<section class="home-shortcuts"[\s\S]*?data-action="study-grammar-random"/);
+  assert.match(past.html, /<section class="home-shortcuts"[\s\S]*?data-action="study-kana-random"[\s\S]*?五十音隨機練習/);
   // Each round is offered once on home, whichever card leads.
   const count = (html, action) => (html.match(new RegExp(`data-action="${action}"`, 'g')) || []).length;
   for (const home of [browser(), past, completedGrammarBrowser()]) {
@@ -2577,4 +2578,45 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   const saved = JSON.parse(b.stored); delete saved.favorites; delete saved.favoriteChanges; delete saved.updatedAt;
   const original = JSON.parse(before); delete original.favorites; delete original.favoriteChanges; delete original.updatedAt;
   assert.deepEqual(saved, original, 'Searching saves nothing besides the favourite');
+});
+
+test('home keeps three identical picture entries for every progress state; quick practice is above them', () => {
+  const fresh = browser();
+  const entries = b => b.html.match(/<section class="home-entries"[\s\S]*?<\/section>/)?.[0];
+  const expected = entries(fresh);
+  assert.ok(expected);
+  for (const image of ['cloud-kana', 'cloud-complete', 'cloud-travel']) assert.match(expected, new RegExp(image));
+  const scenarios = [fresh];
+  const saved = browser({hash:'#travel/hotel'}); saved.study('study-favorite',{phrase:'phrase/hotel/check-in'}); scenarios.push(saved);
+  for (const ids of [['h-a'], ['g-identity'], ['h-a','g-identity']]) {
+    const b = browser(); for(const id of ids){b.study('study-open',{course:id});b.study('study-next');} scenarios.push(b);
+  }
+  const data = JSON.parse(fresh.stored);
+  for (const id of vm.runInContext('Object.keys(Content.courses)', contentContext)) data.learning.study.courses[id] = {completedAt:'2026-10-01T00:00:00.000Z'};
+  scenarios.push(browser({raw:JSON.stringify(data)}));
+  for(const b of scenarios){
+    b.navigate('#home'); const before = b.stored;
+    assert.equal(entries(b),expected);
+    assert.ok(b.html.indexOf('home-shortcuts') < b.html.indexOf('home-entries'));
+    if(b.html.includes('home-dashboard')) assert.ok(b.html.indexOf('home-entries') < b.html.indexOf('home-dashboard'));
+    for(const action of ['kana','grammar','travel','study-kana-random','study-grammar-random']) assert.equal((b.html.match(new RegExp(`data-action="${action}"`, 'g'))||[]).length,1);
+    b.navigate('#home'); assert.equal(b.stored,before,'Rendering the home never writes progress');
+  }
+});
+
+test('overview navigation tracks the current section while focused and utility pages keep only their return', () => {
+  const b = browser();
+  for(const [hash,section] of [['#kana','#kana'],['#grammar','#grammar'],['#travel','#travel'],['#travel/favorites','#travel']]){
+    b.navigate(hash);
+    const header=b.html.match(/<header[\s\S]*?<\/header>/)[0];
+    assert.match(header,/aria-label="學習與旅遊"/);
+    assert.match(header,new RegExp(`href="${section}" aria-current="page"`));
+    assert.equal((header.match(/aria-current="page"/g)||[]).length,1);
+  }
+  for(const hash of ['#study/g-identity','#study/h-a','#kana-random','#grammar-random','#settings','#history','#about','#feedback']){
+    b.navigate(hash);
+    const header=b.html.match(/<header[\s\S]*?<\/header>/)[0];
+    assert.doesNotMatch(header,/section-nav|href="#travel"/);
+    assert.match(header,/class="exit"/);
+  }
 });

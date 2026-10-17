@@ -36,6 +36,7 @@ function harness(saved, voices = [], history = [], options = {}) {
   const context = vm.createContext({ setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); }, document, location, window: { speechSynthesis }, SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } }, console });
   vm.runInContext(readFileSync(new URL("../dist/content.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/kana-practice.js", import.meta.url), "utf8"), context);
+  vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice;`, context);
   const study = context.moduleStudy;
   currentState = study.sanitize(saved);
@@ -734,7 +735,7 @@ test('travel pages show staff questions and Japanese keywords; study headers kee
   b.render('#travel/dining');
   assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">店員可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
   b.render('#kana');
-  assert.doesNotMatch(b.html.split("</header>")[0], /href="#travel"/);
+  assert.match(b.html.split("</header>")[0], /href="#kana" aria-current="page"/);
   assert.match(b.html, /class="exit" href="#home"/);
 });
 
