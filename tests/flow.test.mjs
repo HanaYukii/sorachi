@@ -2411,13 +2411,25 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   ]) assert.deepEqual(found(query), steps, query);
   for (const [query, first, also] of [
     ['退房 行李', 'hotel/luggage', ['hotel/check-out', 'hotel/pick-up']], ['入住 退房', 'hotel/luggage', ['hotel/check-in', 'hotel/check-out']],
-    ['mizu o kudasai', 'dining/water', ['basics/slowly', 'shopping/this-one']], ['chekkuin wa nanji', 'hotel/check-in', ['hotel/check-out']],
+    ['mizu o kudasai', 'dining/water', []], ['chekkuin wa nanji', 'hotel/check-in', ['hotel/check-out']],
+    // Greetings and requests only order the list, around a word or on their own (すみません, ください, 我想要, 可以嗎).
+    ['すみません トイレはどこですか', 't-place/toilet', []], ['不好意思 可以刷卡嗎', 't-pay/credit-cash', []], ['sumimasen rokkaa wa doko desu ka', 't-place/locker', []],
+    ['rokku kudasai', 't-order/drink-temperature', []], ['收據 謝謝', 'shopping/receipt', []], ['袋ください', 'shopping/bag', []], ['我想要廁所', 't-place/toilet', []],
+    ['外帶可以嗎', 'dining/takeout', []], ['請問水在哪裡', 'dining/water', []],
+    // Romaji typed in one run loses particles and requests from its ends; a short romaji word is a whole word.
+    ['kippukudasai', 'transit/ticket', []], ['toirewadokodesuka', 't-place/toilet', []], ['kaadodeonegaishimasu', 't-pay/credit-cash', []], ['kyoto ni iku', 'transit/direction', []],
+    // A card whose keyword or title is the word comes first; doubled romaji letters fold (roka is rokkaa).
+    ['荷物', 'hotel/luggage', ['t-place/locker-size']], ['nimotsu', 'hotel/luggage', []], ['nimotsu wa doko', 'hotel/luggage', ['t-place/locker-size']], ['袋', 'shopping/bag', []], ['roka', 't-place/locker', []],
+    ['kaado、genkin', 't-pay/credit-cash', []],
+    // Everyday words lead to the ones the cards use, and the situation breaks a tie (演唱會 → the concert's drink card).
+    ['check in', 'hotel/check-in', []], ['轉車', 'transit/transfer', []], ['幾點關門', 'lines/hours', []],
+    ['演唱會 飲料', 'live/drink', ['t-order/drink-temperature']], ['飯店 預約', 'hotel/reservation', []], ['買東西 袋子', 'shopping/bag', []],
     ['水 請給我', 'dining/water', []], ['冰的 熱的', 't-order/drink-temperature', ['t-order/noodle-temperature']],
     ['Suica 加值', 't-pay/suica', ['t-charge/top-up', 't-charge/amount']], ['西瓜卡 加值', 't-pay/suica', ['t-charge/top-up', 't-charge/amount']],
     // Words split at punctuation and where romaji meets Chinese or kana; Chinese typed without spaces that no card
     // holds whole is tried two characters at a time.
     ['退房、行李', 'hotel/luggage', ['hotel/check-out']], ['toire,doko', 't-place/toilet', []], ['suica加值', 't-pay/suica', ['t-charge/top-up']], ['toireどこ', 't-place/toilet', []],
-    ['西瓜卡加值', 't-pay/suica', ['t-charge/top-up']], ['我要退房', 'hotel/check-out', ['hotel/luggage']], ['寄放行李箱', 't-place/locker-size', ['hotel/luggage']],
+    ['我要退房', 'hotel/check-out', ['hotel/luggage']], ['寄放行李箱', 'hotel/luggage', ['t-place/locker-size']],
     // A situation found by its Chinese line lists the cards sharing most of the query first.
     ['退房 寄放', 'hotel/luggage', ['hotel/check-in']], ['說出金額', 't-charge/amount', ['t-charge/top-up']],
   ]) {
@@ -2425,6 +2437,8 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     assert.equal(steps[0], first, `${query}: ${steps.join()}`);
     for (const step of also) assert.ok(steps.includes(step), `${query} → ${step}`);
   }
+  // Suica top-up typed without a space: both cards lead.
+  assert.deepEqual(found('西瓜卡加值').slice(0, 2).sort(), ['t-charge/top-up', 't-pay/suica']);
   // Only common words: just the cards holding the most of them.
   const common = found('kore o onegaishimasu');
   assert.ok(common.length <= 3 && common.includes('t-order/menu-item'), common.join());

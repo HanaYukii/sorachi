@@ -398,8 +398,10 @@ const Study = (() => {
   // lives only in this page: nothing is saved or sent.
   let travelQuery = "", travelFound = null, travelReturn = null, travelIndex = null, travelShown = null;
   // Spaces vanish, except between romaji words, which keep a boundary (rokkaa|doko); fields are joined by line breaks.
+  // A long vowel and a doubled consonant (a small っ) fold too, so a beginner who misses either still finds the card
+  // (roka, kipu); only a pair of consonants folds, so nonsense like zzzz stays nonsense.
   const fold = (text) => String(text).normalize("NFKC").toLowerCase().replace(/[|\n]/gu, "").replace(/臺/gu, "台").replace(/[ァ-ヶ]/gu, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60))
-    .replace(/([a-z])[\s,.!?'’\-/]+(?=[a-z])/gu, "$1|").replace(/[\s・、。，,.!?！？「」『』（）()〜~'’\-／/]/gu, "").replace(/ou/gu, "o").replace(/([aiueo])\1+/gu, "$1");
+    .replace(/([a-z])[\s,.!?'’\-/]+(?=[a-z])/gu, "$1|").replace(/[\s・、。，,.!?！？「」『』（）()〜~'’\-／/]/gu, "").replace(/ou/gu, "o").replace(/([aiueo])\1+/gu, "$1").replace(/([b-df-hj-np-tv-z])\1/gu, "$1");
   // A term matches text as it is; romaji may also run across word boundaries when it starts a word, so chekkuin
   // finds chekku in and dokodesuka finds doko desu ka. Romaji never starts inside a word, so kaado misses rokkaa doko.
   const matcher = (term) => {
@@ -407,50 +409,105 @@ const Study = (() => {
     const loose = /^[a-z]+$/u.test(letters) ? new RegExp(`(?:^|[|\\n])${[...letters].join("\\|?")}`, "u") : null;
     return (text) => text.includes(term) || Boolean(loose?.test(text));
   };
-  const TRAVEL_ALIASES = [["寄物櫃", "置物櫃"], ["寄物", "寄放"], ["寄行李", "寄放行李"], ["行李寄放", "寄放行李"], ["洗手間", "廁所"], ["化妝室", "廁所"], ["買單", "結帳"], ["埋單", "結帳"], ["會計", "会計"], ["付款", "付現", "結帳"], ["打包", "外帶"], ["儲值", "加值"], ["交通卡", "交通ic卡"], ["icoca", "交通ic卡"], ["pasmo", "交通ic卡"], ["發票", "收據"], ["不用", "不需要"], ["不要", "不需要"], ["來回票", "來回"]];
+  const TRAVEL_ALIASES = [["寄物櫃", "置物櫃"], ["寄物", "寄放"], ["寄行李", "寄放行李"], ["行李寄放", "寄放行李"], ["洗手間", "廁所"], ["化妝室", "廁所"], ["買單", "結帳"], ["埋單", "結帳"], ["會計", "会計"], ["付款", "付現", "結帳"], ["打包", "外帶"], ["儲值", "加值"], ["交通卡", "交通ic卡"], ["icoca", "交通ic卡"], ["pasmo", "交通ic卡"], ["發票", "收據"], ["不用", "不需要"], ["不要", "不需要"], ["來回票", "來回"], ["關門", "營業"], ["打烊", "營業"],
+    ["剪票口", "驗票閘門"], ["轉車", "轉乘"], ["換車", "轉乘"], ["劃位", "對號座"], ["熱飲", "熱的"], ["冰飲", "冰的"], ["大碗", "大份"], ["加大", "大份"], ["幾個人", "幾位"], ["兩位", "幾位"],
+    ["帶走", "外帶"], ["開水", "水"], ["冰水", "水"], ["怎麼賣", "多少錢"], ["試衣間", "試穿"], ["塑膠袋", "袋子"], ["當天票", "當日票"], ["現場票", "當日票"], ["服務生", "店員"],
+    ["出去再進來", "再入場"], ["切符", "きっぷ"], ["拿行李", "領回"], ["領行李", "領回"], ["取行李", "領回"], ["checkin", "chekkuin"], ["check in", "chekku in"], ["checkout", "chekkuauto"], ["check out", "chekku auto"]];
   const fields = (part) => part ? [part.title, ...(part.keywords || []).flat(), part.example, part.reading, part.meaning, part.polite, part.politeReading, part.politeMeaning].filter(Boolean).map(fold) : [];
   // The aliases are folded once; a term holding one also tries the words the cards use.
   let travelAliases = null;
   const variants = (q) => [q, ...(travelAliases ||= TRAVEL_ALIASES.map((words) => words.map(fold))).filter(([alias]) => q.includes(alias)).flatMap(([alias, ...words]) => words.map((word) => q.replace(alias, word)))];
-  // The words of a query: split at spaces and punctuation, and where romaji meets Chinese or kana (suica加值).
-  const queryWords = (query) => [...new Set(String(query).normalize("NFKC").replace(/([a-z])(?=[^\x00-\x7f])/giu, "$1 ").replace(/([^\x00-\x7f])(?=[a-z])/giu, "$1 ")
-    .split(/[\s、，,・。.！？!?／/]+/u).map(fold).filter(Boolean))];
+  // The words of a query, split at spaces and punctuation; a word mixing romaji with Chinese or kana is split where
+  // they meet (suica加值) unless a card holds it whole (ic卡).
+  const queryWords = (query) => String(query).normalize("NFKC").split(/[\s、，,・。.！？!?／/]+/u).filter(Boolean);
+  const splitScripts = (word) => word.replace(/([a-z])(?=[^\x00-\x7f])/giu, "$1 ").replace(/([^\x00-\x7f])(?=[a-z])/giu, "$1 ").split(" ");
   // Every two characters in a row of a Chinese or kana word (說出金額 → 說出, 出金, 金額).
   const pairs = (word) => { const chars = [...word]; return chars.slice(1).map((ch, i) => chars[i] + ch); };
   const isRomaji = (word) => /^[a-z|]+$/u.test(word);
+  // Greetings, requests and question endings say how to ask, not what about: around a word they are trimmed off
+  // (袋ください → 袋, 我想要廁所 → 廁所, 外帶可以嗎 → 外帶), and on their own they only order the list.
+  const FILLER_LEAD = ["すみません", "不好意思", "請問", "我想要", "我要", "我想", "請給我", "給我", "幫我", "麻煩", "請", "有"];
+  const FILLER_TAIL = ["をください", "ください", "をお願いします", "お願いします", "をおねがいします", "おねがいします", "はどこですか", "どこですか", "がありますか", "ありますか", "がほしいです", "ほしいです", "ですか", "です", "可以嗎", "在哪裡", "在哪", "嗎", "を", "は", "が"];
+  // Particles and endings carry nothing at all; the other fillers still tell cards apart when nothing else does.
+  const PARTICLES = ["wa", "ga", "o", "ni", "de", "mo", "no", "to", "e", "ka", "ne", "yo", "desu", "masu", "は", "が", "を", "に", "で", "も", "の", "と", "へ", "か", "です", "ますか", "ですか"];
+  // Romaji typed in one run (toirewadokodesuka, kippukudasai) loses the same kind of words from its ends.
+  const ROMAJI_LEAD = ["sumimasen"], ROMAJI_TAIL = ["onegaishimasu", "arimasuka", "arimasu", "kudasai", "desuka", "desu", "doko", "wa", "ga", "o", "de", "ni", "mo"];
+  let fillers = null;
+  const fillerWords = () => fillers ||= {
+    lead: FILLER_LEAD.map(fold), tail: FILLER_TAIL.map(fold), particles: new Set(PARTICLES.map(fold)),
+    romajiLead: ROMAJI_LEAD.map(fold), romajiTail: ROMAJI_TAIL.map(fold),
+    words: new Set([...FILLER_LEAD, ...FILLER_TAIL, ...PARTICLES, "sumimasen", "kudasai", "onegaishimasu", "arimasu", "hoshii", "doko", "どこ", "謝謝", "ありがとう", "arigatou"].map(fold)),
+  };
+  // The word without its greetings and requests, and those as words of their own. Romaji is trimmed only until what
+  // is left is a word some card holds (`held`), so a word that merely ends like a particle (kado) is left alone.
+  const trimFillers = (word, held = null) => {
+    const { lead, tail, romajiLead, romajiTail } = fillerWords(), parts = [];
+    const [leads, tails] = held ? [romajiLead, romajiTail] : [lead, tail];
+    for (let changed = true; changed && !held?.(word);) {
+      changed = false;
+      for (const part of leads) if (word.length > part.length && word.startsWith(part)) { word = word.slice(part.length); parts.push(part); changed = true; if (held) break; }
+      if (held && changed) continue;
+      for (const part of tails) if (word.length > part.length && word.endsWith(part)) { word = word.slice(0, -part.length); parts.push(part); changed = true; if (held) break; }
+    }
+    return { core: word, parts };
+  };
+  // Each keyword of a card on its own: the Japanese, its reading, romaji and every meaning (荷物, にもつ, nimotsu, 行李),
+  // with romaji spaces left out (chekkuin is the keyword chekku in).
+  const keywordParts = (step) => (step.keywords || []).flatMap(([word, romaji, meaning]) => [word.replace(/（.*?）/u, ""), (word.match(/（(.*?)）/u) || [])[1], romaji, ...meaning.split("／")]).filter(Boolean).map((part) => fold(part).replace(/\|/gu, ""));
   function travelMatches(query) {
-    // `head` is a card's title and keywords, where a word says most about the card.
-    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: [...fields(step), ...fields(step.staffAsks), ...fields(step.extra)].join("\n"), head: [step.title, ...(step.keywords || []).flat()].map(fold).join("\n"), situation: [item.title, item.subtitle].filter(Boolean).map(fold).join("\n") })));
+    // A card's title and keywords say most about it; `exact` holds each keyword alone.
+    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: [...fields(step), ...fields(step.staffAsks), ...fields(step.extra)].join("\n"), title: fold(step.title), keys: (step.keywords || []).flat().map(fold).join("\n"), exact: new Set(keywordParts(step)), situation: [item.title, item.subtitle].filter(Boolean).map(fold).join("\n") })));
     const q = fold(query);
     if (!q) return [];
     // A word is tried with its aliases; each word's matchers are built once per search.
     const tried = new Map();
     const has = (text, word) => { if (!tried.has(word)) tried.set(word, variants(word).map(matcher)); return tried.get(word).some((match) => match(text)); };
-    const words = queryWords(query);
+    const held = (word) => travelIndex.some((entry) => has(entry.own, word) || has(entry.situation, word));
+    // How much a word says about a card: one of its keywords (荷物 → the luggage card), in its title, in a keyword.
+    const exactly = (entry, word) => variants(word).some((term) => entry.exact.has(term.replace(/\|/gu, "")));
+    const standing = (entry, word, test = has) => exactly(entry, word) ? 3 : test(entry.title, word) ? 2 : test(entry.keys, word) ? 1 : 0;
+    const words = [...new Set(queryWords(query).flatMap((token) => { const word = fold(token); return /[a-z]/u.test(word) && /[^\x00-\x7f]/u.test(word) && !held(word) ? splitScripts(token).map(fold) : [word]; }).filter(Boolean))];
     // What orders a list: the query's words and, for Chinese or kana, their pairs of characters.
     const pieces = [...new Set(words.flatMap((word) => isRomaji(word) ? [word] : [word, ...pairs(word)]))];
     const byOverlap = (list) => list.map((entry) => ({ entry, n: pieces.filter((piece) => has(entry.own, piece)).length })).sort((a, b) => b.n - a.n).map(({ entry }) => entry);
-    // Cards whose own words match; then every card of a situation whose name or line matches, when none of its own
-    // did, the cards sharing most of the query first (退房 寄放 → the luggage card).
-    const own = travelIndex.filter((entry) => has(entry.own, q));
+    // Cards whose own words match, the ones where the query is a keyword or in the title first (袋 → the bag card);
+    // then every card of a situation whose name or line matches, when none of its own did, the cards sharing most of
+    // the query first (退房 寄放 → the luggage card).
+    const own = travelIndex.filter((entry) => has(entry.own, q)).map((entry) => ({ entry, n: standing(entry, q) })).sort((a, b) => b.n - a.n).map(({ entry }) => entry);
     const named = travelIndex.filter((entry) => !own.some((match) => match.item === entry.item) && has(entry.situation, q));
     if (own.length || named.length) return [...own, ...byOverlap(named)];
-    // Words that never appear together. Chinese or kana typed without spaces that no card holds whole (我要退房,
-    // 西瓜卡加值) is tried two characters at a time.
-    const counted = [...new Set(words.flatMap((word) => !/[a-z]/u.test(word) && [...word].length > 2 && !travelIndex.some((entry) => has(entry.own, word)) ? pairs(word) : [word]))];
-    if (counted.length === 1 && words.length === 1) return [];
-    // A word in more than one card in ten (o, wa, de, desu, doko, onegaishimasu) only orders the list: a card is found
-    // by a rarer word. More rare words, one in the card's title or keywords, then rarer ones, put a card first
-    // (kippu wa doko → the ticket card; 退房 行李 → luggage, then check-out). With only common words, just the cards
-    // holding the most of them are kept.
-    const reach = new Map(counted.map((word) => [word, travelIndex.filter((entry) => has(entry.own, word)).length]));
-    const rare = counted.filter((word) => reach.get(word) && reach.get(word) <= travelIndex.length / 10);
-    const keys = rare.length ? rare : counted.filter((word) => reach.get(word));
+    // Words that never appear together. A Chinese or kana word no card or situation holds whole is split into its
+    // greetings and requests and what is left (袋ください → 袋, ください); what is left, if still not held whole and
+    // longer than two characters, is tried two characters at a time (西瓜卡加值, 我要退房). Romaji typed in one run
+    // loses particles and requests from its ends until a card holds it (toirewadokodesuka → toire).
+    const expand = (word) => {
+      if (held(word)) return [word];
+      if (/[a-z]/u.test(word)) { const { core, parts } = trimFillers(word, held); return held(core) ? [core, ...parts] : [word]; }
+      const { core, parts } = trimFillers(word);
+      return [...(held(core) || [...core].length <= 2 ? [core] : pairs(core)), ...parts];
+    };
+    const counted = [...new Set(words.flatMap(expand))];
+    if (counted.length === 1 && counted[0] === q) return [];
+    // Here a romaji word of three letters or fewer must be a whole word (iku is not ikura, in is not genkin).
+    const inText = (text, word) => /^[a-z]{1,3}$/u.test(word) ? new RegExp(`(?:^|[^a-z])${word}(?![a-z])`, "u").test(text) : has(text, word);
+    // A card is found by a topic word that few cards hold (in no more than one card in ten). Without one, every word
+    // but particles counts, greetings and requests included, and just the cards holding the most of them are kept
+    // (すみません これ ください → the これください card). Order: more found words, a word that is one of the card's
+    // keywords (荷物 → the luggage card) or in its title, rarer words, more of all the words, then words in the card's
+    // situation (演唱會 飲料 → the concert's drink card).
+    const reach = new Map(counted.map((word) => [word, travelIndex.filter((entry) => inText(entry.own, word)).length]));
+    // A single romaji letter (the i of ii desu ka) says no more than a particle.
+    const { words: fillerSet, particles } = fillerWords(), bare = (word) => particles.has(word) || /^[a-z]$/u.test(word);
+    const topics = counted.filter((word) => reach.get(word) && reach.get(word) <= travelIndex.length / 10 && !fillerSet.has(word) && !bare(word));
+    const keys = topics.length ? topics : counted.filter((word) => reach.get(word) && !bare(word));
     const weight = (list) => list.reduce((sum, word) => sum + 1 / reach.get(word), 0);
-    let kept = travelIndex.map((entry) => { const found = keys.filter((word) => has(entry.own, word)); return { entry, found, head: found.filter((word) => has(entry.head, word)).length, all: counted.filter((word) => has(entry.own, word)).length }; }).filter(({ found }) => found.length);
-    if (!kept.length) return byOverlap(travelIndex.filter((entry) => counted.some((word) => has(entry.situation, word))));
-    if (!rare.length) { const most = Math.max(...kept.map(({ found }) => found.length)); kept = kept.filter(({ found }) => found.length === most); }
-    return kept.sort((a, b) => b.found.length - a.found.length || b.head - a.head || weight(b.found) - weight(a.found) || b.all - a.all).map(({ entry }) => entry);
+    let kept = travelIndex.map((entry) => {
+      const found = keys.filter((word) => inText(entry.own, word));
+      return { entry, found, head: found.reduce((sum, word) => sum + standing(entry, word, inText), 0), all: counted.filter((word) => inText(entry.own, word)).length, named: counted.filter((word) => inText(entry.situation, word)).length };
+    }).filter(({ found }) => found.length);
+    if (!kept.length) return byOverlap(travelIndex.filter((entry) => counted.some((word) => inText(entry.situation, word))));
+    if (!topics.length) { const most = Math.max(...kept.map(({ found }) => found.length)); kept = kept.filter(({ found }) => found.length === most); }
+    return kept.sort((a, b) => b.found.length - a.found.length || b.head - a.head || weight(b.found) - weight(a.found) || b.all - a.all || b.named - a.named).map(({ entry }) => entry);
   }
   // The row of the card just looked at is marked, so coming back puts focus on it.
   function travelResults(back = null, found = travelMatches(travelQuery)) {
