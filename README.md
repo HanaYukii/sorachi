@@ -2,7 +2,9 @@
 
 給日文零基礎的人：先學五十音和基礎句型，出發旅行前也能查常用的日文。
 
-網站：https://hanayukii.github.io/sorachi/
+網站：https://sorachi.app/
+
+舊站保留在 https://hanayukii.github.io/sorachi/ ，供原有使用者匯出進度。到舊站的「學習紀錄」下載備份，再到新站的「學習紀錄」從備份檔還原；請使用原本學習時的瀏覽器。
 
 這是新手入門的雛形，不是完整的 N5／N4 教材。
 

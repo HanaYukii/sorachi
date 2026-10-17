@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { createServer } from 'node:http';
 import { prepareRelease } from '../scripts/prepare-release.mjs';
 import { verifyDeployment, verifyWithRetry } from '../scripts/verify-deploy.mjs';
-import { publish } from '../scripts/publish.mjs';
+import { publish, DEPLOY_REMOTE } from '../scripts/publish.mjs';
 
 async function fixture(t) {
   const dir = await mkdtemp(join(tmpdir(), 'sorachi-release-'));
@@ -139,6 +139,8 @@ test('publish waits for exact CI and rechecks main before subtree push', async (
   assert.equal(await publish({ run, validate: async () => {}, verify }), sha);
   const pushed = calls.findIndex((c) => c.includes('subtree push'));
   assert.ok(pushed >= 0 && verified[0] > pushed, 'Pages is verified after the push');
+  assert.equal(calls[pushed], `git subtree push --prefix=dist ${DEPLOY_REMOTE} gh-pages`);
+  assert.equal(DEPLOY_REMOTE, 'https://github.com/HanaYukii/sorachi-site.git', 'Never publish a CNAME to the old origin: it must remain accessible for backup exports');
   assert.ok(calls.findIndex((c) => c.includes('run watch 7')) < calls.findIndex((c) => c.includes('subtree push')));
   calls.length = 0;
   changed = true;

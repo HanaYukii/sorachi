@@ -1,6 +1,6 @@
 # SoraChi 開發與發佈
 
-純靜態網站：`dist/` 就是原始碼，不需要建置或安裝套件。`main` 放程式與測試，`gh-pages` 只發佈 `dist/`。
+純靜態網站：`dist/` 就是原始碼，不需要建置或安裝套件。`HanaYukii/sorachi` 的 `main` 放程式與測試，`HanaYukii/sorachi-site` 的 `gh-pages` 只發佈 `dist/` 到 https://sorachi.app/ 。原 repo 的 `gh-pages` 保留為舊站，不再推送新版本。
 
 ## 本機預覽與檢查
 
@@ -16,12 +16,16 @@ node scripts/prepare-release.mjs --check
 ## 發佈
 
 1. `node scripts/prepare-release.mjs`：依檔案內容更新 `index.html` 的 `?v=`，並產生 `dist/release.json`，一起提交。
-2. 推送 `main` 後執行 `./scripts/publish.sh`：要求乾淨的 `main`、HEAD 等於 `origin/main`、同一提交的 CI 成功；推送 `gh-pages` 後會等 Pages 送出這一版，逐檔驗證通過才印出 `Published and verified build <buildId>`。
+2. 推送 `main` 後執行 `./scripts/publish.sh`：要求乾淨的 `main`、HEAD 等於 `origin/main`、同一提交的 CI 成功；推送 `sorachi-site` 的 `gh-pages` 後會等 Pages 送出這一版，逐檔驗證通過才印出 `Published and verified build <buildId>`。
 3. 需要重新驗證時：`node scripts/verify-deploy.mjs --attempts 18 --interval-ms 10000`。
 
 ### 自訂網域
 
-把網域寫進 `dist/CNAME` 再照一般流程發佈，不要在 GitHub Settings 設定（會在 `gh-pages` 直接提交 CNAME，之後的 subtree push 會被拒）。換網域等於換 origin，使用者的進度不會跟過去：切換前先引導使用者「下載備份」，再到新網域「從備份檔還原」，並更新 `scripts/verify-deploy.mjs` 的預設網址。細節見 #17、#18。
+2026-10-18 採 #17 做法 Y：正式站由 `HanaYukii/sorachi-site` 的 `gh-pages` 提供，原始碼與 CI 仍在 `HanaYukii/sorachi`。`scripts/publish.mjs` 固定把通過同一提交 CI 的 `dist/` 推到正式站 repo；驗證預設 https://sorachi.app/ 。`dist/CNAME` 隨原始碼提交，勿在 GitHub Settings 另存網域造成發佈分支分岔。
+
+舊站 https://hanayukii.github.io/sorachi/ 保留 HTTP 200，凍結於來源提交 `693902f`（發佈分支 `e72b833395dac9a1087129fdd6ba46c4a86ea07c`）。不要將含 CNAME 的新版推到原 repo 的 `gh-pages`，否則舊網址會轉址、讀不到原有瀏覽器資料。舊站頁尾提供「學習紀錄與備份」入口；使用者以原瀏覽器下載備份，在新站還原。只使用既有的檔案合併機制，不自動傳送 localStorage、也不把資料放進網址。
+
+Cloudflare DNS：四筆 GitHub Pages A（185.199.108–111.153）、四筆 AAAA（2606:50c0:8000–8003::153）、www CNAME 指向 hanayukii.github.io，皆為 DNS only、TTL 300。GitHub 帳號已驗證 sorachi.app，保留 `_github-pages-challenge-HanaYukii` TXT；HTTPS 由 GitHub Pages 提供。網域續約與 DNS 在 Cloudflare 管理。
 
 ### 回滾
 
@@ -29,8 +33,8 @@ node scripts/prepare-release.mjs --check
 - 緊急情況（`main` 一時過不了 CI）：
 
   ```sh
-  git ls-remote origin refs/heads/gh-pages
-  git push --force-with-lease=refs/heads/gh-pages:<目前 gh-pages 的 SHA> origin $(git subtree split --prefix=dist <好的提交>):refs/heads/gh-pages
+  git ls-remote https://github.com/HanaYukii/sorachi-site.git refs/heads/gh-pages
+  git push --force-with-lease=refs/heads/gh-pages:<目前 gh-pages 的 SHA> https://github.com/HanaYukii/sorachi-site.git $(git subtree split --prefix=dist <好的提交>):refs/heads/gh-pages
   git worktree add ../sorachi-good <好的提交>
   node scripts/verify-deploy.mjs --dir ../sorachi-good --attempts 18 --interval-ms 10000
   git worktree remove ../sorachi-good

@@ -5,7 +5,7 @@ import { prepareRelease, sha256, isMain } from './prepare-release.mjs';
 
 const matchesMime = (actual, expected) => actual === expected || (expected === 'text/javascript' && actual === 'application/javascript') || (expected === 'image/x-icon' && actual === 'image/vnd.microsoft.icon');
 
-export async function verifyDeployment({ dir = resolve('dist'), url = 'https://hanayukii.github.io/sorachi/', timeoutMs = 10000 } = {}) {
+export async function verifyDeployment({ dir = resolve('dist'), url = 'https://sorachi.app/', timeoutMs = 10000 } = {}) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) throw new Error('timeoutMs must be a positive integer');
   const base = new URL(url);
   if (!['https:', 'http:'].includes(base.protocol) || base.username || base.password || base.search || base.hash) throw new Error('Use an HTTP(S) base URL without credentials, query or hash');

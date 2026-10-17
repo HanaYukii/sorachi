@@ -5,6 +5,9 @@ import { prepareRelease, isMain } from './prepare-release.mjs';
 import { verifyWithRetry } from './verify-deploy.mjs';
 
 const exec = promisify(execFile);
+// Keep the original Pages origin available for exporting browser-local progress.
+// Source, tests and exact-commit CI stay in HanaYukii/sorachi.
+export const DEPLOY_REMOTE = 'https://github.com/HanaYukii/sorachi-site.git';
 // On failure, put the child's full output in the message so CI logs show which test failed.
 export const command = async (bin, args) => {
   try { return (await exec(bin, args, { timeout: 20 * 60 * 1000, maxBuffer: 16 * 1024 * 1024 })).stdout.trim(); }
@@ -42,8 +45,8 @@ export async function publish({ run = command, validate = () => validateLocal(ru
   } else if (ci.conclusion !== 'success') throw new Error(`CI ${ci.databaseId} did not succeed: ${ci.conclusion}`);
   await clean();
   if (await run('git', ['branch', '--show-current']) !== 'main' || await run('git', ['rev-parse', 'HEAD']) !== sha || await currentRemote() !== sha) throw new Error('Main changed while waiting for CI; retry with the new commit.');
-  await run('git', ['subtree', 'push', '--prefix=dist', 'origin', 'gh-pages']);
-  console.log(`Pushed dist from tested main ${sha} to gh-pages; waiting for Pages to serve it…`);
+  await run('git', ['subtree', 'push', '--prefix=dist', DEPLOY_REMOTE, 'gh-pages']);
+  console.log(`Pushed dist from tested main ${sha} to ${DEPLOY_REMOTE} gh-pages; waiting for Pages to serve it…`);
   // A cancelled Pages build would otherwise look published; only the served bytes count.
   let result;
   try { result = await verify(); }
