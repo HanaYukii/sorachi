@@ -2398,7 +2398,8 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['男廁', 't-place/toilet'], ['上小號', 't-place/toilet'], ['上大號', 't-place/toilet'], ['hitori', 'dining/party-size'], ['ふたり', 'dining/party-size'],
     ['ひとり', 'dining/party-size'], ['兩個人', 'dining/party-size'], ['一個人', 'dining/party-size'], ['大號', 'shopping/size'], ['切符', 'transit/ticket'],
     ['拿行李', 'hotel/pick-up'], ['領行李', 'hotel/pick-up'], ['取行李', 'hotel/pick-up'], ['checkin', 'hotel/check-in'], ['checkout', 'hotel/check-out'],
-    ['tearai', 't-place/toilet'], ['加大', 't-order/portion'], ['開水', 'dining/water'], ['冰水', 'dining/water'],
+    ['tearai', 't-place/toilet'], ['加大', 't-order/portion'], ['開水', 'dining/water'], ['冰水', 'dining/water'], ['門票', 'lines/same-day'],
+    ['再進去', 'live/re-entry'], ['再進場', 'live/re-entry'], ['千円', 't-charge/amount'],
   ]) assert.equal(found(query)[0], step, `${query} → ${step}`);
   // Without their aliases these would also list other cards.
   assert.deepEqual(found('寄行李'), ['hotel/luggage']);
@@ -2432,6 +2433,12 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['傘ありますか', []], ['有藥嗎', []], ['箸ください', []], ['郵票', []], ['機票', []], ['可以退稅嗎', []], ['英語できますか', []],
     // 日文的 in front is trimmed like the 的日文 after (日文的謝謝 → just the thanks card).
     ['日文的謝謝', ['basics/thanks']],
+    // A single character never lists a whole situation by its name (飯 of 飯店).
+    ['飯呢', []],
+    // A last character in many cards (好 of 不好意思) is not tried alone, so a phrase ending in it lists nothing.
+    ['這樣就好', []], ['大家好的日文', []],
+    // ございました is an ending like ございます (just the thanks card).
+    ['ありがとうございました', ['basics/thanks']],
   ]) assert.deepEqual(found(query), steps, query);
   // A pasted page of text answers at once, without an error, and the box takes 80 characters.
   assert.doesNotThrow(() => found('kippukudasai'.repeat(400)));
@@ -2481,6 +2488,14 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     // Romaji in one run: どうも is a greeting (domoarigatou), and the longest ending goes first (ekimo is eki + mo, not
     // ekim + o). A place character at the end counts alone (樓梯 → 梯).
     ['domoarigatou', 'basics/thanks', []], ['ekimo', 't-place/station', []], ['手扶梯在哪裡', 't-place/facilities', []], ['樓梯在哪', 't-place/facilities', []],
+    // A word only a situation's line holds lists that situation, not the cards sharing the request around it.
+    ['可以叫店員嗎', 'basics/attention', []], ['請問演唱會', 'live/doors', []],
+    // 先 alone only orders the list (可以先|check in).
+    ['可以先check in嗎', 'hotel/check-in', []],
+    // Only a request of one or two characters is tried with the character after it (不好意思|打 is not a word).
+    ['不好意思打擾一下', 'basics/attention', []],
+    // 千円 written in kanji reaches the card's 1000円, also inside a longer amount.
+    ['二千円お願いします', 't-charge/amount', []],
     // A long sentence typed without punctuation is still searched.
     ['すみませんチェックアウトしたあとに大きい荷物をここでしばらく預かってもらうことはできますか', 'hotel/luggage', []],
     ['演唱會 飲料', 'live/drink', ['t-order/drink-temperature']], ['飯店 預約', 'hotel/reservation', []], ['買東西 袋子', 'shopping/bag', []],
