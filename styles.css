@@ -9,6 +9,8 @@
   --line: #e9e3ef;
   --aqua: #e4f3f6;
   --aqua-ink: #3c6974;
+  --example-border: #8fbcc6;
+  --rule-border: #b49aca;
   --orange: #f5b489;
   --orange-ink: #663e2c;
   --yellow: #fbf3d2;
@@ -1235,3 +1237,43 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 @media (max-width: 860px) { .home-dashboard { grid-template-columns: minmax(0, 1fr); grid-template-areas: "next" "side" "all"; margin-top: 22px; } }
 @media (max-width: 600px) { .dash-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "main icon" "meta icon"; row-gap: 2px; } .dash-row-meta { justify-self: start; } }
 @media (max-width: 400px) { .dash-progress { padding: 18px 16px 16px; } .dash-stats strong { font-size: 23px; } .dash-row { column-gap: 10px; } }
+
+.lesson-shell.lesson-wide { max-width: 1080px; }
+.lesson-wide .study-main { max-width: 960px; }
+
+/* Learning blocks: aqua for examples, lilac for explanation, apricot for the next action. */
+.lesson-phases { display: flex; gap: 10px; list-style: none; padding: 0; margin: 20px 0 26px; }
+.lesson-phases li { display: flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; background: white; color: var(--muted); font-size: 14px; }
+.lesson-phases li span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--paper); font-size: 12px; }
+.lesson-phases [aria-current="step"] { border: 2px solid #a58bbf; padding: 7px 11px; background: var(--lilac); color: var(--purple-deep); font-weight: 700; }
+.lesson-phases [aria-current="step"] span { background: var(--purple-deep); color: white; }
+.study-card.lesson-card { padding: 0; border: 0; background: transparent; }
+.lesson-blocks { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.lesson-example, .lesson-rule { min-width: 0; padding: 22px; border-radius: 20px; border: 2px solid; overflow-wrap: anywhere; }
+.lesson-example { background: var(--aqua); border-color: var(--example-border); }
+.lesson-rule { background: var(--lilac); border-color: var(--rule-border); }
+.lesson-blocks h3 { font-size: 14px; line-height: 1.6; margin: 0 0 14px; }
+.lesson-example h3 { color: var(--aqua-ink); }
+.lesson-rule h3 { color: var(--purple-deep); }
+.study-card .lesson-example .grammar-example { color: var(--ink); font-size: 26px; line-height: 1.8; margin: 0 0 8px; }
+.lesson-example .example-reading { color: var(--aqua-ink); font-size: 15px; line-height: 1.7; letter-spacing: .3px; }
+.lesson-example .example-meaning { font-size: 16px; margin: 16px 0; padding-top: 14px; border-top: 1px solid #a8ccd4; }
+.lesson-rule p { font-size: 16px; line-height: 1.9; }
+.lesson-example .audio-button { background: white; border: 1px solid var(--example-border); }
+.lesson-example .study-audio-status:empty { display: none; }
+.kana-hint { background: var(--lilac); border: 2px solid var(--rule-border); }
+.hint-list > div + div { border-top-color: #cbbada; }
+.keyword-box { border: 2px solid var(--example-border); }
+@media (max-width: 600px) {
+  .lesson-blocks { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .lesson-example, .lesson-rule { padding: 20px; border-radius: 16px; }
+  .lesson-phases { gap: 6px; }
+  .lesson-phases li { gap: 5px; padding: 7px 8px; font-size: 13px; }
+  .lesson-phases [aria-current="step"] { padding: 6px 7px; }
+  .lesson-phases li span { width: 19px; height: 19px; }
+}
+
+.example-parts { display: flex; flex-wrap: wrap; gap: 10px; }
+.example-part { display: grid; justify-items: center; align-content: start; gap: 6px; padding: 12px; background: white; border: 1px solid #b2d1d8; border-radius: 12px; }
+.example-part [lang="ja"] { font-family: "Noto Sans JP", sans-serif; font-size: 23px; line-height: 1.5; }
+.example-part .part-meaning { color: var(--ink); font-size: 14px; line-height: 1.5; }
