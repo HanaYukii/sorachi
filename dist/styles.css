@@ -1291,3 +1291,8 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
   .example-words .example-part { grid-template-columns: minmax(0, 1fr); }
   .example-words .part-meaning { grid-column: 1; grid-row: auto; }
 }
+
+/* Kana stays attached to its kanji; normal text still wraps between words. */
+.lesson-example .with-furigana { line-height: 2.15; }
+.lesson-example ruby { ruby-position: over; ruby-align: center; }
+.lesson-example rt { font-size: 13px; line-height: 1.4; color: var(--aqua-ink); font-weight: 500; }

@@ -5,6 +5,9 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../dist/study.js', import.meta.url), 'utf8');
 const clone = (value) => JSON.parse(JSON.stringify(value));
+// Reconstruct the written reading, not the hidden speaker label, when checking complete examples.
+const kanaHtml = html => html.replace(/<ruby>[^<]*<rp>（<\/rp><rt>(.*?)<\/rt><rp>）<\/rp><\/ruby>/gs, '$1').replace(/<span class="with-furigana">(.*?)<\/span>/gs, '$1');
+
 function harness(saved, voices = [], history = [], options = {}) {
   let prefs = clone(options.preferences || {}), favorites = clone(options.favorites || []), localWriteBlocked = false;
   let html = '', focused = null, stored = null, currentState, pressed = null;
@@ -1074,7 +1077,7 @@ test('lesson phases follow a saved attempt through cards, quiz, reload and compl
   const phase = html => html.match(/<li aria-current="step"><span aria-hidden="true">\d<\/span>([^<]+)/)?.[1];
   assert.equal(phase(b.html), '看說明');
   assert.match(b.html, /介紹自己：我是學生/);
-  assert.match(b.html, /わたし<\/span><span class="example-reading">watashi<\/span><span class="part-meaning">我/);
+  assert.match(kanaHtml(b.html), /わたし<\/span><span class="example-reading">watashi<\/span><span class="part-meaning">我/);
   for (let i = 0; i < 3; i++) b.action('next');
   assert.equal(phase(b.html), '做練習');
   const restored = harness(b.stored);
@@ -1168,7 +1171,8 @@ test('word preparation keeps the complete target sentence visible and grouped ex
   for(let i=0;i<course.steps.length;i++){
    const step=course.steps[i];
    if(step.example.includes('。')){
-    assert.ok(b.html.includes(step.example),step.id+' retains the complete example');
+    const example=kanaHtml(b.html).match(/<p class="grammar-example" lang="ja">(.*?)<\/p>/s)?.[1];
+    assert.equal(example,step.example,step.id+' retains the complete example');
     assert.ok(b.html.replaceAll('&#39;', "'").includes(step.reading),step.id+' retains its full reading');
    }
    if(i<course.steps.length-1)b.action('next');
@@ -1189,7 +1193,7 @@ test('vocabulary and verb lists use honest labels and preserve each Japanese-rea
    if(kind&&!presentation.previews?.[step.id])assert.ok(b.html.includes('aria-label="'+labels[kind]+'"'),step.id);
    if(parts&&(kind==='words'||kind==='forms')){
     assert.equal((b.html.match(/class="example-part"/g)||[]).length,parts.length,step.id);
-    const plain=b.html.replaceAll('&#39;',"'");
+    const plain=kanaHtml(b.html).replaceAll('&#39;',"'");
     for(const [jp,reading,meaning] of parts){
      assert.ok(plain.includes('<span lang="ja">'+jp+'</span><span class="example-reading">'+reading+'</span><span class="part-meaning">'+meaning+'</span>'),step.id+' keeps the pair together');
     }
@@ -1198,4 +1202,25 @@ test('vocabulary and verb lists use honest labels and preserve each Japanese-rea
    if(i<course.steps.length-1)b.action('next');
   }
  }
+});
+
+
+test('reviewed kanji spellings preserve every kana segment and spoken lesson text', () => {
+ const b=harness(null,[{lang:'ja-JP'}]);
+ for(const course of b.content.grammar){
+  const presentation=b.content.lessonPresentation[course.id];
+  const allowed=new Set([...course.steps.map(step=>step.example),...Object.values(presentation.parts).flat().map(part=>part[0])]);
+  for(const [text,tokens] of Object.entries(presentation.writing||{})){
+   assert.ok(allowed.has(text),'Only explicitly reviewed examples or groups may be annotated');
+   assert.equal(tokens.map(t=>typeof t==='string'?t:t[1]).join(''),text,'Kanji never replaces or drops a kana reading');
+   for(const token of tokens)if(typeof token!=='string'){
+    assert.equal(token.length,2);assert.ok(token.every(v=>typeof v==='string'&&v.length>0));
+   }
+  }
+ }
+ b.action('open',{course:'g-identity'});
+ assert.match(b.html,/<ruby>私<rp>（<\/rp><rt>わたし<\/rt>/);
+ assert.match(b.html,/<ruby>学生<rp>（<\/rp><rt>がくせい<\/rt>/);
+ b.action('audio',{index:'1'});assert.equal(b.utterances.at(-1).text,'わたしは がくせいです。');
+ b.action('open',{course:'h-a'});assert.doesNotMatch(b.html,/<ruby>/,'Kana recognition cards remain unchanged');
 });
