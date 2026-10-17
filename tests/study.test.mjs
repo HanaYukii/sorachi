@@ -1133,7 +1133,7 @@ test('all grammar lessons have beginner titles, while optional notes keep the co
     assert.doesNotMatch(b.content.displayTitle(course.id), /[ぁ-ヿ]/u, 'Entry titles must make sense without reading kana');
     b.action('open',{course:course.id});
     assert.ok(b.html.includes(b.content.displayTitle(course.id)));
-    assert.match(b.html,/aria-label="例句與意思"/);
+    assert.match(b.html,/class="lesson-example" aria-label="[^"]+"/);
     assert.match(b.html,/aria-label="學習重點"/);
     assert.match(b.html,/aria-current="step"/);
   }
@@ -1164,13 +1164,36 @@ test('word preparation keeps the complete target sentence visible and grouped ex
  assert.ok(b.html.includes(sentence.example));assert.ok(b.html.includes(sentence.reading));assert.ok(b.html.includes(sentence.meaning));
  assert.match(b.html,/data-action="study-audio" data-course="g-identity" data-index="1"/);
  for(const course of b.content.grammar){
-  if(!Object.keys(b.content.lessonPresentation[course.id].parts).length)continue;
   b.action('open',{course:course.id});
   for(let i=0;i<course.steps.length;i++){
    const step=course.steps[i];
-   if(b.content.lessonPresentation[course.id].parts[step.id]&&!b.content.lessonPresentation[course.id].previews?.[step.id]){
+   if(step.example.includes('。')){
     assert.ok(b.html.includes(step.example),step.id+' retains the complete example');
-    assert.ok(b.html.includes(step.reading),step.id+' retains its full reading');
+    assert.ok(b.html.replaceAll('&#39;', "'").includes(step.reading),step.id+' retains its full reading');
+   }
+   if(i<course.steps.length-1)b.action('next');
+  }
+ }
+});
+
+
+test('vocabulary and verb lists use honest labels and preserve each Japanese-reading-meaning pair', () => {
+ const b=harness();
+ const labels={words:'單字與意思',phrase:'短語與意思',forms:'動詞變化對照',mixed:'短語與例句',usage:'用法整理'};
+ for(const course of b.content.grammar){
+  b.action('open',{course:course.id});
+  const presentation=b.content.lessonPresentation[course.id];
+  for(let i=0;i<course.steps.length;i++){
+   const step=course.steps[i],kind=presentation.kinds?.[step.id],parts=presentation.parts?.[step.id];
+   if(!step.example.includes('。'))assert.ok(labels[kind],step.id+' needs an explicit non-sentence label');
+   if(kind&&!presentation.previews?.[step.id])assert.ok(b.html.includes('aria-label="'+labels[kind]+'"'),step.id);
+   if(parts&&(kind==='words'||kind==='forms')){
+    assert.equal((b.html.match(/class="example-part"/g)||[]).length,parts.length,step.id);
+    const plain=b.html.replaceAll('&#39;',"'");
+    for(const [jp,reading,meaning] of parts){
+     assert.ok(plain.includes('<span lang="ja">'+jp+'</span><span class="example-reading">'+reading+'</span><span class="part-meaning">'+meaning+'</span>'),step.id+' keeps the pair together');
+    }
+    if(kind==='forms')assert.match(b.html,/example-parts example-rows/);
    }
    if(i<course.steps.length-1)b.action('next');
   }

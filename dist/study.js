@@ -656,10 +656,13 @@ const Study = (() => {
   function fullExample(step) {
     return `<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="example-reading">${escape(step.reading)}</p>` : ""}`;
   }
-  function lessonExample(course, step, wordsOnly = false) {
+  const exampleLabels = { words: "單字與意思", phrase: "短語與意思", forms: "動詞變化對照", mixed: "短語與例句", usage: "用法整理" };
+  function lessonExample(course, step, kind) {
     const parts = Content.lessonPresentation[course.id]?.parts?.[step.id];
     if (!parts) return fullExample(step);
-    return `${wordsOnly ? "" : fullExample(step)}<p class="example-guide">${wordsOnly ? "先認識這兩個單字。" : "分開看：每組依序是日文、讀音和意思。"}</p><div class="example-parts">${parts.map(([word, reading, meaning]) => `<div class="example-part"><span lang="ja">${escape(word)}</span><span class="example-reading">${escape(reading)}</span><span class="part-meaning">${escape(meaning)}</span></div>`).join("")}</div>`;
+    const pairedList = kind === "words" || kind === "forms";
+    const guide = kind === "words" ? "日文搭配讀音與中文意思。" : kind === "forms" ? "每列是一組說法，下面是讀音和意思。" : "分開看：每組依序是日文、讀音和意思。";
+    return `${pairedList ? "" : fullExample(step)}<p class="example-guide">${guide}</p><div class="example-parts${kind === "forms" ? " example-rows" : kind === "words" ? " example-words" : ""}">${parts.map(([word, reading, meaning]) => `<div class="example-part"><span lang="ja">${escape(word)}</span><span class="example-reading">${escape(reading)}</span><span class="part-meaning">${escape(meaning)}</span></div>`).join("")}</div>`;
   }
   function card(course, active) {
     const i = active.cursor;
@@ -678,10 +681,14 @@ const Study = (() => {
       // A lesson card: the example, its reading and meaning, and the explanation (travel-only parts are rejected by
       // Content.validate, so there is nothing else to show).
       const step = course.steps[i];
-      const note = Content.lessonPresentation[course.id]?.notes?.[step.id];
+      const presentation = Content.lessonPresentation[course.id];
+      const kind = presentation?.kinds?.[step.id];
+      const label = exampleLabels[kind] || "例句與意思";
+      const pairedList = (kind === "words" || kind === "forms") && presentation?.parts?.[step.id];
+      const note = presentation?.notes?.[step.id];
       const previewIndex = course.steps.findIndex(item => item.id === Content.lessonPresentation[course.id]?.previews?.[step.id]);
       const preview = course.steps[previewIndex];
-      body = `<h2>${escape(step.title)}</h2><div class="lesson-blocks"><section class="lesson-example" aria-label="例句與意思"><h3>${preview ? "這課會說的句子" : "例句與意思"}</h3>${preview ? `${fullExample(preview)}<p class="example-meaning">${escape(preview.meaning)}</p>${audioButton(course, previewIndex)}<h3 class="example-subheading">先認識單字</h3>` : ""}${lessonExample(course, step, Boolean(preview))}${preview ? "" : `<p class="example-meaning">${escape(step.meaning)}</p>`}${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(note?.main || step.body)}</p>${note?.extra ? `<details class="lesson-extra"><summary>補充說明</summary><p>${escape(note.extra)}</p></details>` : ""}</section></div>`;
+      body = `<h2>${escape(step.title)}</h2><div class="lesson-blocks"><section class="lesson-example" aria-label="${preview ? "這課會說的句子與單字" : label}"><h3>${preview ? "這課會說的句子" : label}</h3>${preview ? `${fullExample(preview)}<p class="example-meaning">${escape(preview.meaning)}</p>${audioButton(course, previewIndex)}<h3 class="example-subheading">先認識單字</h3>` : ""}${lessonExample(course, step, kind)}${preview || pairedList ? "" : `<p class="example-meaning">${escape(step.meaning)}</p>`}${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(note?.main || step.body)}</p>${note?.extra ? `<details class="lesson-extra"><summary>補充說明</summary><p>${escape(note.extra)}</p></details>` : ""}</section></div>`;
     }
     // Once a grammar quiz has answers, the cards lead back to the question instead of restarting it.
     const resumable = course.type === "grammar" && Object.keys(active.first || {}).length > 0;
