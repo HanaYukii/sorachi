@@ -1089,6 +1089,810 @@ const DrillBank = (() => {
       "batch": "2026-10-17-200"
     },
     "promptReading": "hai, dōzo"
+  },
+  {
+    "id": "drill/basic/umbrella-not-bag",
+    "courseId": "g-nouns",
+    "prompt": "下雨時想找自己的「雨傘」，要認哪個詞？",
+    "options": [
+      "傘（かさ）",
+      "かばん",
+      "切符（きっぷ）"
+    ],
+    "readings": [
+      "kasa",
+      "kaban",
+      "kippu"
+    ],
+    "answer": 0,
+    "explanation": "「傘」是雨傘；「かばん」是包包；「切符」是車票。這題要找能擋雨的雨傘，所以選「傘」。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-kasa",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-nouns"
+    ]
+  },
+  {
+    "id": "drill/basic/station-not-shop",
+    "courseId": "g-nouns",
+    "prompt": "要搭電車，先找「車站」。哪個詞表示車站？",
+    "options": [
+      "駅（えき）",
+      "店（みせ）",
+      "ホテル"
+    ],
+    "readings": [
+      "eki",
+      "mise",
+      "hoteru"
+    ],
+    "answer": 0,
+    "explanation": "「駅」是車站；「店」是店家；「ホテル」是飯店。搭電車要找的車站是「駅」。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-eki",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-nouns"
+    ]
+  },
+  {
+    "id": "drill/basic/room-word",
+    "courseId": "g-adj-na",
+    "prompt": "飯店人員說「部屋（へや）」，這個詞是什麼意思？",
+    "options": [
+      "房間",
+      "車站",
+      "店家"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「部屋」是房間。車站是「駅」，店家是「店」；這些都是地點的名稱，但指的地方不同。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-heya",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-adj-na",
+      "g-nouns"
+    ],
+    "promptReading": "heya"
+  },
+  {
+    "id": "drill/basic/buy-bread-past",
+    "courseId": "g-mashita",
+    "prompt": "「パンを 買（か）いました。」告訴你哪件事已經做了？",
+    "options": [
+      "買了麵包",
+      "吃了麵包",
+      "沒有買麵包"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「買いました」是「買了」；吃了要說「食べました」；沒有買則是「買いませんでした」。這句只說買了，沒有說吃了。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-kau",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-mashita"
+    ],
+    "promptReading": "pan o kaimashita"
+  },
+  {
+    "id": "drill/basic/return-to-hotel",
+    "courseId": "g-te-sequence",
+    "prompt": "逛完街，想說「回飯店」。哪一句符合？",
+    "options": [
+      "ホテルに 帰（かえ）ります。",
+      "ホテルで 待（ま）ちます。",
+      "ホテルで 食（た）べます。"
+    ],
+    "readings": [
+      "hoteru ni kaerimasu",
+      "hoteru de machimasu",
+      "hoteru de tabemasu"
+    ],
+    "answer": 0,
+    "explanation": "「帰ります」是回去，所以「ホテルに帰ります」是回飯店。其他兩句分別是在飯店等、在飯店吃東西，沒有表示回去。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-kaeru",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-te-sequence",
+      "g-nouns"
+    ]
+  },
+  {
+    "id": "drill/basic/kuru-meaning",
+    "courseId": "g-verb-forms",
+    "prompt": "「来（く）る」是「来（き）ます」的原形。它表示哪個動作？",
+    "options": [
+      "來",
+      "去",
+      "買"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「来る／来ます」是來；去是「行く／行きます」；買是「買う／買います」。同一個動作可以有原形和禮貌說法。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-kuru-tomodachi-ie",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-verb-forms"
+    ],
+    "promptReading": "kuru / kimasu"
+  },
+  {
+    "id": "drill/basic/look-at-this",
+    "courseId": "g-verb-forms",
+    "prompt": "想表達「看這個」，空格要放哪個動作？これを＿＿。",
+    "options": [
+      "見（み）ます",
+      "買（か）います",
+      "飲（の）みます"
+    ],
+    "readings": [
+      "mimasu",
+      "kaimasu",
+      "nomimasu"
+    ],
+    "answer": 0,
+    "explanation": "「見ます」是看，所以「これを見ます」是看這個。「買います」是買，「飲みます」是喝，都不是題目要說的「看」。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-miru-terebi",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-verb-forms"
+    ],
+    "promptReading": "kore o ___"
+  },
+  {
+    "id": "drill/basic/go-station-action",
+    "courseId": "g-ni-de",
+    "prompt": "「駅（えき）に 行（い）きます。」是在表達什麼？",
+    "options": [
+      "要去車站",
+      "在車站買東西",
+      "車站有廁所"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「行きます」是去，「駅に」說明去的地方。這句沒有買東西的動作，也沒有說哪裡有廁所。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-iku-kaisha",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-ni-de"
+    ],
+    "promptReading": "eki ni ikimasu"
+  },
+  {
+    "id": "drill/basic/cheap-not-small",
+    "courseId": "g-adj-i",
+    "prompt": "想說麵包「便宜」，不是說它「小」。哪一句符合？",
+    "options": [
+      "この パンは 安（やす）いです。",
+      "この パンは 小（ちい）さいです。",
+      "この パンは 高（たか）いです。"
+    ],
+    "readings": [
+      "kono pan wa yasui desu",
+      "kono pan wa chiisai desu",
+      "kono pan wa takai desu"
+    ],
+    "answer": 0,
+    "explanation": "「安い」說價錢便宜；「小さい」說大小；談麵包的價錢時，「高い」是貴。便宜和小不是同一個意思。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-yasui-mise",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-adj-i"
+    ]
+  },
+  {
+    "id": "drill/basic/tasty-not-cheap",
+    "courseId": "g-who-2",
+    "prompt": "吃了一口麵包，想稱讚「好吃」。選哪一句？",
+    "options": [
+      "おいしいです。",
+      "安（やす）いです。",
+      "大（おお）きいです。"
+    ],
+    "readings": [
+      "oishii desu",
+      "yasui desu",
+      "ookii desu"
+    ],
+    "answer": 0,
+    "explanation": "「おいしい」說味道好吃；「安い」說價錢便宜；「大きい」說大小。題目要稱讚味道，所以選「おいしいです」。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-oishii",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-who-2"
+    ]
+  },
+  {
+    "id": "drill/basic/cold-versus-warm-water",
+    "courseId": "g-adj-neg",
+    "prompt": "想要冷的水，哪個說法符合？",
+    "options": [
+      "冷（つめ）たい 水（みず）",
+      "温（あたた）かい 水（みず）",
+      "高（たか）い 水（みず）"
+    ],
+    "readings": [
+      "tsumetai mizu",
+      "atatakai mizu",
+      "takai mizu"
+    ],
+    "answer": 0,
+    "explanation": "「冷たい」說水或飲料是冷的；「温かい」是溫暖的；談水的價錢時，「高い」是貴。只有第一個在說冷水。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-tsumetai",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-adj-neg"
+    ]
+  },
+  {
+    "id": "drill/basic/speak-slowly-word",
+    "courseId": "g-te-kudasai",
+    "prompt": "「ゆっくり 話（はな）してください。」裡，哪個詞表示「慢慢地」，說明說話的速度？",
+    "options": [
+      "ゆっくり",
+      "話（はな）して",
+      "ください"
+    ],
+    "readings": [
+      "yukkuri",
+      "hanashite",
+      "kudasai"
+    ],
+    "answer": 0,
+    "explanation": "「ゆっくり」是慢慢地；「話して」是說話的て形；「ください」把這句變成請求。表示速度慢一點的是「ゆっくり」。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-yukkuri",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-te-kudasai"
+    ],
+    "promptReading": "yukkuri hanashite kudasai"
+  },
+  {
+    "id": "drill/basic/chotto-wait-amount",
+    "courseId": "g-te-kudasai",
+    "prompt": "店員請你「ちょっと 待（ま）ってください」。這裡的「ちょっと」是什麼意思？",
+    "options": [
+      "一下子",
+      "慢慢地",
+      "明天"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "在「ちょっと待ってください」裡，「ちょっと」表示一下子，整句是請等一下。「ゆっくり」才是慢慢地；「あした」是明天。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-vocab-chotto",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-te-kudasai"
+    ],
+    "promptReading": "chotto matte kudasai"
+  },
+  {
+    "id": "drill/basic/clean-room-description",
+    "courseId": "g-adj-na",
+    "prompt": "想說「這個房間很乾淨」，選哪一句？",
+    "options": [
+      "この 部屋（へや）は きれいです。",
+      "この 部屋（へや）は きれいじゃないです。",
+      "この 部屋（へや）は 小（ちい）さいです。"
+    ],
+    "readings": [
+      "kono heya wa kirei desu",
+      "kono heya wa kirei ja nai desu",
+      "kono heya wa chiisai desu"
+    ],
+    "answer": 0,
+    "explanation": "「きれい」可以形容乾淨、漂亮；第二句的「じゃないです」是否定，表示不乾淨；第三句只說房間小。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-usage-kirei",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-adj-na"
+    ]
+  },
+  {
+    "id": "drill/basic/convenient-not-quiet",
+    "courseId": "g-adj-na",
+    "prompt": "想說飯店「很方便」，選哪個說法？",
+    "options": [
+      "便利（べんり）です。",
+      "静（しず）かです。",
+      "きれいです。"
+    ],
+    "readings": [
+      "benri desu",
+      "shizuka desu",
+      "kirei desu"
+    ],
+    "answer": 0,
+    "explanation": "「便利」是方便；「静か」是安靜；「きれい」是乾淨、漂亮。這些都能形容飯店，但題目指定要說的是「方便」。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-syn-benri",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-adj-na"
+    ]
+  },
+  {
+    "id": "drill/basic/behind-the-station",
+    "courseId": "g-position",
+    "prompt": "「駅（えき）の 後（うし）ろに ホテルが あります。」飯店在哪裡？",
+    "options": [
+      "車站後面",
+      "車站前面",
+      "車站裡面"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「後ろ」是後面，所以飯店在車站後面。「前」是前面，「中」是裡面；不要把這三個位置混在一起。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-usage-ushiro",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-position",
+      "g-nouns"
+    ],
+    "promptReading": "eki no ushiro ni hoteru ga arimasu"
+  },
+  {
+    "id": "drill/basic/topic-versus-owner",
+    "courseId": "g-no",
+    "prompt": "比較「私（わたし）は 学生（がくせい）です」和「私（わたし）の 本（ほん）」時，哪一組意思正確？",
+    "options": [
+      "我是學生／我的書",
+      "我的學生／我是書",
+      "我是老師／我的書"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「私は学生です」用「は」說明我是誰；「私の本」用「の」表示我的書。老師是「先生」，不是「学生」。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-ha-watashi-gakusei",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-no",
+      "g-nouns"
+    ],
+    "promptReading": "watashi wa gakusei desu / watashi no hon"
+  },
+  {
+    "id": "drill/basic/ka-polite-question",
+    "courseId": "g-nouns",
+    "prompt": "你指著一張票，想確認「是車票嗎？」。哪一句是在提問？",
+    "options": [
+      "切符（きっぷ）ですか。",
+      "切符（きっぷ）です。",
+      "切符（きっぷ）じゃないです。"
+    ],
+    "readings": [
+      "kippu desu ka",
+      "kippu desu",
+      "kippu ja nai desu"
+    ],
+    "answer": 0,
+    "explanation": "句尾加「か」成為問題：「切符ですか」是「是車票嗎？」。第二句是肯定說法，第三句是否定說法，都不是這裡要問的問題。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-ka",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-nouns",
+      "g-negative"
+    ]
+  },
+  {
+    "id": "drill/basic/whose-book-reply",
+    "courseId": "g-nouns",
+    "prompt": "這本書屬於老師。想說「老師的書」，要選哪個？",
+    "options": [
+      "先生（せんせい）の 本（ほん）",
+      "先生（せんせい）と 本（ほん）",
+      "本（ほん）の 先生（せんせい）"
+    ],
+    "readings": [
+      "sensei no hon",
+      "sensei to hon",
+      "hon no sensei"
+    ],
+    "answer": 0,
+    "explanation": "「AのB」可表示 A 的 B，所以老師的書是「先生の本」。「先生と本」是把老師和書列在一起；把順序倒成「本の先生」也不表示老師的書。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-no",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-nouns",
+      "g-to"
+    ]
+  },
+  {
+    "id": "drill/basic/cat-existence-roles",
+    "courseId": "g-arimasu",
+    "prompt": "「ここに 猫（ねこ）が います。」裡，「ここ」和「猫」分別告訴你什麼？",
+    "options": [
+      "在哪裡／有什麼動物",
+      "有什麼動物／在哪裡",
+      "什麼時候／多少錢"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「ここに」說在這裡，「猫がいます」說有貓。整句是這裡有貓，沒有提到時間或價錢。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-ga-neko-iru",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-arimasu"
+    ],
+    "promptReading": "koko ni neko ga imasu"
+  },
+  {
+    "id": "drill/basic/action-place-hotel",
+    "courseId": "g-ni-de",
+    "prompt": "想說「在飯店喝水」，哪一句符合？",
+    "options": [
+      "ホテルで 水（みず）を 飲（の）みます。",
+      "ホテルに 行（い）きます。",
+      "水（みず）を 買（か）います。"
+    ],
+    "readings": [
+      "hoteru de mizu o nomimasu",
+      "hoteru ni ikimasu",
+      "mizu o kaimasu"
+    ],
+    "answer": 0,
+    "explanation": "「ホテルで」標出喝水的地方，第一句是完整的「在飯店喝水」。第二句是去飯店，第三句是買水，和題目要說的動作不同。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-de-toshokan",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-ni-de",
+      "g-nouns"
+    ]
+  },
+  {
+    "id": "drill/basic/destination-with-e",
+    "courseId": "g-ni-de",
+    "prompt": "「京都（きょうと）へ 行（い）きます。」中的「京都へ」說明什麼？",
+    "options": [
+      "要去的地方",
+      "出發的地方",
+      "搭的交通工具"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「へ」在這裡標示前往的方向，讀作 e，所以要去京都。從京都出發用「京都から」；交通工具則是「バスで」這類說法。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-e-kyouto-iku",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-ni-de",
+      "g-transport"
+    ],
+    "promptReading": "kyouto e ikimasu"
+  },
+  {
+    "id": "drill/basic/na-links-convenient",
+    "courseId": "g-adj-na",
+    "prompt": "「便利（べんり）です」改成放在名詞前，想說「方便的飯店」。哪一個正確？",
+    "options": [
+      "便利（べんり）な ホテル",
+      "便利（べんり）の ホテル",
+      "便利（べんり）です ホテル"
+    ],
+    "readings": [
+      "benri na hoteru",
+      "benri no hoteru",
+      "benri desu hoteru"
+    ],
+    "answer": 0,
+    "explanation": "「便利」是な形容詞，放在名詞前加「な」。「の」不是這個形容詞的接法；「です」是句尾的禮貌說法，不能這樣直接接在飯店前面。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-na",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-adj-na",
+      "g-nouns"
+    ]
+  },
+  {
+    "id": "drill/basic/until-friday",
+    "courseId": "g-kara-made-time",
+    "prompt": "「月曜日（げつようび）から 金曜日（きんようび）まで」表示哪一段時間？",
+    "options": [
+      "星期一到星期五",
+      "星期五到星期一",
+      "只有星期一和星期五"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「から」標出起點，「まで」標出終點。這裡是從星期一到星期五的一段時間，不是倒過來，也不是只列出兩天。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-made-kuji-hataraku",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-kara-made-time"
+    ],
+    "promptReading": "getsuyoubi kara kin'youbi made"
+  },
+  {
+    "id": "drill/basic/reason-and-result-buy",
+    "courseId": "g-kara-reason",
+    "prompt": "「安（やす）いですから、買（か）います。」哪一個是原因，哪一個是決定？",
+    "options": [
+      "因為便宜／決定買",
+      "因為買了／所以便宜",
+      "因為很貴／決定不買"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「から」前面的「安いです」是便宜這個原因；後面的「買います」是要買的決定。「高い」才是貴，「買いません」才是不買。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-kara-atama-itai",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-kara-reason"
+    ],
+    "promptReading": "yasui desu kara, kaimasu"
+  },
+  {
+    "id": "drill/basic/soshite-action-order",
+    "courseId": "g-soshite-demo",
+    "prompt": "「パンを 買（か）います。そして、うちに 帰（かえ）ります。」這裡的「そして」把兩個動作怎麼連起來？",
+    "options": [
+      "先買麵包，然後回家",
+      "先回家，然後買麵包",
+      "買麵包，但是不回家"
+    ],
+    "readings": [
+      "",
+      "",
+      ""
+    ],
+    "answer": 0,
+    "explanation": "「そして」除了補充另一點，也可以表示然後。這裡照順序說：先買麵包，然後回家；沒有把順序倒過來，也沒有說不回家。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-context-soshite",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-soshite-demo",
+      "g-te-sequence"
+    ],
+    "promptReading": "pan o kaimasu. soshite, uchi ni kaerimasu"
+  },
+  {
+    "id": "drill/basic/but-still-buy",
+    "courseId": "g-soshite-demo",
+    "prompt": "想表達「很貴，但是還是要買」，哪句意思符合？",
+    "options": [
+      "高（たか）いです。でも、買（か）います。",
+      "高（たか）いです。でも、買（か）いません。",
+      "安（やす）いです。そして、買（か）います。"
+    ],
+    "readings": [
+      "takai desu. demo, kaimasu",
+      "takai desu. demo, kaimasen",
+      "yasui desu. soshite, kaimasu"
+    ],
+    "answer": 0,
+    "explanation": "第一句用「でも」轉折：雖然很貴，仍要買。第二句說不買；第三句說便宜，而且沒有用「但是」轉折，都不符合指定意思。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-context-demo",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-soshite-demo"
+    ]
+  },
+  {
+    "id": "drill/basic/dakara-result-direction",
+    "courseId": "g-dakara",
+    "prompt": "價格太貴是原因，不買是決定。哪一句把順序說對了？",
+    "options": [
+      "高（たか）いです。だから、買（か）いません。",
+      "買（か）いません。だから、高（たか）いです。",
+      "高（たか）いです。だから、買（か）いました。"
+    ],
+    "readings": [
+      "takai desu. dakara, kaimasen",
+      "kaimasen. dakara, takai desu",
+      "takai desu. dakara, kaimashita"
+    ],
+    "answer": 0,
+    "explanation": "「だから」是所以，前面放原因、後面放結果。第一句是因為貴，所以不買；第二句把因果倒過來；第三句說已經買了。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-context-dakara",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-dakara"
+    ]
+  },
+  {
+    "id": "drill/basic/request-slow-speech",
+    "courseId": "g-te-kudasai",
+    "prompt": "想請對方「慢慢說」，哪一句是請求？",
+    "options": [
+      "ゆっくり 話（はな）してください。",
+      "ゆっくり 話（はな）します。",
+      "ちょっと 待（ま）ってください。"
+    ],
+    "readings": [
+      "yukkuri hanashite kudasai",
+      "yukkuri hanashimasu",
+      "chotto matte kudasai"
+    ],
+    "answer": 0,
+    "explanation": "「話してください」用て形加「ください」請對方說話。第二句只說慢慢說話，沒有請求的「ください」；第三句是請等一下，動作不同。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-tekudasai-iu",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-te-kudasai"
+    ]
+  },
+  {
+    "id": "drill/basic/buy-then-eat",
+    "courseId": "g-te-sequence",
+    "prompt": "想說「先買麵包，再吃麵包」，哪一句順序正確？",
+    "options": [
+      "パンを 買（か）ってから、食（た）べます。",
+      "パンを 食（た）べてから、買（か）います。",
+      "パンを 買（か）います。でも、食（た）べません。"
+    ],
+    "readings": [
+      "pan o katte kara, tabemasu",
+      "pan o tabete kara, kaimasu",
+      "pan o kaimasu. demo, tabemasen"
+    ],
+    "answer": 0,
+    "explanation": "「買ってから」是買完之後，後面再接吃。第二句把吃和買的順序倒過來；第三句則是會買，但是不吃。",
+    "source": {
+      "kind": "jabiko-adapted",
+      "id": "n5-grammar-tekara-te-arau-taberu",
+      "commit": "57524190e53d947cc0be8813af4d8cef60201f00",
+      "batch": "2026-10-18-jabiko"
+    },
+    "scope": [
+      "g-te-sequence"
+    ]
   }
 ];
   function validate(content) {
