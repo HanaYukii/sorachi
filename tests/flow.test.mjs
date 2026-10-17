@@ -790,7 +790,7 @@ test("home explains the task: the kana card leads to the table, and anyone can s
   assert.match(b.html, /日文入門/);
   assert.match(b.html, /入門必學，搭配各式技巧好好記熟。/);
   assert.match(b.html, /<button class="primary" data-action="kana">學五十音/);
-  assert.match(b.html, /每輪 5 題[\s\S]*?data-action="study-kana-random">五十音隨機練習/);
+  assert.match(b.html, /每輪 5 題[\s\S]*?data-action="study-kana-random"[^>]*aria-label="五十音隨機練習"/);
   assert.doesNotMatch(b.html, /data-action="study-review-start"/, 'Nothing to review yet');
   assert.doesNotMatch(b.html, /あ、ア、山/);
   b.action('kana');
@@ -2105,7 +2105,7 @@ test('the kana card stays the same whatever the progress: 學五十音 and 五�
   const card = (b) => (b.html.match(/<section class="home-shortcuts"[\s\S]*?<\/section>\s*<section class="home-entries"[\s\S]*?<\/section>/) || [''])[0];
   const fresh = browser();
   assert.match(card(fresh), /<button class="primary" data-action="kana">學五十音/);
-  assert.match(card(fresh), /data-action="study-kana-random">五十音隨機練習/);
+  assert.match(card(fresh), /data-action="study-kana-random"[^>]*aria-label="五十音隨機練習"/);
   assert.doesNotMatch(card(fresh), /data-action="study-open"|study-review-start/);
   // Begun with hiragana or katakana, or something learned: the same card; carrying on is listed once, under 接著做.
   const begun = browser();
@@ -2281,7 +2281,7 @@ test('句型隨機練習: one click from home, five different questions from a c
   }
   assert.deepEqual([...seen].sort(), [...pool].sort());
   const fresh = browser();
-  assert.match(fresh.html, /data-action="study-grammar-random">句型隨機練習[\s\S]*data-action="grammar">學基礎句型/);
+  assert.match(fresh.html, /data-action="study-grammar-random"[^>]*aria-label="句型隨機練習"[\s\S]*data-action="grammar">學基礎句型/);
   assert.equal(fresh.run('Study.context("#grammar-random")'), '句型隨機練習');
 });
 
