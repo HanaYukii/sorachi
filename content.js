@@ -7229,6 +7229,456 @@ const Content = (() => {
       },
     },
   });
+  // Audited card types distinguish vocabulary/phrases from complete sentences.
+  // Each tuple is an authored Japanese/reading/meaning pair; no runtime word splitting.
+  Object.assign(lessonPresentation["g-identity"], {
+    kinds: {"g-identity/card/nouns": "words"},
+    parts: { ...lessonPresentation["g-identity"].parts,
+      "g-identity/card/nouns": [
+        ["わたし", "watashi", "我"],
+        ["がくせい", "gakusei", "學生"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-place"], {
+    kinds: {"g-place/card/words": "words"},
+    parts: { ...lessonPresentation["g-place"].parts,
+      "g-place/card/words": [
+        ["ここ", "koko", "這裡"],
+        ["そこ", "soko", "那裡（你那邊）"],
+        ["あそこ", "asoko", "那裡（遠處）"],
+        ["どこ", "doko", "哪裡"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-kochira"], {
+    kinds: {"g-kochira/card/words": "words"},
+    parts: { ...lessonPresentation["g-kochira"].parts,
+      "g-kochira/card/words": [
+        ["こちら", "kochira", "這邊"],
+        ["そちら", "sochira", "那邊（你那邊）"],
+        ["あちら", "achira", "那邊（遠處）"],
+        ["どちら", "dochira", "哪邊"],
+      ],
+    },
+    notes: { ...lessonPresentation["g-kochira"].notes, ...{"g-kochira/card/words": {"main": "こちら 是這邊，そちら 是對方那邊，あちら 是遠處，どちら 問哪邊。用來指方向或那一帶，語氣比較客氣。", "extra": "こちら 也能指人或自己這一方；後面介紹別人的課會再學。"}} },
+  });
+  Object.assign(lessonPresentation["g-who"], {
+    kinds: {"g-who/card/words": "words"},
+    parts: { ...lessonPresentation["g-who"].parts,
+      "g-who/card/words": [
+        ["だれ", "dare", "誰"],
+        ["なに", "nani", "什麼"],
+        ["どこ", "doko", "哪裡"],
+        ["いつ", "itsu", "什麼時候"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-nouns"], {
+    kinds: {"g-nouns/card/people": "words", "g-nouns/card/things": "words", "g-nouns/card/places": "words"},
+    parts: { ...lessonPresentation["g-nouns"].parts,
+      "g-nouns/card/people": [
+        ["ともだち", "tomodachi", "朋友"],
+        ["せんせい", "sensei", "老師"],
+      ],
+      "g-nouns/card/things": [
+        ["きっぷ", "kippu", "車票"],
+        ["かばん", "kaban", "包包"],
+      ],
+      "g-nouns/card/places": [
+        ["みせ", "mise", "店"],
+        ["ホテル", "hoteru", "飯店"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-days"], {
+    kinds: {"g-days/card/three-days": "words"},
+    parts: { ...lessonPresentation["g-days"].parts,
+      "g-days/card/three-days": [
+        ["きのう", "kinou", "昨天"],
+        ["きょう", "kyou", "今天"],
+        ["あした", "ashita", "明天"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-day-parts"], {
+    kinds: {"g-day-parts/card/parts": "words", "g-day-parts/card/with-no": "phrase"},
+    parts: { ...lessonPresentation["g-day-parts"].parts,
+      "g-day-parts/card/parts": [
+        ["あさ", "asa", "早上"],
+        ["ひる", "hiru", "中午"],
+        ["よる", "yoru", "晚上"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-weekdays"], {
+    kinds: {"g-weekdays/card/weekdays": "words", "g-weekdays/card/weekend": "words"},
+    parts: { ...lessonPresentation["g-weekdays"].parts,
+      "g-weekdays/card/weekdays": [
+        ["げつようび", "getsuyoubi", "星期一"],
+        ["かようび", "kayoubi", "星期二"],
+        ["すいようび", "suiyoubi", "星期三"],
+        ["もくようび", "mokuyoubi", "星期四"],
+        ["きんようび", "kin'youbi", "星期五"],
+      ],
+      "g-weekdays/card/weekend": [
+        ["どようび", "doyoubi", "星期六"],
+        ["にちようび", "nichiyoubi", "星期日"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-numbers"], {
+    kinds: {"g-numbers/card/one-five": "words", "g-numbers/card/six-ten": "words", "g-numbers/card/zero": "words"},
+    parts: { ...lessonPresentation["g-numbers"].parts,
+      "g-numbers/card/one-five": [
+        ["いち", "ichi", "一"],
+        ["に", "ni", "二"],
+        ["さん", "san", "三"],
+        ["よん", "yon", "四"],
+        ["ご", "go", "五"],
+      ],
+      "g-numbers/card/six-ten": [
+        ["ろく", "roku", "六"],
+        ["なな", "nana", "七"],
+        ["はち", "hachi", "八"],
+        ["きゅう", "kyuu", "九"],
+        ["じゅう", "juu", "十"],
+      ],
+    },
+    notes: { ...lessonPresentation["g-numbers"].notes, ...{"g-numbers/card/one-five": {"main": "先記住一到五：いち、に、さん、よん、ご。這裡的「四」用 よん。", "extra": "4 也有 し 的念法，接某些詞時會變成 よ。遇到幾點、幾個人的課再學。"}, "g-numbers/card/six-ten": {"main": "這裡的「七」用 なな，「九」用 きゅう。先把這五個讀音和數字對起來。", "extra": "7 也念 しち，9 也念 く。說幾點時有特定念法，之後再練。"}} },
+  });
+  Object.assign(lessonPresentation["g-prices"], {
+    kinds: {"g-prices/card/units": "words", "g-prices/card/sound-change": "words", "g-prices/card/yen": "words"},
+    parts: { ...lessonPresentation["g-prices"].parts,
+      "g-prices/card/units": [
+        ["じゅう", "juu", "十"],
+        ["ひゃく", "hyaku", "一百"],
+        ["せん", "sen", "一千"],
+      ],
+      "g-prices/card/sound-change": [
+        ["さんびゃく", "sanbyaku", "三百"],
+        ["ろっぴゃく", "roppyaku", "六百"],
+        ["はっぴゃく", "happyaku", "八百"],
+      ],
+      "g-prices/card/yen": [
+        ["ひゃくえん", "hyaku en", "100 日圓"],
+        ["せんえん", "sen en", "1000 日圓"],
+      ],
+    },
+    notes: { ...lessonPresentation["g-prices"].notes, ...{"g-prices/card/units": {"main": "先記住 じゅう（十）、ひゃく（一百）、せん（一千）。加上數字就能說 にじゅう（20）、ごひゃく（500）。100 和 1000 前面不加 いち。", "extra": "300、600、800 會變音，下一張會學。3000（さんぜん）、8000（はっせん）也會變音，之後再學。"}} },
+  });
+  Object.assign(lessonPresentation["g-counting"], {
+    kinds: {"g-counting/card/tsu": "words"},
+    parts: { ...lessonPresentation["g-counting"].parts,
+      "g-counting/card/tsu": [
+        ["ひとつ", "hitotsu", "一個"],
+        ["ふたつ", "futatsu", "兩個"],
+        ["みっつ", "mittsu", "三個"],
+        ["よっつ", "yottsu", "四個"],
+        ["いつつ", "itsutsu", "五個"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-people"], {
+    kinds: {"g-people/card/one-two": "words", "g-people/card/nin": "words"},
+    parts: { ...lessonPresentation["g-people"].parts,
+      "g-people/card/one-two": [
+        ["ひとり", "hitori", "一個人"],
+        ["ふたり", "futari", "兩個人"],
+      ],
+      "g-people/card/nin": [
+        ["さんにん", "sannin", "三個人"],
+        ["よにん", "yonin", "四個人"],
+        ["ごにん", "gonin", "五個人"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-clock"], {
+    kinds: {"g-clock/card/ji": "words", "g-clock/card/special": "words", "g-clock/card/han": "words"},
+    parts: { ...lessonPresentation["g-clock"].parts,
+      "g-clock/card/ji": [
+        ["いちじ", "ichiji", "1 點"],
+        ["にじ", "niji", "2 點"],
+        ["さんじ", "sanji", "3 點"],
+      ],
+      "g-clock/card/special": [
+        ["よじ", "yoji", "4 點"],
+        ["しちじ", "shichiji", "7 點"],
+        ["くじ", "kuji", "9 點"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-minutes"], {
+    kinds: {"g-minutes/card/fun": "words", "g-minutes/card/pun": "words", "g-minutes/card/ppun": "words"},
+    parts: { ...lessonPresentation["g-minutes"].parts,
+      "g-minutes/card/fun": [
+        ["にふん", "nifun", "2 分"],
+        ["ごふん", "gofun", "5 分"],
+        ["ななふん", "nanafun", "7 分"],
+        ["きゅうふん", "kyuufun", "9 分"],
+      ],
+      "g-minutes/card/pun": [
+        ["さんぷん", "sanpun", "3 分"],
+        ["よんぷん", "yonpun", "4 分"],
+      ],
+      "g-minutes/card/ppun": [
+        ["いっぷん", "ippun", "1 分"],
+        ["ろっぷん", "roppun", "6 分"],
+        ["はっぷん", "happun", "8 分"],
+        ["じゅっぷん", "juppun", "10 分"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-dates"], {
+    kinds: {"g-dates/card/gatsu": "words", "g-dates/card/special": "words", "g-dates/card/nichi": "words"},
+    parts: { ...lessonPresentation["g-dates"].parts,
+      "g-dates/card/gatsu": [
+        ["いちがつ", "ichigatsu", "1 月"],
+        ["にがつ", "nigatsu", "2 月"],
+        ["じゅうにがつ", "juunigatsu", "12 月"],
+      ],
+      "g-dates/card/special": [
+        ["しがつ", "shigatsu", "4 月"],
+        ["しちがつ", "shichigatsu", "7 月"],
+        ["くがつ", "kugatsu", "9 月"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-dates-2"], {
+    kinds: {"g-dates-2/card/tsuitachi": "words", "g-dates-2/card/two-five": "words", "g-dates-2/card/yokka": "words"},
+    parts: { ...lessonPresentation["g-dates-2"].parts,
+      "g-dates-2/card/tsuitachi": [
+        ["ついたち", "tsuitachi", "1 日"],
+        ["しがつ ついたち", "shigatsu tsuitachi", "4 月 1 日"],
+      ],
+      "g-dates-2/card/two-five": [
+        ["ふつか", "futsuka", "2 日"],
+        ["みっか", "mikka", "3 日"],
+        ["よっか", "yokka", "4 日"],
+        ["いつか", "itsuka", "5 日"],
+      ],
+      "g-dates-2/card/yokka": [
+        ["じゅうよっか", "juuyokka", "14 日"],
+        ["にじゅうよっか", "nijuuyokka", "24 日"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-dates-3"], {
+    kinds: {"g-dates-3/card/six-eight": "words", "g-dates-3/card/nine-ten": "words", "g-dates-3/card/hatsuka": "words"},
+    parts: { ...lessonPresentation["g-dates-3"].parts,
+      "g-dates-3/card/six-eight": [
+        ["むいか", "muika", "6 日"],
+        ["なのか", "nanoka", "7 日"],
+        ["ようか", "youka", "8 日"],
+      ],
+      "g-dates-3/card/nine-ten": [
+        ["ここのか", "kokonoka", "9 日"],
+        ["とおか", "tooka", "10 日"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-position"], {
+    kinds: {"g-position/card/three": "words", "g-position/card/four": "words"},
+    parts: { ...lessonPresentation["g-position"].parts,
+      "g-position/card/three": [
+        ["うえ", "ue", "上面"],
+        ["した", "shita", "下面"],
+        ["なか", "naka", "裡面"],
+      ],
+      "g-position/card/four": [
+        ["まえ", "mae", "前面"],
+        ["うしろ", "ushiro", "後面"],
+        ["となり", "tonari", "旁邊"],
+        ["ちかく", "chikaku", "附近"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-adj-i"], {
+    kinds: {"g-adj-i/card/size": "words", "g-adj-i/card/takai": "words", "g-adj-i/card/before-noun": "phrase"},
+    parts: { ...lessonPresentation["g-adj-i"].parts,
+      "g-adj-i/card/size": [
+        ["おおきい", "ookii", "大"],
+        ["ちいさい", "chiisai", "小"],
+      ],
+      "g-adj-i/card/takai": [
+        ["たかい", "takai", "貴（也有「高」的意思）"],
+        ["やすい", "yasui", "便宜"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-who-2"], {
+    kinds: {"g-who-2/card/review": "words"},
+    parts: { ...lessonPresentation["g-who-2"].parts,
+      "g-who-2/card/review": [
+        ["いつ", "itsu", "什麼時候"],
+        ["どこ", "doko", "哪裡"],
+        ["だれ", "dare", "誰"],
+        ["なん", "nan", "什麼"],
+        ["いくら", "ikura", "多少錢"],
+        ["いくつ", "ikutsu", "幾個"],
+        ["どう", "dou", "怎麼樣"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-kono"], {
+    kinds: {"g-kono/card/distance": "phrase"},
+  });
+  Object.assign(lessonPresentation["g-no"], {
+    kinds: {"g-no/card/a-no-b": "phrase", "g-no/card/not-always-de": "phrase"},
+    parts: { ...lessonPresentation["g-no"].parts,
+      "g-no/card/sentence": [
+        ["これ", "kore", "這個"],
+        ["は", "wa", "說到…"],
+        ["わたしの", "watashi no", "我的"],
+        ["かさ", "kasa", "傘"],
+        ["です", "desu", "禮貌結尾"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-mo"], {
+    kinds: {"g-mo/card/san": "phrase"},
+  });
+  Object.assign(lessonPresentation["g-to"], {
+    kinds: {"g-to/card/to": "phrase"},
+  });
+  Object.assign(lessonPresentation["g-kara-made"], {
+    kinds: {"g-kara-made/card/kara": "phrase", "g-kara-made/card/made": "phrase", "g-kara-made/card/both": "phrase"},
+  });
+  Object.assign(lessonPresentation["g-kara-made-time"], {
+    kinds: {"g-kara-made-time/card/hours": "phrase", "g-kara-made-time/card/days": "phrase"},
+  });
+  Object.assign(lessonPresentation["g-transport"], {
+    kinds: {"g-transport/card/more": "phrase"},
+  });
+  Object.assign(lessonPresentation["g-adj-na"], {
+    kinds: {"g-adj-na/card/na": "phrase"},
+  });
+  Object.assign(lessonPresentation["g-kara-reason"], {
+    kinds: {"g-kara-reason/card/compare": "phrase"},
+  });
+  Object.assign(lessonPresentation["g-te-sequence"], {
+    kinds: {"g-te-sequence/card/three-kara": "phrase"},
+  });
+  Object.assign(lessonPresentation["g-mashita"], {
+    kinds: {"g-mashita/card/four-forms": "forms"},
+    parts: { ...lessonPresentation["g-mashita"].parts,
+      "g-mashita/card/four-forms": [
+        ["たべます", "tabemasu", "吃"],
+        ["たべません", "tabemasen", "不吃"],
+        ["たべました", "tabemashita", "吃了"],
+        ["たべませんでした", "tabemasen deshita", "沒有吃"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-verb-forms"], {
+    kinds: {"g-verb-forms/card/plain": "forms", "g-verb-forms/card/group1": "forms", "g-verb-forms/card/group2-3": "forms"},
+    parts: { ...lessonPresentation["g-verb-forms"].parts,
+      "g-verb-forms/card/plain": [
+        ["たべます", "tabemasu", "吃（禮貌說法）"],
+        ["たべる", "taberu", "吃（原形）"],
+      ],
+      "g-verb-forms/card/group1": [
+        ["のみます → のむ", "nomimasu → nomu", "喝"],
+        ["かいます → かう", "kaimasu → kau", "買"],
+        ["いきます → いく", "ikimasu → iku", "去"],
+      ],
+      "g-verb-forms/card/group2-3": [
+        ["たべます → たべる", "tabemasu → taberu", "吃"],
+        ["みます → みる", "mimasu → miru", "看"],
+        ["します → する", "shimasu → suru", "做"],
+        ["きます → くる", "kimasu → kuru", "來"],
+      ],
+    },
+    notes: { ...lessonPresentation["g-verb-forms"].notes, ...{"g-verb-forms/card/plain": {"main": "「たべます」是禮貌地說「吃」。查字典時會找到「たべる」，這種寫法叫「原形」，也叫「辭書形」。", "extra": "動詞分成三類，下一張起用已學過的動詞比較。先看「ます」前面的讀音；有些動詞要個別記。"}, "g-verb-forms/card/group2-3": {"main": "第二類把「ます」換成「る」：たべます → たべる（吃）、みます → みる（看）。第三類另外記：します → する（做）、きます → くる（來）。", "extra": "「ます」前是 e 結尾的音，像「べ」be，屬於第二類。i 結尾的音大多屬於第一類，但 みます、います 是第二類，要個別記。"}} },
+  });
+  Object.assign(lessonPresentation["g-te-forms"], {
+    kinds: {"g-te-forms/card/simple": "forms", "g-te-forms/card/sound": "forms", "g-te-forms/card/irregular": "forms"},
+    parts: { ...lessonPresentation["g-te-forms"].parts,
+      "g-te-forms/card/simple": [
+        ["たべます → たべて", "tabemasu → tabete", "吃"],
+        ["みます → みて", "mimasu → mite", "看"],
+      ],
+      "g-te-forms/card/sound": [
+        ["かいます → かって", "kaimasu → katte", "買"],
+        ["のみます → のんで", "nomimasu → nonde", "喝"],
+        ["まちます → まって", "machimasu → matte", "等"],
+      ],
+      "g-te-forms/card/irregular": [
+        ["きます → きて", "kimasu → kite", "來"],
+        ["します → して", "shimasu → shite", "做"],
+        ["いきます → いって", "ikimasu → itte", "去"],
+      ],
+    },
+    notes: { ...lessonPresentation["g-te-forms"].notes, ...{"g-te-forms/card/simple": {"main": "て形是動詞的另一種寫法。先看這兩個例子：たべます → たべて（吃）、みます → みて（看），都是把「ます」換成「て」。後面接「ください」可以請別人做事。", "extra": "這兩個都是第二類動詞。「ます」前是 e 結尾的音（如「べ」be）也照這樣變；「みます」要個別記。て形也能連接動作，後面會再學。"}} },
+  });
+  Object.assign(lessonPresentation["g-te-iru"], {
+    kinds: {"g-te-iru/card/compare": "forms"},
+    parts: { ...lessonPresentation["g-te-iru"].parts,
+      "g-te-iru/card/compare": [
+        ["たべます", "tabemasu", "平常吃、等一下要吃"],
+        ["たべました", "tabemashita", "吃了"],
+        ["たべて います", "tabete imasu", "正在吃"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-adj-neg"], {
+    kinds: {"g-adj-neg/card/cold": "mixed"},
+  });
+  Object.assign(lessonPresentation["g-kedo"], {
+    kinds: {"g-kedo/card/review": "usage"},
+  });
+  Object.assign(lessonPresentation["g-verbs"], {
+    parts: { ...lessonPresentation["g-verbs"].parts,
+      "g-verbs/card/taberu": [
+        ["パン", "pan", "麵包"],
+        ["を", "o", "標出吃的東西"],
+        ["たべます", "tabemasu", "吃（禮貌說法）"],
+      ],
+      "g-verbs/card/nomu": [
+        ["みず", "mizu", "水"],
+        ["を", "o", "標出喝的東西"],
+        ["のみます", "nomimasu", "喝（禮貌說法）"],
+      ],
+      "g-verbs/card/kau": [
+        ["パン", "pan", "麵包"],
+        ["を", "o", "標出買的東西"],
+        ["かいます", "kaimasu", "買（禮貌說法）"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-arimasu"], {
+    parts: { ...lessonPresentation["g-arimasu"].parts,
+      "g-arimasu/card/arimasu": [
+        ["パン", "pan", "麵包"],
+        ["が", "ga", "標出有什麼"],
+        ["あります", "arimasu", "有（東西）"],
+      ],
+      "g-arimasu/card/imasu": [
+        ["ねこ", "neko", "貓"],
+        ["が", "ga", "標出有誰或什麼動物"],
+        ["います", "imasu", "有（人或動物）"],
+      ],
+      "g-arimasu/card/place": [
+        ["あそこに", "asoko ni", "在那裡"],
+        ["トイレ", "toire", "廁所"],
+        ["が", "ga", "標出有什麼"],
+        ["あります", "arimasu", "有（東西）"],
+      ],
+    },
+  });
+  Object.assign(lessonPresentation["g-te-mo-ii"], {
+    notes: { ...lessonPresentation["g-te-mo-ii"].notes, ...{"g-te-mo-ii/card/ask": {"main": "て形後面加「も いいですか」，用來問「我可以…嗎？」。例句的 まって 來自 まちます（等）；ここで 是「在這裡」。", "extra": "「いい」是好、可以，和「いいえ」（不、不是）不同。旅遊區的試穿問法也使用這個句型。"}} },
+  });
+  // Keep question words and the scope of these comparisons explicit for beginners.
+  lessonPresentation["g-who-2"].notes = {
+    "g-who-2/card/review": { main: "想問時間，用「いつ」；想問地點，用「どこ」；想問價錢，用「いくら」；想問數量，用「いくつ」。「いくら」和「いくつ」只差最後一個音，要分清楚。" },
+  };
+  lessonPresentation["g-kara-reason"].notes = {
+    "g-kara-reason/card/compare": { main: "看這兩個例子：「えきから」是從車站；「たかいですから」是因為很貴。同樣的「から」，要和前面的詞一起看，意思才清楚。" },
+  };
+  lessonPresentation["g-te-sequence"].notes = {
+    "g-te-sequence/card/three-kara": { main: "這三個例子要一起記：「えきから」是從車站；「たかいですから」是因為很貴；「たべてから」是吃完之後。不要只看到「から」就決定中文意思。" },
+  };
   const displayTitle = id => lessonPresentation[id]?.title || getCourse(id)?.title || null;
   const data = { rows, grammar, lessonPlan, sounds, phrasebook, intro };
   // Kana row groups in teaching order; the kana page and home recommendation follow them.
