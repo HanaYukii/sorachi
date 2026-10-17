@@ -13,7 +13,7 @@ const errors = mutate => { const copy = data(); mutate(copy); return Content.val
 
 test('current reviewed content matches the editorial snapshot', () => {
   const original = JSON.stringify(data(), (key, value) => key === 'id' && typeof value === 'string' && value.includes('/') ? undefined : value);
-  assert.equal(createHash('sha256').update(original).digest('hex'), '97b607d45282d1d0155fd89db59682ea597733b1bc76ac4974e511975112b76f');
+  assert.equal(createHash('sha256').update(original).digest('hex'), '16a935056ee14246dd25683ad506ff1dae587120a1ff07cc509f4ced7c6c7fb5');
   assert.deepEqual(plain(Content.validate()), []);
 });
 
@@ -141,7 +141,7 @@ test('schema guards reject missing Japanese, readings, Chinese and partial polit
   assert.match(errors(d => d.phrasebook[0].steps[0].politeReading = ''), /politeReading/i);
   assert.match(errors(d => d.phrasebook[0].steps[0].keywords[0][1] = ''), /reading/i);
   // A lesson card shows no travel-only part, so content with one is refused instead of being dropped silently.
-  for (const [key, value] of [['keywords', [['わたし', 'watashi', '我']]], ['polite', 'わたしです'], ['staffAsks', { example: 'なんですか', reading: 'nan desu ka', meaning: '是什麼' }], ['extra', {}]]) {
+  for (const [key, value] of [['keywords', [['わたし', 'watashi', '我']]], ['polite', 'わたしです'], ['staffAsks', { example: 'なんですか', reading: 'nan desu ka', meaning: '是什麼' }], ['staffSays', { example: '売り切れです', reading: 'urikire desu', meaning: '賣完了' }], ['extra', {}]]) {
     assert.match(errors(d => { d.grammar[0].steps[0][key] = value; }), new RegExp(`steps\\[0\\]\\.${key}: only travel cards have this part`), key);
     assert.match(errors(d => { d.sounds[0].steps[0][key] = value; }), new RegExp(`steps\\[0\\]\\.${key}: only travel cards have this part`), `sounds ${key}`);
   }
@@ -216,7 +216,7 @@ test('grammar questions with Japanese options must carry matching romaji, travel
 
 test('four travel cards say what staff may ask, and party size is answered by gesture', () => {
   const card = (cat, tail) => Content.phrasebook.find(c => c.id === cat).steps.find(s => s.id.endsWith(`/${tail}`));
-  const expected = { 'dining/takeout': '店内でお召し上がりですか？', 'shopping/bag': '袋はご利用ですか？', 'dining/decline': '温めますか？', 'hotel/check-in': 'パスポートをお願いします。' };
+  const expected = { 'dining/takeout': '店内でお召し上がりですか？', 'shopping/bag': '袋はご利用ですか？', 'dining/decline': '袋はご利用ですか？', 'hotel/check-in': 'パスポートをお願いします。' };
   for (const [key, ask] of Object.entries(expected)) {
     const [cat, tail] = key.split('/');
     const staff = card(cat, tail).staffAsks;
@@ -422,4 +422,13 @@ test('connector lessons test position and direction, and こちら also introduc
   const ids = Content.grammar.map(lesson => lesson.id);
   assert.equal(ids[ids.indexOf('g-kara-reason') + 1], 'g-dakara');
   assert.equal(ids[ids.indexOf('g-mo') + 1], 'g-kochira-2');
+});
+
+test('staff replies require Japanese, romaji and Chinese just like staff questions', () => {
+  const reply = d => d.phrasebook.find(c => c.id === 'hotel').steps.find(s => s.id === 'phrase/hotel/towels');
+  assert.match(errors(d => { reply(d).staffSays = null; }), /staffSays: invalid staff line/);
+  for (const field of ['example', 'reading', 'meaning']) {
+    assert.match(errors(d => { delete reply(d).staffSays[field]; }), new RegExp(`staffSays\\.${field}`));
+  }
+  assert.match(errors(d => { reply(d).staffSays.example = 'English only'; }), /staffSays\.example/);
 });

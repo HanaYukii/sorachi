@@ -746,7 +746,7 @@ test('travel pages show staff questions and Japanese keywords; study headers kee
   assert.ok(b.html.indexOf('<h2>五十音隨機練習</h2>') < b.html.indexOf('id="kana-basic-heading"'));
   b.render('#travel');
   b.render('#travel/dining');
-  assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">店員可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
+  assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">對方可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
   b.render('#kana');
   assert.match(b.html.split("</header>")[0], /href="#kana" aria-current="page"/);
   assert.match(b.html, /class="exit" href="#home"/);
@@ -1435,7 +1435,7 @@ test('continuous practice can stop, resume the same unanswered question and retu
 test('food keywords can be searched, bookmarked and spoken individually without quiz records', () => {
   const b = harness(null, [{lang:'ja-JP',name:'Kyoko'}]);
   b.render('#travel/food');
-  assert.equal((b.html.match(/data-action="study-food-audio"/g)||[]).length,12);
+  assert.equal((b.html.match(/data-action="study-food-audio"/g)||[]).length,24);
   const food = b.content.phrasebook.find(c => c.id === 'food');
   for (const step of food.steps) for (const [index, word] of step.keywords.entries()) {
     b.action('food-audio',{phrase:step.id,index:String(index)});
@@ -1467,4 +1467,29 @@ test('all 32 second-batch drill questions render reading aids, explain answers a
   assert.equal(restored.study.currentReview().questionId,entry.id);
   assert.match(restored.html,/✓ 答對了/);
  }
+});
+
+test('common travel additions speak kana and distinguish staff replies from questions', () => {
+  const b = harness(null, [{lang:'ja-JP', name:'Kyoko'}]);
+  const before = clone(b.state);
+  for (const [category, slug, spoken] of [
+    ['dining', 'warm-up', 'あたためてください。'],
+    ['dining', 'utensils', 'おはし、おねがいします。'],
+    ['food', 'meal-set', 'たんぴんでおねがいします。'],
+    ['food', 'meat', 'これはぶたにくですか？'],
+    ['hotel', 'wifi', 'ワイファイのパスワードは？'],
+    ['hotel', 'towels', 'タオル、おねがいします。'],
+    ['transit', 'missed-stop', 'のりすごしました。'],
+    ['transit', 'gate-help', 'すみません、とおれません。'],
+  ]) {
+    b.render(`#travel/${category}`);
+    const index = b.content.phrasebook.find(c => c.id === category).steps.findIndex(s => s.id === `phrase/${category}/${slug}`);
+    b.action('travel-audio', {course:category, index:String(index), full:'0'});
+    assert.equal(b.utterances.at(-1).text, spoken, `${category}/${slug}`);
+  }
+  b.render('#travel/hotel');
+  assert.match(b.html, /對方可能會說<\/span><span lang="ja">少々お待ちください。<\/span><span class="staff-asks-reading">shoushou omachi kudasai<\/span><span>請稍等一下。/);
+  assert.doesNotMatch(b.html, /對方可能會問<\/span><span lang="ja">少々お待ちください/);
+  assert.deepEqual(clone(b.state), before, 'Reading and playback do not change study progress');
+  assert.equal(b.records.length, 0);
 });

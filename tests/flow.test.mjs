@@ -2423,7 +2423,7 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['結帳', ['t-pay/bill']], ['kaikei', ['t-pay/bill']], ['お会計', ['t-pay/bill']], ['okaikei onegaishimasu', ['t-pay/bill']],
     ['Suica', ['t-pay/suica']], ['  SUICA ', ['t-pay/suica']], ['西瓜卡', ['t-pay/suica']], ['すいか', ['t-pay/suica']], ['ＳＵＩＣＡ', ['t-pay/suica']],
     ['寄放行李', ['hotel/luggage']], ['月台', ['transit/platform']], ['ほーむ', ['transit/platform']], ['homu', ['transit/platform']], ['hoomu', ['transit/platform']],
-    ['刷卡', ['t-pay/credit-cash']], ['kaado', ['t-pay/credit-cash']], ['kado', ['t-pay/credit-cash']], ['erebeta', ['t-place/facilities']],
+    ['刷卡', ['t-pay/credit-cash']], ['kaado', ['t-pay/credit-cash', 'hotel/key-card']], ['kado', ['t-pay/credit-cash', 'hotel/key-card']], ['erebeta', ['t-place/facilities']],
     // What staff may ask and an extra part are found too.
     ['お召し上がり', ['dining/takeout']], ['ロック', ['t-order/drink-temperature']],
     // Romaji typed without the card's spaces is found from the start of a word (chekkuin → chekku in).
@@ -2439,7 +2439,7 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['寄物櫃', 't-place/locker'], ['寄物', 'hotel/luggage'], ['寄行李', 'hotel/luggage'], ['行李寄放', 'hotel/luggage'], ['洗手間', 't-place/toilet'], ['化妝室', 't-place/toilet'],
     ['買單', 't-pay/bill'], ['埋單', 't-pay/bill'], ['會計', 't-pay/bill'], ['付款', 't-pay/bill'], ['打包', 'dining/takeout'], ['儲值', 't-charge/top-up'],
     ['交通卡', 't-pay/suica'], ['icoca', 't-pay/suica'], ['pasmo', 't-pay/suica'], ['發票', 'shopping/receipt'], ['不用', 'dining/decline'], ['不要', 'dining/decline'],
-    ['來回票', 'transit/ticket'], ['月臺', 'transit/platform'], ['打烊', 'lines/hours'], ['剪票口', 't-place/facilities'], ['換車', 'transit/transfer'],
+    ['來回票', 'transit/ticket'], ['月臺', 'transit/platform'], ['打烊', 'lines/hours'], ['剪票口', 'transit/gate-help'], ['換車', 'transit/transfer'],
     ['劃位', 'transit/seat'], ['熱飲', 't-order/drink-temperature'], ['冰飲', 't-order/drink-temperature'], ['大碗', 't-order/portion'], ['幾個人', 'dining/party-size'],
     ['兩位', 'dining/party-size'], ['帶走', 'dining/takeout'], ['怎麼賣', 'shopping/price'], ['試衣間', 'shopping/try-on'], ['現場票', 'lines/same-day'],
     ['服務生', 'basics/attention'], ['出去再進來', 'live/re-entry'], ['日文不好', 'basics/not-understood'], ['日語不好', 'basics/not-understood'],
@@ -2468,28 +2468,28 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   // keywords, then rarer words come first.
   for (const [query, steps] of [
     ['toire doko', ['t-place/toilet']], ['chekkuin onegaishimasu', ['hotel/check-in']], ['kippu wa doko', ['transit/ticket']],
-    ['kaado de onegaishimasu', ['t-pay/credit-cash']], ['genkin de ii desu ka', ['t-pay/credit-cash']], ['汽車保險', []],
+    ['kaado de onegaishimasu', ['t-pay/credit-cash', 'hotel/key-card']], ['genkin de ii desu ka', ['t-pay/credit-cash']], ['汽車保險', []],
     // Something no card holds lists nothing, however polite (not every card that shares 有…嗎), also typed as one run
     // of romaji with a request (satokudasai, denwawadokodesuka).
-    ['有吸管嗎', []], ['有退稅嗎', []], ['satokudasai', []], ['denwawadokodesuka', []], ['請問一下廁所在哪裡', ['t-place/toilet']],
+    ['有吸管嗎', ['dining/utensils']], ['有退稅嗎', []], ['satokudasai', []], ['denwawadokodesuka', []], ['請問一下廁所在哪裡', ['t-place/toilet']],
     ['請問一下這個多少錢', ['shopping/price']], ['手洗いはどこですか', ['t-place/toilet']], ['お手洗いはどこですか', ['t-place/toilet']],
     // A word none of whose pieces any card holds lists nothing, Chinese or romaji; so does a lone character no card
     // has as a keyword (那). The character across a cut never stands in for a word no card holds (んを, 子嗎, 所在).
-    ['有吹風機嗎', []], ['便利商店在哪', []], ['sutoroo arimasuka', []], ['那是什麼意思', []],
-    ['ラーメンをください', ['food/noodles']], ['お釣りをください', []], ['有筷子嗎', []], ['派出所在哪裡', []], ['我要加點', []], ['請問退稅', []], ['コーヒーがほしいです', []],
-    // A lone character no card holds stays a word, so it still lists nothing (傘, 藥, 箸); so do a word ending in 票
+    ['有吹風機嗎', []], ['便利商店在哪', ['dining/warm-up', 'dining/utensils']], ['sutoroo arimasuka', ['dining/utensils']], ['那是什麼意思', []],
+    ['ラーメンをください', ['food/noodles']], ['お釣りをください', []], ['有筷子嗎', ['dining/utensils']], ['派出所在哪裡', []], ['我要加點', []], ['請問退稅', []], ['コーヒーがほしいです', ['food/drinks']],
+    // A lone character no card holds stays a word, so it still lists nothing (傘, 藥); so do a word ending in 票
     // that is not a ticket here (郵票, 機票) and a request or ending around something not here (可以…嗎, できますか).
-    ['傘ありますか', []], ['有藥嗎', []], ['箸ください', []], ['郵票', []], ['機票', []], ['可以退稅嗎', []], ['英語できますか', []],
+    ['傘ありますか', []], ['有藥嗎', []], ['箸ください', ['dining/utensils']], ['郵票', []], ['機票', []], ['可以退稅嗎', []], ['英語できますか', []],
     // 日文的 in front is trimmed like the 的日文 after (日文的謝謝 → just the thanks card).
     ['日文的謝謝', ['basics/thanks']],
-    // 飯 now finds the food/rice card, but must not list the hotel situation.
-    ['飯呢', ['food/rice']],
+    // 飯 finds the two rice cards, but must not list the hotel situation.
+    ['飯呢', ['food/rice', 'food/rice-bowls']],
     // A last character in many cards (好 of 不好意思) is not tried alone, so a phrase ending in it lists nothing.
     ['這樣就好', []], ['大家好的日文', []],
     // ございました is an ending like ございます (just the thanks card).
     ['ありがとうございました', ['basics/thanks']],
-    // ございます alone is an ending too; 飯 now has an actual food card.
-    ['おはようございます', []], ['飯', ['food/rice']],
+    // ございます alone is an ending too; 飯 has two food cards.
+    ['おはようございます', []], ['おはよう', []], ['おはようございます、トイレはどこですか', ['t-place/toilet']], ['飯', ['food/rice', 'food/rice-bowls']],
   ]) assert.deepEqual(found(query), steps, query);
   // A pasted page of text answers at once, without an error, and the box takes 80 characters.
   assert.doesNotThrow(() => found('kippukudasai'.repeat(400)));
@@ -2502,7 +2502,7 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['rokku kudasai', 't-order/drink-temperature', []], ['收據 謝謝', 'shopping/receipt', []], ['袋ください', 'shopping/bag', []], ['我想要廁所', 't-place/toilet', []],
     ['外帶可以嗎', 'dining/takeout', []], ['請問水在哪裡', 'dining/water', []],
     // Romaji typed in one run loses particles and requests from its ends; a short romaji word is a whole word.
-    ['kippukudasai', 'transit/ticket', []], ['toirewadokodesuka', 't-place/toilet', []], ['kaadodeonegaishimasu', 't-pay/credit-cash', []], ['kyoto ni iku', 'transit/direction', []],
+    ['kippukudasai', 'transit/ticket', []], ['toirewadokodesuka', 't-place/toilet', []], ['kaadodeonegaishimasu', 't-pay/credit-cash', []], ['kyoto ni iku', 'transit/last-train', ['transit/direction']],
     // A card whose keyword or title is the word comes first; doubled romaji letters fold (roka is rokkaa).
     ['荷物', 'hotel/luggage', ['t-place/locker-size']], ['nimotsu', 'hotel/luggage', []], ['nimotsu wa doko', 'hotel/luggage', ['t-place/locker-size']], ['袋', 'shopping/bag', []], ['roka', 't-place/locker', []],
     ['kaado、genkin', 't-pay/credit-cash', []],
@@ -2813,4 +2813,28 @@ test('every new Jabiko drill item renders its readings and explanation and survi
   assert.deepEqual(JSON.parse(r.stored).learning.study.courses,{});
   r.study('study-next');assert.match(r.html,/第 2 題/);
  }
+});
+
+test('new travel needs and staff replies are searchable and favorites survive reload', () => {
+  const b = browser({hash:'#travel'});
+  const found = query => {
+    b.typeSearch(query);
+    return [...b.node('#travel-results').innerHTML.matchAll(/data-step="phrase\/([^"]+)"/g)].map(m => m[1]);
+  };
+  for (const [query, first] of [
+    ['有筷子嗎','dining/utensils'], ['加熱','dining/warm-up'], ['不要蔥','dining/without-topping'],
+    ['套餐','food/meal-set'], ['牛丼','food/rice-bowls'], ['豬肉','food/meat'], ['コーヒー','food/drinks'],
+    ['早餐','hotel/breakfast'], ['wifi','hotel/wifi'], ['毛巾','hotel/towels'], ['房卡','hotel/key-card'],
+    ['搭錯車','transit/wrong-train'], ['坐過站','transit/missed-stop'], ['閘門','transit/gate-help'], ['末班車','transit/last-train'],
+    ['少々お待ちください','hotel/towels'], ['shoushou','hotel/towels'], ['請稍等','hotel/towels'],
+  ]) assert.equal(found(query)[0], first, query);
+  b.study('study-travel-open', {situation:'hotel',step:'phrase/hotel/towels'});
+  b.study('study-favorite', {phrase:'phrase/hotel/towels'});
+  b.study('study-travel-open', {situation:'dining',step:'phrase/dining/utensils'});
+  b.study('study-favorite', {phrase:'phrase/dining/utensils'});
+  const reloaded = browser({raw:b.stored,hash:'#travel/favorites'});
+  assert.match(reloaded.html, /需要毛巾/);
+  assert.match(reloaded.html, /便利商店：要筷子、湯匙或吸管/);
+  assert.match(reloaded.html, /少々お待ちください/);
+  assert.deepEqual(JSON.parse(reloaded.stored).favorites, ['phrase/hotel/towels','phrase/dining/utensils']);
 });
