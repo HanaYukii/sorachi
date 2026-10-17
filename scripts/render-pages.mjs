@@ -7,7 +7,7 @@ const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&am
 export function renderPages(contents) {
   if (!contents.has('routes.js')) return new Map(contents);
   const context = vm.createContext({});
-  for (const file of ['content.js', 'routes.js', 'navigation.js']) vm.runInContext(contents.get(file).toString(), context, { filename: file });
+  for (const file of ['content.js', 'routes.js']) vm.runInContext(contents.get(file).toString(), context, { filename: file });
   const { Content, Routes } = vm.runInContext('({Content,Routes})', context);
   const result = new Map([...contents].filter(([path, bytes]) => path === 'index.html' || !path.endsWith('.html') || !bytes.toString().includes(GENERATED_PAGE)));
   const template = contents.get('index.html').toString().replace(GENERATED_PAGE + '\n', '');

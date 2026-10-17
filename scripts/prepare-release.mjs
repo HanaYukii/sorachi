@@ -28,19 +28,19 @@ export async function prepareRelease({ dir = resolve('dist'), check = false } = 
   const paths = [...contents.keys()].sort();
   if (!contents.has('index.html')) throw new Error('Missing dist/index.html');
   for (const page of paths.filter(path => path.endsWith('.html'))) {
-  let html = contents.get(page).toString().replace(/<(?:script|link)\b[^>]*>/gi, (tag) => tag.replace(/\b(src|href)\s*=\s*(["'])(.*?)\2/gi, (attribute, key, quote, raw) => {
-    const ref = raw.replaceAll('&amp;', '&');
-    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(ref)) return attribute;
-    const url = new URL(ref, 'https://release.invalid/');
-    if (!/\.(?:m?js|css)$/i.test(url.pathname)) return attribute;
-    if (ref.startsWith('/') || ref.split(/[?#]/)[0].split('/').includes('..')) throw new Error(`Use a relative local asset path: ${ref}`);
-    const path = decodeURIComponent(url.pathname.slice(1));
-    if (!contents.has(path)) throw new Error(`Missing referenced asset: ${path}`);
-    url.searchParams.set('v', sha256(contents.get(path)).slice(0, 10));
-    const updated = ref.split(/[?#]/)[0] + url.search + url.hash;
-    return `${key}=${quote}${updated.replaceAll('&', '&amp;')}${quote}`;
-  }));
-  contents.set(page, Buffer.from(html));
+    const html = contents.get(page).toString().replace(/<(?:script|link)\b[^>]*>/gi, (tag) => tag.replace(/\b(src|href)\s*=\s*(["'])(.*?)\2/gi, (attribute, key, quote, raw) => {
+      const ref = raw.replaceAll('&amp;', '&');
+      if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(ref)) return attribute;
+      const url = new URL(ref, 'https://release.invalid/');
+      if (!/\.(?:m?js|css)$/i.test(url.pathname)) return attribute;
+      if (ref.startsWith('/') || ref.split(/[?#]/)[0].split('/').includes('..')) throw new Error(`Use a relative local asset path: ${ref}`);
+      const path = decodeURIComponent(url.pathname.slice(1));
+      if (!contents.has(path)) throw new Error(`Missing referenced asset: ${path}`);
+      url.searchParams.set('v', sha256(contents.get(path)).slice(0, 10));
+      const updated = ref.split(/[?#]/)[0] + url.search + url.hash;
+      return `${key}=${quote}${updated.replaceAll('&', '&amp;')}${quote}`;
+    }));
+    contents.set(page, Buffer.from(html));
   }
   // Every entry page compares the same build marker with the root update check.
   const versionTag = /<meta name="sorachi-version" content="[^"]*" \/>/g;

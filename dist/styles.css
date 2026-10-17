@@ -868,7 +868,6 @@ button svg {
 }
 
 /* Shared learning views. */
-.aqua-label { color: var(--aqua-ink); background: var(--aqua); }
 .study-main { max-width: 680px; margin: 30px auto 55px; }
 .study-main h1 { font-size: 29px; line-height: 1.6; letter-spacing: -.5px; margin: 12px 0; }
 .study-main > p { color: var(--muted); font-size: 15px; line-height: 1.9; }
@@ -1089,7 +1088,6 @@ button.text-button:disabled { color: var(--muted); opacity: .55; text-decoration
 summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; border-radius: 6px; }
 
 /* Travel additions (#16) */
-.header-link { min-height: 44px; display: inline-flex; align-items: center; font-size: 13px; color: var(--purple-deep); white-space: nowrap; }
 .staff-asks { display: grid; gap: 2px; margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--aqua); color: var(--aqua-ink); font-size: 14px; line-height: 1.7; }
 .staff-asks-label { font-size: 13px; font-weight: 600; }
 .staff-asks [lang="ja"] { font-size: 16px; color: var(--ink); }

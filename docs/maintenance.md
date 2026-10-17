@@ -67,3 +67,16 @@
 基準為主線 69647ad，接續 #77／#84／#86 的本機整合 91e7382。刪除舊 hero、path-card、review-entry 與相關手機覆寫；保留仍在使用的 study-review-entry。核對 JS 模板、動態 class 與 index 後才刪除。未改儲存、舊路由或資料相容行為。
 
 前述候選的進展：#84 已將頁首與頁面標題收斂至 Navigation；#86 共用 grammarFeedback 和 showFeedback，但各模式的保存、選項與焦點政策仍分開。其餘候選保留待後續具體範圍，不為減少行數繼續拆分。
+
+## 2026-10-18 第三輪：路徑網址改版後（#91）
+
+基準為 `68aa7ae`（網址與字級調整完成，339 項測試通過）。本輪只整理新增路由與相關失效樣式：
+
+- 頁面名稱、所屬區塊與種類集中於 `Routes.page`；Navigation 保留頁首的呈現。移除重複的路由清單和 Routes 對 Navigation 的反向依賴，靜態頁生成只需要 Content 與 Routes。路由查詢改用同一組登記資料，不在每個連結重建清單。
+- 刪除 `.aqua-label`、`.header-link`；已核對 JS 模板、動態 class、classList 操作與產生的 HTML，沒有畫面使用。保留 `tone-*`、`*-entry` 等動態樣式。
+- 清掉流程測試中未使用的 URL helper，整理 release 腳本縮排。資料格式、清除標記、儲存鎖、舊課程／備份處理與 OAuth callback 均保留。
+- 以改版前後程式各自載入 Content／Routes／Navigation，比對全部 131 個登記頁面的 metadata、頁面種類和 header HTML，完全相同。既有行為測試照常執行，不以重構後的實作重新定義預期。
+
+驗證：教材檢查、339/339 Node 測試及 deterministic release 檢查通過；174 個本機資源與全部目錄入口逐檔相符。CUA 重載後確認首頁、設定頁及鍵盤焦點，按鈕仍有 3px 外框；本輪延續前述 320px／1280px 與前後頁驗收。
+
+本輪不繼續拆分 Study、儲存或測驗模組；後續有具體需求再另立範圍。

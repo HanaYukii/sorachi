@@ -43,10 +43,9 @@ function browser({
   let focused = null;
   let currentURL = new URL(address || hash, "http://localhost/");
   let currentHash = currentURL.hash;
-  // The tab's history: one entry per hash change, each with its own state; a reload keeps the current entry's state.
+  // The tab history keeps each path/legacy-fragment entry and its state through navigation and reload.
   const entries = [{ url: currentURL.href, state: historyState }];
   let at = 0;
-  const url = (value) => `http://localhost/${value}`;
   const elements = new Map();
   const add = (map, type, fn) => map.set(type, [...(map.get(type) || []), fn]);
   const dispatch = (map, type, event) =>

@@ -1,6 +1,6 @@
 # SoraChi 開發與發佈
 
-純靜態網站：互動程式、樣式和教材直接維護在 `dist/`，不用安裝套件。`prepare-release` 會產生各路徑的 HTML 和 sitemap；標有 Generated 的 HTML 不手動修改。`HanaYukii/sorachi` 的 `main` 放程式與測試，`HanaYukii/sorachi-site` 的 `gh-pages` 只發佈 `dist/` 到 https://sorachi.app/ 。原 repo 的 `gh-pages` 保留為舊站，不再推送新版本。
+純靜態網站：互動程式、樣式和教材直接維護在 `dist/`，不用安裝套件。`prepare-release` 會產生各路徑的 HTML 和 sitemap；標有 Generated 的 HTML 正文與 metadata 不手動修改；共用的 head／script 外殼維護在根目錄 `dist/index.html`，再由 prepare-release 套用到所有入口。`HanaYukii/sorachi` 的 `main` 放程式與測試，`HanaYukii/sorachi-site` 的 `gh-pages` 只發佈 `dist/` 到 https://sorachi.app/ 。原 repo 的 `gh-pages` 保留為舊站，不再推送新版本。
 
 ## 本機預覽與檢查
 
