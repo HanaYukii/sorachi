@@ -3,6 +3,7 @@
 // Beginner courses share one small, browser-local state. No account is required.
 const Study = (() => {
   const GRAMMAR = Content.grammar;
+  const drillPool = Drill.pool(GRAMMAR, DrillBank.questions);
   const PHRASEBOOK = Content.phrasebook, courses = Content.courses;
   const travelItem = (id) => PHRASEBOOK.find(item => item.id === id);
   let api;
@@ -64,7 +65,7 @@ const Study = (() => {
     return active;
   }
   function sanitize(saved) {
-    const state = { script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt), grammarReview: {}, grammarReviewSession: null, lastGrammarId: null };
+    const state = { drill: Drill.restore(saved?.drill, drillPool), script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt), grammarReview: {}, grammarReviewSession: null, lastGrammarId: null };
     const review = KanaPractice.sanitize(saved?.reviewSession);
     if (review?.mode === 'review') state.reviewSession = review;
     for (const [id, course] of Object.entries(courses)) {
@@ -222,13 +223,14 @@ const Study = (() => {
     // Same order as KanaPractice.selectReview, so the listed characters are the ones the next round practices.
     const wrong = KanaPractice.entries.filter(item => data.kanaReview[item.id]?.wrong).sort((a,b)=>data.kanaReview[a.id].lastSeen.localeCompare(data.kanaReview[b.id].lastSeen)||a.id.localeCompare(b.id));
     const availableCount = KanaPractice.entries.filter(item => data.kanaReview[item.id] || data.courses[item.courseId]?.completedAt).length;
-    return {wrongCount:wrong.length,availableCount,wrongLabels:wrong.slice(0,5).map(item=>`${item.character}（${item.reading}）`),canResume:Boolean(data.reviewSession && data.reviewSession.round!=='done'),hasData:Object.keys(data.kanaReview).length>0 || Boolean(data.reviewSession) || Object.keys(data.grammarReview).length>0 || Boolean(data.grammarReviewSession)};
+    return {wrongCount:wrong.length,availableCount,wrongLabels:wrong.slice(0,5).map(item=>`${item.character}（${item.reading}）`),canResume:Boolean(data.reviewSession && data.reviewSession.round!=='done'),hasData:Boolean(data.drill.session) || Object.keys(data.kanaReview).length>0 || Boolean(data.reviewSession) || Object.keys(data.grammarReview).length>0 || Boolean(data.grammarReviewSession)};
   }
   // A clear is dated after the previous clear and after every answer and record this browser has dated, also when the
   // clock went back or two clears fall in one millisecond; otherwise a backup made before it looks newer and brings
   // ended rounds and mistakes back (#36). Dates iso() would drop are skipped, and the clear stays within LAST_DATE.
   function clearReview() {
     const data=state();
+    data.drill=Drill.clear(data.drill);
     const dates=[data.reviewClearedAt,...Object.values(data.kanaReview).map(item=>item.lastSeen),...Object.values(data.grammarReview).map(item=>item.lastSeen),...(api.history?.()||[]).map(entry=>entry?.date)].map(date=>Date.parse(iso(date))).filter(Number.isFinite);
     data.kanaReview={}; data.reviewSession=null; data.grammarReview={}; data.grammarReviewSession=null; data.reviewClearedAt=new Date(Math.min(LAST_DATE,Math.max(Date.now(),...dates.map(time=>time+1)))).toISOString();
     for (const id of Object.keys(courses)) if(courses[id].type==='kana') {if(data.courses[id])data.courses[id].active=null;drafts.delete(id);}
@@ -340,13 +342,13 @@ const Study = (() => {
     return `<section class="study-review-entry"><h2>複習學過的句型</h2><p class="study-note">從完成的課裡挑 ${reviewSize()} 題混在一起練。</p><a class="text-button" href="#grammar-review">${round && !round.done ? "繼續複習" : `複習 ${reviewSize()} 題`}</a></section>`;
   }
   function currentReview() {
-    const random = location.hash === "#grammar-random", round = random ? grammarRandomRound : location.hash === "#drill" ? drillRound : location.hash === "#grammar-review" ? grammarRound() : null;
+    const random = location.hash === "#grammar-random", round = random ? grammarRandomRound : location.hash === "#drill" ? state().drill.session : location.hash === "#grammar-review" ? grammarRound() : null;
     if (!round || round.done) return null;
     const { course, question } = roundItem(round);
     return { courseId: course.id, questionId: question.id };
   }
   // The question on screen in a grammar review or random round.
-  const roundItem = (round) => { const item = round.items[round.cursor], course = courses[item.courseId]; return { item, course, question: course.questions[item.q] }; };
+  const roundItem = (round) => { const item = round.items[round.cursor], course = courses[item.courseId]; return { item, course, question: item.id ? drillPool.find(q=>q.id===item.id).question : course.questions[item.q] }; };
   function grammarFeedback(question, correct, retry = false) {
     if (correct) return `答對了。${question.explanation}`;
     const reading = question.readings?.[question.answer];
@@ -381,7 +383,7 @@ const Study = (() => {
       body = `<section class="study-card study-result"><h2>複習完成</h2><p class="result-scope">這輪用來複習，不新增課程成績。</p><p class="result-score">第一次答對 <strong>${firstCorrect} / ${round.items.length}</strong> 題</p>${missed.length ? `<details class="result-lessons"><summary>回看相關課程（${missed.length}）</summary><ul class="review-lessons">${missed.map(id => `<li><button class="text-button" data-action="study-open" data-course="${id}">${escape(Content.displayTitle(id))} →</button></li>`).join("")}</ul></details>` : '<p class="study-note">這次都答對了。</p>'}${resultActions(exit, exitLabel, `<button class="text-button" data-action="study-grammar-review">再複習 ${reviewSize()} 題</button>`)}</section>`;
     } else if (round) {
       const { item, course, question } = roundItem(round), solved = round.solved[round.cursor] === true;
-      body = `<p class="reading-label">複習 · ${round.cursor + 1} / ${round.items.length} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map(choice => `<button class="answer${(solved || round.wrong !== null) && choice === question.answer ? " correct" : round.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${(solved || round.wrong !== null) && choice === question.answer ? (solved ? " ✓ 答對了" : " ✓ 正確答案") : round.wrong === choice ? " ✕ 再試一次" : ""}</span></button>`).join("")}</div><p class="study-feedback${!solved && round.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarReviewFeedback(round))}</p><div class="look-back-slot">${grammarReviewLook(round)}</div></section><div class="study-nav"><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${round.cursor === round.items.length - 1 ? "完成複習" : "下一題 →"}</button></div>`;
+      body = `<p class="reading-label">複習 · ${round.cursor + 1} / ${round.items.length} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2>${question.promptReading ? `<p class="study-note">${escape(question.promptReading)}</p>` : ""}<div class="study-options" role="group" aria-label="答案選項">${item.options.map(choice => `<button class="answer${(solved || round.wrong !== null) && choice === question.answer ? " correct" : round.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${(solved || round.wrong !== null) && choice === question.answer ? (solved ? " ✓ 答對了" : " ✓ 正確答案") : round.wrong === choice ? " ✕ 再試一次" : ""}</span></button>`).join("")}</div><p class="study-feedback${!solved && round.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarReviewFeedback(round))}</p><div class="look-back-slot">${grammarReviewLook(round)}</div></section><div class="study-nav"><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${round.cursor === round.items.length - 1 ? "完成複習" : "下一題 →"}</button></div>`;
     } else body = reviewSize() ? `<p>從完成的句型課挑 ${reviewSize()} 題混在一起練，最近答錯、還沒獨立答對的題目會優先出現。答錯時會顯示正確答案和說明，可以再選一次。</p><button class="primary" data-action="study-grammar-review">開始複習</button>` : '<p>先完成兩課句型，就可以在這裡複習。</p><a class="primary" href="#grammar">看基礎句型</a>';
     return wrap(`<h1 class="focus-heading" tabindex="-1">句型小複習</h1>${body}<p class="study-note">複習進度會保存在這個瀏覽器，下次可以接著練；不會改變各課的完成紀錄和成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
@@ -803,36 +805,15 @@ const Study = (() => {
   // Both short practice and continuous practice share answer rendering and feedback.
   function grammarQuestion(round, position, nextLabel = "下一題 →") {
     const { item, question } = roundItem(round), chosen = round.answers[round.cursor], answered = chosen !== undefined, correct = chosen === question.answer;
-    return `<p class="reading-label">${position} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map((choice) => `<button class="answer${answered && choice === question.answer ? " correct" : answered && chosen === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${answered ? answerMark(chosen === choice, choice === question.answer, correct) : ""}</span></button>`).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarRandomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${nextLabel}</button></div>`;
-  }
-  const DRILL_POOL = Content.grammar.flatMap(course => course.questions.map((_, q) => ({ courseId: course.id, q })));
-  let drillRound = null;
-  function drillNext(round) {
-    const previous = round.items[0];
-    if (!round.deck.length) {
-      round.deck = shuffle(DRILL_POOL.length);
-      const last = round.deck.length - 1;
-      const first = DRILL_POOL[round.deck[last]];
-      if (last > 0 && previous?.courseId === first.courseId && previous.q === first.q) {
-        [round.deck[0], round.deck[last]] = [round.deck[last], round.deck[0]];
-      }
-    }
-    const item = DRILL_POOL[round.deck.pop()];
-    round.items = [{ ...item, options: shuffle(courses[item.courseId].questions[item.q].options.length) }];
-    round.answers = [];
-  }
-  function newDrill() {
-    const round = { items: [], cursor: 0, answers: [], deck: [], answered: 0, correct: 0, done: false };
-    drillNext(round);
-    return round;
+    return `<p class="reading-label">${position} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2>${question.promptReading ? `<p class="study-note">${escape(question.promptReading)}</p>` : ""}<div class="study-options grammar-options" role="group" aria-label="答案選項">${item.options.map((choice) => `<button class="answer${answered && choice === question.answer ? " correct" : answered && chosen === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}>${question.readings?.[choice] ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${answered ? answerMark(chosen === choice, choice === question.answer, correct) : ""}</span></button>`).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarRandomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${nextLabel}</button></div>`;
   }
   function drillPage() {
-    drillRound ||= newDrill();
-    const round = drillRound;
+    if (!state().drill.session) { state().drill=Drill.start(state().drill,drillPool); save(); }
+    const round = state().drill.session;
     const body = round.done
       ? `<section class="study-card study-result"><h2>本次練習</h2><p class="result-score">答對 <strong>${round.correct} / ${round.answered}</strong> 題</p><div class="finish-actions"><button class="primary" data-action="study-drill-continue">繼續刷題 →</button><a class="text-button" href="#home">回首頁</a></div></section>`
       : grammarQuestion(round, `第 ${round.answered + (round.answers[0] === undefined ? 1 : 0)} 題`) + '<button class="text-button drill-stop" data-action="study-drill-stop">結束這次練習</button>';
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎刷題</h1><p class="study-note">單字、助詞與句型混合出題。選答案後看解釋，再按「下一題」，想停時就結束。</p>${body}<p class="study-note">本次結果只保留在目前分頁，重新整理會重新開始；不影響課程進度。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎刷題</h1><p class="study-note">單字、助詞與句型混合出題。選答案後看解釋，再按「下一題」，想停時就結束。</p>${round.restarted ? '<p class="study-note" role="status">題目內容已更新，這次練習已重新開始；課程進度與成績都保留。</p>' : ""}${body}<p class="study-note">自動記住這次練習，離開後可接著做。不影響課程進度；可到「學習紀錄」清除。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`);
   }
   function practiceFeedback(session) {
     if(!KanaPractice.answered(session))return '';
@@ -892,7 +873,7 @@ const Study = (() => {
   function quiz(course, active) {
     if(course.type==='kana')return practiceQuiz(active.practice);
     const q = active.order[active.cursor], solved = active.solved[q] === true, question = course.questions[q], correct = question.answer;
-    return `<p class="reading-label">練習 · ${active.cursor + 1} / ${size(course)} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${active.options[q].map((choice) => `<button class="answer${(solved || active.wrong !== null) && choice === correct ? " correct" : active.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${(solved || active.wrong !== null) && choice === correct ? (solved ? ' ✓ 答對了' : ' ✓ 正確答案') : active.wrong === choice ? ' ✕ 再試一次' : ''}</span></button>`).join("")}</div><p class="study-feedback${!solved && active.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(answerFeedback(course, active))}</p><div class="look-back-slot">${lookBack(course, active)}</div></section><div class="study-nav"><button class="text-button" data-action="study-review">回看這課說明</button><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${active.cursor === size(course) - 1 ? "完成這一輪" : "下一題 →"}</button></div><p class="study-note">答錯可以重試；第一次的答案會留下紀錄，重試不會改寫第一次作答的成績。</p>`;
+    return `<p class="reading-label">練習 · ${active.cursor + 1} / ${size(course)} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2>${question.promptReading ? `<p class="study-note">${escape(question.promptReading)}</p>` : ""}<div class="study-options" role="group" aria-label="答案選項">${active.options[q].map((choice) => `<button class="answer${(solved || active.wrong !== null) && choice === correct ? " correct" : active.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${(solved || active.wrong !== null) && choice === correct ? (solved ? ' ✓ 答對了' : ' ✓ 正確答案') : active.wrong === choice ? ' ✕ 再試一次' : ''}</span></button>`).join("")}</div><p class="study-feedback${!solved && active.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(answerFeedback(course, active))}</p><div class="look-back-slot">${lookBack(course, active)}</div></section><div class="study-nav"><button class="text-button" data-action="study-review">回看這課說明</button><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${active.cursor === size(course) - 1 ? "完成這一輪" : "下一題 →"}</button></div><p class="study-note">答錯可以重試；第一次的答案會留下紀錄，重試不會改寫第一次作答的成績。</p>`;
   }
   function nextCourse(id) {
     const course = courses[id];
@@ -1179,25 +1160,15 @@ const Study = (() => {
     }
     if (action === "study-drill") { api.go("#drill"); return true; }
     if (location.hash === "#drill" && ["study-answer", "study-next", "study-drill-stop", "study-drill-continue"].includes(action)) {
-      const round = drillRound;
-      if (!round) return true;
-      if (action === "study-drill-continue" && round.done) {
-        round.done = false;
-        if (round.answers[0] !== undefined) drillNext(round);
-        redraw(); return true;
-      }
-      if (round.done) return true;
-      if (action === "study-drill-stop") { round.done = true; redraw(); return true; }
-      if (action === "study-answer") {
-        const choice = Number(button.dataset.choice), { item, question } = roundItem(round);
-        if (round.answers[0] === undefined && item.options.includes(choice)) {
-          round.answers[0] = choice; round.answered++;
-          if (choice === question.answer) round.correct++;
-          paintChoice(choice, question.answer, grammarRandomFeedback(round));
-        }
-      } else if (action === "study-next" && round.answers[0] !== undefined) { drillNext(round); redraw(); }
+      const command = {"study-answer":"answer","study-next":"next","study-drill-stop":"stop","study-drill-continue":"continue"}[action];
+      const updated = Drill.act(state().drill,drillPool,command,Number(button.dataset.choice));
+      if (!updated) return true;
+      state().drill=updated; save();
+      if(command==='answer') { const round=updated.session, {question}=roundItem(round); paintChoice(round.answers[0],question.answer,grammarRandomFeedback(round)); }
+      else redraw();
       return true;
     }
+
     if (action === "study-grammar-random") { grammarRandomRound = newGrammarRandomRound(); if (location.hash === "#grammar-random") redraw(); else api.go("#grammar-random"); return true; }
     if (location.hash === "#grammar-random" && ["study-answer", "study-next", "study-grammar-random-again"].includes(action)) {
       if (action === "study-grammar-random-again") { grammarRandomRound = newGrammarRandomRound(); redraw(); return true; }
@@ -1342,7 +1313,7 @@ const Study = (() => {
     return true;
   }
   function context(hash) {
-    if (hash === "#drill") return drillRound?.done ? "基礎刷題・本次結果" : "基礎刷題";
+    if (hash === "#drill") return state().drill.session?.done ? "基礎刷題・本次結果" : "基礎刷題";
     if (hash === "#kana") return "五十音表";
     if (hash === "#grammar-random") return grammarRandomRound ? grammarRandomRound.done ? "句型隨機練習・結果" : `句型隨機練習・第 ${grammarRandomRound.cursor + 1} 題` : "句型隨機練習";
     if (hash === "#kana-random") return randomRound ? randomRound.done ? "五十音隨機練習・結果" : `五十音隨機練習・第 ${randomRound.cursor + 1} 題` : "五十音隨機練習";

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "a9d8ebf4e5b6299a46550613ee8f30b3f56b9d977c3657763fe6415c444f362b",
+  "buildId": "e5aead97dd66dbe9d08d7e948721d4e1b35130495c658202af554eace59a0e2b",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app.js",
-      "sha256": "ce7b212cac24493e43eeeedf7a21e5263abffea92ec33342a19515e4e7016d97",
-      "bytes": 51826,
+      "sha256": "417e7891f116c353c2bab503f05ceb3b2895e30b93931c20f6a370af5808a9fa",
+      "bytes": 51907,
       "mime": "text/javascript"
     },
     {
@@ -118,14 +118,26 @@
     },
     {
       "path": "diagnostics.js",
-      "sha256": "b1f0811aabded6cd9c0cdf61b9839ddc8628c5624697f30bffe912b2937c26a0",
-      "bytes": 7944,
+      "sha256": "ddd51894bbafe76988efc3ba8bfafcb74cb99896459cf75e2bdd0d27a8b5af4c",
+      "bytes": 8515,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "drill-bank.js",
+      "sha256": "547ddbb2bdbab31430a4b1c6fc21e89cccde1fcf56b9acd212cefd2715530a22",
+      "bytes": 13627,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "drill.js",
+      "sha256": "f181c784cb19943c6752d01eba98a02f35b27cf26870307cc666e3de45ec341d",
+      "bytes": 6262,
       "mime": "text/javascript"
     },
     {
       "path": "index.html",
-      "sha256": "03cd03d6716b81419b07cabcf8799b38e71b897e25665fafafdcd5f8bfe5d0c5",
-      "bytes": 2183,
+      "sha256": "5cb664bb1054775cae073bb5af601ecab2daaefe8808ffca5f74da3c5354116b",
+      "bytes": 2304,
       "mime": "text/html"
     },
     {
@@ -148,20 +160,20 @@
     },
     {
       "path": "storage.js",
-      "sha256": "9ca858fe73e3a998ccbff8917ebc468b83c6f25cc6de134a19e24927fbfe0dde",
-      "bytes": 18972,
+      "sha256": "9697e84a98636bc438b154e3c3c1f92925559a31ac0a7f4fe7c33af8c0221e2b",
+      "bytes": 19285,
       "mime": "text/javascript"
     },
     {
       "path": "study.js",
-      "sha256": "003162c84d33e76044eae0526fc8eaa99ad8f28c89f78b5e74771b9ef4de7725",
-      "bytes": 128882,
+      "sha256": "cd8b2ced2706f8069c3cca9ec7fc457573cf8ab58a39b702773b2c1a6b57017b",
+      "bytes": 128372,
       "mime": "text/javascript"
     },
     {
       "path": "styles.css",
-      "sha256": "acded02994ed01f4f9a3589831da930784e5d01150b3ee90bc011eea9860c7f8",
-      "bytes": 55902,
+      "sha256": "6d5ef41cb5e565073fad08d26e7ae3e5d0f79cba8c0e338af9f1851c3030a862",
+      "bytes": 55947,
       "mime": "text/css"
     },
     {
