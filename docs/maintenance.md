@@ -13,7 +13,7 @@
 2. **找候選**
    - CSS：每個 class 有沒有 `dist/*.js` 或 `index.html` 產生它，包括 template 裡拼出來的 class（例如 `tone-${...}`）和 `classList.toggle`。組合的選擇器（`A + B`、`A > B`）要確認畫面上真的有這個組合，不是兩個 class 各自存在就算。
    - JS：沒人讀的變數、函式、匯出；前面已經 return 掉、走不到的分支。
-   - 文件：README 和 `docs/` 有沒有還在描述已經拿掉的功能。引用測試寫測試標題、引用程式寫函式名稱，不寫行號；把舊行號換成標題時，要用寫那份文件當時的版本去查。
+   - 文件：README 和 `docs/` 有沒有還在描述已經拿掉的功能。引用測試寫測試標題、引用程式寫函式名稱，不寫行號；把舊行號換成標題時，行號可能是更早的版本寫的，前後版本都查，並讀過那個測試確認真的在測這件事。
 3. **分類**：確認可刪、可以重構、仍需查證。
    - 文字搜尋零筆不等於沒用。還要查動態 class、`data-action` 事件、字串 key、全域匯出、發佈腳本與測試入口。
 4. **不動舊資料相容**：見下一節。真的要拿掉，另開 issue，寫淘汰理由和資料保護方式。
@@ -37,7 +37,7 @@
   - 學習紀錄裡「舊版」的文字。
 - 只給測試用的匯出：`store.importBackup`、`DataStore.mergeAttempts`、`KanaPractice.firstCorrect`、`Study.nextCourse`、`Content.revisionOf`、`Content.rows`（程式內部仍在用，從外面只有測試讀）。
 
-## 2026-10-17 第一輪（到 main 46b66f2）
+## 2026-10-17 第一輪（b6ae022 之後）
 
 | 做了什麼 | commit |
 | --- | --- |
@@ -45,9 +45,9 @@
 | 句型測驗裡走不到的五十音分支拿掉。課程卡不再畫只有舊旅遊課才有的關鍵字、完整說法和延伸說法，內容檢查改成拒收這些欄位（連同店員問句和完整說法的語音用字）。 | 6c1b065 |
 | 修過期文字：設定頁的「換個記法」、空紀錄頁的按鈕（改成「看五十音表」）、README 與文件。kana-practice-audit 的測試引用改成標題。 | f5deb96 |
 | `iso()` 只留 KanaPractice 一份；兩個一模一樣的題目 helper 合成 `roundItem`。 | 46b66f2 |
-| 審查後補：kana-practice-audit 有四個測試引用指錯（舊行號要用 7ced429 的版本查），改正，程式引用改成函式名稱；README 的記憶提示說明；拿掉只有舊課程卡會用的 `.phrase-label + .grammar-example` 和內容檢查裡讀 `polite` 的一處。 | 「Correct the kana audit's test citations and fill the checklist」 |
+| 審查後補：kana-practice-audit 有四個測試引用指錯，改正（舊行號有的照 7ced429、有的照 b93513a，也有指在測試上一行的，兩個版本都要查），程式引用改成函式名稱；README 的記憶提示說明；拿掉只有舊課程卡會用的 `.phrase-label + .grammar-example` 和內容檢查裡讀 `polite` 的一處。 | 「Correct the kana audit's test citations and fill the checklist」 |
 
-驗證：內容檢查、全部測試（261 個）、prepare-release，並在瀏覽器開過主要頁面，沒有錯誤訊息。
+驗證：內容檢查、全部測試、prepare-release，並在瀏覽器開過主要頁面，沒有錯誤訊息。審查用 641 個畫面狀態比對前後的 HTML，除了刻意改的兩段文字完全相同。
 
 ## 下一輪候選（這輪沒做）
 

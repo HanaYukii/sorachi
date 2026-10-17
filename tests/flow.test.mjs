@@ -2395,17 +2395,39 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   // A situation's title or Chinese line lists its cards when none of them matches by itself.
   const order = ['t-order/menu-item', 't-order/quantity', 't-order/drink-temperature', 't-order/noodle-temperature', 't-order/portion'];
   assert.deepEqual(found('點餐'), order);
-  assert.deepEqual(found('一般份或大份'), order);
+  const portion = found('一般份或大份');
+  assert.equal(portion[0], 't-order/portion', 'The card sharing most of the line comes first');
+  assert.deepEqual([...portion].sort(), [...order].sort());
   assert.deepEqual(found('請店員加值'), ['t-charge/top-up', 't-charge/amount']);
   const help = found('叫店員');
   assert.ok(help.length >= 5 && help.every((step) => step.startsWith('basics/')), help.join());
   assert.ok(found('交通').includes('transit/platform'));
-  // Several words: the cards holding the most of them, rarer words first; a one-letter romaji word does not count.
-  assert.deepEqual(found('toire doko'), ['t-place/toilet']);
-  assert.deepEqual(found('退房 行李'), ['hotel/luggage']);
-  assert.deepEqual(found('chekkuin onegaishimasu'), ['hotel/check-in']);
-  assert.deepEqual(found('mizu o kudasai'), ['dining/water', 'basics/slowly', 'shopping/this-one']);
-  assert.deepEqual(found('Suica 加值'), ['t-charge/top-up', 't-charge/amount', 't-pay/suica']);
+  // Several words: a card is found by a word that few cards hold; words in more than one card in ten (wa, de, desu,
+  // doko, onegaishimasu) and one-letter words only order the list. More rare words, one in the card's title or
+  // keywords, then rarer words come first.
+  for (const [query, steps] of [
+    ['toire doko', ['t-place/toilet']], ['chekkuin onegaishimasu', ['hotel/check-in']], ['kippu wa doko', ['transit/ticket']],
+    ['kaado de onegaishimasu', ['t-pay/credit-cash']], ['genkin de ii desu ka', ['t-pay/credit-cash']], ['汽車保險', []],
+  ]) assert.deepEqual(found(query), steps, query);
+  for (const [query, first, also] of [
+    ['退房 行李', 'hotel/luggage', ['hotel/check-out', 'hotel/pick-up']], ['入住 退房', 'hotel/luggage', ['hotel/check-in', 'hotel/check-out']],
+    ['mizu o kudasai', 'dining/water', ['basics/slowly', 'shopping/this-one']], ['chekkuin wa nanji', 'hotel/check-in', ['hotel/check-out']],
+    ['水 請給我', 'dining/water', []], ['冰的 熱的', 't-order/drink-temperature', ['t-order/noodle-temperature']],
+    ['Suica 加值', 't-pay/suica', ['t-charge/top-up', 't-charge/amount']], ['西瓜卡 加值', 't-pay/suica', ['t-charge/top-up', 't-charge/amount']],
+    // Words split at punctuation and where romaji meets Chinese or kana; Chinese typed without spaces that no card
+    // holds whole is tried two characters at a time.
+    ['退房、行李', 'hotel/luggage', ['hotel/check-out']], ['toire,doko', 't-place/toilet', []], ['suica加值', 't-pay/suica', ['t-charge/top-up']], ['toireどこ', 't-place/toilet', []],
+    ['西瓜卡加值', 't-pay/suica', ['t-charge/top-up']], ['我要退房', 'hotel/check-out', ['hotel/luggage']], ['寄放行李箱', 't-place/locker-size', ['hotel/luggage']],
+    // A situation found by its Chinese line lists the cards sharing most of the query first.
+    ['退房 寄放', 'hotel/luggage', ['hotel/check-in']], ['說出金額', 't-charge/amount', ['t-charge/top-up']],
+  ]) {
+    const steps = found(query);
+    assert.equal(steps[0], first, `${query}: ${steps.join()}`);
+    for (const step of also) assert.ok(steps.includes(step), `${query} → ${step}`);
+  }
+  // Only common words: just the cards holding the most of them.
+  const common = found('kore o onegaishimasu');
+  assert.ok(common.length <= 3 && common.includes('t-order/menu-item'), common.join());
   // Romaji never matches from inside a word across a space (rokkaa doko).
   assert.ok(!found('kaado').includes('t-place/locker'));
   // Only the count is announced; nothing found shows a clear message and a way to clear the box.

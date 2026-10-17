@@ -1,19 +1,19 @@
 # 五十音練習：Jabiko 對照與壓力情境（#36、#37）
 
-2026-10-16 依程式逐行核對。Jabiko 是唯讀參考，以 commit `31c96ab` 為準；SoraChi 以撰寫時的 main 為準，程式位置用「檔案:行」標示，日後改版可能位移。
+2026-10-16 依程式逐行核對。Jabiko 是唯讀參考，以 commit `31c96ab` 為準；SoraChi 以撰寫時的 main 為準。Jabiko 的位置用「檔案:行」；SoraChi 的位置寫函式名稱、引用測試寫測試標題，改版後也找得到。
 
 ## Jabiko 對照（#37）
 
 | 機制 | Jabiko 做法 | SoraChi 做法 | 結論 |
 | --- | --- | --- | --- |
-| 干擾項與形近字 | 先取 14 組形近字（kanaDrill.ts:28-45），再取同行（110-112），再從本字往後繞整張表（113-116）；固定 3 個干擾項，候選是全部 104 字，不管學過哪幾行，也沒有亂數 | 只從本行和已完成的行、同一種假名取（kana-practice.js 的 `question()`、`create()`）；強／鬆兩層形近字計分；2 個同行、最多 1 個跨行，最多 4 個選項（30-34） | 保留 SoraChi（只出學過的字）；補上 Jabiko 有、SoraChi 沒有的形近組 ま／も、ク／フ、ク／ワ |
+| 干擾項與形近字 | 先取 14 組形近字（kanaDrill.ts:28-45），再取同行（110-112），再從本字往後繞整張表（113-116）；固定 3 個干擾項，候選是全部 104 字，不管學過哪幾行，也沒有亂數 | 只從本行和已完成的行、同一種假名取（kana-practice.js 的 `question()`、`create()`）；強／鬆兩層形近字計分；2 個同行、最多 1 個跨行，最多 4 個選項（`question()` 的 `add` 與同行挑選） | 保留 SoraChi（只出學過的字）；補上 Jabiko 有、SoraChi 沒有的形近組 ま／も、ク／フ、ク／ワ |
 | 同讀音排除 | 三種題型都排除同 romaji（kanaDrill.ts:177, 211-212, 259） | 用讀音去重（kana-practice.js 的 `question()` 用 `seen` 記下用過的讀音），を／ヲ 讀 o；重新載入時再驗一次 | 保留 SoraChi；補上點名同音字的測試 |
 | 選項排列 | 字典序排序後依題號旋轉（kanaDrill.ts:131-135；practice.ts:167-172, 412-415），正解位置可從題號推算 | 每題洗牌一次並存檔，重新整理順序不變（kana-practice.js 的 `question()` 洗牌、`create()` 存檔） | 保留 SoraChi |
 | 錯題進出 | 不另存狀態，重播作答紀錄推導（srs.ts:16-23, 56-77）；答錯就進、答對一次就出（#525） | 每個字一筆 `kanaReview`，每次作答覆寫；歷史只補缺的字（kana-practice.js 的 `seedReview()`） | 語意相同，保留 SoraChi |
 | 錯題排序 | 依最近一次答錯，由舊到新（srs.ts:96-101）；一次跑完整個錯題池 | 錯題優先，再依 lastSeen 由舊到新，最多 5 個（kana-practice.js 的 `selectReview()`） | 保留 SoraChi |
 | 冷卻期 | 沒有。移除原因寫在 srs.ts:8-14：舊版答錯後冷卻 2 天，一次練很多題的新手看到空的弱點清單，回報「錯題沒被記錄」 | 沒有，剛答錯就能複習 | 兩邊一致 |
 | 練習中保存 | 進行中的一輪不保存，重新整理就重開（usePracticeSession.ts:355, 369-373；sessionPools.ts:374-376） | 整個 session 每次作答和下一題都存，載入時逐欄驗證，有獨立的 practiceVersion | 保留 SoraChi |
-| 多分頁 | 沒有 storage 事件；每次寫入先讀再 append（storage.ts:23-35, 53），不互蓋但畫面會過時 | 寫入前比對原文；收到 storage 事件就警告；衝突後停止寫入，不自動合併（storage.js:138-158） | 保留 SoraChi；append 合併要改 schema，暫不引入 |
+| 多分頁 | 沒有 storage 事件；每次寫入先讀再 append（storage.ts:23-35, 53），不互蓋但畫面會過時 | 寫入前比對原文；收到 storage 事件就警告；衝突後停止寫入，不自動合併（storage.js 的 `checkForUpdates()`、`commit()`） | 保留 SoraChi；append 合併要改 schema，暫不引入 |
 | 寫入失敗 | 靜默改用記憶體（storage.ts:44-48） | 保留上次成功的內容並警告；清除失敗會回滾 | 保留 SoraChi |
 | 測試設計 | 全域固定 Math.random（setup.ts:30-33），誘答用 mulberry32 以題目為 seed（practice.ts:364-385） | 原本靠多次重跑 | 引入：測試裡用固定 seed 掃過選項產生 |
 | 語音、資源修復 | 取第一個本機 ja-JP（macOS 會選到 Eddy）；修復時註銷整個 origin 的 Service Worker 並清快取（assetRecovery.ts:54-63） | — | 不引入：語音規則會選錯；SoraChi 在共用 origin |
@@ -39,7 +39,7 @@ issue 列的情境逐一寫成測試。「舊程式會失敗」表示修正前�
 
 #8 的 8 項說法：
 1. 每輪最多 5 字、錯字優先（等最久的先），答對一次就移出，沒有冷卻期：`kana-review-audit.test.mjs`「review puts mistakes first, longest-waiting first, then oldest learned, at most five unique characters」、`study.test.mjs`「a kana character answered right leaves the mistake pool, and a later wrong answer puts it back」。
-2. 一輪混合兩種方向，排除同讀音：`kana-practice.test.mjs`「same-reading pairs never appear as answer and distractor in one question: お／を、オ／ヲ、じ／ぢ、ず／づ、ジ／ヂ、ズ／ヅ」。
+2. 一輪混合兩種方向，排除同讀音：`kana-practice.test.mjs`「each round mixes directions with bounded cross-row options and no duplicate readings」、「same-reading pairs never appear as answer and distractor in one question: お／を、オ／ヲ、じ／ぢ、ず／づ、ジ／ヂ、ズ／ヅ」。
 3. 重考不改第一次的成績：`kana-practice.test.mjs`「wrong first answers advance once, return only after the first round and never rewrite score」。
 4. 複習不產生完成紀錄、可重新載入：`flow.test.mjs`「a review of exactly two characters says 複習 2 個字, mixes both directions with three same-row options, and ends with 再複習 2 個字 without a record」、`study.test.mjs`「short review persists retries without creating course completions or history, and can restart immediately」。
 5. 只留最近 200 筆，清除會結束未完成的五十音：`storage.test.mjs`「retains the latest 200 completed rounds through write, reload and backup import」、`kana-review-audit.test.mjs`「clear ends active course and review sessions without reviving old mistakes on reload」。「存檔失敗回復記憶體」只適用於清除；作答失敗是保留上次存的內容，見上表。
