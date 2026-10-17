@@ -5,9 +5,8 @@ import { prepareRelease, isMain } from './prepare-release.mjs';
 import { verifyWithRetry } from './verify-deploy.mjs';
 
 const exec = promisify(execFile);
-// Keep the original Pages origin available for exporting browser-local progress.
-// Source, tests and exact-commit CI stay in HanaYukii/sorachi.
-export const DEPLOY_REMOTE = 'https://github.com/HanaYukii/sorachi-site.git';
+// Source and production Pages share one repository; publish only the tested dist subtree.
+export const DEPLOY_REMOTE = 'https://github.com/HanaYukii/sorachi.git';
 // On failure, put the child's full output in the message so CI logs show which test failed.
 export const command = async (bin, args) => {
   try { return (await exec(bin, args, { timeout: 20 * 60 * 1000, maxBuffer: 16 * 1024 * 1024 })).stdout.trim(); }

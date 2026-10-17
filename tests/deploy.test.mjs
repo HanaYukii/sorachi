@@ -140,7 +140,7 @@ test('publish waits for exact CI and rechecks main before subtree push', async (
   const pushed = calls.findIndex((c) => c.includes('subtree push'));
   assert.ok(pushed >= 0 && verified[0] > pushed, 'Pages is verified after the push');
   assert.equal(calls[pushed], `git subtree push --prefix=dist ${DEPLOY_REMOTE} gh-pages`);
-  assert.equal(DEPLOY_REMOTE, 'https://github.com/HanaYukii/sorachi-site.git', 'Never publish a CNAME to the old origin: it must remain accessible for backup exports');
+  assert.equal(DEPLOY_REMOTE, 'https://github.com/HanaYukii/sorachi.git', 'Source and production deploy from the same repository');
   assert.ok(calls.findIndex((c) => c.includes('run watch 7')) < calls.findIndex((c) => c.includes('subtree push')));
   calls.length = 0;
   changed = true;
