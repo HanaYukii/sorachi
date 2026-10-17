@@ -189,7 +189,7 @@ const Study = (() => {
     drafts.delete(course.id);
   }
   const save = () => api.save();
-  const currentId = () => location.hash.startsWith("#study/") ? location.hash.slice(7) : null;
+  const currentId = () => Routes.current().startsWith("#study/") ? Routes.current().slice(7) : null;
   // Special-sound lessons are grammar-style courses that belong with the kana.
   const kanaArea = (course) => course.type === "kana" || course.home === "kana";
   const backHash = (course) => kanaArea(course) ? "#kana" : "#grammar";
@@ -199,7 +199,7 @@ const Study = (() => {
   // 回 leads back to where a lesson or review was opened (#82): home, or else its own list, also for a direct link.
   const exitTo = (list) => api.from?.() === "#home" ? ["#home", "回首頁"] : list === "#kana" ? ["#kana", "回五十音表"] : ["#grammar", "回基礎句型"];
   function wrap(content, destination = "#home", label = "回首頁", wide = false, pageClass = "") {
-    return `<div class="lesson-shell${wide ? " lesson-wide" : ""}${pageClass ? ` ${pageClass}` : ""}">${Navigation.header(globalThis.location?.hash || "", destination, label)}<main id="main" tabindex="-1" class="study-main">${content}${warning()}</main>${footer()}</div>`;
+    return `<div class="lesson-shell${wide ? " lesson-wide" : ""}${pageClass ? ` ${pageClass}` : ""}">${Navigation.header(Routes.current(), destination, label)}<main id="main" tabindex="-1" class="study-main">${content}${warning()}</main>${footer()}</div>`;
   }
   function status(id) {
     const saved = state().courses[id];
@@ -241,11 +241,11 @@ const Study = (() => {
     for (const id of Object.keys(courses)) if(courses[id].type==='kana') {if(data.courses[id])data.courses[id].active=null;drafts.delete(id);}
   }
   function currentPractice() {
-    if (location.hash === "#kana-random") {
+    if (Routes.current() === "#kana-random") {
       const q = randomRound && !randomRound.done ? randomRound.items[randomRound.cursor] : null;
       return q ? {courseId:KanaPractice.entry(q.id).courseId,questionId:q.id,direction:q.direction,round:"random",practiceVersion:KanaPractice.VERSION} : null;
     }
-    const review=location.hash==='#kana-review';
+    const review=Routes.current()==='#kana-review';
     const course=review?null:courses[currentId()];
     const active=course?peekAttempt(course.id):null;
     const session=review?state().reviewSession:active?.phase==='quiz'?active.practice:null;
@@ -358,7 +358,7 @@ const Study = (() => {
     return `<section class="study-review-entry"><h2>複習學過的句型</h2><p class="study-note">從完成的課裡挑 ${reviewSize()} 題混在一起練。</p><a class="text-button" href="#grammar-review">${round && !round.done ? "繼續複習" : `複習 ${reviewSize()} 題`}</a></section>`;
   }
   function currentReview() {
-    const random = location.hash === "#grammar-random", round = random ? grammarRandomRound : location.hash === "#drill" ? state().drill.session : location.hash === "#grammar-review" ? grammarRound() : null;
+    const random = Routes.current() === "#grammar-random", round = random ? grammarRandomRound : Routes.current() === "#drill" ? state().drill.session : Routes.current() === "#grammar-review" ? grammarRound() : null;
     if (!round || round.done) return null;
     const { course, question } = roundItem(round);
     return { courseId: course.id, questionId: question.id };
@@ -612,7 +612,7 @@ const Study = (() => {
   // a query that changes nothing redraws and announces nothing. One search serves the list and the count.
   function searchTravel(value, composing = false) {
     travelQuery = String(value || "");
-    if (composing || location.hash !== "#travel") return;
+    if (composing || Routes.current() !== "#travel") return;
     const found = travelMatches(travelQuery), html = travelResults(null, found);
     if (html === travelShown) return;
     travelShown = html;
@@ -984,7 +984,7 @@ const Study = (() => {
   }
   function redraw(selector = ".focus-heading") {
     const app = document.querySelector("#app");
-    app.innerHTML = render(location.hash);
+    app.innerHTML = Routes.links(render(Routes.current()));
     if (selector === ".focus-heading") window.scrollTo?.({ top: 0, behavior: "instant" });
     app.querySelector(selector)?.focus({ preventScroll: true });
   }
@@ -1129,14 +1129,14 @@ const Study = (() => {
       if (item?.steps.some((step) => step.id === button.dataset.step)) { travelFound = travelReturn = button.dataset.step; api.go(`#travel/${item.id}`); }
       return true;
     }
-    if (action === "study-travel-clear") { travelQuery = ""; if (location.hash === "#travel") redraw("#travel-search"); return true; }
+    if (action === "study-travel-clear") { travelQuery = ""; if (Routes.current() === "#travel") redraw("#travel-search"); return true; }
     if (action === "study-favorite") {
       const id = button.dataset.phrase;
-      if (!location.hash.startsWith("#travel/") || !PHRASEBOOK.some(item => item.steps.some(step => step.id === id))) return true;
+      if (!Routes.current().startsWith("#travel/") || !PHRASEBOOK.some(item => item.steps.some(step => step.id === id))) return true;
       const wasSaved = favoriteIds().includes(id), next = wasSaved ? favoriteIds().filter(value => value !== id) : [...favoriteIds(),id];
       if (api.saveFavorites?.(next)) {
         // The list is drawn again, so a phrase playing from it stops instead of losing its speaker.
-        if (location.hash === "#travel/favorites") { stopAudio(); redraw(); }
+        if (Routes.current() === "#travel/favorites") { stopAudio(); redraw(); }
         else { button.textContent = wasSaved ? "收藏" : "已收藏"; button.setAttribute?.("aria-pressed",String(!wasSaved)); }
       }
       return true;
@@ -1144,14 +1144,14 @@ const Study = (() => {
     if (action === "study-food-audio") {
       const step = PHRASEBOOK.find(item => item.id === "food")?.steps.find(step => step.id === button.dataset.phrase);
       const index = Number(button.dataset.index), keyword = Number.isInteger(index) && step?.keywords[index];
-      if (location.hash.startsWith("#travel") && keyword) {
+      if (Routes.current().startsWith("#travel") && keyword) {
         const text = keyword[0], spoken = text.match(/（(.*?)）/u)?.[1] || text;
         say(spoken, `[data-audio-for="${step.id}-${index}"]`, button);
       }
       return true;
     }
     if (action === "study-travel-audio") {
-      const item = location.hash === "#travel/favorites" ? travelItem(button.dataset.course) : location.hash.startsWith("#travel/") ? travelItem(location.hash.slice(8)) : null;
+      const item = Routes.current() === "#travel/favorites" ? travelItem(button.dataset.course) : Routes.current().startsWith("#travel/") ? travelItem(Routes.current().slice(8)) : null;
       const index = Number(button.dataset.index);
       const full = button.dataset.full !== "0" && Boolean(item?.steps?.[index]?.polite);
       if (item && item.id === button.dataset.course && Number.isInteger(index) && index >= 0 && index < item.steps.length) speak(item, index, `[data-audio-for="${item.id}-${index}${full ? "-full" : ""}"]`, full, button);
@@ -1164,8 +1164,8 @@ const Study = (() => {
       return true;
     }
     // A new random round starts from home every time; on the page itself, answers mark in place and 下一題 moves on.
-    if (action === "study-kana-random") { randomRound = newRandomRound(); if (location.hash === "#kana-random") redraw(); else api.go("#kana-random"); return true; }
-    if (location.hash === "#kana-random" && ["study-answer", "study-next", "study-random-again"].includes(action)) {
+    if (action === "study-kana-random") { randomRound = newRandomRound(); if (Routes.current() === "#kana-random") redraw(); else api.go("#kana-random"); return true; }
+    if (Routes.current() === "#kana-random" && ["study-answer", "study-next", "study-random-again"].includes(action)) {
       if (action === "study-random-again") { randomRound = newRandomRound(); redraw(); return true; }
       const round = randomRound;
       if (!round || round.done) return true;
@@ -1180,7 +1180,7 @@ const Study = (() => {
       return true;
     }
     if (action === "study-drill") { api.go("#drill"); return true; }
-    if (location.hash === "#drill" && ["study-answer", "study-next", "study-drill-stop", "study-drill-continue"].includes(action)) {
+    if (Routes.current() === "#drill" && ["study-answer", "study-next", "study-drill-stop", "study-drill-continue"].includes(action)) {
       const command = {"study-answer":"answer","study-next":"next","study-drill-stop":"stop","study-drill-continue":"continue"}[action];
       const updated = Drill.act(state().drill,drillPool,command,Number(button.dataset.choice));
       if (!updated) return true;
@@ -1190,8 +1190,8 @@ const Study = (() => {
       return true;
     }
 
-    if (action === "study-grammar-random") { grammarRandomRound = newGrammarRandomRound(); if (location.hash === "#grammar-random") redraw(); else api.go("#grammar-random"); return true; }
-    if (location.hash === "#grammar-random" && ["study-answer", "study-next", "study-grammar-random-again"].includes(action)) {
+    if (action === "study-grammar-random") { grammarRandomRound = newGrammarRandomRound(); if (Routes.current() === "#grammar-random") redraw(); else api.go("#grammar-random"); return true; }
+    if (Routes.current() === "#grammar-random" && ["study-answer", "study-next", "study-grammar-random-again"].includes(action)) {
       if (action === "study-grammar-random-again") { grammarRandomRound = newGrammarRandomRound(); redraw(); return true; }
       const round = grammarRandomRound;
       if (!round || round.done) return true;
@@ -1205,7 +1205,7 @@ const Study = (() => {
       return true;
     }
     // The review page owns only answer and next; study-open, study-script and the like go to the handlers below.
-    if(location.hash==='#kana-review'&&(action==='study-answer'||action==='study-next')){
+    if(Routes.current()==='#kana-review'&&(action==='study-answer'||action==='study-next')){
       const session=state().reviewSession;
       if(!session||session.round==='done')return true;
       if(action==='study-answer'){
@@ -1228,10 +1228,10 @@ const Study = (() => {
     }
     if (action === "study-grammar-review") {
       if (grammarRound() && !grammarRound().done) { api.go("#grammar-review"); return true; }
-      if (startGrammarRound()) { if (location.hash === "#grammar-review") redraw(); else api.go("#grammar-review"); }
+      if (startGrammarRound()) { if (Routes.current() === "#grammar-review") redraw(); else api.go("#grammar-review"); }
       return true;
     }
-    if (location.hash === "#grammar-review") {
+    if (Routes.current() === "#grammar-review") {
       const round = grammarRound();
       if (!round || round.done) return true;
       const { item, question } = roundItem(round);

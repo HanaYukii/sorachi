@@ -1,6 +1,7 @@
 "use strict";
 
 const app = document.querySelector("#app");
+const setMarkup = html => { app.innerHTML = Routes.links(html); Routes.updateMeta(); };
 
 const TOTAL_STEPS = 6;
 let canStore = true;
@@ -75,7 +76,7 @@ const warningMessage = () =>
     ? ""
     : dataStore.isConflict() ? '<p class="storage-warning storage-conflict">另一個分頁已更新或清除資料。這個分頁已停止儲存，請重新載入後再繼續。<button class="text-button" data-action="reload">重新載入</button></p>'
     : dataStore.lockReason() === "newer" ? '<p class="storage-warning">網站已更新，這個頁面還是舊版本，練習暫時不會儲存。<button class="text-button" data-action="reload">重新整理</button></p>'
-    : dataStore.lockReason() === "invalid" ? `<p class="storage-warning">瀏覽器裡的學習資料無法讀取，練習暫時不會儲存；原始資料沒有被改動。${location.hash === "#history" ? "" : '<button class="text-button" data-action="history">到學習紀錄處理</button>'}</p>`
+    : dataStore.lockReason() === "invalid" ? `<p class="storage-warning">瀏覽器裡的學習資料無法讀取，練習暫時不會儲存；原始資料沒有被改動。${Routes.current() === "#history" ? "" : '<button class="text-button" data-action="history">到學習紀錄處理</button>'}</p>`
     : dataStore.isProtected() ? '<p class="storage-warning">目前無法讀取瀏覽器中的資料，練習不會儲存，也不會改動原有紀錄。</p>'
     : '<p class="storage-warning">目前瀏覽器無法儲存進度；這次仍可正常上課，關閉後可能需要重新開始。</p>';
 
@@ -87,7 +88,7 @@ const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
 // link, has none. An entry gets its source once, when it is first shown, so going back to it never changes it.
 const exits = ["#home", "#kana", "#grammar"];
 const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|kana-random$|grammar-random$|drill$|feedback$)/.test(page || "");
-let cameFrom = null, shown = null, shownHash = null, shownFeedback = null;
+let cameFrom = null, shown = null, shownRoute = null, shownFeedback = null;
 function arrive() {
   if (window.history.state?.from === undefined) window.history.replaceState({ from: exits.includes(shown) ? shown : passesOn(shown) ? cameFrom : null }, "");
   route();
@@ -136,12 +137,10 @@ const account = Account.create({
   importRemote: payload => { const result=dataStore.importBackupDetailed(JSON.stringify(payload)); if(result.ok) loadProgress(); return result; },
 });
 function accountPage() {
-  document.title = `${account.user()?"我的帳號":"登入"}｜SoraChi`;
-  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash)}<main id="main" tabindex="-1" class="utility-main">${account.render()}${warning()}</main>${footer()}</div>`;
+  setMarkup(`<div class="lesson-shell">${Navigation.header(Routes.current())}<main id="main" tabindex="-1" class="utility-main">${account.render()}${warning()}</main>${footer()}</div>`);
   focusHeading();
 }
 function home() {
-  document.title = "SoraChi｜五十音、基礎句型與旅遊日語｜零基礎也能學";
   const begun = progress.inProgress;
   const grammarNext = Study.grammarNext();
   const grammarStarted = Content.grammar.some(c => progress.study.courses[c.id]?.completedAt || Study.hasProgress(c.id));
@@ -168,13 +167,13 @@ function home() {
   const shortcuts = `<section class="home-shortcuts" aria-labelledby="quick-title"><div><h2 id="quick-title">隨機練習</h2><p>每輪 5 題，從最基礎的內容開始。不記成績。</p></div><div class="quick-actions"><button class="text-button" data-action="study-kana-random" aria-label="五十音隨機練習"><span>五十音<span class="quick-detail">隨機</span>練習</span>${icons.arrow}</button><button class="text-button" data-action="study-grammar-random" aria-label="句型隨機練習"><span>句型<span class="quick-detail">隨機</span>練習</span>${icons.arrow}</button></div></section>`;
   const entries = `<section class="home-entries" aria-label="學習與旅遊">${entry("kana", "cloud-kana", "五十音", "入門必學，搭配各式技巧好好記熟。", "學五十音", "kana")}${entry("grammar", "cloud-complete", "基礎句型", "日文基本的句子架構。", "學基礎句型", "grammar")}${entry("travel", "cloud-travel", "旅遊常用語", "記好這些關鍵字，不用完整句，也能清楚表達意思。", "查常用語", "travel")}${entry("drill", "cloud-drill", "基礎刷題", "練習本站提到的日文基礎，也可作為 N5、N4 的準備。", progress.study.drill.session ? "接著刷題" : "開始刷題", "study-drill")}</section>`;
   const below = newVisitor ? `<div class="script-supplement intro-entry"><button class="text-button" data-action="start">認識三種日文寫法${icons.arrow}</button><p>平假名、片假名與漢字的用法。</p></div>` : homeDashboard({ grammarNext, grammarStarted, begun, review, saved, kanaNext, otherSounds: soundIds.filter((id) => id !== nextKana && unfinished(id)) });
-  app.innerHTML = `<div class="shell">
+  setMarkup(`<div class="shell">
     <header class="site-header home-header"><a class="brand" href="#home" aria-label="SoraChi 首頁">${friend("", "", "cloud-friend", 42)}<span class="brand-word">SoraChi<span class="brand-dot">.</span></span></a><div class="header-tools">${Navigation.accountLink()}${Navigation.feedbackLink()}</div></header>
     <main id="main" tabindex="-1" class="home"><section class="welcome"><h1 class="focus-heading" tabindex="-1">日文入門</h1><p>零基礎也可以用。學五十音、練句型，旅行時查常用語。</p></section>
     ${shortcuts}
     ${entries}
     ${below}
-    <aside class="gentle-note">${icons.book}<span>${account.user() ? "目前使用帳號進度；可到「帳號」儲存雲端備份。" : "不用登入也能學；訪客進度保存在這個瀏覽器。"}</span></aside>${warning()}</main>${footer()}</div>`;
+    <aside class="gentle-note">${icons.book}<span>${account.user() ? "目前使用帳號進度；可到「帳號」儲存雲端備份。" : "不用登入也能學；訪客進度保存在這個瀏覽器。"}</span></aside>${warning()}</main>${footer()}</div>`);
 }
 
 // Stable illustrated entries stay above the returning learner’s next steps and local progress.
@@ -232,15 +231,14 @@ const {lessons, questions} = Content.intro;
 function lesson(focus = true) {
   const step = progress.step;
   const isQuiz = step >= 4;
-  document.title = "日文的三種文字｜SoraChi";
   const current = isQuiz ? questions[step] : lessons[step];
   const answered = progress.answers[step] === true;
   const content = isQuiz
     ? `<span class="question-tag">小練習 ${step - 3} / 2 · 選一個答案</span>${current.word ? `<div class="question-word" lang="ja">${current.word}</div><p class="question-note">${current.note}</p>` : '<div style="height:22px"></div>'}<div class="answers" role="group" aria-label="答案選項">${current.options.map((option, i) => `<button class="answer${answered && i === current.answer ? " correct" : selectedWrong === i ? " wrong" : ""}" data-answer="${i}" ${answered ? 'aria-disabled="true" tabindex="-1"' : ""}><span class="letter">${answered && i === current.answer ? icons.check : String.fromCharCode(65 + i)}</span><span>${option}</span>${answered && i === current.answer ? '<span class="answer-status">答對了</span>' : ""}</button>`).join("")}</div><div class="feedback${selectedWrong !== null ? " wrong" : ""}" role="status" aria-live="polite" aria-atomic="true" ${!answered && selectedWrong === null ? 'style="display:block;padding:0;margin:0"' : ""}>${answered ? `<strong>${current.correct}</strong>${current.explanation}` : selectedWrong !== null ? `<strong>${current.wrong}</strong>${current.hint}` : ""}</div>`
     : current.content;
-  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash)}<div class="lesson-progress"><div class="track" role="progressbar" aria-label="日文的三種文字進度" aria-valuemin="1" aria-valuemax="${TOTAL_STEPS}" aria-valuenow="${step + 1}" aria-valuetext="第 ${step + 1} 步，共 ${TOTAL_STEPS} 步"><span style="width:${((step + 1) / TOTAL_STEPS) * 100}%"></span></div><span class="step-count">${step + 1} / ${TOTAL_STEPS}</span></div>
+  setMarkup(`<div class="lesson-shell">${Navigation.header(Routes.current())}<div class="lesson-progress"><div class="track" role="progressbar" aria-label="日文的三種文字進度" aria-valuemin="1" aria-valuemax="${TOTAL_STEPS}" aria-valuenow="${step + 1}" aria-valuetext="第 ${step + 1} 步，共 ${TOTAL_STEPS} 步"><span style="width:${((step + 1) / TOTAL_STEPS) * 100}%"></span></div><span class="step-count">${step + 1} / ${TOTAL_STEPS}</span></div>
     <main id="main" tabindex="-1" class="lesson-main"><div class="eyebrow">${isQuiz ? "確認理解" : current.label}</div><h1 tabindex="-1" class="lesson-title focus-heading">${current.title}</h1><p class="lesson-intro">${isQuiz ? "選擇一個答案。答錯時可看提示後重試。" : current.intro}</p><section class="content-card ${current.className || ""} ${isQuiz ? "quiz-card" : ""}" aria-label="${isQuiz ? "練習題" : "課程內容"}">${content}</section>${isQuiz ? "" : `<aside class="mascot-tip">${friend("", "", "cloud-friend", 40)}<span>${current.tip}</span></aside>`}${warning()}
-    <div class="lesson-navigation"><button class="back-button" data-action="back">${icons.back}${step === 0 ? "回首頁" : "上一步"}</button><div class="next-wrap"><button class="primary" data-action="next" ${isQuiz && !answered ? "disabled" : ""}>${step === 5 ? "完成練習" : isQuiz ? "下一題" : step === 3 ? "開始練習" : "下一步"}${icons.arrow}</button>${isQuiz && !answered ? '<p class="step-hint">先選一個答案</p>' : ""}</div></div><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div></main></div>`;
+    <div class="lesson-navigation"><button class="back-button" data-action="back">${icons.back}${step === 0 ? "回首頁" : "上一步"}</button><div class="next-wrap"><button class="primary" data-action="next" ${isQuiz && !answered ? "disabled" : ""}>${step === 5 ? "完成練習" : isQuiz ? "下一題" : step === 3 ? "開始練習" : "下一步"}${icons.arrow}</button>${isQuiz && !answered ? '<p class="step-hint">先選一個答案</p>' : ""}</div></div><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div></main></div>`);
   if (focus) focusHeading();
 }
 
@@ -279,8 +277,7 @@ function updateAnswerFeedback() {
 }
 
 function finish() {
-  document.title = "完成日文的三種文字｜SoraChi";
-  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash)}<main id="main" tabindex="-1" class="finish"><div class="finish-art">${friend("", "SoraChi 雲朵精靈開心地抱著小書，陪你完成日文的三種文字", "cloud-complete", 160)}<span class="finish-check">${icons.check}</span></div><h1 tabindex="-1" class="focus-heading">日文的三種文字已完成</h1><p>本課介紹了平假名、片假名和漢字。</p><div class="summary"><span><b lang="ja">ねこ</b> · 平假名</span><span><b lang="ja">パン</b> · 片假名</span><span><b lang="ja">山</b> · 漢字</span></div>${resultCard()}<div class="finish-actions"><button class="primary" data-action="kana">接著認識五十音${icons.arrow}</button><button class="text-button" data-action="home">回首頁</button><button class="text-button" data-action="restart">再看一次這堂課</button></div><p class="storage-note">${canStore ? "完成紀錄已保存在這個瀏覽器。" : "這次已完成，但瀏覽器無法保存紀錄。"}</p>${warning()}</main>${footer()}</div>`;
+  setMarkup(`<div class="lesson-shell">${Navigation.header(Routes.current())}<main id="main" tabindex="-1" class="finish"><div class="finish-art">${friend("", "SoraChi 雲朵精靈開心地抱著小書，陪你完成日文的三種文字", "cloud-complete", 160)}<span class="finish-check">${icons.check}</span></div><h1 tabindex="-1" class="focus-heading">日文的三種文字已完成</h1><p>本課介紹了平假名、片假名和漢字。</p><div class="summary"><span><b lang="ja">ねこ</b> · 平假名</span><span><b lang="ja">パン</b> · 片假名</span><span><b lang="ja">山</b> · 漢字</span></div>${resultCard()}<div class="finish-actions"><button class="primary" data-action="kana">接著認識五十音${icons.arrow}</button><button class="text-button" data-action="home">回首頁</button><button class="text-button" data-action="restart">再看一次這堂課</button></div><p class="storage-note">${canStore ? "完成紀錄已保存在這個瀏覽器。" : "這次已完成，但瀏覽器無法保存紀錄。"}</p>${warning()}</main>${footer()}</div>`);
   focusHeading();
 }
 
@@ -351,10 +348,9 @@ async function importFile(file) {
   location.reload();
 }
 function historyPage(confirmClear = false, confirmRestart = false) {
-  document.title = "學習紀錄｜SoraChi";
   const entries = [...progress.history].reverse();
   const hasReviewData = Study.reviewSummary().hasData;
-  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash)}<main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">課後練習會記錄成績；基礎刷題會記住這次練習，回首頁可接著做。</p>${entries.length ? `<p class="record-note">保留最近 ${DataStore.MAX_ATTEMPTS} 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list" role="list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄第一次作答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第一次答錯：${entry.courseId ? Study.retryLabels(entry).map(escapeHTML).join("、") : entry.retryQuestions.map((q) => `第 ${q - 3} 題`).join("、")}` : entry.firstCorrect === (entry.total || 2) ? "全部題目第一次都答對。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : dataStore.isProtected() ? `<section class="empty-record">${icons.book}<h2>目前無法讀取成績紀錄</h2></section>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過日文的三種文字；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成一堂課的課後練習，紀錄就會顯示在這裡。"}</p><button class="primary" data-action="kana">看五十音表${icons.arrow}</button></section>`}${recoveryPanel(confirmRestart)}${backupPanel()}<p class="record-note">進度會先保存在這個瀏覽器。也可到<a href="#account">我的帳號</a>手動儲存雲端備份；清除網站資料前請先備份。</p>${warning()}${!dataStore.isProtected() && (entries.length || hasReviewData) ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除全部成績與複習紀錄？這也會結束尚未完成的五十音練習、五十音複習、句型小複習與基礎刷題；已完成狀態與其他課程進度會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績與複習紀錄</button>` : ""}</main>${footer()}</div>`;
+  setMarkup(`<div class="lesson-shell">${Navigation.header(Routes.current())}<main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">課後練習會記錄成績；基礎刷題會記住這次練習，回首頁可接著做。</p>${entries.length ? `<p class="record-note">保留最近 ${DataStore.MAX_ATTEMPTS} 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list" role="list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄第一次作答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第一次答錯：${entry.courseId ? Study.retryLabels(entry).map(escapeHTML).join("、") : entry.retryQuestions.map((q) => `第 ${q - 3} 題`).join("、")}` : entry.firstCorrect === (entry.total || 2) ? "全部題目第一次都答對。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : dataStore.isProtected() ? `<section class="empty-record">${icons.book}<h2>目前無法讀取成績紀錄</h2></section>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過日文的三種文字；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成一堂課的課後練習，紀錄就會顯示在這裡。"}</p><button class="primary" data-action="kana">看五十音表${icons.arrow}</button></section>`}${recoveryPanel(confirmRestart)}${backupPanel()}<p class="record-note">進度會先保存在這個瀏覽器。也可到<a href="#account">我的帳號</a>手動儲存雲端備份；清除網站資料前請先備份。</p>${warning()}${!dataStore.isProtected() && (entries.length || hasReviewData) ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除全部成績與複習紀錄？這也會結束尚未完成的五十音練習、五十音複習、句型小複習與基礎刷題；已完成狀態與其他課程進度會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績與複習紀錄</button>` : ""}</main>${footer()}</div>`);
   focusHeading();
   // Announce the restore result once, after the page exists, so the live region reads it.
   if (importNote) {
@@ -368,10 +364,9 @@ function captureFeedback(hash) {
 }
 function feedbackPage() {
   feedbackDiagnostics ||= captureFeedback("#home");
-  document.title = "問題與建議｜SoraChi";
   const direct=directFeedback();
   const form=feedbackSent ? `<section class="account-panel"><h2>已收到你的回報</h2><p>謝謝你告訴我們。回報內容只會提供給網站管理者。</p><button class="primary" data-action="feedback-back">回到剛才的頁面</button><button class="text-button" data-action="feedback-new">再寫一則</button></section>` : `<form id="feedback-form" class="feedback-form"><fieldset${feedbackBusy?' disabled':''}><label for="feedback-category">回報類型</label><select id="feedback-category" name="category">${["問題回報","學習建議","其他想法"].map(kind => `<option${feedbackDraft.category === kind ? " selected" : ""}>${kind}</option>`).join("")}</select><label for="feedback-message">內容</label><textarea id="feedback-message" name="message" rows="5" maxlength="600" aria-describedby="feedback-limit feedback-privacy" required placeholder="例如：這個說明看不太懂，希望多一個例子。">${escapeHTML(feedbackDraft.message)}</textarea><p class="record-note" id="feedback-limit">最多 600 字。會附上所在位置：${escapeHTML(feedbackContext)}，以及版本與教材識別碼。</p>${direct ? `<label for="feedback-contact">聯絡方式（選填）</label><input id="feedback-contact" maxlength="200" value="${escapeHTML(feedbackDraft.contact || "")}" placeholder="希望收到回覆時再填寫 Email" aria-describedby="feedback-privacy"><aside class="feedback-privacy" id="feedback-privacy">不用登入也能送出。內容不公開，只供網站管理者處理；不會附上你的答案或學習紀錄。${account.user()?'目前已登入，回報會附上帳號識別碼；聯絡方式仍由你自行選擇是否填寫。':''}</aside><div id="feedback-challenge"></div><button class="primary" type="submit">${feedbackBusy?'送出中…':'送出回報'}</button>` : `<aside class="feedback-privacy" id="feedback-privacy">站內回報目前尚未連線，可改用 GitHub。需要 GitHub 帳號，送出後內容會公開，請勿填入姓名、Email 或其他私人資料。</aside><button class="primary" type="submit">準備回報內容 ${icons.arrow}</button><p class="record-note">下一步會產生連結，讓你到 GitHub 確認後送出。</p>`}</fieldset><div id="feedback-ready" role="status" aria-live="polite">${escapeHTML(feedbackStatus)}</div></form>`;
-  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash, feedbackReturn, "回到剛才的頁面", "feedback-back")}<main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">問題與建議</h1><p class="utility-intro">回報操作問題、教材錯誤，或提出課程建議。</p>${form}</main>${footer()}</div>`;
+  setMarkup(`<div class="lesson-shell">${Navigation.header(Routes.current(), feedbackReturn, "回到剛才的頁面", "feedback-back")}<main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">問題與建議</h1><p class="utility-intro">回報操作問題、教材錯誤，或提出課程建議。</p>${form}</main>${footer()}</div>`);
   if(direct && !feedbackSent) FeedbackChallenge.mount(CloudConfig.turnstileSiteKey,()=>{ const status=app.querySelector("#feedback-ready"); if(status) status.textContent="驗證沒有載入，請確認網路後重新開啟回報頁。內容會保留。"; });
   focusHeading();
 }
@@ -389,7 +384,7 @@ async function sendDirectFeedback(category, message) {
     await account.service().sendFeedback({id,category:{"問題回報":"bug","學習建議":"wish","其他想法":"other"}[category],message,contact:feedbackDraft.contact,context:feedbackContext,diagnostics:feedbackDiagnostics,challenge});
     if(feedbackSubmission===id) { feedbackSent=true; feedbackDraft={category:"問題回報",message:"",contact:""}; feedbackStatus=""; }
   } catch { feedbackStatus="這次沒有送出成功，內容已保留。請再試一次。"; }
-  finally { feedbackBusy=false; if(location.hash==="#feedback") feedbackPage(); }
+  finally { feedbackBusy=false; if(Routes.current()==="#feedback") feedbackPage(); }
 }
 
 function buildFeedbackURL(category, message, context) {
@@ -407,7 +402,7 @@ app.addEventListener("change", (event) => {
 });
 app.addEventListener("input", (event) => {
   if (event?.target?.id === "travel-search") { Study.searchTravel(event.target.value, event.isComposing); return; }
-  if (location.hash !== "#feedback" || feedbackBusy || feedbackSent) return;
+  if (Routes.current() !== "#feedback" || feedbackBusy || feedbackSent) return;
   feedbackSubmission=null; feedbackStatus="";
   feedbackDraft = {category: app.querySelector("#feedback-category").value, message: app.querySelector("#feedback-message").value, contact: app.querySelector("#feedback-contact")?.value || ""};
   app.querySelector("#feedback-ready").replaceChildren();
@@ -453,54 +448,52 @@ function focusHeading() {
   app.querySelector(".focus-heading")?.focus({ preventScroll: true });
 }
 function aboutPage() {
-  document.title = "關於 SoraChi｜SoraChi";
-  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash)}<main id="main" tabindex="-1" class="utility-main info-page"><h1 class="focus-heading" tabindex="-1">關於 SoraChi</h1>
+  setMarkup(`<div class="lesson-shell">${Navigation.header(Routes.current())}<main id="main" tabindex="-1" class="utility-main info-page"><h1 class="focus-heading" tabindex="-1">關於 SoraChi</h1>
     <section class="info-section"><h2>緣起</h2><p>把 Jabiko 分享出去後，我發現完全沒有日文基礎的人，其實很難直接使用。五十音還不熟，就要面對單字、句型和題目，往往不知道從哪裡開始。所以另外做了 SoraChi，從五十音和基本句子架構開始，讓零基礎的人也能用。</p><p>後來又想到，這些剛入門的人，也常有去日本旅遊的需求。點餐、結帳、買票、寄放行李，記得幾個簡單的關鍵字，就能處理不少事情，不一定要先學會完整句子。因此 SoraChi 把旅遊常用語獨立成一區，需要時可以直接查，也能在出發前先記熟。</p><p>學習內容會逐步往 N5／N4 延伸，目前先把入門基礎整理好。</p></section>
     <section class="info-section"><h2>吉祥物：雲朵精靈</h2><p>Sora（そら）在日文裡是「天空」；Chi 則取自「ちゃん（chan）」親暱、可愛的稱呼語感，組成了 SoraChi 這個名字。</p><p>吉祥物是一隻頭上有淡紫色葉子、繫著淡黃色圍巾的雲朵精靈，和 Sora 的天空意象相呼應。</p>${friend("about-mascot", "SoraChi 的雲朵精靈", "cloud-friend", 150, "(max-width: 540px) 120px, 150px")}</section>
     <section class="info-section"><h2>作者</h2><p class="author-name">花雪（HanaYukii）</p><p>程式競賽選手出身，碩士畢業後進入 Google，任職三年，目前在 AI 新創從事研發工作，也大量接觸 AI agent。</p><p>以前考過日檢 N2，2024 年重新追起日系偶像後又開始使用日文，也製作過大量偶像相關翻譯素材。</p><p>除了翻譯，也持續開發日文練習網站 Jabiko 與 SoraChi，整理教材、練習功能與題庫。</p><p>除了這個入門版本，後續也會推出適合我自己程度使用的 N2、N1 與 Post-N1（N1 之後的進階學習）版本。</p><a class="text-button" href="https://hanayukii.dev/about" target="_blank" rel="noopener noreferrer">作者的個人網站 ↗</a></section>
-    </main>${footer()}</div>`;
+    </main>${footer()}</div>`);
   focusHeading();
 }
 function route() {
   // Do not open or save a lesson under the guest owner while a saved login is loading.
   if(accountLoading) return;
   FeedbackChallenge.dispose();
-  // Keep old bookmarks working, with one canonical home address and no extra history entry.
-  if (location.hash === "#home") window.history.replaceState(window.history.state, "", (location.pathname || "./") + (location.search || ""));
+  Routes.normalize();
+  Routes.updateMeta();
   Study.stopAudio();
   cameFrom = exits.includes(window.history.state?.from) ? window.history.state.from : null;
   // The lesson on screen until now, so its list can bring that row back into view.
   const leaving = shown?.startsWith("#study/") ? shown.slice(7) : null, left = Study.title(leaving) ? leaving : null;
   // A historical completion URL must never claim an active replay is finished.
-  if (location.hash === "#done" && progress.inProgress) {
+  if (Routes.current() === "#done" && progress.inProgress) {
     replaceRoute("#lesson");
     return;
   }
   // The retired #study/t-* travel courses now live in the phrasebook under the same id.
-  const retired = location.hash.match(/^#study\/(t-[a-z-]+)$/)?.[1];
+  const retired = Routes.current().match(/^#study\/(t-[a-z-]+)$/)?.[1];
   if (retired && Study.travelTitle(retired)) {
     replaceRoute(`#travel/${retired}`);
     return;
   }
   selectedWrong = null;
   window.scrollTo({ top: 0, behavior: "instant" });
-  const studyPage = Study.render(location.hash);
+  const studyPage = Study.render(Routes.current());
   // Pages without a route of their own show home.
-  shown = studyPage !== null || ["#lesson", "#history", "#feedback", "#about", "#account"].includes(location.hash) || location.hash === "#done" && progress.completed ? location.hash : "#home";
-  shownHash = location.hash;
+  shown = studyPage !== null || ["#lesson", "#history", "#feedback", "#about", "#account"].includes(Routes.current()) || Routes.current() === "#done" && progress.completed ? Routes.current() : "#home";
+  shownRoute = Routes.current();
   if (studyPage !== null) {
-    document.title = `${Navigation.page(location.hash).title}｜SoraChi`;
-    app.innerHTML = studyPage;
+    setMarkup(studyPage);
     focusHeading();
     // Back on the kana table or the grammar list from a lesson, that lesson's row is in view and has focus.
-    const row = (location.hash === "#kana" || location.hash === "#grammar") && left ? app.querySelector(`.course-row[data-course="${left}"]`) : null;
+    const row = (Routes.current() === "#kana" || Routes.current() === "#grammar") && left ? app.querySelector(`.course-row[data-course="${left}"]`) : null;
     if (row) { const unit = row.closest?.("details"); if (unit) unit.open = true; row.focus({ preventScroll: true }); row.scrollIntoView?.({ block: "center" }); }
     // A travel card opened from a search result, or back on the search, the result that was opened.
     const found = app.querySelector(".travel-found") || app.querySelector(".return-focus");
     if (found) { found.focus({ preventScroll: true }); found.scrollIntoView?.({ block: found.matches?.(".return-focus") ? "center" : "start" }); }
     return;
   }
-  if (location.hash === "#lesson") {
+  if (Routes.current() === "#lesson") {
     if (progress.completed && !progress.inProgress) {
       replaceRoute("#done");
       return;
@@ -513,9 +506,9 @@ function route() {
       save();
     }
     lesson();
-  } else if (location.hash === "#done" && progress.completed) finish();
-  else if (location.hash === "#history") historyPage();
-  else if (location.hash === "#feedback") {
+  } else if (Routes.current() === "#done" && progress.completed) finish();
+  else if (Routes.current() === "#history") historyPage();
+  else if (Routes.current() === "#feedback") {
     // A feedback page keeps its way back, context and report in its history entry, so going back to an older one
     // returns where that one came from.
     const saved = window.history.state?.feedback;
@@ -524,20 +517,23 @@ function route() {
     shownFeedback = JSON.stringify(window.history.state?.feedback ?? null);
     feedbackPage();
   }
-  else if (location.hash === "#about") aboutPage();
-  else if (location.hash === "#account") accountPage();
-  else {
+  else if (Routes.current() === "#about") aboutPage();
+  else if (Routes.current() === "#account") accountPage();
+  else if (!Routes.known(Routes.current())) {
+    setMarkup(`<div class="lesson-shell">${Navigation.header(Routes.current())}<main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">找不到頁面</h1><p class="study-note">這個連結可能已變更，請回首頁選擇內容。</p><a class="primary" href="/">回首頁</a></main>${footer()}</div>`);
+    focusHeading();
+  } else {
     home();
     focusHeading();
   }
 }
 function replaceRoute(hash) {
-  window.history.replaceState({ from: null }, "", hash);
+  window.history.replaceState({ from: null }, "", Routes.path(hash));
   route();
 }
 function go(hash) {
-  if (location.hash === hash) route();
-  else location.hash = hash;
+  if (Routes.current() === hash) route();
+  else { window.history.pushState(null, "", Routes.path(hash)); arrive(); }
 }
 function restart() {
   progress.step = 0;
@@ -550,6 +546,12 @@ function restart() {
   go("#lesson");
 }
 app.addEventListener("click", (event) => {
+  const anchor = event.target.closest("a");
+  if (anchor && !event.defaultPrevented && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && (!event.button || event.button === 0) && !anchor.getAttribute("target") && anchor.getAttribute("download") === null) {
+    const href = anchor.getAttribute("href");
+    const id = href?.startsWith("/") && !href.startsWith("//") ? Routes.fromPath(href) : href;
+    if (Routes.known(id)) { event.preventDefault(); if (!restarting) go(id); return; }
+  }
   const button = event.target.closest("button");
   if (!button || button.disabled || restarting) return;
   // The second click of a double click never answers: after 再練, 下一題 or 開始練習 a new option can sit under the pointer.
@@ -632,10 +634,10 @@ app.addEventListener("click", (event) => {
       if(feedbackBusy) break;
       feedbackSent=false; feedbackSubmission=null; feedbackStatus=""; feedbackPage(); break;
     case "feedback":
-      if (location.hash !== "#feedback" && !feedbackBusy) {
+      if (Routes.current() !== "#feedback" && !feedbackBusy) {
         if(feedbackSent) { feedbackSent=false; feedbackSubmission=null; }
-        feedbackDiagnostics = captureFeedback(location.hash || "#home");
-        feedbackReturn = Navigation.page(location.hash).kind !== "unknown" || Study.context(location.hash) ? location.hash : "#home";
+        feedbackDiagnostics = captureFeedback(Routes.current() || "#home");
+        feedbackReturn = Navigation.page(Routes.current()).kind !== "unknown" || Study.context(Routes.current()) ? Routes.current() : "#home";
         feedbackContext = Study.context(feedbackReturn) || (feedbackReturn === "#lesson" ? `日文的三種文字・第 ${progress.step + 1} 步${progress.step >= 4 ? `・小練習 ${progress.step - 3}` : ""}` : feedbackReturn === "#done" ? "日文的三種文字完成頁" : feedbackReturn === "#home" ? "首頁" : Navigation.page(feedbackReturn).title);
       }
       go("#feedback");
@@ -695,13 +697,13 @@ window.addEventListener("storage", (event) => {
   canStore = dataStore.canPersist();
   updateStorageWarning();
 });
-window.addEventListener("hashchange", arrive);
-// Back or forward between two entries with the same address fires no hashchange, but their sources can differ, and
+window.addEventListener("hashchange", () => { if (Routes.current() !== shownRoute) arrive(); });
+// History entries with the same path can have different sources, and
 // two feedback pages with the same source can be about different pages.
 window.addEventListener("popstate", () => {
-  if (location.hash !== shownHash) return;
+  if (Routes.current() !== shownRoute) { arrive(); return; }
   const from = exits.includes(window.history.state?.from) ? window.history.state.from : null;
-  if (from !== cameFrom || location.hash === "#feedback" && JSON.stringify(window.history.state?.feedback ?? null) !== shownFeedback) route();
+  if (from !== cameFrom || Routes.current() === "#feedback" && JSON.stringify(window.history.state?.feedback ?? null) !== shownFeedback) route();
 });
 // The page opened first has no source; marking it keeps a later visit back from giving it one.
 if (window.history.state?.from === undefined) window.history.replaceState({ from: null }, "");
@@ -711,7 +713,7 @@ function beforeUpdateReload() {
   const draft = app.querySelector("#feedback-message")?.value ?? feedbackDraft.message;
   const warning = !canStore ? "目前有進度無法儲存，更新後可能無法接續。要現在更新嗎？"
     : draft.trim() ? "更新會清除尚未送出的回報內容。要現在更新嗎？"
-    : /^#(?:(?:kana|grammar)-random)$/.test(location.hash) ? "這輪隨機練習不會保存，更新後會重新開始。要現在更新嗎？" : "";
+    : /^#(?:(?:kana|grammar)-random)$/.test(Routes.current()) ? "這輪隨機練習不會保存，更新後會重新開始。要現在更新嗎？" : "";
   if (warning && !window.confirm(warning)) return false;
   restarting = true;
   Study.stopAudio();
