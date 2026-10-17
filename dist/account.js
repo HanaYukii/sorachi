@@ -2,6 +2,16 @@
 
 const Account = (() => {
   const escape = text => String(text).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+  function authReturn(location) {
+    const url = new URL(`${location.pathname || "/"}${location.search || ""}${location.hash || ""}`, location.origin || "https://sorachi.app");
+    const fragment = new URL(`?${url.hash.slice(1)}`, url).searchParams;
+    const failed = [url.searchParams, fragment].some(params => params.has("error") && (params.has("error_description") || params.has("error_code")));
+    const hasCode = url.hash === "#account" && url.searchParams.has("code");
+    if (!failed && !hasCode) return null;
+    // Never render provider text or leave failed authorization codes in the address.
+    for (const key of ["error", "error_code", "error_description", "code", "state"]) url.searchParams.delete(key);
+    return {failed, cleanPath:`${url.pathname}${url.search}#account`};
+  }
   function create(api) {
     let service=null, busy=false, message="", remote=null, revision=null, alive=true, initialized=false;
     const configured = () => Boolean(CloudConfig.url && CloudConfig.publishableKey);
@@ -16,6 +26,14 @@ const Account = (() => {
     };
     async function start() {
       if (!configured()) return;
+      const returned = authReturn(location);
+      const loginFailure = "登入沒有完成，請再試一次。原本的學習紀錄仍保留，也可以先不登入繼續使用。";
+      const reportLoginFailure = () => {
+        window.history.replaceState(window.history.state, "", returned.cleanPath);
+        message=loginFailure;
+        api.notice(message);
+      };
+      if (returned?.failed) reportLoginFailure();
       api.lock(true);
       try {
         const client=await Cloud.load(CloudConfig);
@@ -31,7 +49,8 @@ const Account = (() => {
         Navigation.setAccountLabel(user()?"帳號":"登入");
       } catch {
         alive=false; service=null; api.owner(null);
-        message="帳號目前無法載入。你仍可使用訪客進度，稍後重新整理再試。";
+        if (returned) reportLoginFailure();
+        else message="帳號目前無法載入。你仍可使用訪客進度，稍後重新整理再試。";
         Navigation.setAccountLabel("登入");
         api.notice(message);
       } finally { api.render(); api.lock(false); }
@@ -83,5 +102,5 @@ const Account = (() => {
     }
     return {start,render,action,user,service:()=>service,configured};
   }
-  return {create};
+  return {create,authReturn};
 })();

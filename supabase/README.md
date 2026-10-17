@@ -30,7 +30,11 @@ node supabase/check-public-access.mjs
 
 在專案 SQL Editor 執行 `tests/accounts.sql`：以 transaction 建立兩個合成測試帳號，驗證 owner isolation、stale revision、偽造 owner、直接刪除及匿名權限，最後 rollback，不留下測試資料。2026-10-18 已執行，結果 PASS。
 
-公開 API 驗收確認匿名讀取兩個表、寫入備份都被拒絕；回報函式拒絕其他 origin 與無效本文。仍需正式網域上的實際 Google 登入、Turnstile 送出與手動備份驗收，不能用單元測試替代。
+公開 API 驗收確認匿名讀取兩個表、寫入備份都被拒絕；回報函式拒絕其他 origin 與無效本文。
+
+2026-10-18 正式站 Chrome 已完成 Google 授權並回到「我的帳號」，重新整理仍保持登入；以首次登入的空白帳號資料完成雲端儲存與重新讀回，沒有帶入訪客進度。首次驗收曾因 provider 密鑰不符而失敗，使用者重新設定後成功。失敗回跳現在顯示可理解的提示、移除網址的錯誤資訊與失效授權碼；不顯示 provider 原始錯誤，也不修改學習紀錄。
+
+Turnstile 在自動操作的 Chrome 曾出現 `300030`；改由使用者親自完成驗證並送出後，正式站已顯示「已收到你的回報」。內容明確標示為部署驗收測試，沒有填入聯絡方式。仍未做 Safari／手機實機與所有擴充套件環境驗收。
 
 ## SDK 來源
 

@@ -4,17 +4,48 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const source=readFileSync(new URL('../dist/account.js',import.meta.url),'utf8');
 const id='11111111-1111-4111-8111-111111111111';
-function setup({signedIn=true,failed=false,confirm=true}={}) {
+function setup({signedIn=true,failed=false,confirm=true,address='https://sorachi.app/#account'}={}) {
   const calls=[],state={user:signedIn?{id,email:'learner@example.test'}:null};let onUser;
   const service={user:()=>state.user,async start(){if(failed)throw Error('offline');onUser(state.user);},async signIn(url){calls.push(['login',url]);},async signOut(){state.user=null;onUser(null);},
     async readBackup(){return state.remote||null;},async writeBackup(_snapshot,revision){calls.push(['write',revision]);if(state.conflict)throw Error('backup-conflict');return {revision:revision+1};}};
-  const ctx=vm.createContext({CloudConfig:{url:'test',publishableKey:'test'},Cloud:{load:async()=>({}),create:options=>{onUser=options.onUser;return service;}},Navigation:{setAccountLabel:value=>calls.push(['label',value])},DataStore:{MAX_ATTEMPTS:200},location:{hash:'#account',origin:'https://sorachi.app'},window:{confirm:()=>confirm},setTimeout,clearTimeout});
-  vm.runInContext(source+';globalThis.make=Account.create',ctx);
+  const location=new URL(address);
+  const ctx=vm.createContext({URL,CloudConfig:{url:'test',publishableKey:'test'},Cloud:{load:async()=>({}),create:options=>{onUser=options.onUser;return service;}},Navigation:{setAccountLabel:value=>calls.push(['label',value])},DataStore:{MAX_ATTEMPTS:200},location,window:{confirm:()=>confirm,history:{state:{from:null},replaceState(state,_title,path){calls.push(['replace',path]);location.href=new URL(path,location).href;}}},setTimeout,clearTimeout});
+  vm.runInContext(source+';globalThis.make=Account.create;globalThis.authReturn=Account.authReturn',ctx);
   const api={lock:value=>calls.push(['lock',value]),owner:value=>calls.push(['owner',value]),render(){},notice:value=>calls.push(['notice',value]),reload:()=>calls.push(['reload']),beforeLogout:value=>calls.push(['beforeLogout',value]),
     importGuest:()=>{calls.push(['claim']);return {ok:true};},importRemote:()=>{calls.push(['restore']);return {ok:true};},importSummary:r=>r.ok?'已帶入':'失敗',export:()=>JSON.stringify({owner:{kind:'account',id}})};
   const account=ctx.make(api);
-  return {account,calls,state,service,change:user=>{state.user=user;onUser(user);}};
+  return {account,calls,state,service,location,authReturn:ctx.authReturn,change:user=>{state.user=user;onUser(user);}};
 }
+test('provider failures show a safe login message and remove callback details, preserving unrelated query parameters',async()=>{
+  for (const address of [
+    'https://sorachi.app/?source=guide#error=server_error&error_code=unexpected_failure&error_description=private-provider-detail',
+    'https://sorachi.app/?source=guide&error=access_denied&error_description=private-provider-detail&code=expired-code&state=oauth-state#account',
+  ]) {
+    const b=setup({signedIn:false,address});await b.account.start();
+    assert.equal(b.location.href,'https://sorachi.app/?source=guide#account');
+    assert.match(b.account.render(),/登入沒有完成/);
+    assert.doesNotMatch(b.account.render(),/private-provider-detail|expired-code|oauth-state/);
+    assert.equal(b.calls.some(x=>x[0]==='claim'),false);
+    assert.match(b.account.render(),/data-action="account-login">/);
+    await b.account.action('account-login');
+    assert.deepEqual(b.calls.find(x=>x[0]==='login'),['login','https://sorachi.app/#account']);
+    assert.doesNotMatch(b.account.render(),/登入沒有完成/);
+    const reloaded=setup({signedIn:false,address:b.location.href});await reloaded.account.start();
+    assert.doesNotMatch(reloaded.account.render(),/登入沒有完成/);
+  }
+});
+test('a failed PKCE exchange removes the consumed code but a successful return is left to the SDK',async()=>{
+  const address='https://sorachi.app/?source=guide&code=test-code#account';
+  const bad=setup({signedIn:false,failed:true,address});await bad.account.start();
+  assert.equal(bad.location.href,'https://sorachi.app/?source=guide#account');
+  assert.match(bad.account.render(),/登入沒有完成/);
+  const good=setup({address});await good.account.start();
+  assert.equal(good.calls.some(x=>x[0]==='replace'),false);
+  assert.doesNotMatch(good.account.render(),/登入沒有完成/);
+  for(const route of ['?error=search#travel','?code=lesson#grammar','#study/g-identity']) {
+    assert.equal(good.authReturn(new URL(`https://sorachi.app/${route}`)),null);
+  }
+});
 test('boot selects owner without claiming guest data; later auth changes reload memory',async()=>{
   const b=setup();await b.account.start();
   assert.deepEqual(b.calls.filter(x=>x[0]==='owner'),[['owner',id]]);
