@@ -207,15 +207,20 @@ const Study = (() => {
     if (saved?.completedAt) return "已完成・可再練";
     return "開始";
   }
-  // A kana row shows each character with its romaji underneath as one unit, so a wrapped row never mismatches them (#80).
-  const kanaCells = (course) => `<span class="kana-cells">${course.letters.map((letter, i) => `<span class="kana-cell"><span lang="ja">${escape(letter)}</span><span class="kana-roman">${escape(course.readings[i])}</span></span>`).join("")}</span>`;
+  // These are grouped lesson entries, not vowel-column tables or individual character buttons.
+  const kanaCells = (course) => `<span class="kana-cells" data-count="${course.letters.length}">${course.letters.map((letter, i) => `<span class="kana-cell"><span lang="ja">${escape(letter)}</span><span class="kana-roman">${escape(course.readings[i])}</span></span>`).join("")}</span>`;
   // Explicit teaching scope: a course topic is not necessarily the current card's sentence type.
   const focusText = (focus, prefix = "") => `<span class="focus-label">${escape(prefix + focus[0])}</span><span>${japaneseRuns(focus[1])}</span>`;
   function row(course) {
     const learned = state().courses[course.id];
+    if (course.type === "kana") {
+      const name = course.row.endsWith("行") ? `${course.letters[0]}行` : course.letters.join("・");
+      const progress = status(course.id) === "開始" ? "學這組" : status(course.id);
+      return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span class="kana-row-heading"><strong lang="ja">${escape(name)}</strong><span class="course-state">${progress}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}<span aria-hidden="true"> →</span></span></span>${kanaCells(course)}</button>`;
+    }
     const focus = Content.lessonPresentation[course.id]?.focus;
-    const name = course.type === "kana" ? `<strong lang="ja">${escape(course.row)}</strong>${course.row.endsWith("行") ? `<span class="row-roman">（${escape(course.readings[0])}）</span>` : ""}` : `<strong>${japaneseRuns(focus ? course.title : Content.displayTitle(course.id))}</strong>`;
-    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span>${name}${course.type === "kana" ? kanaCells(course) : `<span class="course-subtitle"${course.home === "kana" ? ' lang="ja"' : ""}>${focus ? `<span class="course-topic">${focusText([focus[0] === "文法" ? "用法" : "單字", Content.displayTitle(course.id)])}</span>` : escape(course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span>`}</span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
+    const name = `<strong>${japaneseRuns(focus ? course.title : Content.displayTitle(course.id))}</strong>`;
+    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span>${name}<span class="course-subtitle"${course.home === "kana" ? ' lang="ja"' : ""}>${focus ? `<span class="course-topic">${focusText([focus[0] === "文法" ? "用法" : "單字", Content.displayTitle(course.id)])}</span>` : escape(course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span></span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
   }
   const kanaRows = (script, group) => Content.rowGroups[group].map((key) => courses[`${script}-${key}`]).filter(Boolean);
   function reviewSummary() {
@@ -250,18 +255,29 @@ const Study = (() => {
   const wrongLine = summary => `答錯的字：${summary.wrongLabels.map(escape).join('、')}${summary.wrongCount>summary.wrongLabels.length?`（共 ${summary.wrongCount} 個）`:''}`;
   function reviewEntry() {
     const summary=reviewSummary();
-    return summary.availableCount ? `<section class="study-review-entry"><h2>${summary.canResume?'還有一輪沒練完':'複習學過的字'}</h2>${summary.wrongLabels.length?`<p class="study-note">${wrongLine(summary)}</p>`:''}<a class="text-button" href="#kana-review">${summary.canResume?'繼續複習':`複習 ${Math.min(5,summary.availableCount)} 個字`}</a></section>`:'';
+    return summary.availableCount ? `<section class="study-review-entry"><div><h2>${summary.canResume?'還有一輪沒練完':'複習學過的字'}</h2>${summary.wrongLabels.length?`<p class="study-note">${wrongLine(summary)}</p>`:''}</div><a class="text-button" href="#kana-review">${summary.canResume?'繼續複習':`複習 ${Math.min(5,summary.availableCount)} 個字`}</a></section>`:'';
   }
   function kanaPage() {
     const script = state().script;
     const learnedBefore = Object.values(state().courses).some((c) => wasEarlierDay(c.completedAt));
-    return wrap(`<h1 class="focus-heading" tabindex="-1">五十音表</h1><p class="study-note">第一次學日文，可以先選「平假名」，從「あ行」開始。每組先看字、聽讀音，再做選擇題；不需要先背完整張表。</p><div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div><p class="study-note">${script === "h" ? "平假名用來寫許多日文詞語。先認字，再慢慢練熟讀音。" : "片假名常用來寫外來語，例如「コーヒー」（咖啡）。讀音和平假名對應，字形不同。"}</p>${reviewEntry()}<section class="study-review-entry"><h2>五十音隨機練習</h2><p class="study-note">基本平假名・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-kana-random">練 5 題 →</button></section><h2 class="course-list-heading">基本字</h2>${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list">${kanaRows(script, "basic").map(row).join("")}</div><h2 class="course-list-heading">濁音・半濁音</h2><p class="study-note">在字的右上加兩點（濁點）或小圈（半濁點），讀音會改變，例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list">${kanaRows(script, "voiced").map(row).join("")}</div><h2 class="course-list-heading">促音・長音</h2><p class="study-note">學過基本字後，再練「停一下」和「拉長音」。課內會用例子說明怎麼念。</p><div class="course-list">${Content.sounds.map(row).join("")}</div><h2 class="course-list-heading">拗音</h2><p class="study-note">把兩個字合在一起念，例如 き＋小的 ゃ → きゃ（kya）。不要拆成 ki、ya 兩個音；這種組合叫「拗音」。</p><div class="course-list">${kanaRows(script, "youon").map(row).join("")}</div><p class="study-note">每種假名先練 46 個基本字，再練 25 個濁音・半濁音和 33 個拗音。</p>`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">五十音表</h1>
+      <p class="study-note">第一次學日文，先選「平假名」，從「あ行」開始。點一組字，先看字、聽讀音，再做練習。</p>
+      <div class="script-tabs" role="group" aria-label="選擇假名種類"><button data-action="study-script" data-script="h" aria-pressed="${script === "h"}">平假名</button><button data-action="study-script" data-script="k" aria-pressed="${script === "k"}">片假名</button></div>
+      <p class="study-note">${script === "h" ? "平假名用來寫許多日文詞語。" : "片假名常用來寫外來語，例如「コーヒー」（咖啡）。讀音和平假名對應，字形不同。"}每格下方的英文字母是羅馬音，幫你對照讀音。</p>
+      ${readingHelp()}
+      <div class="kana-practice-links">${reviewEntry()}<section class="study-review-entry"><div><h2>五十音隨機練習</h2><p class="study-note">基本平假名・5 題，不記成績。</p></div><button class="text-button" data-action="study-kana-random">練 5 題 →</button></section></div>
+      <div class="kana-layout">
+        <section class="kana-section kana-basic" aria-labelledby="kana-basic-heading"><h2 id="kana-basic-heading" class="course-list-heading">基本字</h2>${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list kana-chart">${kanaRows(script, "basic").map(row).join("")}</div></section>
+        <section class="kana-section kana-voiced" aria-labelledby="kana-voiced-heading"><h2 id="kana-voiced-heading" class="course-list-heading">濁音・半濁音</h2><p class="study-note">右上加兩點或小圈，讀音就會改變。例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list kana-chart">${kanaRows(script, "voiced").map(row).join("")}</div></section>
+        <section class="kana-section kana-sounds" aria-labelledby="kana-sounds-heading"><h2 id="kana-sounds-heading" class="course-list-heading">促音・長音</h2><p class="study-note">學過基本字後，再練「停一下」和「拉長音」。</p><div class="course-list">${Content.sounds.map(row).join("")}</div></section>
+        <section class="kana-section kana-youon" aria-labelledby="kana-youon-heading"><h2 id="kana-youon-heading" class="course-list-heading">拗音</h2><p class="study-note">把兩個字合在一起念，例如 き＋小的 ゃ → きゃ（kya）。不要拆成 ki、ya 兩個音。</p><div class="course-list kana-chart">${kanaRows(script, "youon").map(row).join("")}</div></section>
+      </div><p class="study-note">每種假名有 46 個基本字、25 個濁音・半濁音和 33 個拗音，可以一組一組學。</p>`, "#home", "回首頁", true, "kana-catalog");
   }
   function settingsPage() {
     return wrap(`<h1 class="focus-heading" tabindex="-1">學習設定</h1><section class="study-card"><h2>播放語速</h2><p class="study-note">五十音、句型與旅遊用語都會使用這個速度。</p><div class="script-tabs" role="group" aria-label="播放語速">${[[0.65,"慢速"],[0.8,"一般"],[1,"原速"]].map(([rate,label]) => `<button data-action="study-rate" data-rate="${rate}" aria-pressed="${speechRate() === rate}">${label}</button>`).join("")}</div><p class="study-note">設定存在這個瀏覽器。</p></section>`);
   }
   function readingHelp() {
-    return `<details class="phrase-more reading-help"><summary>日文下方的英文字母怎麼看？</summary><p class="study-note">這是「羅馬字」，用英文字母提示日文讀音，不是照英文單字念。不確定時可以按喇叭聽讀音。</p><p class="study-note">aa、ii、uu、ee、oo 表示把音拉長。ou、ei 也常念成長音，例如 gakusei（學生）的最後念成 see：ga-ku-see。五十音區的「長音」課有更多例子。</p></details>`;
+    return `<details class="phrase-more reading-help"><summary>日文下方的英文字母怎麼看？</summary><p class="study-note">這是「羅馬字」（也常叫羅馬音），用英文字母提示日文讀音。例如 あ 是 a、か 是 ka。先對照字和讀音，不用照英文單字念；進入每組課程後，可以按喇叭跟著念。</p><p class="study-note">shi（し）、chi（ち）、tsu（つ）、fu（ふ）是常見的寫法，幾個英文字母合起來表示一個音。遇到不確定的讀音，就按喇叭聽。</p><p class="study-note">aa、ii、uu、ee、oo 表示把音拉長，例如 おばあさん obaasan（奶奶）的 aa 要念久一點。ou、ei 也常念成長音，例如 がくせい gakusei（學生）的「せい」通常把 e 拉長。學過基本字後，可以看「長音」課的例子。</p></details>`;
   }
   function grammarNext() {
     const unfinished = c => state().courses[c.id]?.active?.touched && state().courses[c.id].active.phase !== "done";
@@ -284,7 +300,7 @@ const Study = (() => {
   }
   // The next lesson and the units come first, so a phone shows where to start; practice without a lesson follows.
   function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><div class="grammar-overview"><div><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按喇叭跟著念。</p>${readingHelp()}</div>${grammarNextEntry()}</div>${grammarUnitList()}${grammarReviewEntry()}<section class="study-review-entry"><h2>句型隨機練習</h2><p class="study-note">入門句型・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-grammar-random">練 5 題 →</button></section>`, "#home", "回首頁", true, "grammar-catalog");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><div class="grammar-overview"><div><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按喇叭跟著念。</p></div>${grammarNextEntry()}</div>${grammarUnitList()}${grammarReviewEntry()}<section class="study-review-entry"><h2>句型隨機練習</h2><p class="study-note">入門句型・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-grammar-random">練 5 題 →</button></section>`, "#home", "回首頁", true, "grammar-catalog");
   }
   // Consecutive lessons with the same unit share one heading, in teaching order; the first lesson has the unit's goal.
   function grammarUnits() {

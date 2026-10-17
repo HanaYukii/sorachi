@@ -104,7 +104,7 @@ test('two scripts cover 46 basic and 25 voiced characters each and only one scri
     b.render('#kana'); b.action('script', { script });
     // 26 kana rows plus the two special-sound lessons.
     assert.equal((b.html.match(/class="course-row" data-action="study-open"/g) || []).length, 28);
-    for (const heading of ['濁音・半濁音', '拗音', '促音・長音']) assert.match(b.html, new RegExp(`<h2 class="course-list-heading">${heading}</h2>`));
+    for (const heading of ['濁音・半濁音', '拗音', '促音・長音']) assert.match(b.html, new RegExp(`<h2[^>]*class="course-list-heading">${heading}</h2>`));
     const letters = [];
     for (const key of groupKeys) {
       const id = `${script}-${key}`;
@@ -645,6 +645,9 @@ test('grammar examples can be played and Japanese quiz options show romaji', () 
   if (!/option-reading/.test(b.html)) { b.action('answer', { choice: '1' }); b.action('next'); }
   assert.match(b.html, /<span lang="ja">です<\/span><span class="option-reading">desu<\/span>/);
   b.render('#grammar');
+  assert.doesNotMatch(b.html, /reading-help|日文下方的英文字母怎麼看/);
+  b.render('#kana');
+  assert.match(b.html, /每格下方的英文字母是羅馬音/);
   assert.match(b.html, /<details class="phrase-more reading-help"><summary>日文下方的英文字母怎麼看？<\/summary>/);
   assert.match(b.html, /ou、ei 也常念成長音/);
 });
@@ -668,8 +671,10 @@ test('the kana table pairs every character with its romaji from the lesson data,
       const rowHtml = html.match(new RegExp(`data-course="${id}">([\\s\\S]*?)</button>`))[1];
       const cells = [...rowHtml.matchAll(/<span class="kana-cell"><span lang="ja">([^<]+)<\/span><span class="kana-roman">([^<]+)<\/span><\/span>/g)].map((m) => [m[1], m[2]]);
       assert.deepEqual(cells, [...course.letters].map((letter, i) => [letter, course.readings[i]]), id);
-      if (course.row.endsWith('行')) assert.ok(rowHtml.includes(`<span class="row-roman">（${course.readings[0]}）</span>`), id);
-      else assert.doesNotMatch(rowHtml, /row-roman/, `${id}: わ・を・ん and contracted rows are named by their kana`);
+      const name = course.row.endsWith('行') ? `${course.letters[0]}行` : course.letters.join('・');
+      assert.ok(rowHtml.includes(`<strong lang="ja">${name}</strong>`), `${id}: group title uses the selected script`);
+      assert.ok(rowHtml.includes(`data-count="${course.letters.length}"`), `${id}: three-character groups have three cells, without misleading vowel columns`);
+      assert.match(rowHtml, /學這組/);
     }
   }
   const pairs = (id) => Object.fromEntries(b.content.courses[id].letters.map((letter, i) => [letter, b.content.courses[id].readings[i]]));
@@ -737,7 +742,8 @@ test('travel pages show staff questions and Japanese keywords; study headers kee
   }
   // On the kana table, the basic rows have their own heading after the random practice box.
   b.render('#kana');
-  assert.match(b.html, /<h2>五十音隨機練習<\/h2>[\s\S]*?<\/section><h2 class="course-list-heading">基本字<\/h2><div class="course-list">/);
+  assert.match(b.html, /<section[^>]*aria-labelledby="kana-basic-heading"><h2 id="kana-basic-heading"[^>]*>基本字<\/h2>/);
+  assert.ok(b.html.indexOf('<h2>五十音隨機練習</h2>') < b.html.indexOf('id="kana-basic-heading"'));
   b.render('#travel');
   b.render('#travel/dining');
   assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">店員可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
