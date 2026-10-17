@@ -13,10 +13,10 @@ const current=d=>d.session.items[0];
 const answer=(d,entries=sample)=>D.act(d,entries,'answer',entries.find(e=>e.id===current(d).id).question.answer);
 const store=()=>{const map=new Map();const storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v)};return {map,storage,create:()=>S.create({storage})};};
 
-test('drill uses stable IDs and revision per question; 50 additions do not mutate course question banks',()=>{
- assert.equal(pool.length,200);assert.equal(B.questions.length,50);assert.equal(C.grammar.flatMap(c=>c.questions).length,150);
+test('drill uses stable IDs and revision per question; 80 additions do not mutate course question banks',()=>{
+ assert.equal(pool.length,230);assert.equal(B.questions.length,80);assert.equal(C.grammar.flatMap(c=>c.questions).length,150);
  assert.deepEqual(clone(B.validate(C)),[]);assert.equal(new Set(pool.map(q=>q.id)).size,pool.length);
- assert.equal(B.questions.filter(q=>q.source.kind==='jabiko-adapted').length,6);
+ assert.equal(B.questions.filter(q=>q.source.kind==='jabiko-adapted').length,36);
  const reversed=D.pool([...C.grammar].reverse(),[...B.questions].reverse());
  for(const q of pool)assert.equal(reversed.find(x=>x.id===q.id).revision,q.revision);
  for(const q of B.questions){assert.ok(q.explanation.length>20);assert.equal(q.readings.length,q.options.length);for(let i=0;i<q.options.length;i++)if(/[ぁ-ヿ]/u.test(q.options[i]))assert.ok(q.readings[i]);}
@@ -86,18 +86,66 @@ test('backup merge keeps the newer whole session and clearing wins in both direc
 
 
 test('the 200-question release preserves all 168 previous question revisions and an in-progress pass',()=>{
- const original=pool.filter(q=>q.question.source?.batch!=='2026-10-17-200');
+ const release200=pool.filter(q=>q.question.source?.batch!=='2026-10-18-jabiko');
+ const original=release200.filter(q=>q.question.source?.batch!=='2026-10-17-200');
  const added=pool.filter(q=>q.question.source?.batch==='2026-10-17-200');
  assert.equal(original.length,168);assert.equal(added.length,32);
  assert.equal(createHash('sha256').update(JSON.stringify(original.map(q=>[q.id,q.revision]))).digest('hex'),'f25e0e5a51ff7d00f0ecedf715f940e372c5eba54a780f1e350ac073b6b5688c');
  let data=answer(D.start(D.blank(),original),original);
- assert.deepEqual(clone(D.restore(data,pool)),clone(data));
+ assert.deepEqual(clone(D.restore(data,release200)),clone(data));
  for(let i=0;i<original.length;i++) {
+  assert.ok(!added.some(q=>q.id===current(data).id));
+  if(!data.session.answers.length)data=answer(data,release200);
+  data=D.act(data,release200,'next');
+ }
+ const nextPass=[current(data).id,...data.session.deck.map(q=>q.id)];
+ assert.equal(new Set(nextPass).size,200);
+ for(const q of added)assert.ok(nextPass.includes(q.id));
+});
+
+
+test('Jabiko additions keep the existing 200 questions and join only the next pass, including persisted reload',()=>{
+ const old=pool.filter(q=>q.question.source?.batch!=='2026-10-18-jabiko');
+ const added=pool.filter(q=>q.question.source?.batch==='2026-10-18-jabiko');
+ assert.equal(old.length,200);assert.equal(added.length,30);
+ assert.equal(createHash('sha256').update(JSON.stringify(old.map(q=>[q.id,q.revision]))).digest('hex'),'f5685dd6eb7af8565169b8f9b2ce87e72ef270d7c47a17c669824914a0572dc7');
+ const env=store(), local=env.create(), progress=local.readProgress();
+ progress.study.drill=answer(D.start(D.blank(),old),old);assert.ok(local.writeProgress(progress));
+ let data=D.restore(env.create().readProgress().study.drill,pool);
+ assert.deepEqual(clone(data),clone(progress.study.drill));
+ for(let i=0;i<old.length;i++) {
   assert.ok(!added.some(q=>q.id===current(data).id));
   if(!data.session.answers.length)data=answer(data,pool);
   data=D.act(data,pool,'next');
  }
  const nextPass=[current(data).id,...data.session.deck.map(q=>q.id)];
- assert.equal(new Set(nextPass).size,200);
+ assert.equal(new Set(nextPass).size,230);
  for(const q of added)assert.ok(nextPass.includes(q.id));
+});
+
+test('the Jabiko batch declares existing teaching scope and uses only its taught kana vocabulary',()=>{
+ const added=B.questions.filter(q=>q.source.batch==='2026-10-18-jabiko');
+ assert.equal(added.length,30);
+ for(const q of added) {
+  assert.equal(q.source.kind,'jabiko-adapted');
+  assert.equal(q.source.commit,'57524190e53d947cc0be8813af4d8cef60201f00');
+  assert.ok(q.scope.includes(q.courseId),q.id);
+  const seen=new Set(), words=new Set();
+  function visit(id) {
+   assert.ok(C.lessonPlan[id],`${q.id}: unknown scope ${id}`);
+   if(seen.has(id))return;seen.add(id);
+   const plan=C.lessonPlan[id];for(const item of [...plan.words,...plan.grammar])words.add(item);
+   for(const prerequisite of plan.requires)visit(prerequisite);
+  }
+  q.scope.forEach(visit);
+  const known=[...words].sort((a,b)=>b.length-a.length);
+  // Like the lesson guard, this flags unknown kana. Human review still checks meaning and grammar.
+  for(const text of [q.prompt,...q.options]) {
+   const reading=text.replace(/[一-龯々]+（([ぁ-んァ-ヶー]+)）/gu,'$1');
+   for(let part of reading.match(/[ぁ-んァ-ヶー]+/gu)||[]) {
+    for(const word of known)part=part.split(word).join('');
+    assert.equal(part,'',`${q.id}: untaught kana in ${text}`);
+   }
+  }
+ }
 });

@@ -1,6 +1,6 @@
 # Jabiko 題目盤點（#39、#89）
 
-目前基準：2026-10-17，SoraChi 48 堂句型、150 題課內題，加上 50 題獨立刷題題目，共 200 題。下方 #39 的 35 課盤點保留作歷史紀錄；最新判斷以本文件末尾 #89 為準。
+目前基準：2026-10-18，SoraChi 48 堂句型、150 題課內題，加上 80 題獨立刷題題目，共 230 題。下方 #39 的 35 課盤點保留作歷史紀錄；最新判斷以本文件末尾的新增批次為準。
 
 - 來源：Jabiko（唯讀參考）`src/domain/exam/items/n5.ts`，commit `31c96ab`（2026-10-11）。
 - 授權：Jabiko repo 沒有授權檔。它的文件說明這些題目是自撰的，參考公開資料只取題型與範圍，沒有複製題幹。使用者在 2026-10-16 允許移植最基礎的題目。所以只搬自撰題，並在 `content.js` 的 `lessonPlan.<課>.sources` 記錄原題 ID。
@@ -177,3 +177,47 @@
 | kudasai-request-marker | g-te-kudasai | 「ちょっと 待（ま）ってください。」哪個部分讓這句變成「請你等一下」的請求？ |
 | ongoing-versus-future | g-te-iru | 想明確說「現在正在等」，空格放哪一個？今（いま）、待（ま）って＿＿。 |
 | permission-positive-reply | g-te-mo-ii | 你問可不可以吃這個，對方回答「はい、どうぞ」。意思最接近哪一個？ |
+
+
+## 第三批：Jabiko 基礎題改寫（2026-10-18）
+
+新增 30 題（批次 `2026-10-18-jabiko`），沿用 Jabiko 自撰題的考點，改成本站已教的詞與句型。Jabiko 來源仍為 `57524190e53d947cc0be8813af4d8cef60201f00` 的 `src/domain/exam/items/n5.ts`；30 個來源 ID 均已核對存在。不移植四選一難度、陌生長句或 N4 標籤；每題保留三個選項、中文解析，日文題幹與選項附讀音。
+
+`scope` 列出本題使用的課程（含所需先備）；不代表使用者必須先完成這些課。自動檢查未知假名只是輔助，不能判斷新詞的意思、文法用法或雙解，仍逐題對照教材和所有選項。
+
+| 新題 ID（drill/basic/） | Jabiko 原題 ID | 本站範圍 | 題目／考點 |
+| --- | --- | --- | --- |
+| umbrella-not-bag | n5-vocab-kasa | g-nouns | 下雨時想找自己的「雨傘」，要認哪個詞？ |
+| station-not-shop | n5-vocab-eki | g-nouns | 要搭電車，先找「車站」。哪個詞表示車站？ |
+| room-word | n5-vocab-heya | g-adj-na、g-nouns | 飯店人員說「部屋（へや）」，這個詞是什麼意思？ |
+| buy-bread-past | n5-vocab-kau | g-mashita | 「パンを 買（か）いました。」告訴你哪件事已經做了？ |
+| return-to-hotel | n5-vocab-kaeru | g-te-sequence、g-nouns | 逛完街，想說「回飯店」。哪一句符合？ |
+| kuru-meaning | n5-vocab-kuru-tomodachi-ie | g-verb-forms | 「来（く）る」是「来（き）ます」的原形。它表示哪個動作？ |
+| look-at-this | n5-vocab-miru-terebi | g-verb-forms | 想表達「看這個」，空格要放哪個動作？これを＿＿。 |
+| go-station-action | n5-vocab-iku-kaisha | g-ni-de | 「駅（えき）に 行（い）きます。」是在表達什麼？ |
+| cheap-not-small | n5-vocab-yasui-mise | g-adj-i | 想說麵包「便宜」，不是說它「小」。哪一句符合？ |
+| tasty-not-cheap | n5-vocab-oishii | g-who-2 | 吃了一口麵包，想稱讚「好吃」。選哪一句？ |
+| cold-versus-warm-water | n5-vocab-tsumetai | g-adj-neg | 想要冷的水，哪個說法符合？ |
+| speak-slowly-word | n5-vocab-yukkuri | g-te-kudasai | 「ゆっくり 話（はな）してください。」裡，哪個詞表示「慢慢地」，說明說話的速度？ |
+| chotto-wait-amount | n5-vocab-chotto | g-te-kudasai | 店員請你「ちょっと 待（ま）ってください」。這裡的「ちょっと」是什麼意思？ |
+| clean-room-description | n5-usage-kirei | g-adj-na | 想說「這個房間很乾淨」，選哪一句？ |
+| convenient-not-quiet | n5-syn-benri | g-adj-na | 想說飯店「很方便」，選哪個說法？ |
+| behind-the-station | n5-usage-ushiro | g-position、g-nouns | 「駅（えき）の 後（うし）ろに ホテルが あります。」飯店在哪裡？ |
+| topic-versus-owner | n5-grammar-ha-watashi-gakusei | g-no、g-nouns | 比較「私（わたし）は 学生（がくせい）です」和「私（わたし）の 本（ほん）」時，哪一組意思正確？ |
+| ka-polite-question | n5-grammar-ka | g-nouns、g-negative | 你指著一張票，想確認「是車票嗎？」。哪一句是在提問？ |
+| whose-book-reply | n5-grammar-no | g-nouns、g-to | 這本書屬於老師。想說「老師的書」，要選哪個？ |
+| cat-existence-roles | n5-grammar-ga-neko-iru | g-arimasu | 「ここに 猫（ねこ）が います。」裡，「ここ」和「猫」分別告訴你什麼？ |
+| action-place-hotel | n5-grammar-de-toshokan | g-ni-de、g-nouns | 想說「在飯店喝水」，哪一句符合？ |
+| destination-with-e | n5-grammar-e-kyouto-iku | g-ni-de、g-transport | 「京都（きょうと）へ 行（い）きます。」中的「京都へ」說明什麼？ |
+| na-links-convenient | n5-grammar-na | g-adj-na、g-nouns | 「便利（べんり）です」改成放在名詞前，想說「方便的飯店」。哪一個正確？ |
+| until-friday | n5-grammar-made-kuji-hataraku | g-kara-made-time | 「月曜日（げつようび）から 金曜日（きんようび）まで」表示哪一段時間？ |
+| reason-and-result-buy | n5-grammar-kara-atama-itai | g-kara-reason | 「安（やす）いですから、買（か）います。」哪一個是原因，哪一個是決定？ |
+| soshite-action-order | n5-context-soshite | g-soshite-demo、g-te-sequence | 「パンを 買（か）います。そして、うちに 帰（かえ）ります。」這裡的「そして」把兩個動作怎麼連起來？ |
+| but-still-buy | n5-context-demo | g-soshite-demo | 想表達「很貴，但是還是要買」，哪句意思符合？ |
+| dakara-result-direction | n5-context-dakara | g-dakara | 價格太貴是原因，不買是決定。哪一句把順序說對了？ |
+| request-slow-speech | n5-grammar-tekudasai-iu | g-te-kudasai | 想請對方「慢慢說」，哪一句是請求？ |
+| buy-then-eat | n5-grammar-tekara-te-arau-taberu | g-te-sequence | 想說「先買麵包，再吃麵包」，哪一句順序正確？ |
+
+未採用：Jabiko 的時間點 に、一起做的 と、たい、ませんか、ながら、比較、可能形等仍無完整本站課程；不能只因為標 N5／N4 就加入。圖書館、報紙、洗手等原題詞彙仍未教，本批相關考點改用飯店、水、買麵包等既有詞。漢字讀音題仍不直接移植，避免未教漢字成為作答門檻。
+
+原有 200 題 ID、revision 與課內題全數不變；進行中的一輪接續原題序，新題只在下一輪洗牌加入。新增測試驗證完整 200 → 230 題的保存／重載接續、詞彙範圍，以及每一新題顯示讀音、首答解釋與重新載入。

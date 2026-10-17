@@ -2793,3 +2793,24 @@ test('every section has a visible header feedback entry and reports its own cont
     b.action('feedback-back'); assert.equal(b.hash, hash);
   }
 });
+
+test('every new Jabiko drill item renders its readings and explanation and survives answering and reload',()=>{
+ const catalog=browser();
+ const questions=catalog.run("DrillBank.questions.filter(q=>q.source.batch==='2026-10-18-jabiko')");
+ assert.equal(questions.length,30);
+ for(const q of questions) {
+  const b=browser();
+  b.run(`progress.study.drill=Drill.start(Drill.blank(),Drill.pool(Content.grammar,DrillBank.questions).filter(q=>q.id===${JSON.stringify(q.id)}))`);
+  b.navigate('#drill');
+  assert.ok(b.html.includes(q.prompt),q.id);
+  for(const reading of [q.promptReading,...q.readings].filter(Boolean))assert.ok(b.html.replace(/&#39;/g,"'").includes(reading),`${q.id}: ${reading}`);
+  b.study('study-answer',{choice:(q.answer+1)%q.options.length});
+  assert.ok(b.node(".study-feedback").textContent.includes(q.explanation),q.id);
+  const r=browser({raw:b.stored,hash:'#drill'});
+  assert.ok(r.html.includes(q.prompt),q.id);
+  assert.ok(r.html.includes(q.explanation),q.id);
+  assert.deepEqual(JSON.parse(r.stored).learning.study.drill,JSON.parse(b.stored).learning.study.drill);
+  assert.deepEqual(JSON.parse(r.stored).learning.study.courses,{});
+  r.study('study-next');assert.match(r.html,/第 2 題/);
+ }
+});
