@@ -197,8 +197,8 @@ const Study = (() => {
   const wasEarlierDay = (date) => date && new Date(date).toDateString() !== new Date().toDateString();
   // 回 leads back to where a lesson or review was opened (#82): home, or else its own list, also for a direct link.
   const exitTo = (list) => api.from?.() === "#home" ? ["#home", "回首頁"] : list === "#kana" ? ["#kana", "回五十音表"] : ["#grammar", "回基礎句型"];
-  function wrap(content, destination = "#home", label = "回首頁", wide = false) {
-    return `<div class="lesson-shell${wide ? " lesson-wide" : ""}">${Navigation.header(globalThis.location?.hash || "", destination, label)}<main id="main" tabindex="-1" class="study-main">${content}${warning()}</main>${footer()}</div>`;
+  function wrap(content, destination = "#home", label = "回首頁", wide = false, pageClass = "") {
+    return `<div class="lesson-shell${wide ? " lesson-wide" : ""}${pageClass ? ` ${pageClass}` : ""}">${Navigation.header(globalThis.location?.hash || "", destination, label)}<main id="main" tabindex="-1" class="study-main">${content}${warning()}</main>${footer()}</div>`;
   }
   function status(id) {
     const saved = state().courses[id];
@@ -213,8 +213,8 @@ const Study = (() => {
   function row(course) {
     const learned = state().courses[course.id];
     const focus = Content.lessonPresentation[course.id]?.focus;
-    const name = course.type === "kana" ? `<strong lang="ja">${escape(course.row)}</strong>${course.row.endsWith("行") ? `<span class="row-roman">（${escape(course.readings[0])}）</span>` : ""}` : `<strong>${escape(Content.displayTitle(course.id))}</strong>`;
-    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span>${name}${course.type === "kana" ? kanaCells(course) : `<span class="course-subtitle"${course.home === "kana" ? ' lang="ja"' : ""}>${focus ? `<span class="course-topic">${focusText(focus)}</span>` : escape(course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span>`}</span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
+    const name = course.type === "kana" ? `<strong lang="ja">${escape(course.row)}</strong>${course.row.endsWith("行") ? `<span class="row-roman">（${escape(course.readings[0])}）</span>` : ""}` : `<strong>${japaneseRuns(focus ? course.title : Content.displayTitle(course.id))}</strong>`;
+    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span>${name}${course.type === "kana" ? kanaCells(course) : `<span class="course-subtitle"${course.home === "kana" ? ' lang="ja"' : ""}>${focus ? `<span class="course-topic">${focusText([focus[0] === "文法" ? "用法" : "單字", Content.displayTitle(course.id)])}</span>` : escape(course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span>`}</span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
   }
   const kanaRows = (script, group) => Content.rowGroups[group].map((key) => courses[`${script}-${key}`]).filter(Boolean);
   function reviewSummary() {
@@ -282,7 +282,7 @@ const Study = (() => {
   }
   // The next lesson and the units come first, so a phone shows where to start; practice without a lesson follows.
   function grammarPage() {
-    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按喇叭跟著念。</p>${readingHelp()}${grammarNextEntry()}${grammarUnitList()}${grammarReviewEntry()}<section class="study-review-entry"><h2>句型隨機練習</h2><p class="study-note">入門句型・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-grammar-random">練 5 題 →</button></section>`);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">基礎句型</h1><div class="grammar-overview"><div><p class="study-note">第一次學，從「基本句子」的第一課開始。每課先看例子，再做幾題練習。還不熟五十音也能先看中文意思，按喇叭跟著念。</p>${readingHelp()}</div>${grammarNextEntry()}</div>${grammarUnitList()}${grammarReviewEntry()}<section class="study-review-entry"><h2>句型隨機練習</h2><p class="study-note">入門句型・5 題，不用先學過，也不會記成績。</p><button class="text-button" data-action="study-grammar-random">練 5 題 →</button></section>`, "#home", "回首頁", true, "grammar-catalog");
   }
   // Consecutive lessons with the same unit share one heading, in teaching order; the first lesson has the unit's goal.
   function grammarUnits() {
@@ -920,7 +920,7 @@ const Study = (() => {
   function coursePage(course) {
     const saved = courseState(course.id);
     const active = peekAttempt(course.id) || draftAttempt(course, saved);
-    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(Content.displayTitle(course.id))}</h1>${Content.lessonPresentation[course.id]?.focus ? `<p class="lesson-topic">${focusText(Content.lessonPresentation[course.id].focus, "本課")}</p>` : Content.lessonPresentation[course.id] ? `<p class="study-note">${escape(course.title)}</p>` : ""}${lessonPhases(active.phase)}${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)), course.type !== "kana");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${japaneseRuns(Content.lessonPresentation[course.id]?.focus ? course.title : Content.displayTitle(course.id))}</h1>${Content.lessonPresentation[course.id]?.focus ? `<p class="lesson-topic">${focusText([Content.lessonPresentation[course.id].focus[0] === "文法" ? "用法" : "單字", Content.displayTitle(course.id)])}</p>` : Content.lessonPresentation[course.id] ? `<p class="study-note">${escape(course.title)}</p>` : ""}${lessonPhases(active.phase)}${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)), course.type !== "kana");
   }
   function render(hash) {
     // The opened search result gets focus only when coming back from the travel cards, not on a later visit.

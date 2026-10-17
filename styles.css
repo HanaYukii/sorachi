@@ -1306,3 +1306,34 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .lesson-card .card-focus { margin: -4px 0 22px; font-size: 15px; }
 .card-focus .focus-label { color: var(--aqua-ink); background: #e5f3f5; border-color: #8dbbc5; }
 .course-topic > span:last-child, .lesson-topic > span:last-child, .card-focus > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+
+/* The desktop catalogue uses the page width; only small screens keep a single course column. */
+.lesson-shell.grammar-catalog { max-width: 1240px; }
+.grammar-catalog .study-main { max-width: 1120px; }
+.grammar-overview { display: grid; gap: 20px; margin: 16px 0 28px; align-items: start; }
+.grammar-overview .study-note { margin-top: 0; font-size: 14px; }
+.grammar-overview .study-review-entry { margin: 0; }
+.grammar-catalog .unit-section { --unit-tint: var(--lilac); --unit-border: var(--rule-border); margin-top: 22px; }
+.grammar-catalog .unit-section:nth-of-type(3n + 2) { --unit-tint: var(--aqua); --unit-border: var(--example-border); }
+.grammar-catalog .unit-section:nth-of-type(3n) { --unit-tint: #fff0e5; --unit-border: #dbaf90; }
+.grammar-catalog .unit-section > summary { border: 2px solid var(--unit-border); background: var(--unit-tint); padding: 18px 22px; }
+.grammar-catalog .unit-goal { max-width: 76ch; color: var(--ink); }
+.grammar-catalog .course-list { gap: 14px; margin: 14px 0 24px; }
+.grammar-catalog .course-row { align-items: start; padding: 22px; border-color: var(--unit-border); }
+.grammar-catalog .course-row strong { display: block; font-size: 18px; font-weight: 600; line-height: 1.75; overflow-wrap: anywhere; }
+.grammar-catalog .course-subtitle { margin-top: 10px; }
+.grammar-catalog .course-row .course-state { margin-top: 4px; white-space: nowrap; }
+@media (hover: hover) { .grammar-catalog .course-row:hover { background: var(--unit-tint); border-color: var(--purple); } }
+@media (min-width: 900px) {
+  .grammar-overview { grid-template-columns: minmax(0, 1fr) minmax(260px, .55fr); gap: 40px; }
+  .grammar-catalog .course-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grammar-catalog .unit-section > summary { position: relative; padding-right: 180px; }
+  .grammar-catalog .unit-count { position: absolute; right: 22px; top: 18px; }
+}
+@media (max-width: 600px) {
+  .grammar-catalog .unit-section > summary, .grammar-catalog .course-row { padding: 16px; }
+  .grammar-catalog .course-row { flex-wrap: wrap; gap: 10px; }
+  .grammar-catalog .course-row > span:first-child { flex: 1 1 100%; }
+  .grammar-catalog .course-row strong { font-size: 17px; }
+  .grammar-catalog .course-row .course-state { margin-left: auto; }
+}
