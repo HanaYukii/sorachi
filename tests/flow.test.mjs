@@ -2713,7 +2713,7 @@ test('a changed drill question is explained and a corrupted or future round is p
 test('the old origin offers a manual backup path without redirecting or sharing progress', () => {
   const b = browser();
   b.run('location.hostname="hanayukii.github.io"');
-  b.navigate('#home');
+  b.navigate('#kana');
   assert.match(b.html, /SoraChi 新網址/);
   assert.match(b.html, /href="https:\/\/sorachi.app\/"/);
   assert.match(b.html, /先在「學習紀錄」下載備份/);
