@@ -208,10 +208,13 @@ const Study = (() => {
   }
   // A kana row shows each character with its romaji underneath as one unit, so a wrapped row never mismatches them (#80).
   const kanaCells = (course) => `<span class="kana-cells">${course.letters.map((letter, i) => `<span class="kana-cell"><span lang="ja">${escape(letter)}</span><span class="kana-roman">${escape(course.readings[i])}</span></span>`).join("")}</span>`;
+  // Explicit teaching scope: a course topic is not necessarily the current card's sentence type.
+  const focusText = (focus, prefix = "") => `<span class="focus-label">${escape(prefix + focus[0])}</span><span>${japaneseRuns(focus[1])}</span>`;
   function row(course) {
     const learned = state().courses[course.id];
+    const focus = Content.lessonPresentation[course.id]?.focus;
     const name = course.type === "kana" ? `<strong lang="ja">${escape(course.row)}</strong>${course.row.endsWith("行") ? `<span class="row-roman">（${escape(course.readings[0])}）</span>` : ""}` : `<strong>${escape(Content.displayTitle(course.id))}</strong>`;
-    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span>${name}${course.type === "kana" ? kanaCells(course) : `<span class="course-subtitle"${course.home === "kana" ? ' lang="ja"' : ""}>${escape(course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span>`}</span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
+    return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span>${name}${course.type === "kana" ? kanaCells(course) : `<span class="course-subtitle"${course.home === "kana" ? ' lang="ja"' : ""}>${focus ? `<span class="course-topic">${focusText(focus)}</span>` : escape(course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span>`}</span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
   }
   const kanaRows = (script, group) => Content.rowGroups[group].map((key) => courses[`${script}-${key}`]).filter(Boolean);
   function reviewSummary() {
@@ -693,7 +696,8 @@ const Study = (() => {
       const note = presentation?.notes?.[step.id];
       const previewIndex = course.steps.findIndex(item => item.id === Content.lessonPresentation[course.id]?.previews?.[step.id]);
       const preview = course.steps[previewIndex];
-      body = `<h2>${escape(step.title)}</h2><div class="lesson-blocks"><section class="lesson-example" aria-label="${preview ? "這課會說的句子與單字" : label}"><h3>${preview ? "這課會說的句子" : label}</h3>${preview ? `${fullExample(course, preview)}<p class="example-meaning">${escape(preview.meaning)}</p>${audioButton(course, previewIndex)}<h3 class="example-subheading">先認識單字</h3>` : ""}${lessonExample(course, step, kind)}${preview || pairedList ? "" : `<p class="example-meaning">${escape(step.meaning)}</p>`}${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(note?.main || step.body)}</p>${note?.extra ? `<details class="lesson-extra"><summary>補充說明</summary><p>${escape(note.extra)}</p></details>` : ""}</section></div>`;
+      const focus = presentation?.cardFocus?.[step.id];
+      body = `<h2>${escape(presentation?.cardTitles?.[step.id] || step.title)}</h2>${focus ? `<p class="card-focus" aria-label="這張卡片的重點">${focusText(focus)}</p>` : ""}<div class="lesson-blocks"><section class="lesson-example" aria-label="${preview ? "這課會說的句子與單字" : label}"><h3>${preview ? "這課會說的句子" : label}</h3>${preview ? `${fullExample(course, preview)}<p class="example-meaning">${escape(preview.meaning)}</p>${audioButton(course, previewIndex)}<h3 class="example-subheading">先認識單字</h3>` : ""}${lessonExample(course, step, kind)}${preview || pairedList ? "" : `<p class="example-meaning">${escape(step.meaning)}</p>`}${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(note?.main || step.body)}</p>${note?.extra ? `<details class="lesson-extra"><summary>補充說明</summary><p>${escape(note.extra)}</p></details>` : ""}</section></div>`;
     }
     // Once a grammar quiz has answers, the cards lead back to the question instead of restarting it.
     const resumable = course.type === "grammar" && Object.keys(active.first || {}).length > 0;
@@ -916,7 +920,7 @@ const Study = (() => {
   function coursePage(course) {
     const saved = courseState(course.id);
     const active = peekAttempt(course.id) || draftAttempt(course, saved);
-    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(Content.displayTitle(course.id))}</h1>${Content.lessonPresentation[course.id] ? `<p class="study-note">${escape(course.title)}</p>` : ""}${lessonPhases(active.phase)}${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)), course.type !== "kana");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(Content.displayTitle(course.id))}</h1>${Content.lessonPresentation[course.id]?.focus ? `<p class="lesson-topic">${focusText(Content.lessonPresentation[course.id].focus, "本課")}</p>` : Content.lessonPresentation[course.id] ? `<p class="study-note">${escape(course.title)}</p>` : ""}${lessonPhases(active.phase)}${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)), course.type !== "kana");
   }
   function render(hash) {
     // The opened search result gets focus only when coming back from the travel cards, not on a later visit.

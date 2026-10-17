@@ -1289,3 +1289,42 @@ test('all extended kana examples highlight the sound, show meaning and romaji, a
  p.action('word-audio',{letter:'ぱ'});assert.equal(p.utterances.at(-1).text,'パン');
  p.action('word-audio',{letter:'ぴ'});assert.equal(p.utterances.at(-1).text,'パン');
 });
+
+test('every grammar entry and explanation card states its own teaching scope', () => {
+ const b=harness();b.render('#grammar');
+ assert.equal((b.html.match(/class="course-topic"/g)||[]).length,48);
+ let cards=0;
+ const text=html=>html.replace(/<[^>]+>/g,'');
+ for(const course of b.content.grammar){
+  const p=b.content.lessonPresentation[course.id];
+  assert.ok(['文法','單字與讀法'].includes(p.focus[0]),course.id);
+  assert.ok(p.focus[1].trim());
+  assert.deepEqual(Object.keys(p.cardFocus).sort(),[...course.steps].map(s=>s.id).sort(),course.id);
+  for(const id of Object.keys(p.cardTitles||{}))assert.ok(course.steps.some(s=>s.id===id));
+  b.action('open',{course:course.id});
+  for(let i=0;i<course.steps.length;i++){
+   const step=course.steps[i],focus=p.cardFocus[step.id];cards++;
+   assert.ok(focus.length===2 && focus.every(x=>typeof x==='string' && x.trim()),step.id);
+   assert.ok(text(b.html.match(/<p class="lesson-topic">(.*?)<\/p>/s)[1]).includes('本課'+p.focus[0]+p.focus[1]));
+   assert.equal(text(b.html.match(/<p class="card-focus"[^>]*>(.*?)<\/p>/s)[1]),focus.join(''),step.id);
+   if(i<course.steps.length-1)b.action('next');
+  }
+ }
+ assert.equal(cards,153);
+});
+
+test('the question lesson labels its affirmative baseline before teaching the question', () => {
+ const b=harness();b.action('open',{course:'g-question'});
+ assert.match(b.html,/<h2>先看肯定句：是學生<\/h2>/);
+ assert.match(b.html,/肯定句對照/);
+ assert.match(kanaHtml(b.html),/<p class="grammar-example" lang="ja">がくせいです。<\/p>/);
+ assert.match(b.html,/下一張會在句尾加上「か」/);
+ assert.doesNotMatch(b.html.match(/<p class="card-focus"[^>]*>(.*?)<\/p>/s)[1],/疑問句/);
+ b.action('next');
+ assert.match(b.html.match(/<p class="card-focus"[^>]*>(.*?)<\/p>/s)[1],/疑問句/);
+ assert.match(kanaHtml(b.html),/<p class="grammar-example" lang="ja">がくせいですか。<\/p>/);
+ b.action('next');assert.match(b.html,/省略主題/);
+ const restored=harness(b.stored);restored.render('#study/g-question');
+ assert.match(restored.html,/省略主題/);
+ assert.equal(restored.state.courses['g-question'].active.cursor,2);
+});

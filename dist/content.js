@@ -8046,6 +8046,306 @@ const Content = (() => {
     "ここで まっても いいですか。": ["ここで ", ["待", "ま"], "っても いいですか。"],
     "まって ください。 ／ まっても いいですか。": [["待", "ま"], "って ください。 ／ ", ["待", "ま"], "っても いいですか。"],
   };
+  // Course scope and current-card purpose are separate, manually reviewed display labels.
+  lessonPresentation["g-identity"].focus = ["文法", "〜は〜です：A 是 B"];
+  lessonPresentation["g-identity"].cardFocus = {
+    "g-identity/card/nouns": ["單字準備", "我、學生"],
+    "g-identity/card/noun-sentence": ["肯定句", "A は B です"],
+    "g-identity/card/topic-reading": ["助詞讀音", "は：標出正在說誰或什麼，讀 wa"],
+  };
+  lessonPresentation["g-question"].focus = ["文法", "〜ですか：是…嗎？"];
+  lessonPresentation["g-question"].cardFocus = {
+    "g-question/card/statement": ["肯定句對照", "〜です：是…，還沒有在問"],
+    "g-question/card/question-particle": ["疑問句", "〜ですか：是…嗎？"],
+    "g-question/card/implicit-person": ["省略主題", "知道在說誰時，可以省略「你」"],
+  };
+  lessonPresentation["g-demo"].focus = ["文法", "これ・それ・あれ：這個、那個"];
+  lessonPresentation["g-demo"].cardFocus = {
+    "g-demo/card/near-speaker": ["指東西", "これ：靠近我"],
+    "g-demo/card/near-listener": ["指東西", "それ：靠近對方"],
+    "g-demo/card/far-from-both": ["指東西", "あれ：離雙方都遠"],
+  };
+  lessonPresentation["g-place"].focus = ["文法", "〜はどこですか：…在哪裡？"];
+  lessonPresentation["g-place"].cardFocus = {
+    "g-place/card/words": ["單字準備", "ここ・そこ・あそこ・どこ"],
+    "g-place/card/question": ["疑問句", "〜はどこですか：…在哪裡？"],
+    "g-place/card/answer": ["回答", "あそこです：在那裡"],
+  };
+  lessonPresentation["g-kono"].focus = ["文法", "この／その／あの＋名稱"];
+  lessonPresentation["g-kono"].cardFocus = {
+    "g-kono/card/kore-kono": ["用法對照", "これ能單獨用；この後面要接名稱"],
+    "g-kono/card/which": ["疑問句", "どれ：哪個；どの＋名稱：哪個…"],
+    "g-kono/card/distance": ["短語", "その／あの＋名稱"],
+  };
+  lessonPresentation["g-kochira"].focus = ["文法", "こちら・どちら：方向與客氣問法"];
+  lessonPresentation["g-kochira"].cardFocus = {
+    "g-kochira/card/words": ["單字準備", "こちら・そちら・あちら・どちら"],
+    "g-kochira/card/staff": ["回答", "こちらです：在這邊"],
+    "g-kochira/card/ask": ["疑問句", "〜はどちらですか：…在哪邊？"],
+  };
+  lessonPresentation["g-who"].focus = ["文法", "だれ／なんですか：是誰、是什麼？"];
+  lessonPresentation["g-who"].cardFocus = {
+    "g-who/card/dare": ["疑問句", "だれですか：是誰？"],
+    "g-who/card/nan": ["疑問句", "なんですか：是什麼？"],
+    "g-who/card/words": ["單字整理", "だれ・なに・どこ・いつ"],
+  };
+  lessonPresentation["g-negative"].focus = ["文法", "〜じゃないです：不是…"];
+  lessonPresentation["g-negative"].cardFocus = {
+    "g-negative/card/ja-nai": ["否定句", "〜じゃないです：不是…"],
+    "g-negative/card/ja-arimasen": ["否定句", "〜じゃありません：較正式的說法"],
+    "g-negative/card/answer": ["問答對照", "〜ですか → いいえ、〜じゃないです"],
+  };
+  lessonPresentation["g-no"].focus = ["文法", "A の B：用 A 說明 B"];
+  lessonPresentation["g-no"].cardFocus = {
+    "g-no/card/a-no-b": ["短語", "A の B：A 的 B"],
+    "g-no/card/sentence": ["肯定句", "これは A の B です"],
+    "g-no/card/not-always-de": ["用法", "の也能連接語言與書等名稱"],
+  };
+  lessonPresentation["g-nouns"].focus = ["單字與讀法", "人、東西與地方的名稱"];
+  lessonPresentation["g-nouns"].cardFocus = {
+    "g-nouns/card/people": ["單字準備", "朋友、老師"],
+    "g-nouns/card/things": ["單字準備", "車票、包包"],
+    "g-nouns/card/places": ["單字準備", "店、飯店"],
+    "g-nouns/card/sentences": ["句型運用", "〜の〜です／〜はどこですか"],
+  };
+  lessonPresentation["g-mo"].focus = ["文法", "〜も：…也一樣"];
+  lessonPresentation["g-mo"].cardFocus = {
+    "g-mo/card/san": ["稱呼", "名字＋さん：禮貌地稱呼對方"],
+    "g-mo/card/mo": ["用法對照", "は：說到…；も：…也"],
+    "g-mo/card/thing": ["肯定句", "これも〜です：這個也是…"],
+  };
+  lessonPresentation["g-kochira-2"].focus = ["文法", "こちらは〜です：介紹這位是誰"];
+  lessonPresentation["g-kochira-2"].cardFocus = {
+    "g-kochira-2/card/introduce": ["介紹人", "こちらは〜さんです"],
+    "g-kochira-2/card/koso": ["回應", "こちらこそ：我才是…"],
+    "g-kochira-2/card/which": ["用法對照", "こちら：這邊／這位"],
+  };
+  lessonPresentation["g-to"].focus = ["文法", "A と B：A 和 B"];
+  lessonPresentation["g-to"].cardFocus = {
+    "g-to/card/to": ["短語", "A と B：A 和 B"],
+    "g-to/card/point": ["肯定句", "A と B です"],
+    "g-to/card/people": ["肯定句", "A と B は〜です"],
+  };
+  lessonPresentation["g-kara-made"].focus = ["文法", "〜から〜まで：從…到…"];
+  lessonPresentation["g-kara-made"].cardFocus = {
+    "g-kara-made/card/kara": ["起點", "〜から：從…"],
+    "g-kara-made/card/made": ["終點", "〜まで：到…"],
+    "g-kara-made/card/both": ["範圍", "地點＋から＋地點＋まで"],
+  };
+  lessonPresentation["g-days"].focus = ["單字與讀法", "昨天、今天、明天與什麼時候"];
+  lessonPresentation["g-days"].cardFocus = {
+    "g-days/card/three-days": ["單字準備", "昨天、今天、明天"],
+    "g-days/card/sentence": ["肯定句", "あしたは〜です：明天是…"],
+    "g-days/card/now": ["肯定句", "いまは〜です：現在是…"],
+    "g-days/card/itsu": ["問答對照", "いつですか：什麼時候？"],
+  };
+  lessonPresentation["g-day-parts"].focus = ["單字與讀法", "早上、中午與晚上"];
+  lessonPresentation["g-day-parts"].cardFocus = {
+    "g-day-parts/card/parts": ["單字準備", "早上、中午、晚上"],
+    "g-day-parts/card/with-no": ["短語", "時間＋の＋時段"],
+    "g-day-parts/card/sentence": ["肯定句", "きょうのよるは〜です：今天晚上是…"],
+  };
+  lessonPresentation["g-weekdays"].focus = ["單字與讀法", "星期一到星期日；問星期幾"];
+  lessonPresentation["g-weekdays"].cardFocus = {
+    "g-weekdays/card/weekdays": ["單字準備", "星期一到星期五"],
+    "g-weekdays/card/weekend": ["單字準備", "星期六、星期日"],
+    "g-weekdays/card/ask": ["疑問句", "なんようびですか：星期幾？"],
+  };
+  lessonPresentation["g-numbers"].focus = ["單字與讀法", "0～10 的讀法"];
+  lessonPresentation["g-numbers"].cardFocus = {
+    "g-numbers/card/one-five": ["數字讀法", "1～5"],
+    "g-numbers/card/six-ten": ["數字讀法", "6～10"],
+    "g-numbers/card/zero": ["數字讀法", "0：ゼロ"],
+  };
+  lessonPresentation["g-prices"].focus = ["單字與讀法", "百、千與日圓價格"];
+  lessonPresentation["g-prices"].cardFocus = {
+    "g-prices/card/units": ["數字讀法", "10、100、1000"],
+    "g-prices/card/sound-change": ["讀音變化", "300、600、800"],
+    "g-prices/card/yen": ["金額", "數字＋えん：…日圓"],
+    "g-prices/card/ikura": ["問答對照", "いくらですか：多少錢？"],
+  };
+  lessonPresentation["g-counting"].focus = ["單字與讀法", "一個到五個；問幾個"];
+  lessonPresentation["g-counting"].cardFocus = {
+    "g-counting/card/tsu": ["數量讀法", "ひとつ～いつつ：一個到五個"],
+    "g-counting/card/ikutsu": ["疑問句對照", "いくつ：幾個；いくら：多少錢"],
+    "g-counting/card/thing": ["問答對照", "〜はいくつですか：有幾個…？"],
+  };
+  lessonPresentation["g-people"].focus = ["單字與讀法", "人數；問幾個人"];
+  lessonPresentation["g-people"].cardFocus = {
+    "g-people/card/one-two": ["人數讀法", "ひとり・ふたり：一人、兩人"],
+    "g-people/card/nin": ["人數讀法", "數字＋にん；四人讀よにん"],
+    "g-people/card/ask": ["問答對照", "なんにんですか：幾個人？"],
+  };
+  lessonPresentation["g-clock"].focus = ["單字與讀法", "幾點與半點"];
+  lessonPresentation["g-clock"].cardFocus = {
+    "g-clock/card/ji": ["時刻讀法", "數字＋じ：…點"],
+    "g-clock/card/special": ["特殊讀音", "4、7、9 點"],
+    "g-clock/card/han": ["時刻讀法", "〜じはん：…點半"],
+    "g-clock/card/ask": ["問答對照", "なんじですか：幾點？"],
+  };
+  lessonPresentation["g-minutes"].focus = ["單字與讀法", "〜ふん／〜ぷん：幾分"];
+  lessonPresentation["g-minutes"].cardFocus = {
+    "g-minutes/card/fun": ["分鐘讀法", "2、5、7、9 分：ふん"],
+    "g-minutes/card/pun": ["分鐘讀法", "3、4 分：ぷん"],
+    "g-minutes/card/ppun": ["讀音變化", "1、6、8、10 分：小っ＋ぷん"],
+    "g-minutes/card/time": ["問答對照", "なんじなんぷんですか：幾點幾分？"],
+  };
+  lessonPresentation["g-kara-made-time"].focus = ["文法", "時間＋から／まで：從幾點到幾點"];
+  lessonPresentation["g-kara-made-time"].cardFocus = {
+    "g-kara-made-time/card/hours": ["時間範圍", "〜じから〜じまで"],
+    "g-kara-made-time/card/days": ["時間範圍", "星期＋から／まで"],
+    "g-kara-made-time/card/sentence": ["肯定句", "〜は時間＋から＋時間＋までです"],
+  };
+  lessonPresentation["g-dates"].focus = ["單字與讀法", "〜がつ／〜にち：幾月幾號"];
+  lessonPresentation["g-dates"].cardFocus = {
+    "g-dates/card/gatsu": ["月份讀法", "數字＋がつ：…月"],
+    "g-dates/card/special": ["特殊讀音", "4、7、9 月"],
+    "g-dates/card/nichi": ["日期讀法", "月份＋日期"],
+    "g-dates/card/ask": ["疑問句", "なんがつなんにちですか：幾月幾號？"],
+  };
+  lessonPresentation["g-dates-2"].focus = ["單字與讀法", "1～5 日、14 日與 24 日"];
+  lessonPresentation["g-dates-2"].cardFocus = {
+    "g-dates-2/card/tsuitachi": ["特殊讀音", "1 日：ついたち"],
+    "g-dates-2/card/two-five": ["日期讀法", "2～5 日"],
+    "g-dates-2/card/yokka": ["特殊讀音", "14 日、24 日"],
+    "g-dates-2/card/ask": ["問答對照", "なんにちですか：幾號？"],
+  };
+  lessonPresentation["g-dates-3"].focus = ["單字與讀法", "6～10 日與 20 日"];
+  lessonPresentation["g-dates-3"].cardFocus = {
+    "g-dates-3/card/six-eight": ["日期讀法", "6～8 日"],
+    "g-dates-3/card/nine-ten": ["日期讀法", "9 日、10 日"],
+    "g-dates-3/card/hatsuka": ["特殊讀音", "20 日：はつか"],
+    "g-dates-3/card/range": ["時間範圍", "日期＋から／まで：從幾號到幾號"],
+  };
+  lessonPresentation["g-verbs"].focus = ["文法", "〜を〜ます：做什麼"];
+  lessonPresentation["g-verbs"].cardFocus = {
+    "g-verbs/card/taberu": ["動作句", "東西＋を＋動詞"],
+    "g-verbs/card/nomu": ["動作句", "動詞放在所做的事情後面"],
+    "g-verbs/card/kau": ["動作句", "〜をかいます：買…"],
+  };
+  lessonPresentation["g-masen"].focus = ["文法", "〜ません：不做…"];
+  lessonPresentation["g-masen"].cardFocus = {
+    "g-masen/card/masen": ["否定句", "動詞改成〜ません"],
+    "g-masen/card/coffee": ["否定句", "〜をのみません：不喝…"],
+    "g-masen/card/answer": ["問答對照", "いきますか → いいえ、いきません"],
+  };
+  lessonPresentation["g-mashita"].focus = ["文法", "〜ました／〜ませんでした：做了、沒做"];
+  lessonPresentation["g-mashita"].cardFocus = {
+    "g-mashita/card/mashita": ["過去肯定句", "〜ました：做了…"],
+    "g-mashita/card/masen-deshita": ["過去否定句", "〜ませんでした：沒做…"],
+    "g-mashita/card/four-forms": ["變化對照", "〜ます／〜ません／〜ました／〜ませんでした"],
+  };
+  lessonPresentation["g-ni-de"].focus = ["文法", "に／へ：去的地方；で：動作的地方"];
+  lessonPresentation["g-ni-de"].cardFocus = {
+    "g-ni-de/card/ni-e": ["去的地方", "地點＋に／へ＋いきます"],
+    "g-ni-de/card/de": ["動作的地方", "地點＋で＋動詞"],
+    "g-ni-de/card/compare": ["用法對照", "に：去那裡；で：在那裡做"],
+  };
+  lessonPresentation["g-transport"].focus = ["文法", "交通工具＋で：搭什麼去"];
+  lessonPresentation["g-transport"].cardFocus = {
+    "g-transport/card/de": ["交通方式", "交通工具＋で＋いきます"],
+    "g-transport/card/more": ["短語", "バスで／タクシーで"],
+    "g-transport/card/both": ["組合", "地點＋に＋交通工具＋で＋いきます"],
+  };
+  lessonPresentation["g-arimasu"].focus = ["文法", "〜があります／います：有…"];
+  lessonPresentation["g-arimasu"].cardFocus = {
+    "g-arimasu/card/arimasu": ["有東西", "〜があります"],
+    "g-arimasu/card/imasu": ["有人或動物", "〜がいます"],
+    "g-arimasu/card/place": ["地點", "地點＋に＋東西＋が＋あります"],
+  };
+  lessonPresentation["g-position"].focus = ["單字與讀法", "位置詞；〜のまえ：…前面"];
+  lessonPresentation["g-position"].cardFocus = {
+    "g-position/card/three": ["單字準備", "上、下、裡面"],
+    "g-position/card/four": ["單字準備", "前、後、旁邊、附近"],
+    "g-position/card/sentence": ["地點句", "A の位置＋に＋B が＋あります"],
+  };
+  lessonPresentation["g-adj-i"].focus = ["文法", "い形容詞：描述大小、價格"];
+  lessonPresentation["g-adj-i"].cardFocus = {
+    "g-adj-i/card/size": ["單字準備", "大、小"],
+    "g-adj-i/card/desu": ["肯定句", "い形容詞＋です"],
+    "g-adj-i/card/takai": ["單字準備", "貴、便宜"],
+    "g-adj-i/card/before-noun": ["短語", "い形容詞直接接名稱"],
+  };
+  lessonPresentation["g-adj-neg"].focus = ["文法", "い形容詞：い改成くないです"];
+  lessonPresentation["g-adj-neg"].cardFocus = {
+    "g-adj-neg/card/kunai": ["否定句", "い → くないです：不…"],
+    "g-adj-neg/card/sentence": ["否定句", "〜はおおきくないです：…不大"],
+    "g-adj-neg/card/cold": ["用詞對照", "つめたい：冰的；あたたかい：溫的；さむい：天氣冷"],
+  };
+  lessonPresentation["g-adj-na"].focus = ["文法", "な形容詞：接名稱時加な"];
+  lessonPresentation["g-adj-na"].cardFocus = {
+    "g-adj-na/card/desu": ["肯定句", "な形容詞＋です"],
+    "g-adj-na/card/na": ["短語", "な形容詞＋な＋名稱"],
+    "g-adj-na/card/kirei": ["否定句", "な形容詞＋じゃないです"],
+  };
+  lessonPresentation["g-who-2"].focus = ["文法", "どうですか：怎麼樣？"];
+  lessonPresentation["g-who-2"].cardFocus = {
+    "g-who-2/card/dou": ["問答對照", "どうですか：問感覺或評價"],
+    "g-who-2/card/dou-yatte": ["問法對照", "どう：怎樣；どうやって：用什麼方法"],
+    "g-who-2/card/review": ["疑問詞整理", "時間、地方、人、東西、價格、數量、感覺"],
+  };
+  lessonPresentation["g-soshite-demo"].focus = ["文法", "そして／でも：而且、但是"];
+  lessonPresentation["g-soshite-demo"].cardFocus = {
+    "g-soshite-demo/card/soshite": ["補充或接續", "句子。 そして、句子。"],
+    "g-soshite-demo/card/demo": ["轉折", "句子。 でも、句子。"],
+    "g-soshite-demo/card/order": ["先後順序", "做了 A。 そして、做了 B。"],
+  };
+  lessonPresentation["g-kara-reason"].focus = ["文法", "原因＋から：因為…所以…"];
+  lessonPresentation["g-kara-reason"].cardFocus = {
+    "g-kara-reason/card/reason": ["原因", "原因＋から、結果"],
+    "g-kara-reason/card/example": ["原因", "〜ですから、結果"],
+    "g-kara-reason/card/compare": ["用法對照", "地點＋から：從；原因＋から：因為"],
+  };
+  lessonPresentation["g-dakara"].focus = ["文法", "だから／ので：所以、因為"];
+  lessonPresentation["g-dakara"].cardFocus = {
+    "g-dakara/card/dakara": ["所以", "原因。 だから、結果。"],
+    "g-dakara/card/node": ["因為", "原因＋ので、結果"],
+    "g-dakara/card/compare": ["句型對照", "から／ので接原因；だから放在下一句"],
+  };
+  lessonPresentation["g-kedo"].focus = ["文法", "〜けど：…，但是…"];
+  lessonPresentation["g-kedo"].cardFocus = {
+    "g-kedo/card/kedo": ["轉折", "前一句＋けど、後一句"],
+    "g-kedo/card/demo": ["用法對照", "でも另起一句；けど接在前一句後"],
+    "g-kedo/card/review": ["位置整理", "句首連接詞／接在前句後的說法"],
+  };
+  lessonPresentation["g-verb-forms"].focus = ["文法", "動詞原形：字典裡的寫法"];
+  lessonPresentation["g-verb-forms"].cardFocus = {
+    "g-verb-forms/card/plain": ["變化對照", "〜ます和動詞原形"],
+    "g-verb-forms/card/group1": ["第一類動詞", "ます前的 i 段音改成 u 段音"],
+    "g-verb-forms/card/group2-3": ["第二、三類動詞", "〜ます → 〜る；します → する；きます → くる"],
+  };
+  lessonPresentation["g-te-forms"].focus = ["文法", "動詞て形：接後續說法的形式"];
+  lessonPresentation["g-te-forms"].cardFocus = {
+    "g-te-forms/card/simple": ["第二類動詞", "去掉ます，加て"],
+    "g-te-forms/card/sound": ["第一類動詞", "〜って／〜んで等讀音變化"],
+    "g-te-forms/card/irregular": ["特殊變化", "きて／して／いって"],
+  };
+  lessonPresentation["g-te-kudasai"].focus = ["文法", "〜てください：請做…"];
+  lessonPresentation["g-te-kudasai"].cardFocus = {
+    "g-te-kudasai/card/matte": ["請求", "動詞て形＋ください"],
+    "g-te-kudasai/card/hanashite": ["請求", "ゆっくり＋動詞て形＋ください"],
+    "g-te-kudasai/card/mite": ["請求", "これを＋動詞て形＋ください"],
+  };
+  lessonPresentation["g-te-sequence"].focus = ["文法", "〜て／〜てから：先做…再…"];
+  lessonPresentation["g-te-sequence"].cardFocus = {
+    "g-te-sequence/card/te": ["動作順序", "動詞て形接下一個動作"],
+    "g-te-sequence/card/tekara": ["做完再做", "動詞て形＋から、下一個動作"],
+    "g-te-sequence/card/three-kara": ["用法對照", "從哪裡／因為／做完之後"],
+  };
+  lessonPresentation["g-te-iru"].focus = ["文法", "〜ています：正在做或保有某個狀態"];
+  lessonPresentation["g-te-iru"].cardFocus = {
+    "g-te-iru/card/now": ["正在做", "動詞て形＋います"],
+    "g-te-iru/card/compare": ["時態對照", "〜ます／〜ました／〜ています"],
+    "g-te-iru/card/state": ["狀態", "よやくしています：已經訂好"],
+  };
+  lessonPresentation["g-te-mo-ii"].focus = ["文法", "〜てもいいですか：可以做…嗎？"];
+  lessonPresentation["g-te-mo-ii"].cardFocus = {
+    "g-te-mo-ii/card/ask": ["詢問許可", "動詞て形＋もいいですか"],
+    "g-te-mo-ii/card/compare": ["用法對照", "てください：請你做；てもいいですか：我可以做嗎"],
+    "g-te-mo-ii/card/answer": ["回應", "はい、どうぞ／すみません、ちょっと…"],
+  };
+  lessonPresentation["g-question"].cardTitles = { "g-question/card/statement": "先看肯定句：是學生" };
+  lessonPresentation["g-question"].notes["g-question/card/statement"] = { main: "「学生です」是在說「是學生」，這是肯定句，還沒有在問。下一張會在句尾加上「か」，變成「学生ですか」（是學生嗎？）。" };
   const displayTitle = id => lessonPresentation[id]?.title || getCourse(id)?.title || null;
   const data = { rows, grammar, lessonPlan, sounds, phrasebook, intro };
   // Kana row groups in teaching order; the kana page and home recommendation follow them.
