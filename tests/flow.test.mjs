@@ -2385,13 +2385,24 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   // Long romaji vowels fold either way.
   assert.deepEqual(found('kyouto'), found('kyoto'));
   assert.ok(found('kyoto').includes('transit/transfer'));
-  // Every alias leads to the card it stands for.
+  // Every alias leads first to the card it stands for (付款 to both 結帳 and 付現).
+  assert.ok(found('付款').includes('t-pay/credit-cash'));
   for (const [query, step] of [
     ['寄物櫃', 't-place/locker'], ['寄物', 'hotel/luggage'], ['寄行李', 'hotel/luggage'], ['行李寄放', 'hotel/luggage'], ['洗手間', 't-place/toilet'], ['化妝室', 't-place/toilet'],
-    ['買單', 't-pay/bill'], ['埋單', 't-pay/bill'], ['會計', 't-pay/bill'], ['付款', 't-pay/credit-cash'], ['打包', 'dining/takeout'], ['儲值', 't-charge/top-up'],
+    ['買單', 't-pay/bill'], ['埋單', 't-pay/bill'], ['會計', 't-pay/bill'], ['付款', 't-pay/bill'], ['打包', 'dining/takeout'], ['儲值', 't-charge/top-up'],
     ['交通卡', 't-pay/suica'], ['icoca', 't-pay/suica'], ['pasmo', 't-pay/suica'], ['發票', 'shopping/receipt'], ['不用', 'dining/decline'], ['不要', 'dining/decline'],
-    ['來回票', 'transit/ticket'], ['月臺', 'transit/platform'],
-  ]) assert.ok(found(query).includes(step), `${query} → ${step}`);
+    ['來回票', 'transit/ticket'], ['月臺', 'transit/platform'], ['打烊', 'lines/hours'], ['剪票口', 't-place/facilities'], ['換車', 'transit/transfer'],
+    ['劃位', 'transit/seat'], ['熱飲', 't-order/drink-temperature'], ['冰飲', 't-order/drink-temperature'], ['大碗', 't-order/portion'], ['幾個人', 'dining/party-size'],
+    ['兩位', 'dining/party-size'], ['帶走', 'dining/takeout'], ['怎麼賣', 'shopping/price'], ['試衣間', 'shopping/try-on'], ['現場票', 'lines/same-day'],
+    ['服務生', 'basics/attention'], ['出去再進來', 'live/re-entry'], ['日文不好', 'basics/not-understood'], ['日語不好', 'basics/not-understood'],
+    ['男廁', 't-place/toilet'], ['上小號', 't-place/toilet'], ['上大號', 't-place/toilet'], ['hitori', 'dining/party-size'], ['ふたり', 'dining/party-size'],
+    ['ひとり', 'dining/party-size'], ['兩個人', 'dining/party-size'], ['一個人', 'dining/party-size'], ['大號', 'shopping/size'], ['切符', 'transit/ticket'],
+    ['拿行李', 'hotel/pick-up'], ['領行李', 'hotel/pick-up'], ['取行李', 'hotel/pick-up'], ['checkin', 'hotel/check-in'], ['checkout', 'hotel/check-out'],
+    ['tearai', 't-place/toilet'], ['加大', 't-order/portion'], ['開水', 'dining/water'], ['冰水', 'dining/water'],
+  ]) assert.equal(found(query)[0], step, `${query} → ${step}`);
+  // Without their aliases these would also list other cards.
+  assert.deepEqual(found('寄行李'), ['hotel/luggage']);
+  assert.deepEqual(found('來回票'), ['transit/ticket']);
   // A situation's title or Chinese line lists its cards when none of them matches by itself.
   const order = ['t-order/menu-item', 't-order/quantity', 't-order/drink-temperature', 't-order/noodle-temperature', 't-order/portion'];
   assert.deepEqual(found('點餐'), order);
@@ -2416,6 +2427,11 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     // has as a keyword (那). The character across a cut never stands in for a word no card holds (んを, 子嗎, 所在).
     ['有吹風機嗎', []], ['便利商店在哪', []], ['sutoroo arimasuka', []], ['那是什麼意思', []],
     ['ラーメンをください', []], ['お釣りをください', []], ['有筷子嗎', []], ['派出所在哪裡', []], ['我要加點', []], ['請問退稅', []], ['コーヒーがほしいです', []],
+    // A lone character no card holds stays a word, so it still lists nothing (傘, 藥, 箸); so do a word ending in 票
+    // that is not a ticket here (郵票, 機票) and a request or ending around something not here (可以…嗎, できますか).
+    ['傘ありますか', []], ['有藥嗎', []], ['箸ください', []], ['郵票', []], ['機票', []], ['可以退稅嗎', []], ['英語できますか', []],
+    // 日文的 in front is trimmed like the 的日文 after (日文的謝謝 → just the thanks card).
+    ['日文的謝謝', ['basics/thanks']],
   ]) assert.deepEqual(found(query), steps, query);
   // A pasted page of text answers at once, without an error, and the box takes 80 characters.
   assert.doesNotThrow(() => found('kippukudasai'.repeat(400)));
@@ -2443,14 +2459,28 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['袋はありますか', 'shopping/bag', []], ['塑膠袋要錢嗎', 'shopping/bag', []], ['當天票還有嗎', 'lines/same-day', []], ['otearai wa doko desu ka', 't-place/toilet', []],
     ['新宿駅、どこですか', 't-place/station', []], ['大盛りにしてください', 't-order/portion', []], ['請問一下', 'basics/attention', []], ['不好意思呢', 'basics/attention', []],
     ['熱的日文', 't-order/drink-temperature', ['t-order/noodle-temperature']], ['冷的日文', 't-order/noodle-temperature', []], ['不好意思的日語', 'basics/attention', []],
-    ['日文的謝謝', 'basics/thanks', []], ['謝謝是什麼意思', 'basics/thanks', []], ['sumimasen wo kudasai', 'basics/attention', []],
+    ['謝謝是什麼意思', 'basics/thanks', []], ['sumimasen wo kudasai', 'basics/attention', []],
     // Each of these depends on one filler or piece rule: 日文的, 呢, どうも, the pair after a place word, the pair after a request.
     ['日文的水', 'dining/water', []], ['水呢', 'dining/water', []], ['水在哪裡呢', 'dining/water', []], ['どうも ありがとう', 'basics/thanks', []],
     ['近くの駅はどこですか', 't-place/station', []], ['我要這個日文', 'shopping/this-one', []], ['check out', 'hotel/check-out', []],
     // Aliases: a pair tries its own (冰水 → 水); a longer one is put in before splitting (交通卡, 行李寄放); none counts twice (加大).
     ['可以用交通卡嗎', 't-pay/suica', []], ['一杯冰水', 'dining/water', []], ['熱開水', 'dining/water', []], ['行李寄放處日文', 't-place/locker-size', []], ['有加大的尺寸嗎', 'shopping/size', []],
     ['女廁在哪', 't-place/toilet', []], ['有小號嗎', 'shopping/size', []], ['可以再進去嗎', 'live/re-entry', []], ['手洗いはどこ', 't-place/toilet', []],
-    ['futari desu', 'dining/party-size', []], ['二人お願いします', 'dining/party-size', []], ['演唱會 現場', 'live/doors', ['live/drink']],
+    ['futari desu', 'dining/party-size', []], ['ふたりお願いします', 'dining/party-size', []], ['演唱會 現場', 'live/doors', ['live/drink']],
+    // A lone character a card holds finds it (冰, 席, 麵); an alias written with a hyphen still counts (check-in), also
+    // next to Chinese, where a keyword reached through an alias counts like one typed (幾點check-in).
+    ['有冰嗎', 't-order/drink-temperature', []], ['席ありますか', 'transit/seat', []], ['有麵嗎', 't-order/noodle-temperature', []],
+    ['check-in', 'hotel/check-in', []], ['Check-in time', 'hotel/check-in', []], ['幾點check-in', 'hotel/check-in', ['hotel/check-out']],
+    // A keyword as the last character counts alone only when no card holds it with the character before (一杯水 → 水;
+    // 開發票 stays 發票). 可以 and できますか are trimmed like other requests; 日文不好 leads to 不太懂日文.
+    ['一杯水', 'dining/water', []], ['可以給我發票嗎', 'shopping/receipt', []], ['可以開發票嗎', 'shopping/receipt', []], ['還有發票嗎', 'shopping/receipt', []],
+    ['試着できますか', 'shopping/try-on', []], ['我日文不好', 'basics/not-understood', []], ['我想上小號', 't-place/toilet', []],
+    // A keyword typed as it is wins a tie over one reached through an alias (大人 → the day pass before ふたり → 幾位),
+    // and an alias longer than a pair counts once (ひとりいくら → the price card first).
+    ['otona futari', 'transit/day-pass', ['dining/party-size']], ['大人 ふたり', 'transit/day-pass', ['dining/party-size']], ['ひとりいくら', 'shopping/price', ['dining/party-size']],
+    // Romaji in one run: どうも is a greeting (domoarigatou), and the longest ending goes first (ekimo is eki + mo, not
+    // ekim + o). A place character at the end counts alone (樓梯 → 梯).
+    ['domoarigatou', 'basics/thanks', []], ['ekimo', 't-place/station', []], ['手扶梯在哪裡', 't-place/facilities', []], ['樓梯在哪', 't-place/facilities', []],
     // A long sentence typed without punctuation is still searched.
     ['すみませんチェックアウトしたあとに大きい荷物をここでしばらく預かってもらうことはできますか', 'hotel/luggage', []],
     ['演唱會 飲料', 'live/drink', ['t-order/drink-temperature']], ['飯店 預約', 'hotel/reservation', []], ['買東西 袋子', 'shopping/bag', []],
