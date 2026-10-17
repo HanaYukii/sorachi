@@ -286,6 +286,7 @@ function browser({
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/diagnostics.js", import.meta.url), "utf8"), context);
+  vm.runInContext(readFileSync(new URL("../dist/update-notice.js", import.meta.url), "utf8"), context);
   vm.runInContext(source, context, { filename: "dist/app.js" });
   flush();
   // `detail` is the click count: 2 is the second click of a double click, 0 a key press.
@@ -2619,4 +2620,23 @@ test('overview navigation tracks the current section while focused and utility p
     assert.doesNotMatch(header,/section-nav|href="#travel"/);
     assert.match(header,/class="exit"/);
   }
+});
+
+test('the update button checks unsaved work and does not overwrite storage on reload', () => {
+  const b=browser({hash:'#grammar'});
+  const stored=b.stored;
+  assert.equal(b.run('beforeUpdateReload()'),true);
+  assert.equal(b.run('beforeUpdateReload()'),false,'Double clicks cannot reload twice');
+  assert.equal(b.stored,stored);
+  const random=browser({hash:'#grammar-random'});
+  random.run('window.confirm = () => false');
+  assert.equal(random.run('beforeUpdateReload()'),false);
+  random.run('window.confirm = () => true');
+  assert.equal(random.run('beforeUpdateReload()'),true);
+  const feedback=browser({hash:'#feedback'});
+  feedback.run('feedbackDraft.message="尚未送出的文字"; window.confirm=()=>false');
+  assert.equal(feedback.run('beforeUpdateReload()'),false);
+  const blocked=browser({hash:'#grammar'});
+  blocked.run('canStore=false; window.confirm=()=>false');
+  assert.equal(blocked.run('beforeUpdateReload()'),false);
 });

@@ -49,6 +49,20 @@ test('check never writes and rejects a missing referenced asset', async (t) => {
   assert.equal(await readFile(join(dir, 'index.html'), 'utf8'), original);
 });
 
+test('the page version is deterministic and changes for page-only and image-only deployments', async (t) => {
+  const dir=await fixture(t), path=join(dir,'index.html');
+  await writeFile(path, '<meta name="sorachi-version" content="" />'+await readFile(path,'utf8'));
+  const version=async()=> (await readFile(path,'utf8')).match(/name="sorachi-version" content="([a-f0-9]{64})"/)[1];
+  await prepareRelease({dir});const first=await version();
+  await prepareRelease({dir});assert.equal(await version(),first);
+  await prepareRelease({dir,check:true});
+  await writeFile(path,(await readFile(path,'utf8'))+'<title>New title</title>');
+  await prepareRelease({dir});const second=await version();assert.notEqual(second,first);
+  await writeFile(join(dir,'assets','friend.png'),'new image');
+  await prepareRelease({dir});assert.notEqual(await version(),second);
+  await prepareRelease({dir,check:true});
+});
+
 test('live verification rejects wrong bytes, MIME, status, fallback 200 and timeout', async (t) => {
   const dir = await fixture(t);
   await prepareRelease({ dir });

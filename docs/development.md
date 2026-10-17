@@ -106,3 +106,11 @@ node scripts/prepare-release.mjs --check
 - `preferences.ttsRate` uses the existing protected storage writer; failed writes keep the previous saved rate and show the existing storage warning. `preferences.kanaHints` (a hint choice per character) is only kept for older data and backups since #35 removed the choice: import still merges it per character (local wins a conflict), and nothing reads it.
 - `lastGrammarId` changes only after meaningful lesson activity, not when opening a first card. The next action resumes that unfinished lesson, otherwise uses teaching order; completed learners can review. Opening a running review again resumes it.
 - User study protocol: [beginner-usability.md](beginner-usability.md). This is a test script, not evidence that real beginners have participated.
+
+## 新版提示與隨機選課
+
+- `prepare-release.mjs` 把所有發佈檔案（包含圖片與頁面文字）算成 `sorachi-version`；計算時先清空標記，避免循環雜湊。`release.json` 仍獨立驗證每個實際檔案。
+- `update-notice.js` 以開頁時內嵌的版本作基準，載入時、每 5 分鐘、回到分頁及恢復連線時讀取同站 `index.html`；使用 no-store 與時間參數，兩次檢查至少相隔 60 秒，隱藏分頁不輪詢。10 秒逾時、離線、無效頁面與重新導向均安靜忽略。
+- 有新版只顯示「有新版本，點此更新」，不自動刷新。更新控制項在 `#app` 外，切換課程不會把提示洗掉；不使用 Service Worker、不清除共用 origin 的快取或儲存。未保存進度、回報草稿與只在記憶體的隨機題目會在點擊更新時提醒；正常課程靠原有即時儲存接續。
+- 每個句型單元有「隨機進一課」，抽取範圍只在該單元，避開目前課程與同次開頁的上一次抽選。課程已有未完成測驗時先回說明，保留題序、選項與首答；已完成課程保留成績，另開閱讀草稿。最後一張說明卡及完成頁都有「再隨機進一課」，不強迫先做題，也不把純閱讀算成測驗完成。原有「隨機練 5 題」維持獨立入口。
+- 本機更新驗收使用獨立 4209 埠副本，僅把輪詢時間縮短；模擬版本替換後出現提示，點擊刷新仍留在同課第 2 張，提示消失。另測單元收合時直接選課、讀完說明換另一課、320px 與 1280px 排版。未在正式站修改使用者資料。

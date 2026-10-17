@@ -634,3 +634,15 @@ window.addEventListener("popstate", () => {
 // The page opened first has no source; marking it keeps a later visit back from giving it one.
 if (window.history.state?.from === undefined) window.history.replaceState({ from: null }, "");
 route();
+function beforeUpdateReload() {
+  if (restarting) return false;
+  const draft = app.querySelector("#feedback-message")?.value ?? feedbackDraft.message;
+  const warning = !canStore ? "目前有進度無法儲存，更新後可能無法接續。要現在更新嗎？"
+    : draft.trim() ? "更新會清除尚未送出的回報內容。要現在更新嗎？"
+    : /^#(?:kana|grammar)-random$/.test(location.hash) ? "這輪隨機練習不會保存，更新後會重新開始。要現在更新嗎？" : "";
+  if (warning && !window.confirm(warning)) return false;
+  restarting = true;
+  Study.stopAudio();
+  return true;
+}
+UpdateNotice.start({ beforeReload: beforeUpdateReload });

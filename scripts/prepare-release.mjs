@@ -25,7 +25,7 @@ export async function prepareRelease({ dir = resolve('dist'), check = false } = 
   const contents = new Map(await Promise.all(paths.map(async (path) => [path, await readFile(join(dir, path))])));
   if (!contents.has('index.html')) throw new Error('Missing dist/index.html');
   const original = contents.get('index.html').toString();
-  const html = original.replace(/<(?:script|link)\b[^>]*>/gi, (tag) => tag.replace(/\b(src|href)\s*=\s*(["'])(.*?)\2/gi, (attribute, key, quote, raw) => {
+  let html = original.replace(/<(?:script|link)\b[^>]*>/gi, (tag) => tag.replace(/\b(src|href)\s*=\s*(["'])(.*?)\2/gi, (attribute, key, quote, raw) => {
     const ref = raw.replaceAll('&amp;', '&');
     if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(ref)) return attribute;
     const url = new URL(ref, 'https://release.invalid/');
@@ -37,6 +37,13 @@ export async function prepareRelease({ dir = resolve('dist'), check = false } = 
     const updated = ref.split(/[?#]/)[0] + url.search + url.hash;
     return `${key}=${quote}${updated.replaceAll('&', '&amp;')}${quote}`;
   }));
+  // Hash the page with an empty version slot, avoiding a self-referential build hash.
+  const versionTag = /<meta name="sorachi-version" content="[^"]*" \/>/;
+  if (versionTag.test(html)) {
+    html = html.replace(versionTag, '<meta name="sorachi-version" content="" />');
+    const version = sha256(JSON.stringify(paths.map(path => [path, sha256(path === 'index.html' ? html : contents.get(path))])));
+    html = html.replace(versionTag, `<meta name="sorachi-version" content="${version}" />`);
+  }
   contents.set('index.html', Buffer.from(html));
   const files = paths.map((path) => ({ path, sha256: sha256(contents.get(path)), bytes: contents.get(path).length, mime: mimeFor(path) }));
   const manifest = { schemaVersion: 1, buildId: sha256(JSON.stringify(files)), files };

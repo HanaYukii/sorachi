@@ -1329,3 +1329,49 @@ test('the question lesson labels its affirmative baseline before teaching the qu
  assert.match(restored.html,/省略主題/);
  assert.equal(restored.state.courses['g-question'].active.cursor,2);
 });
+
+test('random lesson entries stay in their unit, open explanations, and keep random questions separate', () => {
+ const b=harness(); b.render('#grammar');
+ assert.equal((b.html.match(/class="unit-random text-button"/g)||[]).length,5);
+ assert.match(b.html,/data-action="study-grammar-random"/);
+ const heading=()=>b.html.match(/<h1[^>]*>(.*?)<\/h1>/s)[1].replace(/<[^>]+>/g,'');
+ for(const unit of b.study.grammarUnits()) {
+  let previous=null;
+  for(let i=0;i<4;i++) {
+   b.render('#grammar');b.action('random-lesson',{unit:unit.lessons[0].id});
+   const chosen=unit.lessons.find(c=>c.title===heading());assert.ok(chosen,unit.title);
+   assert.notEqual(chosen.id,previous);previous=chosen.id;
+   assert.match(b.html,/句型說明/);assert.doesNotMatch(b.html,/data-action="study-answer"/);
+  }
+ }
+ assert.equal(b.records.length,0);assert.equal(b.saves,0,'Choosing a topic alone does not complete it');
+ const before=b.html;b.action('random-lesson',{unit:'not-a-unit'});assert.equal(b.html,before);
+});
+
+test('random lessons preserve existing quiz answers, and completion offers another topic in the same unit', () => {
+ const b=harness(), unit=b.study.grammarUnits()[0], before={};
+ for(const course of unit.lessons) {
+  startQuiz(b,course.id);b.action('answer',{choice:String(chooseCurrent(b,course.id))});
+  before[course.id]=clone(b.state.courses[course.id].active);
+ }
+ b.render('#grammar');b.action('random-lesson',{unit:unit.lessons[0].id});
+ const course=unit.lessons.find(c=>b.state.courses[c.id].active.phase==='cards');assert.ok(course);
+ const active=b.state.courses[course.id].active;
+ for(const field of ['first','solved','order','options']) assert.deepEqual(clone(active[field]),before[course.id][field],field);
+ for(let i=0;i<course.steps.length;i++)b.action('next');
+ finishQuiz(b,course.id);
+ assert.match(b.html,/data-action="study-random-lesson" data-unit="g-identity">再隨機進一課/);
+ const result=clone(b.state.courses[course.id]);b.action('random-lesson',{unit:'g-identity'});
+ assert.deepEqual(clone(b.state.courses[course.id]),result,'Picking another lesson keeps the completed result');
+ assert.match(b.html,/句型說明/);
+});
+
+
+test('finishing the explanation can lead to another lesson without doing or completing a quiz', () => {
+ const b=harness();b.action('open',{course:'g-question'});b.action('next');b.action('next');
+ assert.match(b.html,/再隨機進一課/);assert.match(b.html,/開始練習/);
+ b.action('random-lesson',{unit:'g-identity'});
+ assert.match(b.html,/句型說明/);assert.equal(b.records.length,0);
+ assert.equal(b.state.courses['g-question'].active.phase,'cards');
+ assert.equal(b.state.courses['g-question'].completedAt,null);
+});
