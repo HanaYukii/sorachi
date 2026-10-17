@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "3dcbf5b05b4a29b862a88ae7b744bde852fd4df4b17f0d8c046aa79bb42c87dd",
+  "buildId": "a9d8ebf4e5b6299a46550613ee8f30b3f56b9d977c3657763fe6415c444f362b",
   "files": [
     {
       "path": ".nojekyll",
@@ -10,8 +10,8 @@
     },
     {
       "path": "app.js",
-      "sha256": "ed318d9abe91c6cef7816a8a2d40814d2e6a34168ded55da5530e05078614e11",
-      "bytes": 51753,
+      "sha256": "ce7b212cac24493e43eeeedf7a21e5263abffea92ec33342a19515e4e7016d97",
+      "bytes": 51826,
       "mime": "text/javascript"
     },
     {
@@ -30,6 +30,24 @@
       "path": "assets/cloud-complete-512.webp",
       "sha256": "97d03350bf2cd754c2dd958f9a11aaf7ab5f185455910014a8d62b93938e8f63",
       "bytes": 23138,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-drill-128.webp",
+      "sha256": "ca2cc3672c8f1299f2c6728ca11c759161f738640c7026f2e883232b7babee0f",
+      "bytes": 4922,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-drill-256.webp",
+      "sha256": "ceff7ac0c7a1158ee25c531477b3e5dcad4591da2271a4792b7efa072f18b598",
+      "bytes": 11324,
+      "mime": "image/webp"
+    },
+    {
+      "path": "assets/cloud-drill-512.webp",
+      "sha256": "8d857e3559a492bfa2b28fc0332cdcab2fe9416ebfb2d032106d8fbb19a20539",
+      "bytes": 26520,
       "mime": "image/webp"
     },
     {
@@ -94,8 +112,8 @@
     },
     {
       "path": "content.js",
-      "sha256": "2a5c99860a8444f2280c9fbe15c716d410447bc8574ad8fea88669de7ac7775b",
-      "bytes": 349365,
+      "sha256": "a5eb501a2fe5c11687ca326913ba6a647821fdd60744c077f4cb3b93c7337d55",
+      "bytes": 352790,
       "mime": "text/javascript"
     },
     {
@@ -106,7 +124,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "17295e4d205fe11621ab05c912bb6e50eb1f4a138b7fff159e103bcccbe43e50",
+      "sha256": "03cd03d6716b81419b07cabcf8799b38e71b897e25665fafafdcd5f8bfe5d0c5",
       "bytes": 2183,
       "mime": "text/html"
     },
@@ -136,14 +154,14 @@
     },
     {
       "path": "study.js",
-      "sha256": "20d3539ab95d725073ae9adb64e3f044f92d29f5ce282ad2b3b7dee2675b7683",
-      "bytes": 127800,
+      "sha256": "003162c84d33e76044eae0526fc8eaa99ad8f28c89f78b5e74771b9ef4de7725",
+      "bytes": 128882,
       "mime": "text/javascript"
     },
     {
       "path": "styles.css",
-      "sha256": "9392b835d17058474cebe2997aedbb6a758844756f94976468842c1b5bae72ba",
-      "bytes": 55742,
+      "sha256": "acded02994ed01f4f9a3589831da930784e5d01150b3ee90bc011eea9860c7f8",
+      "bytes": 55902,
       "mime": "text/css"
     },
     {

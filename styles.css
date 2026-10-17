@@ -1354,3 +1354,5 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 
 .home-entry.drill-entry { background: #f2f6fc; border-color: #a4b8d8; }
 .drill-stop { margin-top: 16px; }
+
+.keyword-audio { display: inline-flex; width: 36px; height: 36px; min-height: 44px; min-width: 44px; padding: 8px; margin-left: 8px; vertical-align: middle; }
