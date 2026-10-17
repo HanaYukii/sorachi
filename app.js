@@ -10,13 +10,16 @@ let selectedWrong = null;
 let feedbackReturn = "#home";
 let feedbackContext = "首頁";
 let feedbackDiagnostics;
-let feedbackDraft = { category: "問題回報", message: "" };
+let feedbackDraft = { category: "問題回報", message: "", contact: "" };
+let feedbackBusy = false, feedbackSent = false, feedbackSubmission = null, feedbackStatus = "";
+const directFeedback = () => Boolean(account.service() && CloudConfig.turnstileSiteKey);
 const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
 const metadata = (id) => ({title: id === "intro" ? "日文的三種文字" : Content.getCourse(id)?.title ?? Content.retiredTitles[id], legacyRevision: Content.legacyCourseRevision[id]});
 const validHistory = (value) => DataStore.normalizeAttempts(value, metadata).slice(-DataStore.MAX_ATTEMPTS);
 let browserStorage;
 try { browserStorage = localStorage; } catch { /* Restricted browser environment. */ }
-const dataStore = DataStore.create({storage: browserStorage, metadata, supportedCourseIds: Object.keys(Content.courses)});
+let dataStore = DataStore.create({storage: browserStorage, metadata, supportedCourseIds: Object.keys(Content.courses)});
+function loadProgress() {
 progress = dataStore.readProgress();
 const introRevision = progress.contentRevision ?? Content.legacyCourseRevision.intro;
 if (introRevision !== Content.courseRevision("intro")) {
@@ -26,6 +29,8 @@ if (introRevision !== Content.courseRevision("intro")) {
 progress.contentRevision = Content.courseRevision("intro");
 progress.study = Study.sanitize(progress.study);
 canStore = dataStore.canPersist();
+}
+loadProgress();
 // The page shows warnings as plain text; a single region outside #app announces
 // only a change in saving state, so redraws and repeated failures stay quiet.
 const saveState = () => canStore ? "ok" : dataStore.isConflict() ? "conflict" : dataStore.lockReason() || "blocked";
@@ -64,7 +69,7 @@ const friend = (className = "", alt = "", asset = "cloud-friend", size = 252, si
   return `<img class="${className}" src="./assets/${asset}-${fallback}.webp" srcset="${widths.map((width) => `./assets/${asset}-${width}.webp ${width}w`).join(", ")}" sizes="${sizes}" alt="${alt}" width="${width}" height="${height}">`;
 };
 const footer = () =>
-  (location.hostname === "hanayukii.github.io" ? '<aside class="domain-move"><strong>SoraChi 新網址：<a href="https://sorachi.app/">sorachi.app</a></strong><p>這裡保留舊版和原本的進度。要搬到新站，先在「學習紀錄」下載備份，再到新站的「學習紀錄」從備份檔還原。</p><button class="text-button" data-action="history">學習紀錄與備份 →</button></aside>' : '') + '<footer class="footer"><span>SoraChi · 日文入門<br><a class="author-credit" href="#about">花雪（HanaYukii）製作</a></span><nav class="quiet-links" aria-label="小工具"><a class="text-button" href="#about">關於 SoraChi</a><button class="text-button" data-action="history">學習紀錄</button><a class="text-button" href="#settings">學習設定</a><button class="text-button" data-action="feedback">問題與建議</button></nav></footer>';
+  (location.hostname === "hanayukii.github.io" ? '<aside class="domain-move"><strong>SoraChi 新網址：<a href="https://sorachi.app/">sorachi.app</a></strong><p>這裡保留舊版和原本的進度。要搬到新站，先在「學習紀錄」下載備份，再到新站的「學習紀錄」從備份檔還原。</p><button class="text-button" data-action="history">學習紀錄與備份 →</button></aside>' : '') + '<footer class="footer"><span>SoraChi · 日文入門<br><a class="author-credit" href="#about">花雪（HanaYukii）製作</a></span><nav class="quiet-links" aria-label="小工具"><a class="text-button" href="#about">關於 SoraChi</a><button class="text-button" data-action="history">學習紀錄</button><a class="text-button" href="#settings">學習設定</a><button class="text-button" data-action="feedback">問題與建議</button><a class="text-button" href="./privacy.html">隱私政策</a><a class="text-button" href="./terms.html">使用條款</a></nav></footer>';
 const warningMessage = () =>
   canStore
     ? ""
@@ -104,6 +109,37 @@ Study.bind({
   from: () => cameFrom,
 });
 
+let logoutRemoval = null;
+let accountLoading = Boolean(CloudConfig.url && CloudConfig.publishableKey);
+const account = Account.create({
+  render: () => { accountLoading=false; route(); },
+  owner: accountId => { dataStore = DataStore.create({storage:browserStorage,metadata,supportedCourseIds:Object.keys(Content.courses),accountId}); loadProgress(); },
+  lock: locked => { app.inert = locked; },
+  notice: message => { const note=document.querySelector("#account-alert"); note.textContent=message; note.hidden=false; },
+  beforeLogout: id => { logoutRemoval = id; },
+  reload: () => {
+    restarting = true;
+    if(logoutRemoval) {
+      try {
+        DataStore.removeAccountData(browserStorage, logoutRemoval);
+      } catch { window.alert("已登出，但瀏覽器無法移除這台裝置上的帳號紀錄。若是公用電腦，請確認資料已移除後再離開。"); }
+    }
+    Study.stopAudio(); location.reload();
+  },
+  export: () => dataStore.exportBackup(),
+  importSummary,
+  importGuest: () => {
+    const guest=DataStore.create({storage:browserStorage,metadata,supportedCourseIds:Object.keys(Content.courses)});
+    try { const result=dataStore.importBackupDetailed(guest.exportBackup()); if(result.ok) loadProgress(); return result; }
+    catch { return {ok:false,reason:"write"}; }
+  },
+  importRemote: payload => { const result=dataStore.importBackupDetailed(JSON.stringify(payload)); if(result.ok) loadProgress(); return result; },
+});
+function accountPage() {
+  document.title = `${account.user()?"我的帳號":"登入"}｜SoraChi`;
+  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash)}<main id="main" tabindex="-1" class="utility-main">${account.render()}${warning()}</main>${footer()}</div>`;
+  focusHeading();
+}
 function home() {
   document.title = "SoraChi｜五十音、基礎句型與旅遊日語｜零基礎也能學";
   const begun = progress.inProgress;
@@ -133,12 +169,12 @@ function home() {
   const entries = `<section class="home-entries" aria-label="學習與旅遊">${entry("kana", "cloud-kana", "五十音", "入門必學，搭配各式技巧好好記熟。", "學五十音", "kana")}${entry("grammar", "cloud-complete", "基礎句型", "日文基本的句子架構。", "學基礎句型", "grammar")}${entry("travel", "cloud-travel", "旅遊常用語", "記好這些關鍵字，不用完整句，也能清楚表達意思。", "查常用語", "travel")}${entry("drill", "cloud-drill", "基礎刷題", "練習本站提到的日文基礎，也可作為 N5、N4 的準備。", progress.study.drill.session ? "接著刷題" : "開始刷題", "study-drill")}</section>`;
   const below = newVisitor ? `<div class="script-supplement intro-entry"><button class="text-button" data-action="start">認識三種日文寫法${icons.arrow}</button><p>平假名、片假名與漢字的用法。</p></div>` : homeDashboard({ grammarNext, grammarStarted, begun, review, saved, kanaNext, otherSounds: soundIds.filter((id) => id !== nextKana && unfinished(id)) });
   app.innerHTML = `<div class="shell">
-    <header class="site-header home-header"><a class="brand" href="#home" aria-label="SoraChi 首頁">${friend("", "", "cloud-friend", 42)}<span class="brand-word">SoraChi<span class="brand-dot">.</span></span></a></header>
+    <header class="site-header home-header"><a class="brand" href="#home" aria-label="SoraChi 首頁">${friend("", "", "cloud-friend", 42)}<span class="brand-word">SoraChi<span class="brand-dot">.</span></span></a><div class="header-tools">${Navigation.accountLink()}${Navigation.feedbackLink()}</div></header>
     <main id="main" tabindex="-1" class="home"><section class="welcome"><h1 class="focus-heading" tabindex="-1">日文入門</h1><p>零基礎也可以用。學五十音、練句型，旅行時查常用語。</p></section>
     ${shortcuts}
     ${entries}
     ${below}
-    <aside class="gentle-note">${icons.book}<span>不用登入；進度只存在這個瀏覽器。</span></aside>${warning()}</main>${footer()}</div>`;
+    <aside class="gentle-note">${icons.book}<span>${account.user() ? "目前使用帳號進度；可到「帳號」儲存雲端備份。" : "不用登入也能學；訪客進度保存在這個瀏覽器。"}</span></aside>${warning()}</main>${footer()}</div>`;
 }
 
 // Stable illustrated entries stay above the returning learner’s next steps and local progress.
@@ -297,6 +333,7 @@ function backupPanel() {
   return `<section class="backup-panel" aria-labelledby="backup-title"><h2 id="backup-title">備份</h2><p>進度、收藏與設定都存在這個瀏覽器。換瀏覽器或清除網站資料前，可以先下載備份檔，之後再還原。</p><div class="quiet-links"><button class="text-button" data-action="export-backup">下載備份</button><label class="text-button file-button">從備份檔還原<input type="file" id="backup-file"></label></div><p id="backup-status" role="status" aria-live="polite"></p></section>`;
 }
 function importSummary(result) {
+  if(!result.ok && result.reason === "owner") return "這份備份屬於另一個帳號，請先登入原本的帳號再匯入。這台裝置的紀錄沒有改動。";
   if (!result.ok) return result.reason === "too-large" ? "這個檔案太大，不像 SoraChi 的備份檔。" : result.reason === "write" ? (dataStore.isConflict() ? "另一個分頁更新了資料，請重新整理後再還原。" : "這次沒有還原成功，瀏覽器無法儲存。原本的紀錄沒有改動。") : "讀不懂這個檔案，請選 SoraChi 下載的備份檔。原本的紀錄沒有改動。";
   return `已從備份還原：新增 ${result.added} 筆紀錄${result.existing ? `，${result.existing} 筆原本就有` : ""}${result.skipped ? `，${result.skipped} 筆較舊的紀錄超過 ${DataStore.MAX_ATTEMPTS} 筆上限，沒有加入` : ""}${result.dropped ? `，本機 ${result.dropped} 筆較舊的紀錄超過 ${DataStore.MAX_ATTEMPTS} 筆上限，已移除` : ""}。課程進度已合併${result.clearApplied ? "；其中一邊較晚清除過紀錄，未完成的五十音練習、五十音複習與句型小複習以那一邊為準" : ""}。`;
 }
@@ -305,7 +342,8 @@ async function importFile(file) {
   if (!file) return;
   if (file.size > DataStore.MAX_BACKUP_CHARS * 4) { status.textContent = importSummary({ok:false,reason:"too-large"}); return; }
   let result;
-  try { result = dataStore.importBackupDetailed(await file.text()); } catch { result = {ok:false,reason:"invalid"}; }
+  const targetStore=dataStore;
+  try { const raw=await file.text(); if(restarting || targetStore !== dataStore) return; result = targetStore.importBackupDetailed(raw); } catch { result = {ok:false,reason:"invalid"}; }
   if (!result.ok) { status.textContent = importSummary(result); return; }
   // Reload so the in-memory progress cannot overwrite what was just imported.
   try { sessionStorage.setItem(IMPORT_NOTE, importSummary(result)); } catch { /* The reload still shows the merged data. */ }
@@ -316,7 +354,7 @@ function historyPage(confirmClear = false, confirmRestart = false) {
   document.title = "學習紀錄｜SoraChi";
   const entries = [...progress.history].reverse();
   const hasReviewData = Study.reviewSummary().hasData;
-  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash)}<main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">課後練習會記錄成績；基礎刷題會記住這次練習，回首頁可接著做。</p>${entries.length ? `<p class="record-note">保留最近 ${DataStore.MAX_ATTEMPTS} 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list" role="list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄第一次作答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第一次答錯：${entry.courseId ? Study.retryLabels(entry).map(escapeHTML).join("、") : entry.retryQuestions.map((q) => `第 ${q - 3} 題`).join("、")}` : entry.firstCorrect === (entry.total || 2) ? "全部題目第一次都答對。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : dataStore.isProtected() ? `<section class="empty-record">${icons.book}<h2>目前無法讀取成績紀錄</h2></section>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過日文的三種文字；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成一堂課的課後練習，紀錄就會顯示在這裡。"}</p><button class="primary" data-action="kana">看五十音表${icons.arrow}</button></section>`}${recoveryPanel(confirmRestart)}${backupPanel()}<p class="record-note">只保存在這個瀏覽器，沒有跨裝置同步。清除網站資料也會移除紀錄。</p>${warning()}${!dataStore.isProtected() && (entries.length || hasReviewData) ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除全部成績與複習紀錄？這也會結束尚未完成的五十音練習、五十音複習、句型小複習與基礎刷題；已完成狀態與其他課程進度會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績與複習紀錄</button>` : ""}</main>${footer()}</div>`;
+  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash)}<main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">學習紀錄</h1><p class="utility-intro">課後練習會記錄成績；基礎刷題會記住這次練習，回首頁可接著做。</p>${entries.length ? `<p class="record-note">保留最近 ${DataStore.MAX_ATTEMPTS} 次完成紀錄。「第一次答對」以每題第一次選擇計算，重試不會改寫成績。</p><ol class="history-list" role="list">${entries.map((entry) => `<li><div class="record-top"><span>${entry.courseId ? escapeHTML(entry.courseTitle || Study.title(entry.courseId) || entry.courseId) : "日文的三種文字"}</span><time datetime="${entry.date}">${new Date(entry.date).toLocaleString("zh-TW", {month:"numeric",day:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})}</time></div><h2>${entry.firstCorrect === null ? "已完成 · 未記錄第一次作答成績" : `第一次答對 <strong>${entry.firstCorrect} / ${entry.total || 2}</strong> 題`}</h2><p>${entry.retryQuestions.length ? `第一次答錯：${entry.courseId ? Study.retryLabels(entry).map(escapeHTML).join("、") : entry.retryQuestions.map((q) => `第 ${q - 3} 題`).join("、")}` : entry.firstCorrect === (entry.total || 2) ? "全部題目第一次都答對。" : "這次已完成練習。"}</p></li>`).join("")}</ol>` : dataStore.isProtected() ? `<section class="empty-record">${icons.book}<h2>目前無法讀取成績紀錄</h2></section>` : `<section class="empty-record">${icons.book}<h2>還沒有新的成績紀錄</h2><p>${progress.completed ? "你已完成過日文的三種文字；舊版尚未留下成績。下次練習完成後，就會記在這裡。" : "完成一堂課的課後練習，紀錄就會顯示在這裡。"}</p><button class="primary" data-action="kana">看五十音表${icons.arrow}</button></section>`}${recoveryPanel(confirmRestart)}${backupPanel()}<p class="record-note">進度會先保存在這個瀏覽器。也可到<a href="#account">我的帳號</a>手動儲存雲端備份；清除網站資料前請先備份。</p>${warning()}${!dataStore.isProtected() && (entries.length || hasReviewData) ? confirmClear ? `<section class="clear-confirm" aria-label="確認清除"><p>清除全部成績與複習紀錄？這也會結束尚未完成的五十音練習、五十音複習、句型小複習與基礎刷題；已完成狀態與其他課程進度會保留。</p><div class="quiet-links"><button class="text-button" data-action="history">先保留</button><button class="text-button" data-action="confirm-clear">確認清除紀錄</button></div></section>` : `<button class="text-button clear-button" data-action="clear-history">清除成績與複習紀錄</button>` : ""}</main>${footer()}</div>`;
   focusHeading();
   // Announce the restore result once, after the page exists, so the live region reads it.
   if (importNote) {
@@ -331,9 +369,29 @@ function captureFeedback(hash) {
 function feedbackPage() {
   feedbackDiagnostics ||= captureFeedback("#home");
   document.title = "問題與建議｜SoraChi";
-  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash, feedbackReturn, "回到剛才的頁面", "feedback-back")}<main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">問題與建議</h1><p class="utility-intro">回報操作問題、教材錯誤，或提出課程建議。</p><form id="feedback-form" class="feedback-form"><label for="feedback-category">回報類型</label><select id="feedback-category" name="category">${["問題回報","學習建議","其他想法"].map((kind) => `<option${feedbackDraft.category === kind ? " selected" : ""}>${kind}</option>`).join("")}</select><label for="feedback-message">內容</label><textarea id="feedback-message" name="message" rows="5" maxlength="600" aria-describedby="feedback-limit feedback-privacy" required placeholder="例如：這個說明看不太懂，希望多一個例子。">${escapeHTML(feedbackDraft.message)}</textarea><p class="record-note" id="feedback-limit">最多 600 字。會附上所在位置：${escapeHTML(feedbackContext)}，以及版本與教材識別碼。</p><aside class="feedback-privacy" id="feedback-privacy">這版使用 GitHub 接收回報，需要 GitHub 帳號。送出後內容會公開，請勿填入姓名、Email 或其他私人資料。</aside><button class="primary" type="submit">準備回報內容 ${icons.arrow}</button><p class="record-note">下一步會產生連結，讓你到 GitHub 確認後送出。</p><div id="feedback-ready" role="status" aria-live="polite"></div></form></main>${footer()}</div>`;
+  const direct=directFeedback();
+  const form=feedbackSent ? `<section class="account-panel"><h2>已收到你的回報</h2><p>謝謝你告訴我們。回報內容只會提供給網站管理者。</p><button class="primary" data-action="feedback-back">回到剛才的頁面</button><button class="text-button" data-action="feedback-new">再寫一則</button></section>` : `<form id="feedback-form" class="feedback-form"><fieldset${feedbackBusy?' disabled':''}><label for="feedback-category">回報類型</label><select id="feedback-category" name="category">${["問題回報","學習建議","其他想法"].map(kind => `<option${feedbackDraft.category === kind ? " selected" : ""}>${kind}</option>`).join("")}</select><label for="feedback-message">內容</label><textarea id="feedback-message" name="message" rows="5" maxlength="600" aria-describedby="feedback-limit feedback-privacy" required placeholder="例如：這個說明看不太懂，希望多一個例子。">${escapeHTML(feedbackDraft.message)}</textarea><p class="record-note" id="feedback-limit">最多 600 字。會附上所在位置：${escapeHTML(feedbackContext)}，以及版本與教材識別碼。</p>${direct ? `<label for="feedback-contact">聯絡方式（選填）</label><input id="feedback-contact" maxlength="200" value="${escapeHTML(feedbackDraft.contact || "")}" placeholder="希望收到回覆時再填寫 Email" aria-describedby="feedback-privacy"><aside class="feedback-privacy" id="feedback-privacy">不用登入也能送出。內容不公開，只供網站管理者處理；不會附上你的答案或學習紀錄。${account.user()?'目前已登入，回報會附上帳號識別碼；聯絡方式仍由你自行選擇是否填寫。':''}</aside><div id="feedback-challenge"></div><button class="primary" type="submit">${feedbackBusy?'送出中…':'送出回報'}</button>` : `<aside class="feedback-privacy" id="feedback-privacy">站內回報目前尚未連線，可改用 GitHub。需要 GitHub 帳號，送出後內容會公開，請勿填入姓名、Email 或其他私人資料。</aside><button class="primary" type="submit">準備回報內容 ${icons.arrow}</button><p class="record-note">下一步會產生連結，讓你到 GitHub 確認後送出。</p>`}</fieldset><div id="feedback-ready" role="status" aria-live="polite">${escapeHTML(feedbackStatus)}</div></form>`;
+  app.innerHTML = `<div class="lesson-shell">${Navigation.header(location.hash, feedbackReturn, "回到剛才的頁面", "feedback-back")}<main id="main" tabindex="-1" class="utility-main"><h1 class="focus-heading" tabindex="-1">問題與建議</h1><p class="utility-intro">回報操作問題、教材錯誤，或提出課程建議。</p>${form}</main>${footer()}</div>`;
+  if(direct && !feedbackSent) FeedbackChallenge.mount(CloudConfig.turnstileSiteKey,()=>{ const status=app.querySelector("#feedback-ready"); if(status) status.textContent="驗證沒有載入，請確認網路後重新開啟回報頁。內容會保留。"; });
   focusHeading();
 }
+async function sendDirectFeedback(category, message) {
+  if(feedbackBusy) return;
+  const challenge=FeedbackChallenge.token();
+  if(!challenge) { app.querySelector("#feedback-ready").textContent="請先完成下方驗證，再送出回報。"; return; }
+  feedbackDraft={category,message,contact:app.querySelector("#feedback-contact")?.value || ""};
+  feedbackSubmission ||= crypto.randomUUID();
+  const id=feedbackSubmission;
+  feedbackBusy=true; feedbackStatus="送出中…";
+  const fields=app.querySelector("fieldset"); if(fields) fields.disabled=true;
+  app.querySelector("#feedback-ready").textContent=feedbackStatus;
+  try {
+    await account.service().sendFeedback({id,category:{"問題回報":"bug","學習建議":"wish","其他想法":"other"}[category],message,contact:feedbackDraft.contact,context:feedbackContext,diagnostics:feedbackDiagnostics,challenge});
+    if(feedbackSubmission===id) { feedbackSent=true; feedbackDraft={category:"問題回報",message:"",contact:""}; feedbackStatus=""; }
+  } catch { feedbackStatus="這次沒有送出成功，內容已保留。請再試一次。"; }
+  finally { feedbackBusy=false; if(location.hash==="#feedback") feedbackPage(); }
+}
+
 function buildFeedbackURL(category, message, context) {
   const url = new URL("https://github.com/HanaYukii/sorachi/issues/new");
   url.searchParams.set("title", `[${category}] SoraChi 使用回饋`);
@@ -349,8 +407,9 @@ app.addEventListener("change", (event) => {
 });
 app.addEventListener("input", (event) => {
   if (event?.target?.id === "travel-search") { Study.searchTravel(event.target.value, event.isComposing); return; }
-  if (location.hash !== "#feedback") return;
-  feedbackDraft = {category: app.querySelector("#feedback-category").value, message: app.querySelector("#feedback-message").value};
+  if (location.hash !== "#feedback" || feedbackBusy || feedbackSent) return;
+  feedbackSubmission=null; feedbackStatus="";
+  feedbackDraft = {category: app.querySelector("#feedback-category").value, message: app.querySelector("#feedback-message").value, contact: app.querySelector("#feedback-contact")?.value || ""};
   app.querySelector("#feedback-ready").replaceChildren();
 });
 // A word finished with an input method searches once, when it is done. Enter in the search box moves to the results
@@ -367,6 +426,7 @@ app.addEventListener("compositionend", (event) => {
 app.addEventListener("submit", (event) => {
   if (event.target.id !== "feedback-form") return;
   event.preventDefault();
+  if(feedbackBusy) return;
   const message = app.querySelector("#feedback-message");
   const category = app.querySelector("#feedback-category").value;
   if (!message.value.trim() || message.value.length > 600) {
@@ -375,6 +435,7 @@ app.addEventListener("submit", (event) => {
     message.addEventListener("input", () => message.setCustomValidity(""), {once:true});
     return;
   }
+  if(directFeedback()) { sendDirectFeedback(category,message.value); return; }
   feedbackDraft = {category, message: message.value};
   const ready = app.querySelector("#feedback-ready");
   const note = document.createElement("p");
@@ -401,6 +462,11 @@ function aboutPage() {
   focusHeading();
 }
 function route() {
+  // Do not open or save a lesson under the guest owner while a saved login is loading.
+  if(accountLoading) return;
+  FeedbackChallenge.dispose();
+  // Keep old bookmarks working, with one canonical home address and no extra history entry.
+  if (location.hash === "#home") window.history.replaceState(window.history.state, "", (location.pathname || "./") + (location.search || ""));
   Study.stopAudio();
   cameFrom = exits.includes(window.history.state?.from) ? window.history.state.from : null;
   // The lesson on screen until now, so its list can bring that row back into view.
@@ -420,7 +486,7 @@ function route() {
   window.scrollTo({ top: 0, behavior: "instant" });
   const studyPage = Study.render(location.hash);
   // Pages without a route of their own show home.
-  shown = studyPage !== null || ["#lesson", "#history", "#feedback", "#about"].includes(location.hash) || location.hash === "#done" && progress.completed ? location.hash : "#home";
+  shown = studyPage !== null || ["#lesson", "#history", "#feedback", "#about", "#account"].includes(location.hash) || location.hash === "#done" && progress.completed ? location.hash : "#home";
   shownHash = location.hash;
   if (studyPage !== null) {
     document.title = `${Navigation.page(location.hash).title}｜SoraChi`;
@@ -459,6 +525,7 @@ function route() {
     feedbackPage();
   }
   else if (location.hash === "#about") aboutPage();
+  else if (location.hash === "#account") accountPage();
   else {
     home();
     focusHeading();
@@ -492,6 +559,7 @@ app.addEventListener("click", (event) => {
     if (next && !next.disabled) next.focus({ preventScroll: true });
     return;
   }
+  if (button.dataset.action?.startsWith("account-")) { account.action(button.dataset.action); return; }
   if (Study.handle(button)) return;
   if (button.dataset.answer !== undefined) {
     const answer = Number(button.dataset.answer);
@@ -560,11 +628,15 @@ app.addEventListener("click", (event) => {
       }
       break;
     }
+    case "feedback-new":
+      if(feedbackBusy) break;
+      feedbackSent=false; feedbackSubmission=null; feedbackStatus=""; feedbackPage(); break;
     case "feedback":
-      if (location.hash !== "#feedback") {
+      if (location.hash !== "#feedback" && !feedbackBusy) {
+        if(feedbackSent) { feedbackSent=false; feedbackSubmission=null; }
         feedbackDiagnostics = captureFeedback(location.hash || "#home");
-        feedbackReturn = ["#lesson", "#done", "#history"].includes(location.hash) || Study.context(location.hash) ? location.hash : "#home";
-        feedbackContext = Study.context(feedbackReturn) || (feedbackReturn === "#lesson" ? `日文的三種文字・第 ${progress.step + 1} 步${progress.step >= 4 ? `・小練習 ${progress.step - 3}` : ""}` : feedbackReturn === "#done" ? "日文的三種文字完成頁" : feedbackReturn === "#history" ? "學習紀錄" : "首頁");
+        feedbackReturn = Navigation.page(location.hash).kind !== "unknown" || Study.context(location.hash) ? location.hash : "#home";
+        feedbackContext = Study.context(feedbackReturn) || (feedbackReturn === "#lesson" ? `日文的三種文字・第 ${progress.step + 1} 步${progress.step >= 4 ? `・小練習 ${progress.step - 3}` : ""}` : feedbackReturn === "#done" ? "日文的三種文字完成頁" : feedbackReturn === "#home" ? "首頁" : Navigation.page(feedbackReturn).title);
       }
       go("#feedback");
       break;
@@ -618,7 +690,7 @@ document.querySelector(".skip-link").addEventListener("click", (event) => {
   document.querySelector("#main")?.focus();
 });
 window.addEventListener("storage", (event) => {
-  if (event.key !== null && event.key !== DataStore.KEY) return;
+  if (event.key !== null && event.key !== dataStore.key) return;
   dataStore.checkForUpdates();
   canStore = dataStore.canPersist();
   updateStorageWarning();
@@ -646,3 +718,4 @@ function beforeUpdateReload() {
   return true;
 }
 UpdateNotice.start({ beforeReload: beforeUpdateReload });
+account.start();

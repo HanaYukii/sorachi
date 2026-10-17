@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "buildId": "11403e01b5548fe5b6cce93990d39ea8d67ff310d34a152e3becd2dfe80c64e6",
+  "buildId": "99aaad32eb544cf23fb7fb74829ba8b26e733c24a69248d0a2c23f5ba834e49c",
   "files": [
     {
       "path": ".nojekyll",
@@ -15,9 +15,15 @@
       "mime": null
     },
     {
+      "path": "account.js",
+      "sha256": "598555d96fa21d56b85506d96a1f6bcb6effc64eb670adaecfa1b7b0cabd43c9",
+      "bytes": 6994,
+      "mime": "text/javascript"
+    },
+    {
       "path": "app.js",
-      "sha256": "31d56a65bd55824752f0a8e6641b5c3c56a4f062e8ddd5e8a709cc6a7b2d420f",
-      "bytes": 52324,
+      "sha256": "e46f26d132c800ab398bcdbba62b3a60a92be61a45b90620703a7d542e5d671e",
+      "bytes": 58655,
       "mime": "text/javascript"
     },
     {
@@ -117,6 +123,18 @@
       "mime": "image/png"
     },
     {
+      "path": "cloud-config.js",
+      "sha256": "c608e669014a6fc55a8e0081d9e9b575a43614d9256cf24c109139f137b4dfe3",
+      "bytes": 398,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "cloud.js",
+      "sha256": "e871c5935b020c5b26b575dd57e847af6b9b965b1576d9ab4c38d51e3cdfab33",
+      "bytes": 4704,
+      "mime": "text/javascript"
+    },
+    {
       "path": "content.js",
       "sha256": "a5eb501a2fe5c11687ca326913ba6a647821fdd60744c077f4cb3b93c7337d55",
       "bytes": 352790,
@@ -141,9 +159,15 @@
       "mime": "text/javascript"
     },
     {
+      "path": "feedback-challenge.js",
+      "sha256": "1ccdde3a979969b208e9ceeee1ad3ac33fd7079b5260041c431c32eaf9251844",
+      "bytes": 1383,
+      "mime": "text/javascript"
+    },
+    {
       "path": "index.html",
-      "sha256": "d23b815103829e2adcd827a662977e2f5ef14fbfc74d993561581da05035dbd1",
-      "bytes": 2423,
+      "sha256": "81b7b0da13d15b4c8af3290b20f59652ec8481d19c530ec3573cbd6cf629b3ce",
+      "bytes": 3211,
       "mime": "text/html"
     },
     {
@@ -160,14 +184,20 @@
     },
     {
       "path": "navigation.js",
-      "sha256": "a92079300c0c11775d5de9f55c55dbe57d0120918ddafca7e7a67441979fae79",
-      "bytes": 2813,
+      "sha256": "59d864e65cc65233de4bafea1dda3ea6c57d861b7e765e1145bd3329e2d25121",
+      "bytes": 3323,
       "mime": "text/javascript"
     },
     {
+      "path": "privacy.html",
+      "sha256": "f628ab70aeedce26f8262dff31ec081cfaebaf7ea1b206c6eb3c9a459d96437d",
+      "bytes": 2845,
+      "mime": "text/html"
+    },
+    {
       "path": "storage.js",
-      "sha256": "9697e84a98636bc438b154e3c3c1f92925559a31ac0a7f4fe7c33af8c0221e2b",
-      "bytes": 19285,
+      "sha256": "95bd541b9f30447b5cef151d7c8828976c1190e1722265094e40a7d6d1d78c87",
+      "bytes": 21050,
       "mime": "text/javascript"
     },
     {
@@ -178,15 +208,33 @@
     },
     {
       "path": "styles.css",
-      "sha256": "2c2d2461e1a5b987b1666d76c91e4169d25f93523860847dfa621395c8ecd4f3",
-      "bytes": 58779,
+      "sha256": "38b2c6f2b29cd5a845348b762967f28835c5c1653876469f7bc5a15f88c146f0",
+      "bytes": 60966,
       "mime": "text/css"
+    },
+    {
+      "path": "terms.html",
+      "sha256": "d01264ebf7ae14d1141b2997b85360709bbace9e5b7b18326a83a05bca9afb9d",
+      "bytes": 2233,
+      "mime": "text/html"
     },
     {
       "path": "update-notice.js",
       "sha256": "f5ab8d4a97bde132ce16ed5ec8a268dfb1e38803d2f92ef5dcfebd7db22bcafe",
       "bytes": 2284,
       "mime": "text/javascript"
+    },
+    {
+      "path": "vendor/supabase-2.108.2.js",
+      "sha256": "c123f7e874934778b7d89fee7dce8de26c858a2c3a92fd7a3f870394a6a2f91f",
+      "bytes": 204619,
+      "mime": "text/javascript"
+    },
+    {
+      "path": "vendor/supabase-LICENSE.txt",
+      "sha256": "334dd6820e2eaeab2064e7c59001b810566728a28a41a7c1dbf69bbee17d0936",
+      "bytes": 1065,
+      "mime": "text/plain"
     }
   ]
 }

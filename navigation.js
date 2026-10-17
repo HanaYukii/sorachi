@@ -19,6 +19,7 @@ const Navigation = (() => {
     "#history": ["學習紀錄", null, "utility"],
     "#settings": ["學習設定", null, "utility"],
     "#about": ["關於 SoraChi", null, "utility"],
+    "#account": ["我的帳號", null, "utility"],
     "#feedback": ["問題與建議", null, "utility"],
   };
   const escape = text => String(text).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
@@ -35,13 +36,17 @@ const Navigation = (() => {
     const [title, section, kind] = item || ["找不到頁面", null, "unknown"];
     return {title, section, kind};
   }
+  let accountLabel = null;
+  const setAccountLabel = label => { accountLabel = label; };
+  const accountLink = () => accountLabel ? `<a class="header-account" href="#account">${escape(accountLabel)}</a>` : "";
+  const feedbackLink = () => `<button class="header-feedback" data-action="feedback">問題與建議</button>`;
   function header(hash, destination = "#home", label = "回首頁", action = null) {
     const info = page(hash);
     const back = action === "feedback-back"
       ? `<button class="exit" data-action="feedback-back">← ${escape(label)}</button>`
       : `<a class="exit" href="${escape(destination)}">← ${escape(label)}</a>`;
     const links = info.kind === "overview" ? `<nav class="section-nav" aria-label="學習與旅遊">${sections.map(([url, title]) => `<a href="${url}"${url === info.section ? ' aria-current="page"' : ""}>${title}</a>`).join("")}</nav>` : "";
-    return `<header class="lesson-header${links ? " overview-header" : ""}">${back}<span class="lesson-name">SoraChi · 日文入門</span>${links}</header>`;
+    return `<header class="lesson-header${links ? " overview-header" : ""}">${back}<div class="header-tools"><span class="lesson-name">SoraChi · 日文入門</span>${accountLink()}${hash === "#feedback" ? "" : feedbackLink()}</div>${links}</header>`;
   }
-  return Object.freeze({ page, header });
+  return Object.freeze({ page, header, feedbackLink, accountLink, setAccountLabel });
 })();

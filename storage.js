@@ -127,14 +127,40 @@ const DataStore = (() => {
     if (local.kanaHints || incoming.kanaHints) result.kanaHints = {...incoming.kanaHints,...local.kanaHints};
     return preferences(result);
   }
-  function validSnapshot(v) {
-    return object(v) && v.schemaVersion === 2 && object(v.owner) && v.owner.kind === "guest" && text(v.owner.id) && object(v.learning) && object(v.learning.intro) && object(v.learning.study) && Array.isArray(v.attempts) && Array.isArray(v.favorites) && object(v.preferences);
+  const accountIdValid = value => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+  function removeAccountData(storage, accountId) {
+    if (!accountIdValid(accountId)) throw Error("Invalid account ID");
+    const ACCOUNT_PREFIX = "sorachi:acct:";
+    const accountKey = `${ACCOUNT_PREFIX}${accountId}:v1`;
+    // Snapshot the matching keys before deletion changes Storage's indexes.
+    const suffixes = [""];
+    for (let i = 0; i < storage.length; i++) {
+      const key = storage.key(i);
+      if (typeof key === "string" && key.startsWith(`${accountKey}:quarantine:`)) suffixes.push(key.slice(accountKey.length));
+    }
+    let failed = false;
+    for (const suffix of suffixes) {
+      const scopedKey = `${ACCOUNT_PREFIX}${accountId}:v1${suffix}`;
+      try {
+        storage.removeItem(scopedKey);
+        if (storage.getItem(scopedKey) !== null) failed = true;
+      } catch { failed = true; }
+    }
+    if (failed) throw Error("Account data removal failed");
   }
-  function create({storage,metadata = () => null,supportedCourseIds} = {}) {
+  function validSnapshot(v) {
+    return object(v) && v.schemaVersion === 2 && object(v.owner) && (v.owner.kind === "guest" && text(v.owner.id) || v.owner.kind === "account" && accountIdValid(v.owner.id)) && object(v.learning) && object(v.learning.intro) && object(v.learning.study) && Array.isArray(v.attempts) && Array.isArray(v.favorites) && object(v.preferences);
+  }
+  function create({storage,metadata = () => null,supportedCourseIds,accountId = null} = {}) {
+    if (accountId !== null && !accountIdValid(accountId)) throw Error("Invalid account ID");
+    const ACCOUNT_PREFIX = "sorachi:acct:";
+    const KEY = accountId ? `${ACCOUNT_PREFIX}${accountId}:v1` : "sorachi:data:v2";
+    const owner = () => accountId ? {kind:"account",id:accountId} : {kind:"guest",id:uid()};
+    const ownSnapshot = value => accountId ? value.owner.kind === "account" && value.owner.id === accountId : value.owner.kind === "guest";
     const supported = supportedCourseIds === undefined ? null : new Set(supportedCourseIds);
     // lockReason explains protectedData: "newer" (a later app wrote it), "invalid" (damaged or incomplete), "unreadable" (storage threw).
     let writable = true, protectedData = false, conflict = false, baselineRaw = null, lockReason = null;
-    let snapshot = {schemaVersion:2,owner:{kind:"guest",id:uid()},updatedAt:new Date().toISOString(),learning:learning(null),attempts:[],favorites:[],preferences:{}};
+    let snapshot = {schemaVersion:2,owner:owner(),updatedAt:new Date().toISOString(),learning:learning(null),attempts:[],favorites:[],preferences:{}};
     // Reject an observed stale snapshot. This synchronous read/write check is
     // not a cross-tab transaction and does not claim to serialize concurrent writes.
     function checkForUpdates() {
@@ -166,6 +192,7 @@ const DataStore = (() => {
       let parsed;
       try { parsed = JSON.parse(raw); } catch { return {ok:false,reason:"invalid"}; }
       if (!validSnapshot(parsed) || Drill.inspect(parsed.learning?.study?.drill) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) return {ok:false,reason:"invalid"};
+      if (parsed.owner.kind === "account" && (!accountId || parsed.owner.id !== accountId)) return {ok:false,reason:"owner"};
       const incoming = clean(parsed), current = snapshot.learning;
       const localIds = new Set(snapshot.attempts.map((item) => item.id));
       // Count from the whole file (clean() keeps only the newest 200), each id once.
@@ -189,14 +216,14 @@ const DataStore = (() => {
         try {
           const parsed = JSON.parse(raw);
           if (object(parsed) && typeof parsed.schemaVersion === "number" && parsed.schemaVersion > 2) { lockReason = "newer"; throw Error("Newer data"); }
-          if (!validSnapshot(parsed) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) throw Error("Unsupported data");
+          if (!validSnapshot(parsed) || !ownSnapshot(parsed) || normalizeAttempts(parsed.attempts,metadata).length !== parsed.attempts.length) throw Error("Unsupported data");
           const drillProblem = Drill.inspect(parsed.learning.study.drill);
           if (drillProblem) { lockReason = drillProblem; throw Error("Unsupported drill data"); }
           snapshot = clean(parsed);
         }
         catch { protectedData = true; lockReason ||= "invalid"; writable = false; }
       } else {
-        const legacyRaw = storage?.getItem(LEGACY_KEY);
+        const legacyRaw = accountId ? null : storage?.getItem(LEGACY_KEY);
         let legacy = null;
         try { legacy = JSON.parse(legacyRaw || "null"); } catch { /* Keep original malformed legacy bytes intact. */ }
         if (object(legacy)) snapshot = {...snapshot,learning:learning(legacy),attempts:normalizeAttempts(legacy.history,metadata).slice(-MAX_ATTEMPTS)};
@@ -204,6 +231,7 @@ const DataStore = (() => {
       }
     } catch { writable = false; protectedData = true; lockReason = "unreadable"; }
     return {
+      key: KEY,
       readProgress: () => clone({...snapshot.learning.intro,study:snapshot.learning.study,history:snapshot.attempts}),
       readSnapshot: () => clone(snapshot), canPersist: () => writable, isProtected: () => protectedData,
       isConflict: () => conflict, checkForUpdates, lockReason: () => protectedData ? lockReason : null,
@@ -218,7 +246,7 @@ const DataStore = (() => {
           var quarantineKey = `${KEY}:quarantine:${now.toISOString()}`;
           storage.setItem(quarantineKey, baselineRaw);
         } catch { return false; }
-        const fresh = {schemaVersion:2,owner:{kind:"guest",id:uid()},updatedAt:now.toISOString(),learning:learning(null),attempts:[],favorites:[],preferences:{}};
+        const fresh = {schemaVersion:2,owner:owner(),updatedAt:now.toISOString(),learning:learning(null),attempts:[],favorites:[],preferences:{}};
         protectedData = false; writable = true;
         if (commit(fresh)) { lockReason = null; return true; }
         // Drop only the copy made just now (the original key is untouched) so retries do not pile up copies.
@@ -227,7 +255,7 @@ const DataStore = (() => {
         return false;
       },
       // After an intentional clear, the v1 copy must not be migrated back if v2 later disappears.
-      forgetLegacy() { if (!writable || !checkForUpdates()) return false; try { storage.removeItem(LEGACY_KEY); return true; } catch { return false; } },
+      forgetLegacy() { if (accountId) return true; if (!writable || !checkForUpdates()) return false; try { storage.removeItem(LEGACY_KEY); return true; } catch { return false; } },
       writeProgress(flat) {
         const nextLearning = learning(flat);
         if (supported) {
@@ -253,5 +281,5 @@ const DataStore = (() => {
       importBackupDetailed,
     };
   }
-  return {KEY,MAX_ATTEMPTS,MAX_BACKUP_CHARS,create,normalizeAttempts,makeAttempt,mergeAttempts};
+  return {KEY,MAX_ATTEMPTS,MAX_BACKUP_CHARS,create,removeAccountData,normalizeAttempts,makeAttempt,mergeAttempts};
 })();

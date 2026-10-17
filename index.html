@@ -2,9 +2,10 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://hrmozzvwycnxdmrhagua.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#faf9fd" />
-    <meta name="sorachi-version" content="932b3b5f7fb248065093c9ed36838ba9ca735989f2e0300f27070c933a6fecb0" />
+    <meta name="sorachi-version" content="7505c021bdfe526ab59a5e5566d794daca24d585c850fd3a4f80bc43dca63998" />
     <meta
       name="description"
       content="SoraChi 日文入門：五十音與基礎句型練習，另設旅遊常用語查詢。按情境看關鍵字、讀音、中文與完整例句。"
@@ -17,23 +18,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400..800&family=Noto+Sans+JP:wght@400..700&display=swap" />
-    <link rel="stylesheet" href="./styles.css?v=2c2d2461e1" />
+    <link rel="stylesheet" href="./styles.css?v=38b2c6f2b2" />
     <script defer src="./content.js?v=a5eb501a2f"></script>
     <script defer src="./drill-bank.js?v=4f2d697449"></script>
     <script defer src="./drill.js?v=f181c784cb"></script>
-    <script defer src="./storage.js?v=9697e84a98"></script>
+    <script defer src="./storage.js?v=95bd541b9f"></script>
     <script defer src="./kana-practice.js?v=622943b488"></script>
     <script defer src="./kana-hints.js?v=02e1ac24bf"></script>
-    <script defer src="./navigation.js?v=a92079300c"></script>
+    <script defer src="./navigation.js?v=59d864e65c"></script>
     <script defer src="./study.js?v=144995853d"></script>
     <script defer src="./diagnostics.js?v=ddd51894bb"></script>
     <script defer src="./update-notice.js?v=f5ab8d4a97"></script>
-    <script defer src="./app.js?v=31d56a65bd"></script>
+    <script defer src="./cloud-config.js?v=c608e66901"></script>
+    <script defer src="./cloud.js?v=e871c5935b"></script>
+    <script defer src="./feedback-challenge.js?v=1ccdde3a97"></script>
+    <script defer src="./account.js?v=598555d96f"></script>
+    <script defer src="./app.js?v=e46f26d132"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">跳到主要內容</a>
     <div id="announcer" class="visually-hidden" aria-live="polite"></div>
     <div id="update-notice" class="update-notice" role="status" aria-live="polite" hidden></div>
+    <div id="account-alert" class="account-alert" role="status" hidden></div>
     <div id="app"><main class="shell"><p role="status">正在載入 SoraChi…</p><p>若一直停在這裡，請重新整理頁面。</p></main></div>
     <noscript>請開啟 JavaScript，才能使用 SoraChi 的互動練習。</noscript>
   </body>
