@@ -2709,3 +2709,15 @@ test('a changed drill question is explained and a corrupted or future round is p
   locked.study('study-answer',{choice:0});locked.study('study-next');assert.equal(locked.stored,raw);
  }
 });
+
+test('the old origin offers a manual backup path without redirecting or sharing progress', () => {
+  const b = browser();
+  b.run('location.hostname="hanayukii.github.io"');
+  b.navigate('#home');
+  assert.match(b.html, /SoraChi 新網址/);
+  assert.match(b.html, /href="https:\/\/sorachi.app\/"/);
+  assert.match(b.html, /先在「學習紀錄」下載備份/);
+  b.run('location.hostname="sorachi.app"');
+  b.navigate('#home');
+  assert.doesNotMatch(b.html, /domain-move/);
+});
