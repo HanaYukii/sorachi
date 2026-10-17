@@ -653,16 +653,21 @@ const Study = (() => {
     return `<aside class="kana-hint"><p class="hint-title">記憶提示</p><dl class="hint-list">${hints.map(item).join("")}</dl>${hints.some((hint) => hint.word) ? '<p class="study-audio-status study-note" data-audio-for="hint-word" role="status" aria-live="polite"></p>' : ""}${KanaHints.notice && hints.some((hint) => hint.label === "字源" || hint.word) ? `<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>` : ""}</aside>`;
   }
   const sameSoundNote = { "ぢ": "ぢ 和 じ 同音，都讀 ji；一般多寫 じ。", "づ": "づ 和 ず 同音，都讀 zu；一般多寫 ず。", "ヂ": "ヂ 和 ジ 同音，都讀 ji；一般多寫 ジ。", "ヅ": "ヅ 和 ズ 同音，都讀 zu；一般多寫 ズ。" };
-  function fullExample(step) {
-    return `<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="example-reading">${escape(step.reading)}</p>` : ""}`;
+  function lessonJapanese(course, text) {
+    const tokens = Content.lessonPresentation[course.id]?.writing?.[text];
+    if (!tokens) return escape(text);
+    return `<span class="with-furigana">${tokens.map(token => typeof token === "string" ? escape(token) : `<ruby>${escape(token[0])}<rp>（</rp><rt>${escape(token[1])}</rt><rp>）</rp></ruby>`).join("")}</span>`;
+  }
+  function fullExample(course, step) {
+    return `<p class="grammar-example" lang="ja">${lessonJapanese(course, step.example)}</p>${step.reading ? `<p class="example-reading">${escape(step.reading)}</p>` : ""}`;
   }
   const exampleLabels = { words: "單字與意思", phrase: "短語與意思", forms: "動詞變化對照", mixed: "短語與例句", usage: "用法整理" };
   function lessonExample(course, step, kind) {
     const parts = Content.lessonPresentation[course.id]?.parts?.[step.id];
-    if (!parts) return fullExample(step);
+    if (!parts) return fullExample(course, step);
     const pairedList = kind === "words" || kind === "forms";
     const guide = kind === "words" ? "日文搭配讀音與中文意思。" : kind === "forms" ? "每列是一組說法，下面是讀音和意思。" : "分開看：每組依序是日文、讀音和意思。";
-    return `${pairedList ? "" : fullExample(step)}<p class="example-guide">${guide}</p><div class="example-parts${kind === "forms" ? " example-rows" : kind === "words" ? " example-words" : ""}">${parts.map(([word, reading, meaning]) => `<div class="example-part"><span lang="ja">${escape(word)}</span><span class="example-reading">${escape(reading)}</span><span class="part-meaning">${escape(meaning)}</span></div>`).join("")}</div>`;
+    return `${pairedList ? "" : fullExample(course, step)}<p class="example-guide">${guide}</p><div class="example-parts${kind === "forms" ? " example-rows" : kind === "words" ? " example-words" : ""}">${parts.map(([word, reading, meaning]) => `<div class="example-part"><span lang="ja">${lessonJapanese(course, word)}</span><span class="example-reading">${escape(reading)}</span><span class="part-meaning">${escape(meaning)}</span></div>`).join("")}</div>`;
   }
   function card(course, active) {
     const i = active.cursor;
@@ -688,7 +693,7 @@ const Study = (() => {
       const note = presentation?.notes?.[step.id];
       const previewIndex = course.steps.findIndex(item => item.id === Content.lessonPresentation[course.id]?.previews?.[step.id]);
       const preview = course.steps[previewIndex];
-      body = `<h2>${escape(step.title)}</h2><div class="lesson-blocks"><section class="lesson-example" aria-label="${preview ? "這課會說的句子與單字" : label}"><h3>${preview ? "這課會說的句子" : label}</h3>${preview ? `${fullExample(preview)}<p class="example-meaning">${escape(preview.meaning)}</p>${audioButton(course, previewIndex)}<h3 class="example-subheading">先認識單字</h3>` : ""}${lessonExample(course, step, kind)}${preview || pairedList ? "" : `<p class="example-meaning">${escape(step.meaning)}</p>`}${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(note?.main || step.body)}</p>${note?.extra ? `<details class="lesson-extra"><summary>補充說明</summary><p>${escape(note.extra)}</p></details>` : ""}</section></div>`;
+      body = `<h2>${escape(step.title)}</h2><div class="lesson-blocks"><section class="lesson-example" aria-label="${preview ? "這課會說的句子與單字" : label}"><h3>${preview ? "這課會說的句子" : label}</h3>${preview ? `${fullExample(course, preview)}<p class="example-meaning">${escape(preview.meaning)}</p>${audioButton(course, previewIndex)}<h3 class="example-subheading">先認識單字</h3>` : ""}${lessonExample(course, step, kind)}${preview || pairedList ? "" : `<p class="example-meaning">${escape(step.meaning)}</p>`}${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(note?.main || step.body)}</p>${note?.extra ? `<details class="lesson-extra"><summary>補充說明</summary><p>${escape(note.extra)}</p></details>` : ""}</section></div>`;
     }
     // Once a grammar quiz has answers, the cards lead back to the question instead of restarting it.
     const resumable = course.type === "grammar" && Object.keys(active.first || {}).length > 0;
