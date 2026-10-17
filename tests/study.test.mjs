@@ -620,7 +620,7 @@ test('the hint box shows origin, comparison and example together, plays the exam
  const m=harness(null,[{lang:'ja-JP'}]);m.loadHints();m.action('open',{course:'h-ma'});m.action('next');
  assert.match(m.html,/<span class="hint-word" lang="ja"><mark>み<\/mark><mark>み<\/mark><\/span>/);
  m.action('open',{course:'h-ga'});
- assert.match(m.html,/<dt>濁點<\/dt>/);assert.doesNotMatch(m.html,/關於記憶提示/);
+ assert.match(m.html,/<dt>濁點<\/dt>/);assert.match(m.html,/關於記憶提示/);
 });
 
 test('grammar still requires a correct retry and preserves its live region and first score', () => {
@@ -1256,4 +1256,36 @@ test('all grammar lessons have reviewed spellings with contextual readings and u
  assert.deepEqual(clone(writing('g-dates-2')['ついたち']),[['1日','ついたち']]);
  assert.deepEqual(clone(writing('g-dates-3')['はつか']),[['20日','はつか']]);
  assert.ok(writing('g-te-iru')['いま、コーヒーを のんで います。'].at(-1).endsWith('います。'),'Auxiliary います is not 今');
+});
+
+
+test('all extended kana examples highlight the sound, show meaning and romaji, and play without changing attempts', () => {
+ const b=harness(null,[{lang:'ja-JP'}]);b.loadHints();
+ let count=0;
+ for(const course of Object.values(b.content.courses).filter(c=>c.type==='kana' && !['h-a','k-a'].includes(c.id))){
+  b.action('open',{course:course.id});
+  for(let i=0;i<course.letters.length;i++){
+   const letter=course.letters[i];
+   // The extended inventory starts at the voiced row; basic rows are already covered above.
+   const first=b.html.includes('<dt>濁點</dt>')||b.html.includes('<dt>半濁點</dt>')||b.html.includes('<dt>拗音</dt>');
+   if(first){
+    count++;
+    const attempt=clone(b.study.currentAttempt(course.id)),before=JSON.stringify(b.stored);
+    assert.match(b.html,/<span class="hint-word" lang="ja">.*<mark>.+<\/mark>.*<\/span>/);
+    assert.match(b.html,/<span class="hint-roman">[a-z]+<\/span>/);
+    b.action('word-audio',{letter});
+    const displayed=b.html.match(/<span class="hint-word" lang="ja">(.*?)<\/span>/)[1].replace(/<[^>]+>/g,'');
+    assert.equal(b.utterances.at(-1)?.text,displayed);
+    assert.equal(JSON.stringify(b.stored),before);
+    assert.deepEqual(clone(b.study.currentAttempt(course.id)),attempt);
+   }
+   if(i<course.letters.length-1)b.action('next');
+  }
+ }
+ assert.equal(count,116);
+ const p=harness(null,[{lang:'ja-JP'}]);p.loadHints();p.action('open',{course:'h-pa'});
+ assert.match(p.html,/<mark>パ<\/mark>ン/);
+ assert.match(p.html,/同音：<span lang="ja">ぱ ＝ パ<\/span>/);
+ p.action('word-audio',{letter:'ぱ'});assert.equal(p.utterances.at(-1).text,'パン');
+ p.action('word-audio',{letter:'ぴ'});assert.equal(p.utterances.at(-1).text,'パン');
 });

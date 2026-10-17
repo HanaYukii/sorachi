@@ -84,7 +84,7 @@ test('an example word holds its kana, spells romaji the way the lessons do, and 
       const pair = word.slice(i, i + 2), ch = word[i];
       let reading;
       if (readings.has(pair)) { reading = readings.get(pair); i++; }
-      else if (pair === 'ファ') { reading = 'fa'; i++; }
+      else if (pair === 'ファ' || pair === 'フェ') { reading = pair === 'ファ' ? 'fa' : 'fe'; i++; }
       else if (ch === 'っ' || ch === 'ッ') { double = true; continue; }
       else if (ch === 'ー') reading = out.at(-1);
       else reading = readings.get(ch);
@@ -95,16 +95,20 @@ test('an example word holds its kana, spells romaji the way the lessons do, and 
     return out;
   };
   let count = 0;
-  for (const letter of basic) {
+  for (const letter of letters) {
     const item = entry(letter, '例子');
     if (!item) continue;
     count++;
-    assert.ok(item.word.includes(letter), `${letter}: ${item.word}`);
+    assert.ok(item.word.includes(item.match || letter), `${letter}: ${item.word}`);
+    if(item.match && item.match !== letter){
+      const hiragana = text => [...text].map(ch => /[ァ-ヶ]/u.test(ch) ? String.fromCharCode(ch.charCodeAt(0)-0x60) : ch).join('');
+      assert.equal(hiragana(item.match),hiragana(letter),'Cross-script examples keep exactly the same sound');
+    }
     assert.equal(romaji(item.word), item.romaji, item.word);
-    assert.match(item.meaning, /^[一-鿿]+$/u, item.word);
+    assert.match(item.meaning, /^[一-鿿、（）]+$/u, item.word);
     assert.equal(item.text, `${item.word}（${item.romaji}）${item.meaning}`);
   }
-  assert.ok(count >= 88, 'Almost every basic kana has an example');
+  assert.equal(count, 205, 'Basic exceptions only: を, ヲ and ヌ; all 116 extended kana have examples');
   assert.equal(entry('を', '例子'), undefined, 'を is only a particle');
 });
 
@@ -116,20 +120,21 @@ test('an example word never means something else on a travel card', () => {
     for (const key of [word.replace(/（.*?）/u, ''), reading]) if (key) phrasebook.set(key.replace(/〜/gu, ''), meaning);
   }
   assert.ok(phrasebook.size >= 60);
-  for (const letter of basic) {
+  for (const letter of letters) {
     const item = entry(letter, '例子');
     if (item && phrasebook.has(item.word)) assert.equal(item.meaning, phrasebook.get(item.word), `${letter}: ${item.word}`);
   }
 });
 
 test('voiced, semi-voiced and contracted hints point back to the base kana with the lesson readings, and claim no origin', () => {
-  assert.deepEqual(plain(hints.get('が')), [{ label: '濁點', text: 'か 右上加兩點（濁點），讀音從 ka 變成 ga。' }]);
-  assert.deepEqual(plain(hints.get('パ')), [{ label: '半濁點', text: 'ハ 右上加一個小圈（半濁點），讀音從 ha 變成 pa。' }]);
-  assert.deepEqual(plain(hints.get('きゃ')), [{ label: '拗音', text: 'き（ki）後面接小的 ゃ（ya），合成一拍讀 kya；寫成大的 や 就是 き、や 兩個音。' }]);
-  assert.deepEqual(plain(hints.get('ジョ')), [{ label: '拗音', text: 'ジ（ji）後面接小的 ョ（yo），合成一拍讀 jo；寫成大的 ヨ 就是 ジ、ヨ 兩個音。' }]);
+  assert.deepEqual(plain(hints.get('が').slice(0,1)), [{ label: '濁點', text: 'か 右上加兩點（濁點），讀音從 ka 變成 ga。' }]);
+  assert.deepEqual(plain(hints.get('パ').slice(0,1)), [{ label: '半濁點', text: 'ハ 右上加一個小圈（半濁點），讀音從 ha 變成 pa。' }]);
+  assert.deepEqual(plain(hints.get('きゃ').slice(0,1)), [{ label: '拗音', text: 'き（ki）後面接小的 ゃ（ya），合成一拍讀 kya；寫成大的 や 就是 き、や 兩個音。' }]);
+  assert.deepEqual(plain(hints.get('ジョ').slice(0,1)), [{ label: '拗音', text: 'ジ（ji）後面接小的 ョ（yo），合成一拍讀 jo；寫成大的 ヨ 就是 ジ、ヨ 兩個音。' }]);
   for (const row of content.rows.slice(10)) for (const script of [row[2], row[3]]) [...script].forEach((letter, i) => {
     const items = hints.get(letter);
-    assert.equal(items.length, 1, letter);
+    assert.equal(items.length, 2, letter);
+    assert.equal(items[1].label, '例子');
     assert.ok(items[0].text.includes(` ${row[4][i]}`), `${letter}: ${items[0].text}`);
     assert.notEqual(items[0].label, '字源', letter);
   });
