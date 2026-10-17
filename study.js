@@ -409,51 +409,68 @@ const Study = (() => {
   };
   const TRAVEL_ALIASES = [["寄物櫃", "置物櫃"], ["寄物", "寄放"], ["寄行李", "寄放行李"], ["行李寄放", "寄放行李"], ["洗手間", "廁所"], ["化妝室", "廁所"], ["買單", "結帳"], ["埋單", "結帳"], ["會計", "会計"], ["付款", "付現", "結帳"], ["打包", "外帶"], ["儲值", "加值"], ["交通卡", "交通ic卡"], ["icoca", "交通ic卡"], ["pasmo", "交通ic卡"], ["發票", "收據"], ["不用", "不需要"], ["不要", "不需要"], ["來回票", "來回"]];
   const fields = (part) => part ? [part.title, ...(part.keywords || []).flat(), part.example, part.reading, part.meaning, part.polite, part.politeReading, part.politeMeaning].filter(Boolean).map(fold) : [];
-  const variants = (q) => [q, ...TRAVEL_ALIASES.filter(([alias]) => q.includes(fold(alias))).flatMap(([alias, ...words]) => words.map((word) => q.replace(fold(alias), fold(word))))];
+  // The aliases are folded once; a term holding one also tries the words the cards use.
+  let travelAliases = null;
+  const variants = (q) => [q, ...(travelAliases ||= TRAVEL_ALIASES.map((words) => words.map(fold))).filter(([alias]) => q.includes(alias)).flatMap(([alias, ...words]) => words.map((word) => q.replace(alias, word)))];
+  // The words of a query: split at spaces and punctuation, and where romaji meets Chinese or kana (suica加值).
+  const queryWords = (query) => [...new Set(String(query).normalize("NFKC").replace(/([a-z])(?=[^\x00-\x7f])/giu, "$1 ").replace(/([^\x00-\x7f])(?=[a-z])/giu, "$1 ")
+    .split(/[\s、，,・。.！？!?／/]+/u).map(fold).filter(Boolean))];
+  // Every two characters in a row of a Chinese or kana word (說出金額 → 說出, 出金, 金額).
+  const pairs = (word) => { const chars = [...word]; return chars.slice(1).map((ch, i) => chars[i] + ch); };
+  const isRomaji = (word) => /^[a-z|]+$/u.test(word);
   function travelMatches(query) {
-    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: [...fields(step), ...fields(step.staffAsks), ...fields(step.extra)].join("\n"), situation: [item.title, item.subtitle].filter(Boolean).map(fold).join("\n") })));
+    // `head` is a card's title and keywords, where a word says most about the card.
+    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: [...fields(step), ...fields(step.staffAsks), ...fields(step.extra)].join("\n"), head: [step.title, ...(step.keywords || []).flat()].map(fold).join("\n"), situation: [item.title, item.subtitle].filter(Boolean).map(fold).join("\n") })));
     const q = fold(query);
     if (!q) return [];
-    const matchers = new Map(), found = (term, text) => { if (!matchers.has(term)) matchers.set(term, matcher(term)); return matchers.get(term)(text); };
-    const inCard = (entry, word) => variants(word).some((term) => found(term, entry.own));
-    const inSituation = (entry, word) => variants(word).some((term) => found(term, entry.situation));
-    // Cards whose own words match; then every card of a situation whose name or line matches, when none of its own did.
-    const own = travelIndex.filter((entry) => inCard(entry, q));
-    const named = travelIndex.filter((entry) => !own.some((match) => match.item === entry.item) && inSituation(entry, q));
-    if (own.length || named.length) return [...own, ...named];
-    // Several words that never appear together: keep the cards holding the most of them (in their own text, or else
-    // in their situation's name), rarer words first, so 退房 行李 finds the luggage card and mizu o kudasai the water
-    // card before others that only say kudasai. A one-letter romaji word (that o) is in nearly every card: not counted.
-    const words = String(query).trim().split(/\s+/u);
-    if (words.length < 2) return [];
-    const counted = words.map(fold).filter((word) => word && !/^[a-z]$/u.test(word));
-    const scored = travelIndex.map((entry) => ({ entry, own: counted.filter((word) => inCard(entry, word)), named: counted.filter((word) => inSituation(entry, word)) }));
-    const reach = new Map(counted.map((word) => [word, scored.filter(({ own, named }) => own.includes(word) || named.includes(word)).length]));
+    // A word is tried with its aliases; each word's matchers are built once per search.
+    const tried = new Map();
+    const has = (text, word) => { if (!tried.has(word)) tried.set(word, variants(word).map(matcher)); return tried.get(word).some((match) => match(text)); };
+    const words = queryWords(query);
+    // What orders a list: the query's words and, for Chinese or kana, their pairs of characters.
+    const pieces = [...new Set(words.flatMap((word) => isRomaji(word) ? [word] : [word, ...pairs(word)]))];
+    const byOverlap = (list) => list.map((entry) => ({ entry, n: pieces.filter((piece) => has(entry.own, piece)).length })).sort((a, b) => b.n - a.n).map(({ entry }) => entry);
+    // Cards whose own words match; then every card of a situation whose name or line matches, when none of its own
+    // did, the cards sharing most of the query first (退房 寄放 → the luggage card).
+    const own = travelIndex.filter((entry) => has(entry.own, q));
+    const named = travelIndex.filter((entry) => !own.some((match) => match.item === entry.item) && has(entry.situation, q));
+    if (own.length || named.length) return [...own, ...byOverlap(named)];
+    // Words that never appear together. Chinese or kana typed without spaces that no card holds whole (我要退房,
+    // 西瓜卡加值) is tried two characters at a time.
+    const counted = [...new Set(words.flatMap((word) => !/[a-z]/u.test(word) && [...word].length > 2 && !travelIndex.some((entry) => has(entry.own, word)) ? pairs(word) : [word]))];
+    if (counted.length === 1 && words.length === 1) return [];
+    // A word in more than one card in ten (o, wa, de, desu, doko, onegaishimasu) only orders the list: a card is found
+    // by a rarer word. More rare words, one in the card's title or keywords, then rarer ones, put a card first
+    // (kippu wa doko → the ticket card; 退房 行李 → luggage, then check-out). With only common words, just the cards
+    // holding the most of them are kept.
+    const reach = new Map(counted.map((word) => [word, travelIndex.filter((entry) => has(entry.own, word)).length]));
+    const rare = counted.filter((word) => reach.get(word) && reach.get(word) <= travelIndex.length / 10);
+    const keys = rare.length ? rare : counted.filter((word) => reach.get(word));
     const weight = (list) => list.reduce((sum, word) => sum + 1 / reach.get(word), 0);
-    const most = Math.max(0, ...scored.map(({ own }) => own.length));
-    const kept = most ? scored.filter(({ own }) => own.length === most) : scored.filter(({ named }) => named.length);
-    return kept.sort((a, b) => weight(b.own) - weight(a.own) || weight(b.named) - weight(a.named)).map(({ entry }) => entry);
+    let kept = travelIndex.map((entry) => { const found = keys.filter((word) => has(entry.own, word)); return { entry, found, head: found.filter((word) => has(entry.head, word)).length, all: counted.filter((word) => has(entry.own, word)).length }; }).filter(({ found }) => found.length);
+    if (!kept.length) return byOverlap(travelIndex.filter((entry) => counted.some((word) => has(entry.situation, word))));
+    if (!rare.length) { const most = Math.max(...kept.map(({ found }) => found.length)); kept = kept.filter(({ found }) => found.length === most); }
+    return kept.sort((a, b) => b.found.length - a.found.length || b.head - a.head || weight(b.found) - weight(a.found) || b.all - a.all).map(({ entry }) => entry);
   }
   // The row of the card just looked at is marked, so coming back puts focus on it.
-  function travelResults(back = null) {
+  function travelResults(back = null, found = travelMatches(travelQuery)) {
     if (!fold(travelQuery)) return "";
-    const found = travelMatches(travelQuery);
     if (!found.length) return `<section class="travel-results"><h2 tabindex="-1">找不到「${escape(travelQuery.trim())}」</h2><p class="study-note">換個說法試試，或從下面的情境找。</p><button class="text-button" data-action="study-travel-clear">清除搜尋</button></section>`;
     return `<section class="travel-results"><div class="travel-results-head"><h2 tabindex="-1">找到 ${found.length} 張卡</h2><button class="text-button" data-action="study-travel-clear">清除搜尋</button></div><ul class="dash-list">${found.map(({ item, step }) => `<li><button class="dash-row${step.id === back ? " return-focus" : ""}" data-action="study-travel-open" data-situation="${item.id}" data-step="${escape(step.id)}"><span class="dash-row-main"><strong>${escape(step.title)}</strong><span><span lang="ja">${escape(step.example)}</span>　${escape(step.meaning)}</span></span><span class="dash-row-meta">${escape(item.title.split("（")[0])}</span>${api.icons?.arrow || "→"}</button></li>`).join("")}</ul></section>`;
   }
   // Only the count is announced; the list itself is not a live region, so typing is not read out row by row.
-  const travelStatus = () => { if (!fold(travelQuery)) return ""; const n = travelMatches(travelQuery).length; return n ? `找到 ${n} 張卡` : "找不到符合的卡"; };
+  const travelStatus = (found) => !fold(travelQuery) ? "" : found.length ? `找到 ${found.length} 張卡` : "找不到符合的卡";
   // While a word is still being composed with an input method the results wait, so the composition is not broken;
-  // a query that changes nothing redraws and announces nothing.
+  // a query that changes nothing redraws and announces nothing. One search serves the list and the count.
   function searchTravel(value, composing = false) {
     travelQuery = String(value || "");
     if (composing || location.hash !== "#travel") return;
-    const html = travelResults();
+    const found = travelMatches(travelQuery), html = travelResults(null, found);
     if (html === travelShown) return;
     travelShown = html;
     const results = document.querySelector("#travel-results"), status = document.querySelector("#travel-status");
     if (results) results.innerHTML = html;
-    if (status) status.textContent = travelStatus();
+    if (status) status.textContent = travelStatus(found);
   }
   // The travel list in a few groups, each with a plain Chinese line, so a situation is found without reading Japanese
   // (#79). A situation missing here still shows, in a last group.
