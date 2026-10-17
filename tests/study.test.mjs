@@ -1224,3 +1224,36 @@ test('reviewed kanji spellings preserve every kana segment and spoken lesson tex
  b.action('audio',{index:'1'});assert.equal(b.utterances.at(-1).text,'わたしは がくせいです。');
  b.action('open',{course:'h-a'});assert.doesNotMatch(b.html,/<ruby>/,'Kana recognition cards remain unchanged');
 });
+
+
+test('all grammar lessons have reviewed spellings with contextual readings and unchanged audio', () => {
+ const b=harness(null,[{lang:'ja-JP'}]);
+ const kanaOnly=['g-demo','g-place','g-kono','g-kochira'];
+ for(const course of b.content.grammar){
+  const presentation=b.content.lessonPresentation[course.id];
+  assert.ok(Object.hasOwn(presentation,'writing'),course.id+' needs a spelling review');
+  assert.equal(Object.keys(presentation.writing).length===0,kanaOnly.includes(course.id),course.id);
+  b.action('open',{course:course.id});
+  for(let i=0;i<course.steps.length;i++){
+   const step=course.steps[i];
+   const parts=presentation.parts[step.id];
+   const displayed=(parts && ['words','forms'].includes(presentation.kinds?.[step.id])) ? parts.map(p=>p[0]) : [step.example,...(parts||[]).map(p=>p[0])];
+   for(const text of displayed){
+    for(const token of presentation.writing[text]||[]){
+     if(Array.isArray(token))assert.ok(b.html.includes('<ruby>'+token[0]+'<rp>（</rp><rt>'+token[1]+'</rt>'),step.id+' must render its kanji and reading');
+    }
+   }
+   b.action('audio',{index:String(i)});
+   assert.equal(b.utterances.at(-1).text,(step.speech||step.example).replace(/\s*／\s*/g,'、'),step.id+' keeps original speech');
+   if(i<course.steps.length-1)b.action('next');
+  }
+ }
+ const writing=id=>b.content.lessonPresentation[id].writing;
+ assert.deepEqual(clone(writing('g-who')['なに']),[['何','なに']]);
+ assert.deepEqual(clone(writing('g-who')['なんですか']),[['何','なん'],'ですか']);
+ assert.deepEqual(clone(writing('g-verb-forms')['きます → くる']),[['来','き'],'ます → ',['来','く'],'る']);
+ assert.deepEqual(clone(writing('g-clock')['よじ']),[['4時','よじ']]);
+ assert.deepEqual(clone(writing('g-dates-2')['ついたち']),[['1日','ついたち']]);
+ assert.deepEqual(clone(writing('g-dates-3')['はつか']),[['20日','はつか']]);
+ assert.ok(writing('g-te-iru')['いま、コーヒーを のんで います。'].at(-1).endsWith('います。'),'Auxiliary います is not 今');
+});
