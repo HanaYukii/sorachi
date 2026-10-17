@@ -404,7 +404,8 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">句型小複習</h1>${body}<p class="study-note">複習進度會保存在這個瀏覽器，下次可以接著練；不會改變各課的完成紀錄和成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
   // A card opened from a search result is marked, so it gets focus and comes into view.
-  function travelCard(item,step,index,found=false) { return `<section class="study-card travel-card${found ? " travel-found" : ""}"${found ? ' tabindex="-1"' : ""}><div class="travel-card-heading"><h2>${escape(step.title)}</h2><button class="text-button favorite-toggle" data-action="study-favorite" data-phrase="${step.id}" aria-pressed="${favoriteIds().includes(step.id)}" aria-label="${escape(step.title)}：收藏">${favoriteIds().includes(step.id) ? "已收藏" : "收藏"}</button></div>${keywordBox(step.keywords, item.id === "food" ? step.id : null)}<div class="phrase-short"><h3 class="phrase-label">可以這樣說</h3><p lang="ja">${escape(step.example)}</p><p class="reading-label">${escape(step.reading)}</p><p>${escape(step.meaning)}</p>${audioButton(item, index, true, false)}</div>${step.staffAsks ? `<p class="staff-asks"><span class="staff-asks-label">店員可能會問</span><span lang="ja">${escape(step.staffAsks.example)}</span><span class="staff-asks-reading">${escape(step.staffAsks.reading)}</span><span>${escape(step.staffAsks.meaning)}</span></p>` : ""}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>看完整說法與讀音</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p>${audioButton(item, index, true, true)}</details>` : ""}${step.extra ? `<details class="phrase-more"><summary>${escape(step.extra.title)}</summary>${keywordBox(step.extra.keywords)}<p lang="ja">${escape(step.extra.example)}</p><p class="reading-label">${escape(step.extra.reading)}</p><p>${escape(step.extra.meaning)}</p><p class="study-note">${escape(step.extra.body)}</p></details>` : ""}</section>`; }
+  function staffLine(part, label) { return part ? `<p class="staff-asks"><span class="staff-asks-label">${label}</span><span lang="ja">${escape(part.example)}</span><span class="staff-asks-reading">${escape(part.reading)}</span><span>${escape(part.meaning)}</span></p>` : ""; }
+  function travelCard(item,step,index,found=false) { return `<section class="study-card travel-card${found ? " travel-found" : ""}"${found ? ' tabindex="-1"' : ""}><div class="travel-card-heading"><h2>${escape(step.title)}</h2><button class="text-button favorite-toggle" data-action="study-favorite" data-phrase="${step.id}" aria-pressed="${favoriteIds().includes(step.id)}" aria-label="${escape(step.title)}：收藏">${favoriteIds().includes(step.id) ? "已收藏" : "收藏"}</button></div>${keywordBox(step.keywords, item.id === "food" ? step.id : null)}<div class="phrase-short"><h3 class="phrase-label">可以這樣說</h3><p lang="ja">${escape(step.example)}</p><p class="reading-label">${escape(step.reading)}</p><p>${escape(step.meaning)}</p>${audioButton(item, index, true, false)}</div>${staffLine(step.staffAsks, "對方可能會問")}${staffLine(step.staffSays, "對方可能會說")}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>看完整說法與讀音</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p>${audioButton(item, index, true, true)}</details>` : ""}${step.extra ? `<details class="phrase-more"><summary>${escape(step.extra.title)}</summary>${keywordBox(step.extra.keywords)}<p lang="ja">${escape(step.extra.example)}</p><p class="reading-label">${escape(step.extra.reading)}</p><p>${escape(step.extra.meaning)}</p><p class="study-note">${escape(step.extra.body)}</p></details>` : ""}</section>`; }
   const savedPhrases = () => favoriteIds().flatMap(id => PHRASEBOOK.flatMap(item => item.steps.flatMap((step,index) => step.id === id ? [{item,step,index}] : [])));
   function travelPage(id) {
     if (id === "favorites") {
@@ -460,7 +461,7 @@ const Study = (() => {
   // Greetings, requests, question endings and "how do you say it in Japanese" say how to ask, not what about: around a
   // word they are trimmed off (袋ください → 袋, 我想要廁所 → 廁所, 謝謝的日文 → 謝謝), and on their own they only
   // order the list.
-  const FILLER_LEAD = ["すみません", "不好意思", "請問一下", "請問", "どうも", "我想要", "我要", "我想", "請給我", "給我", "幫我", "麻煩", "可以", "請", "有", "日文的", "日語的"];
+  const FILLER_LEAD = ["おはようございます", "おはよう", "すみません", "不好意思", "請問一下", "請問", "どうも", "我想要", "我要", "我想", "請給我", "給我", "幫我", "麻煩", "可以", "請", "有", "日文的", "日語的"];
   // 日文 alone is not trimmed off a phrase: in 不會日文 it is what the phrase is about.
   const FILLER_TAIL = ["をください", "ください", "をお願いします", "お願いします", "をおねがいします", "おねがいします", "はどこですか", "どこですか", "がありますか", "ありますか", "がほしいです", "ほしいです", "できますか", "ございます", "ございました", "ですか", "です", "可以嗎", "在哪裡", "在哪", "嗎", "呢", "吧", "啊", "を", "は", "が",
     "的日文怎麼說", "日文怎麼說", "的日語怎麼說", "日語怎麼說", "怎麼說", "的日文", "的日語", "的日本語", "是什麼意思", "什麼意思", "的意思"];
@@ -502,7 +503,7 @@ const Study = (() => {
   const keywordParts = (step) => (step.keywords || []).flatMap(([word, romaji, meaning]) => [word.replace(/（.*?）/u, ""), (word.match(/（(.*?)）/u) || [])[1], romaji, ...meaning.split("／")]).filter(Boolean).map((part) => fold(part).replace(/\|/gu, ""));
   function travelMatches(query) {
     // A card's title and keywords say most about it; `exact` holds each keyword alone.
-    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: [...fields(step), ...fields(step.staffAsks), ...fields(step.extra)].join("\n"), title: fold(step.title), keys: (step.keywords || []).flat().map(fold).join("\n"), exact: new Set(keywordParts(step)), situation: [item.title, item.subtitle].filter(Boolean).map(fold).join("\n") })));
+    travelIndex ||= PHRASEBOOK.flatMap((item) => item.steps.map((step) => ({ item, step, own: [...fields(step), ...fields(step.staffAsks), ...fields(step.staffSays), ...fields(step.extra)].join("\n"), title: fold(step.title), keys: (step.keywords || []).flat().map(fold).join("\n"), exact: new Set(keywordParts(step)), situation: [item.title, item.subtitle].filter(Boolean).map(fold).join("\n") })));
     const q = fold(query);
     if (!q) return [];
     // A word is tried with its aliases; each word's matchers are built once per search.
@@ -522,7 +523,10 @@ const Study = (() => {
     // then every card of a situation whose name or line matches, when none of its own did, the cards sharing most of
     // the query first (退房 寄放 → the luggage card). One character is too little to name a situation (飯 of 飯店).
     const own = travelIndex.filter((entry) => has(entry.own, q)).map((entry) => ({ entry, n: standing(entry, q) })).sort((a, b) => b.n - a.n).map(({ entry }) => entry);
-    const named = [...q].length < 2 ? [] : travelIndex.filter((entry) => !own.some((match) => match.item === entry.item) && has(entry.situation, q));
+    // A category heading such as 交通 still lists its cards when a new card also contains that word.
+    // Specific phrases (寄放行李) keep the narrower card match instead of opening the whole category.
+    const named = [...q].length < 2 ? [] : travelIndex.filter((entry) => !own.includes(entry) && has(entry.situation, q) &&
+      (!own.some((match) => match.item === entry.item) || q === fold(entry.item.title.split(/[：:]/u)[0])));
     if (own.length || named.length) return [...own, ...byOverlap(named)];
     // From here a romaji word of three letters or fewer must be a whole word (iku is not ikura, in is not genkin).
     const inText = (text, word) => /^[a-z]{1,3}$/u.test(word) ? new RegExp(`(?:^|[^a-z])${word}(?![a-z])`, "u").test(text) : has(text, word);
@@ -543,13 +547,14 @@ const Study = (() => {
     // Generic endings must not become topic words merely because the catalogue grows.
     const rare = (word) => !fillerWords().words.has(word) && travelIndex.filter((entry) => has(entry.own, word)).length <= travelIndex.length / 10;
     const expand = (word) => {
-      if (held(word)) return [word];
+      // Keep a kana greeting whole: おはよう must not match the おは in おはし as the catalogue grows.
+      if (held(word) || /^[ぁ-ゖ]+$/u.test(word) && fillerWords().words.has(word)) return [word];
       if (/[a-z]/u.test(word)) {
         const { core, parts } = trimFillers(word, held, true);
         return held(core) ? [core, ...parts] : [word];
       }
       const { core, parts, start } = trimFillers(word, settled);
-      if (settled(core)) return [core, ...parts];
+      if (settled(core) || /^[ぁ-ゖ]+$/u.test(core) && fillerWords().words.has(core)) return [core, ...parts];
       // A lone character stays a word (傘 lists nothing, 冰 finds the drink card), except one a card holds left by
       // "what does it mean" or "in Japanese" (那是什麼意思, 我的日文).
       if ([...core].length === 1 && !/[駅站口梯]/u.test(core) && !(held(core) && parts.some((part) => /意思|怎麼說|日文|日語|日本語|意味/u.test(part)))) return [core, ...parts];
@@ -578,7 +583,7 @@ const Study = (() => {
     const { words: fillerSet, particles } = fillerWords();
     const filler = (word) => fillerSet.has(word), bare = (word) => !fragments.has(word) && particles.has(word) || /^[a-z]$/u.test(word);
     const topics = counted.filter((word) => reach.get(word) && reach.get(word) <= travelIndex.length / 10 && !filler(word) && !bare(word));
-    // A word the query names that no card or situation holds (吸管) means it asks about something not here: with no
+    // A word the query names that no card or situation holds (吹風機) means it asks about something not here: with no
     // topic found, nothing is listed, rather than cards that only share its greetings.
     if (!topics.length && counted.some((word) => !fragments.has(word) && !filler(word) && !bare(word) && !reach.get(word) && !heldAsWord(word))) return [];
     // A word only a situation's name or line holds (可以叫店員嗎 → 叫店員) lists its cards, not those sharing the requests.

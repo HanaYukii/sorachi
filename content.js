@@ -5715,7 +5715,7 @@ const Content = (() => {
     {
       "id": "food",
       "title": "常見食物與菜單",
-      "subtitle": "麵類・飯類・常見菜色・輕食",
+      "subtitle": "麵飯・套餐・肉類・飲料",
       "steps": [
         {
           "title": "麵類：拉麵、烏龍麵、蕎麥麵",
@@ -5816,13 +5816,132 @@ const Content = (() => {
           "meaning": "我要這個，麻煩你。",
           "body": "在麵包店或便當店，指著想要的商品說「これ」。在便利商店，也可以把選好的商品拿到櫃檯結帳。",
           "id": "phrase/food/takeaway"
+        },
+        {
+          "title": "菜單上的定食、套餐與單點",
+          "keywords": [
+            [
+              "定食（ていしょく）",
+              "teishoku",
+              "定食"
+            ],
+            [
+              "セット",
+              "setto",
+              "套餐／組合"
+            ],
+            [
+              "単品（たんぴん）",
+              "tanpin",
+              "單點"
+            ]
+          ],
+          "example": "単品でお願いします。",
+          "reading": "tanpin de onegaishimasu",
+          "meaning": "我要單點，麻煩你。",
+          "body": "「定食」通常是主菜搭配飯、湯等的餐點組合；「セット」也表示組合餐；「単品」是只點這一樣。套餐包含哪些東西，先看菜單上的照片或說明。",
+          "speech": "たんぴんでおねがいします。",
+          "staffAsks": {
+            "example": "セットにしますか？",
+            "reading": "setto ni shimasu ka",
+            "meaning": "要選套餐嗎？"
+          },
+          "id": "phrase/food/meal-set"
+        },
+        {
+          "title": "丼飯：牛丼、親子丼、天丼",
+          "keywords": [
+            [
+              "牛丼（ぎゅうどん）",
+              "gyuudon",
+              "牛肉丼飯"
+            ],
+            [
+              "親子丼（おやこどん）",
+              "oyakodon",
+              "雞肉與蛋的丼飯"
+            ],
+            [
+              "天丼（てんどん）",
+              "tendon",
+              "天婦羅丼飯"
+            ]
+          ],
+          "example": "牛丼、お願いします。",
+          "reading": "gyuudon, onegaishimasu",
+          "meaning": "我要牛肉丼飯，麻煩你。",
+          "body": "「丼」是飯上放配料的料理。先認得這三種常見名稱，想點哪一道就說名稱，也可以指著菜單。",
+          "speech": "ぎゅうどん、おねがいします。",
+          "staffSays": {
+            "example": "売り切れです。",
+            "reading": "urikire desu",
+            "meaning": "已經賣完了。"
+          },
+          "id": "phrase/food/rice-bowls"
+        },
+        {
+          "title": "肉類：牛肉、豬肉、雞肉",
+          "keywords": [
+            [
+              "牛肉（ぎゅうにく）",
+              "gyuuniku",
+              "牛肉"
+            ],
+            [
+              "豚肉（ぶたにく）",
+              "butaniku",
+              "豬肉"
+            ],
+            [
+              "鶏肉（とりにく）",
+              "toriniku",
+              "雞肉"
+            ]
+          ],
+          "example": "これは豚肉ですか？",
+          "reading": "kore wa butaniku desu ka",
+          "meaning": "這是豬肉嗎？",
+          "body": "看不出餐點用哪種肉時，指著菜單問「豚肉？」也可以。要確認牛肉或雞肉，就換成對應的名稱。",
+          "speech": "これはぶたにくですか？",
+          "staffSays": {
+            "example": "いいえ、鶏肉です。",
+            "reading": "iie, toriniku desu",
+            "meaning": "不是，是雞肉。"
+          },
+          "id": "phrase/food/meat"
+        },
+        {
+          "title": "飲料：咖啡、紅茶、烏龍茶",
+          "keywords": [
+            [
+              "コーヒー",
+              "koohii",
+              "咖啡"
+            ],
+            [
+              "紅茶（こうちゃ）",
+              "koucha",
+              "紅茶"
+            ],
+            [
+              "ウーロン茶（ウーロンちゃ）",
+              "uuroncha",
+              "烏龍茶"
+            ]
+          ],
+          "example": "アイスコーヒー、お願いします。",
+          "reading": "aisu koohii, onegaishimasu",
+          "meaning": "我要冰咖啡，麻煩你。",
+          "body": "咖啡或紅茶前面加「アイス」是冰的，加「ホット」是熱的，例如「ホットコーヒー」。也可以先指飲料，再回答冷熱。",
+          "speech": "アイスコーヒー、おねがいします。",
+          "id": "phrase/food/drinks"
         }
       ]
     },
     {
       "id": "dining",
       "title": "內用外帶、用餐需求",
-      "subtitle": "幾位・內用・外帶・水・不需要",
+      "subtitle": "內用外帶・加熱・餐具・用餐需求",
       "steps": [
         {
           "title": "進門時：幾位？",
@@ -5903,16 +6022,94 @@ const Content = (() => {
               "不需要"
             ]
           ],
-          "body": "店員問要不要袋子、收據等物品時，可以用這句回答。「大丈夫です」（daijoubu desu）也可能表示婉拒，但依情境也能表示「沒問題」；要清楚表達不需要，可用「いりません」。超商店員問「温めますか？」時，不用加熱就回「大丈夫です」。",
+          "body": "店員問要不要袋子、收據等物品時，可以用這句回答。「大丈夫です」（daijoubu desu）也可能表示婉拒，但依情境也能表示「沒問題」；要清楚表達不需要，可用「いりません」。",
           "example": "袋はいりません。",
           "reading": "fukuro wa irimasen",
           "meaning": "我不需要袋子。",
           "staffAsks": {
-            "example": "温めますか？",
-            "reading": "atatamemasu ka",
-            "meaning": "（超商便當）要加熱嗎？"
+            "example": "袋はご利用ですか？",
+            "reading": "fukuro wa goriyou desu ka",
+            "meaning": "需要袋子嗎？"
           },
           "id": "phrase/dining/decline"
+        },
+        {
+          "title": "便利商店：便當要不要加熱",
+          "keywords": [
+            [
+              "温めて（あたためて）",
+              "atatamete",
+              "請加熱"
+            ],
+            [
+              "そのままで",
+              "sono mama de",
+              "維持原樣／不用加熱"
+            ]
+          ],
+          "example": "温めてください。",
+          "reading": "atatamete kudasai",
+          "meaning": "請幫我加熱。",
+          "body": "店員問要不要加熱，要的話回答「はい、お願いします」（hai, onegaishimasu，好的，麻煩你）。不用加熱就說「そのままで」。",
+          "speech": "あたためてください。",
+          "staffAsks": {
+            "example": "温めますか？",
+            "reading": "atatamemasu ka",
+            "meaning": "要加熱嗎？"
+          },
+          "id": "phrase/dining/warm-up"
+        },
+        {
+          "title": "便利商店：要筷子、湯匙或吸管",
+          "keywords": [
+            [
+              "お箸（おはし）",
+              "ohashi",
+              "筷子"
+            ],
+            [
+              "スプーン",
+              "supuun",
+              "湯匙"
+            ],
+            [
+              "ストロー",
+              "sutoroo",
+              "吸管"
+            ]
+          ],
+          "example": "お箸、お願いします。",
+          "reading": "ohashi, onegaishimasu",
+          "meaning": "麻煩給我筷子。",
+          "body": "說出需要的餐具，再加「お願いします」就可以。要湯匙時，把「お箸」換成「スプーン」。需要兩份也可以比出兩根手指。",
+          "speech": "おはし、おねがいします。",
+          "staffAsks": {
+            "example": "お箸はおつけしますか？",
+            "reading": "ohashi wa otsuke shimasu ka",
+            "meaning": "需要附筷子嗎？"
+          },
+          "id": "phrase/dining/utensils"
+        },
+        {
+          "title": "不想加某項配料",
+          "keywords": [
+            [
+              "抜き（ぬき）",
+              "nuki",
+              "不加／去掉"
+            ],
+            [
+              "ねぎ",
+              "negi",
+              "蔥"
+            ]
+          ],
+          "example": "ねぎ抜きでお願いします。",
+          "reading": "negi nuki de onegaishimasu",
+          "meaning": "不要加蔥，麻煩你。",
+          "body": "配料名稱後面加「抜き」，就是希望不加那項配料。這張先記「ねぎ抜き」（不要蔥）；能不能調整，要讓店員確認。",
+          "speech": "ねぎぬきでおねがいします。",
+          "id": "phrase/dining/without-topping"
         }
       ]
     },
@@ -6431,7 +6628,7 @@ const Content = (() => {
     {
       "id": "transit",
       "title": "交通：買票與搭車",
-      "subtitle": "單程・來回・對號座・月台・轉乘・下車",
+      "subtitle": "買票・月台・轉乘・搭錯車・末班車",
       "steps": [
         {
           "title": "買票：到哪裡、單程或來回",
@@ -6607,13 +6804,115 @@ const Content = (() => {
           "politeReading": "dono eki de orireba ii desu ka",
           "politeMeaning": "我應該在哪一站下車？",
           "id": "phrase/transit/get-off"
+        },
+        {
+          "title": "搭錯車時找站務員",
+          "keywords": [
+            [
+              "電車（でんしゃ）",
+              "densha",
+              "電車"
+            ],
+            [
+              "間違えました（まちがえました）",
+              "machigaemashita",
+              "弄錯了"
+            ]
+          ],
+          "example": "電車を間違えました。",
+          "reading": "densha o machigaemashita",
+          "meaning": "我搭錯電車了。",
+          "body": "向站務員說這句，再出示原本要去的站名或路線畫面。對方問目的地時，直接說站名就可以。",
+          "speech": "でんしゃをまちがえました。",
+          "staffAsks": {
+            "example": "どこまで行きますか？",
+            "reading": "doko made ikimasu ka",
+            "meaning": "您要到哪裡？"
+          },
+          "id": "phrase/transit/wrong-train"
+        },
+        {
+          "title": "坐過站，想回原本要去的車站",
+          "keywords": [
+            [
+              "乗り過ごしました（のりすごしました）",
+              "norisugoshimashita",
+              "坐過站了"
+            ],
+            [
+              "戻りたい（もどりたい）",
+              "modoritai",
+              "想回去"
+            ]
+          ],
+          "example": "乗り過ごしました。",
+          "reading": "norisugoshimashita",
+          "meaning": "我坐過站了。",
+          "body": "說完後讓站務員看你原本要下車的站名。只說「戻りたい」時，也要指出想回哪一站。",
+          "speech": "のりすごしました。",
+          "polite": "乗り過ごしました。京都に戻りたいです。",
+          "politeReading": "norisugoshimashita. kyouto ni modoritai desu",
+          "politeMeaning": "我坐過站了，想回京都。",
+          "politeSpeech": "のりすごしました。きょうとにもどりたいです。",
+          "id": "phrase/transit/missed-stop"
+        },
+        {
+          "title": "交通卡刷不過閘門",
+          "keywords": [
+            [
+              "通れません（とおれません）",
+              "tooremasen",
+              "無法通過"
+            ],
+            [
+              "改札（かいさつ）",
+              "kaisatsu",
+              "驗票閘門"
+            ]
+          ],
+          "example": "すみません、通れません。",
+          "reading": "sumimasen, tooremasen",
+          "meaning": "不好意思，我過不了閘門。",
+          "body": "在閘門旁向站務員出示交通卡或手機，說「通れません」。原因不一定是餘額不足，先讓站務員確認。",
+          "speech": "すみません、とおれません。",
+          "staffAsks": {
+            "example": "どこから乗りましたか？",
+            "reading": "doko kara norimashita ka",
+            "meaning": "您從哪一站上車？"
+          },
+          "id": "phrase/transit/gate-help"
+        },
+        {
+          "title": "問最後一班車",
+          "keywords": [
+            [
+              "終電（しゅうでん）",
+              "shuuden",
+              "末班電車"
+            ],
+            [
+              "何時（なんじ）",
+              "nanji",
+              "幾點"
+            ]
+          ],
+          "example": "終電は何時ですか？",
+          "reading": "shuuden wa nanji desu ka",
+          "meaning": "末班車是幾點？",
+          "body": "問的時候一起出示目的地，不同方向和轉乘路線的末班車時間不同。「終電」用在電車，公車可以說「最終バス」（saishuu basu，末班公車）。",
+          "speech": "しゅうでんはなんじですか？",
+          "polite": "京都まで行く終電は何時ですか？",
+          "politeReading": "kyouto made iku shuuden wa nanji desu ka",
+          "politeMeaning": "能到京都的末班電車是幾點？",
+          "politeSpeech": "きょうとまでいくしゅうでんはなんじですか？",
+          "id": "phrase/transit/last-train"
         }
       ]
     },
     {
       "id": "hotel",
       "title": "飯店與預約",
-      "subtitle": "入住・預約・退房・寄放與領回行李",
+      "subtitle": "入住退房・寄放行李・早餐・房間需求",
       "steps": [
         {
           "title": "辦理入住",
@@ -6713,6 +7012,99 @@ const Content = (() => {
           "reading": "nimotsu o uketoritai desu",
           "meaning": "我想領回行李。",
           "id": "phrase/hotel/pick-up"
+        },
+        {
+          "title": "早餐幾點開始、在哪裡吃",
+          "keywords": [
+            [
+              "朝食（ちょうしょく）",
+              "choushoku",
+              "早餐"
+            ],
+            [
+              "何時から（なんじから）",
+              "nanji kara",
+              "從幾點開始"
+            ]
+          ],
+          "example": "朝食は何時からですか？",
+          "reading": "choushoku wa nanji kara desu ka",
+          "meaning": "早餐從幾點開始？",
+          "body": "先說「朝食」再問時間。想問用餐地點，可以說「朝食、どこですか？」（choushoku, doko desu ka，早餐在哪裡吃？）。",
+          "speech": "ちょうしょくはなんじからですか？",
+          "id": "phrase/hotel/breakfast"
+        },
+        {
+          "title": "詢問 Wi-Fi 密碼",
+          "keywords": [
+            [
+              "Wi-Fi（ワイファイ）",
+              "waifai",
+              "無線網路"
+            ],
+            [
+              "パスワード",
+              "pasuwaado",
+              "密碼"
+            ]
+          ],
+          "example": "Wi-Fiのパスワードは？",
+          "reading": "waifai no pasuwaado wa",
+          "meaning": "Wi-Fi 密碼是什麼？",
+          "body": "拿著手機的 Wi-Fi 畫面，說「Wi-Fi、パスワード？」就能表達想問密碼。對方也可能指給你看房內的說明卡。",
+          "speech": "ワイファイのパスワードは？",
+          "polite": "Wi-Fiのパスワードを教えてください。",
+          "politeReading": "waifai no pasuwaado o oshiete kudasai",
+          "politeMeaning": "請告訴我 Wi-Fi 密碼。",
+          "politeSpeech": "ワイファイのパスワードをおしえてください。",
+          "id": "phrase/hotel/wifi"
+        },
+        {
+          "title": "需要毛巾",
+          "keywords": [
+            [
+              "タオル",
+              "taoru",
+              "毛巾"
+            ]
+          ],
+          "example": "タオル、お願いします。",
+          "reading": "taoru, onegaishimasu",
+          "meaning": "麻煩給我毛巾。",
+          "body": "向櫃檯說「タオル」再加「お願いします」，也可以比手指表示需要幾條。",
+          "speech": "タオル、おねがいします。",
+          "staffSays": {
+            "example": "少々お待ちください。",
+            "reading": "shoushou omachi kudasai",
+            "meaning": "請稍等一下。"
+          },
+          "id": "phrase/hotel/towels"
+        },
+        {
+          "title": "房卡打不開門",
+          "keywords": [
+            [
+              "カードキー",
+              "kaado kii",
+              "房卡"
+            ],
+            [
+              "開きません（あきません）",
+              "akimasen",
+              "打不開"
+            ]
+          ],
+          "example": "カードキーで開きません。",
+          "reading": "kaado kii de akimasen",
+          "meaning": "用房卡打不開門。",
+          "body": "把房卡拿給櫃檯看，說「開きません」，再出示房號，讓工作人員幫你確認。",
+          "speech": "カードキーであきません。",
+          "staffAsks": {
+            "example": "お部屋は何号室ですか？",
+            "reading": "oheya wa nangoushitsu desu ka",
+            "meaning": "您的房間是幾號房？"
+          },
+          "id": "phrase/hotel/key-card"
         }
       ]
     },
@@ -8555,11 +8947,11 @@ const Content = (() => {
       if (value.extra !== undefined) card(value.extra, `${path}.extra`, seen, kind);
       for (const key of ['speech', 'politeSpeech']) if (value[key] !== undefined && (typeof value[key] !== 'string' || !/^[\u3040-\u30ff\u3000-\u303f\uff01-\uff1f\s、。？！ー]+$/u.test(value[key]))) fail(`${path}.${key}`, 'speech text must be kana only');
       if (value.politeSpeech !== undefined && value.polite === undefined) fail(`${path}.politeSpeech`, 'politeSpeech needs polite');
-      // Keywords, a fuller form, staff questions and an extra part belong to travel cards; a lesson card never shows them.
-      if (kind === 'card') for (const key of ['keywords', 'polite', 'politeReading', 'politeMeaning', 'politeSpeech', 'staffAsks', 'extra']) if (value[key] !== undefined) fail(`${path}.${key}`, 'only travel cards have this part');
-      if (value.staffAsks !== undefined) {
-        if (!record(value.staffAsks)) fail(`${path}.staffAsks`, 'invalid staff question');
-        else { text(value.staffAsks.example, `${path}.staffAsks.example`, 'ja'); text(value.staffAsks.reading, `${path}.staffAsks.reading`, 'reading'); text(value.staffAsks.meaning, `${path}.staffAsks.meaning`, 'zh'); }
+      // Keywords, a fuller form, staff lines and an extra part belong to travel cards; a lesson card never shows them.
+      if (kind === 'card') for (const key of ['keywords', 'polite', 'politeReading', 'politeMeaning', 'politeSpeech', 'staffAsks', 'staffSays', 'extra']) if (value[key] !== undefined) fail(`${path}.${key}`, 'only travel cards have this part');
+      for (const key of ['staffAsks', 'staffSays']) if (value[key] !== undefined) {
+        if (!record(value[key])) fail(`${path}.${key}`, 'invalid staff line');
+        else { text(value[key].example, `${path}.${key}.example`, 'ja'); text(value[key].reading, `${path}.${key}.reading`, 'reading'); text(value[key].meaning, `${path}.${key}.meaning`, 'zh'); }
       }
     }
     function question(value, path, seen, introQuestion = false) {
