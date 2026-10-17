@@ -415,7 +415,7 @@ const Study = (() => {
       const back = travelReturn;
       travelReturn = null;
       travelShown = travelResults(back);
-      return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<div class="travel-search" role="search"><label for="travel-search">找詞或情境</label><input id="travel-search" type="search" value="${escape(travelQuery)}" placeholder="例如：結帳、Suica、寄放行李" autocomplete="off" enterkeyhint="search" maxlength="80"><p id="travel-status" class="visually-hidden" role="status" aria-live="polite"></p></div><div id="travel-results">${travelShown}</div><a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span class="favorites-count">${savedPhrases().length} 張收藏<span aria-hidden="true"> →</span></span></a>${travelGroups()}`);
+      return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<div class="travel-search" role="search"><label for="travel-search">找詞或情境</label><input id="travel-search" type="search" value="${escape(travelQuery)}" placeholder="例如：結帳、Suica、寄放行李" autocomplete="off" enterkeyhint="search" maxlength="80"><p id="travel-status" class="visually-hidden" role="status" aria-live="polite"></p></div><div id="travel-results">${travelShown}</div><a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span class="favorites-count">${savedPhrases().length} 張收藏<span aria-hidden="true"> →</span></span></a>${travelGroups()}`, "#home", "回首頁", true, "travel-catalog");
     }
     const item = travelItem(id), found = travelFound;
     travelFound = null;
