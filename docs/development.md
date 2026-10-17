@@ -79,6 +79,7 @@ node scripts/prepare-release.mjs --check
 ## 檔案
 
 - `dist/content.js`：教材（五十音、句型、旅遊常用語、文字介紹）、穩定 ID、revision 與 `validate()`。
+- `dist/navigation.js`：共用頁首、區域導覽與路由標題；來源返回和學習狀態仍由原模組管理。
 - `dist/study.js`：課程與旅遊頁面、測驗流程、語音。
 - `dist/app.js`：首頁、文字介紹、學習紀錄、備份、回報。
 - `dist/kana-practice.js`、`dist/kana-hints.js`：五十音練習與複習、記憶提示。
