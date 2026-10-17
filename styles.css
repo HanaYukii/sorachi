@@ -1298,3 +1298,11 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .lesson-example rt { font-size: 13px; line-height: 1.4; color: var(--aqua-ink); font-weight: 500; }
 
 .hint-script-note { flex-basis: 100%; color: var(--muted); font-size: 13px; }
+
+/* Keep whole-course scope separate from the example currently being shown. */
+.course-topic, .lesson-topic, .card-focus { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; line-height: 1.8; }
+.focus-label { display: inline-block; flex-shrink: 0; border: 1px solid var(--purple-line, #cbb9dc); border-radius: 7px; padding: 1px 7px; color: var(--purple-deep); background: var(--purple-soft, #eee7f5); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.lesson-topic { margin: 12px 0 24px; font-size: 15px; }
+.lesson-card .card-focus { margin: -4px 0 22px; font-size: 15px; }
+.card-focus .focus-label { color: var(--aqua-ink); background: #e5f3f5; border-color: #8dbbc5; }
+.course-topic > span:last-child, .lesson-topic > span:last-child, .card-focus > span:last-child { min-width: 0; overflow-wrap: anywhere; }
