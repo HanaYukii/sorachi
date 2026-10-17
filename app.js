@@ -105,7 +105,7 @@ Study.bind({
 });
 
 function home() {
-  document.title = "SoraChi｜日文入門練習";
+  document.title = "SoraChi｜五十音、基礎句型與旅遊日語｜零基礎也能學";
   const begun = progress.inProgress;
   const grammarNext = Study.grammarNext();
   const grammarStarted = Content.grammar.some(c => progress.study.courses[c.id]?.completedAt || Study.hasProgress(c.id));
