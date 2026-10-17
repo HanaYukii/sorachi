@@ -6840,6 +6840,7 @@ const Content = (() => {
   const lessonPresentation = {
     "g-identity": {
       title: "介紹自己：我是學生",
+      previews: { "g-identity/card/nouns": "g-identity/card/noun-sentence" },
       parts: {
         "g-identity/card/nouns": [["わたし", "watashi", "我"], ["がくせい", "gakusei", "學生"]],
         "g-identity/card/noun-sentence": identityParts,
@@ -6847,6 +6848,388 @@ const Content = (() => {
       },
     },
   };
+  Object.assign(lessonPresentation, {
+    "g-question": {
+      title: "問對方：你是學生嗎？",
+      parts: {
+        "g-question/card/statement": [
+          ["がくせい", "gakusei", "學生"],
+          ["です", "desu", "禮貌結尾"],
+        ],
+        "g-question/card/question-particle": [
+          ["がくせい", "gakusei", "學生"],
+          ["ですか", "desu ka", "是…嗎？"],
+        ],
+        "g-question/card/implicit-person": [
+          ["がくせい", "gakusei", "學生"],
+          ["ですか", "desu ka", "是…嗎？"],
+        ],
+      },
+      notes: {"g-question/card/question-particle": {"main": "在「です」後加上「か」，就能表示疑問。「か」讀作 ka。", "extra": "句尾也可以寫句號「。」，不用靠問號判斷。說話時常用上揚語調詢問，但會依情境改變，不一定都上揚。"}},
+    },
+    "g-demo": {
+      title: "指東西：這個、那個",
+      parts: {
+        "g-demo/card/near-speaker": [
+          ["これ", "kore", "這個（我這邊）"],
+          ["は", "wa", "說到…"],
+          ["パン", "pan", "麵包"],
+          ["です", "desu", "禮貌結尾"],
+        ],
+        "g-demo/card/near-listener": [
+          ["それ", "sore", "那個（你那邊）"],
+          ["は", "wa", "說到…"],
+          ["パン", "pan", "麵包"],
+          ["です", "desu", "禮貌結尾"],
+        ],
+        "g-demo/card/far-from-both": [
+          ["あれ", "are", "那個（遠處）"],
+          ["は", "wa", "說到…"],
+          ["パン", "pan", "麵包"],
+          ["です", "desu", "禮貌結尾"],
+        ],
+      },
+    },
+    "g-place": {
+      title: "問路：廁所在哪裡？",
+      parts: {
+        "g-place/card/words": [
+          ["ここ", "koko", "這裡"],
+          ["そこ", "soko", "那裡（你那邊）"],
+          ["あそこ", "asoko", "那裡（遠處）"],
+          ["どこ", "doko", "哪裡？"],
+        ],
+        "g-place/card/question": [
+          ["すみません、", "sumimasen,", "不好意思"],
+          ["トイレ", "toire", "廁所"],
+          ["は", "wa", "說到…"],
+          ["どこですか", "doko desu ka", "在哪裡？"],
+        ],
+        "g-place/card/answer": [
+          ["あそこ", "asoko", "那裡（遠處）"],
+          ["です", "desu", "禮貌結尾"],
+        ],
+      },
+    },
+    "g-kono": {
+      title: "說清楚是哪一個麵包",
+      parts: {
+        "g-kono/card/kore-kono": [
+          ["これは パンです。", "kore wa pan desu", "這是麵包"],
+          ["この パンです。", "kono pan desu", "是這個麵包"],
+        ],
+        "g-kono/card/which": [
+          ["どれですか。", "dore desu ka", "哪一個？"],
+          ["どの パンですか。", "dono pan desu ka", "哪個麵包？"],
+        ],
+        "g-kono/card/distance": [
+          ["その パン", "sono pan", "那個麵包（你那邊）"],
+          ["あの パン", "ano pan", "那個麵包（遠處）"],
+        ],
+      },
+    },
+    "g-kochira": {
+      title: "客氣地問：在哪邊？",
+      parts: {
+        "g-kochira/card/words": [
+          ["こちら", "kochira", "這邊"],
+          ["そちら", "sochira", "那邊（你那邊）"],
+          ["あちら", "achira", "那邊（遠處）"],
+          ["どちら", "dochira", "哪邊？"],
+        ],
+        "g-kochira/card/staff": [
+          ["こちら", "kochira", "這邊"],
+          ["です", "desu", "禮貌結尾"],
+        ],
+        "g-kochira/card/ask": [
+          ["すみません、", "sumimasen,", "不好意思"],
+          ["トイレ", "toire", "廁所"],
+          ["は", "wa", "說到…"],
+          ["どちらですか", "dochira desu ka", "在哪邊？（客氣問法）"],
+        ],
+      },
+      notes: {"g-kochira/card/ask": {"main": "問方向用「どちら」，比「どこ」客氣。", "extra": "「どちら」也能問「兩個裡的哪一個」，之後再學。"}},
+    },
+    "g-who": {
+      title: "問誰、什麼、哪裡",
+      parts: {
+        "g-who/card/dare": [
+          ["あの ひと", "ano hito", "那個人"],
+          ["は", "wa", "說到…"],
+          ["だれですか", "dare desu ka", "是誰？"],
+        ],
+        "g-who/card/nan": [
+          ["これ", "kore", "這個"],
+          ["は", "wa", "說到…"],
+          ["なんですか", "nan desu ka", "是什麼？"],
+        ],
+        "g-who/card/words": [
+          ["だれ", "dare", "誰？"],
+          ["なに", "nani", "什麼？"],
+          ["どこ", "doko", "哪裡？"],
+          ["いつ", "itsu", "什麼時候？"],
+        ],
+      },
+    },
+    "g-negative": {
+      title: "說「我不是學生」",
+      parts: {
+        "g-negative/card/ja-nai": [
+          ["わたし", "watashi", "我"],
+          ["は", "wa", "說到…"],
+          ["がくせい", "gakusei", "學生"],
+          ["じゃないです", "ja nai desu", "不是…"],
+        ],
+        "g-negative/card/ja-arimasen": [
+          ["これ", "kore", "這個"],
+          ["は", "wa", "說到…"],
+          ["パン", "pan", "麵包"],
+          ["じゃありません", "ja arimasen", "不是…（較正式）"],
+        ],
+        "g-negative/card/answer": [
+          ["がくせいですか。", "gakusei desu ka", "是學生嗎？"],
+          ["いいえ、", "iie,", "不"],
+          ["がくせいじゃないです。", "gakusei ja nai desu", "不是學生"],
+        ],
+      },
+    },
+    "g-no": {
+      title: "說「我的傘」",
+      parts: {
+      },
+    },
+    "g-nouns": {
+      title: "認識人、東西和地方的名稱",
+      parts: {
+      },
+    },
+    "g-mo": {
+      title: "說「我也是學生」",
+      parts: {
+      },
+    },
+    "g-kochira-2": {
+      title: "介紹別人：這位是…",
+      parts: {
+      },
+    },
+    "g-to": {
+      title: "把東西列出來：麵包和水",
+      parts: {
+      },
+    },
+    "g-kara-made": {
+      title: "說從哪裡到哪裡",
+      parts: {
+      },
+    },
+    "g-days": {
+      title: "說昨天、今天和明天",
+      parts: {
+      },
+    },
+    "g-day-parts": {
+      title: "說早上、中午和晚上",
+      parts: {
+      },
+    },
+    "g-weekdays": {
+      title: "問今天星期幾",
+      parts: {
+      },
+    },
+    "g-numbers": {
+      title: "從零數到十",
+      parts: {
+      },
+    },
+    "g-prices": {
+      title: "問價格、說多少錢",
+      parts: {
+      },
+    },
+    "g-counting": {
+      title: "數東西：一個到五個",
+      parts: {
+      },
+    },
+    "g-people": {
+      title: "說有幾個人",
+      parts: {
+      },
+    },
+    "g-clock": {
+      title: "問幾點、說整點和半點",
+      parts: {
+      },
+    },
+    "g-minutes": {
+      title: "說幾分鐘、幾點幾分",
+      parts: {
+      },
+    },
+    "g-kara-made-time": {
+      title: "說從幾點到幾點",
+      parts: {
+      },
+    },
+    "g-dates": {
+      title: "說幾月幾號",
+      parts: {
+      },
+    },
+    "g-dates-2": {
+      title: "日期讀法：一號到五號",
+      parts: {
+      },
+    },
+    "g-dates-3": {
+      title: "日期讀法：六號到十號、二十號",
+      parts: {
+      },
+    },
+    "g-verbs": {
+      title: "說要吃、喝或買什麼",
+      parts: {
+      },
+    },
+    "g-masen": {
+      title: "說不吃、不喝、不去",
+      parts: {
+      },
+    },
+    "g-mashita": {
+      title: "說昨天做了、沒做什麼",
+      parts: {
+      },
+    },
+    "g-ni-de": {
+      title: "說去哪裡、在哪裡做事",
+      parts: {
+      },
+    },
+    "g-transport": {
+      title: "說搭什麼車去",
+      parts: {
+      },
+    },
+    "g-arimasu": {
+      title: "說哪裡有東西、人或動物",
+      parts: {
+      },
+    },
+    "g-position": {
+      title: "說在上面、前面或旁邊",
+      parts: {
+      },
+    },
+    "g-adj-i": {
+      title: "說大小、貴或便宜",
+      parts: {
+      },
+    },
+    "g-adj-neg": {
+      title: "說不貴，以及冷和暖",
+      parts: {
+      },
+    },
+    "g-adj-na": {
+      title: "說房間安靜、車站方便",
+      parts: {
+      },
+    },
+    "g-who-2": {
+      title: "問怎麼樣、怎麼去",
+      parts: {
+      },
+    },
+    "g-soshite-demo": {
+      title: "接著說：而且、但是",
+      parts: {
+        "g-soshite-demo/card/soshite": [
+          ["この パン", "kono pan", "這個麵包"],
+          ["は", "wa", "說到…"],
+          ["やすいです。", "yasui desu.", "很便宜"],
+          ["そして、", "soshite,", "而且"],
+          ["おいしいです。", "oishii desu.", "很好吃"],
+        ],
+        "g-soshite-demo/card/demo": [
+          ["この パン", "kono pan", "這個麵包"],
+          ["は", "wa", "說到…"],
+          ["おいしいです。", "oishii desu.", "很好吃"],
+          ["でも、", "demo,", "但是"],
+          ["たかいです。", "takai desu.", "很貴"],
+        ],
+        "g-soshite-demo/card/order": [
+          ["きのう", "kinou", "昨天"],
+          ["コーヒーを", "koohii o", "咖啡（喝的東西）"],
+          ["のみました。", "nomimashita.", "喝了"],
+          ["そして、", "soshite,", "然後"],
+          ["パンを", "pan o", "麵包（吃的東西）"],
+          ["たべました。", "tabemashita.", "吃了"],
+        ],
+      },
+    },
+    "g-kara-reason": {
+      title: "說明原因：因為…所以…",
+      parts: {
+      },
+    },
+    "g-dakara": {
+      title: "接著說「所以」，客氣地說明原因",
+      parts: {
+      },
+    },
+    "g-kedo": {
+      title: "把「但是」接在句子後面",
+      parts: {
+      },
+    },
+    "g-verb-forms": {
+      title: "認識字典裡的動詞寫法",
+      parts: {
+      },
+    },
+    "g-te-forms": {
+      title: "學「請等」之前：動詞怎麼變",
+      parts: {
+      },
+    },
+    "g-te-kudasai": {
+      title: "請對方等一下、說慢一點",
+      parts: {
+        "g-te-kudasai/card/matte": [
+          ["ちょっと", "chotto", "一下"],
+          ["まって ください。", "matte kudasai", "請等"],
+        ],
+        "g-te-kudasai/card/hanashite": [
+          ["ゆっくり", "yukkuri", "慢慢地"],
+          ["はなして ください。", "hanashite kudasai", "請說"],
+        ],
+        "g-te-kudasai/card/mite": [
+          ["これ", "kore", "這個"],
+          ["を", "o", "標出要看的東西"],
+          ["みて ください。", "mite kudasai", "請看"],
+        ],
+      },
+    },
+    "g-te-sequence": {
+      title: "說先做什麼、再做什麼",
+      parts: {
+      },
+    },
+    "g-te-iru": {
+      title: "說正在做什麼",
+      parts: {
+      },
+    },
+    "g-te-mo-ii": {
+      title: "問「我可以…嗎？」",
+      parts: {
+      },
+    },
+  });
+  const displayTitle = id => lessonPresentation[id]?.title || getCourse(id)?.title || null;
   const data = { rows, grammar, lessonPlan, sounds, phrasebook, intro };
   // Kana row groups in teaching order; the kana page and home recommendation follow them.
   const rowGroups = Object.freeze({
@@ -7118,5 +7501,5 @@ const Content = (() => {
     return value;
   }
   deepFreeze(data); deepFreeze(courses); deepFreeze(lessonPresentation);
-  return Object.freeze({ rows, rowGroups, grammar, lessonPlan, lessonPresentation, sounds, phrasebook, intro, retiredTitles, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
+  return Object.freeze({ rows, rowGroups, grammar, lessonPlan, lessonPresentation, displayTitle, sounds, phrasebook, intro, retiredTitles, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
 })();

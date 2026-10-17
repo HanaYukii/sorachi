@@ -631,7 +631,10 @@ test('grammar examples can be played and Japanese quiz options show romaji', () 
   const b = harness(null, [{ lang: 'ja-JP' }]);
   b.action('open', { course: 'g-identity' });
   assert.match(b.html, /data-action="study-audio"/);
+  b.action('audio', { index: '1' }); assert.equal(b.utterances.at(-1).text, 'わたしは がくせいです。', 'The complete sentence preview plays while still on the vocabulary card');
   b.action('audio', { index: '0' }); assert.equal(b.utterances.at(-1).text, 'わたし、がくせい');
+  assert.match(b.html, /data-audio-for="g-identity-0"/);
+  assert.match(b.html, /data-audio-for="g-identity-1"/);
   b.action('next'); b.action('audio', { index: '1' }); assert.equal(b.utterances.at(-1).text, 'わたしは がくせいです。');
   b.action('next'); b.action('next');
   // Question order is shuffled; answer the plain-romaji question first if it comes up.
@@ -814,7 +817,7 @@ test('the last card leads back to the question once the quiz has answers', () =>
 test('the grammar result page offers the next lesson', () => {
   const b = harness();
   startQuiz(b, 'g-identity'); finishQuiz(b, 'g-identity');
-  assert.match(b.html, /data-action="study-open" data-course="g-question">下一課：疑問句：〜ですか/);
+  assert.match(b.html, /data-action="study-open" data-course="g-question">下一課：問對方：你是學生嗎？/);
 });
 
 // Grammar mini-review (#44): read the current question from the page, as a learner would.
@@ -1099,7 +1102,7 @@ test('display annotations pair authored words with readings without changing cou
       for (const tuple of parts) assert.ok(tuple.length === 3 && tuple.every(v => typeof v === 'string' && v.trim()));
     }
   }
-  b.action('open', { course: 'g-question' });
+  b.action('open', { course: 'g-no' });
   assert.match(b.html, /class="grammar-example" lang="ja"/);
   assert.match(b.html, /class="example-reading"/);
 });
@@ -1120,4 +1123,56 @@ test('grammar retry explains the next action and reveals the right choice withou
   reloaded.action('answer',{choice:String(question.answer)});
   assert.equal(reloaded.next.disabled,false);
   assert.equal(reloaded.state.courses['g-identity'].active.first[q],false);
+});
+
+
+test('all grammar lessons have beginner titles, while optional notes keep the core rule visible', () => {
+  const b=harness();
+  for(const course of b.content.grammar){
+    assert.ok(b.content.lessonPresentation[course.id]?.title,course.id);
+    assert.doesNotMatch(b.content.displayTitle(course.id), /[ぁ-ヿ]/u, 'Entry titles must make sense without reading kana');
+    b.action('open',{course:course.id});
+    assert.ok(b.html.includes(b.content.displayTitle(course.id)));
+    assert.match(b.html,/aria-label="例句與意思"/);
+    assert.match(b.html,/aria-label="學習重點"/);
+    assert.match(b.html,/aria-current="step"/);
+  }
+  b.action('open',{course:'g-question'}); b.action('next');
+  assert.match(b.html, /在「です」後加上「か」/);
+  assert.match(b.html, /<details class="lesson-extra"><summary>補充說明<\/summary>/);
+  assert.doesNotMatch(b.html, /<details[^>]*open/);
+});
+
+test('a course result keeps one primary and one secondary action, with restart optional', () => {
+ const b=harness();startQuiz(b,'g-identity');finishQuiz(b,'g-identity');
+ const nav=b.html.match(/<div class="study-nav">(.*?)<\/div>/s)[1];
+ assert.equal((nav.match(/class="primary"/g)||[]).length,1);
+ assert.equal((nav.match(/class="text-button"/g)||[]).length,1);
+ assert.doesNotMatch(nav,/study-restart/);
+ assert.match(b.html,/<details class="result-extra"><summary>其他練習選項<\/summary>/);
+ assert.match(b.html,/課後練習會記錄第一次作答的成績/);
+ assert.equal(b.records.length,1);
+ b.action('restart'); assert.equal(b.records.length,1,'Opening a new attempt does not duplicate the previous score');
+});
+
+
+test('word preparation keeps the complete target sentence visible and grouped examples never replace it',()=>{
+ const b=harness();b.action('open',{course:'g-identity'});
+ assert.match(b.html,/這課會說的句子/);
+ assert.match(b.html,/先認識單字/);
+ const sentence=b.content.getCourse('g-identity').steps[1];
+ assert.ok(b.html.includes(sentence.example));assert.ok(b.html.includes(sentence.reading));assert.ok(b.html.includes(sentence.meaning));
+ assert.match(b.html,/data-action="study-audio" data-course="g-identity" data-index="1"/);
+ for(const course of b.content.grammar){
+  if(!Object.keys(b.content.lessonPresentation[course.id].parts).length)continue;
+  b.action('open',{course:course.id});
+  for(let i=0;i<course.steps.length;i++){
+   const step=course.steps[i];
+   if(b.content.lessonPresentation[course.id].parts[step.id]&&!b.content.lessonPresentation[course.id].previews?.[step.id]){
+    assert.ok(b.html.includes(step.example),step.id+' retains the complete example');
+    assert.ok(b.html.includes(step.reading),step.id+' retains its full reading');
+   }
+   if(i<course.steps.length-1)b.action('next');
+  }
+ }
 });

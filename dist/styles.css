@@ -1262,3 +1262,20 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .study-feedback:not(:empty) { padding: 16px 18px; border: 2px solid #81aa9b; border-radius: 14px; background: #edf6f1; color: #315c4a; line-height: 1.8; }
 .study-feedback.wrong:not(:empty) { border-color: #c49b9b; background: #fff2f2; color: #763c43; }
 .study-options .answer.correct { border-width: 2px; }
+
+/* Supplemental material stays optional; the main example and rule remain visible. */
+.example-guide { font-size: 13px; color: var(--aqua-ink); margin: 0 0 16px; }
+.lesson-extra, .result-extra, .result-lessons { margin-top: 18px; border-top: 1px solid var(--rule-border); padding-top: 8px; }
+.lesson-extra summary, .result-extra summary, .result-lessons summary { min-height: 44px; display: list-item; align-content: center; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--purple-deep); }
+.lesson-extra p { margin-top: 10px; }
+.result-scope { color: var(--aqua-ink); }
+.result-extra .text-button { margin-top: 8px; }
+.example-part { max-width: 100%; overflow-wrap: anywhere; }
+.lesson-phases { flex-wrap: wrap; }
+
+.study-result .study-nav { justify-content: flex-start; gap: 14px 24px; }
+.study-result .result-score { font-size: 17px; }
+.study-result .result-score strong { font-size: 26px; color: var(--aqua-ink); margin-inline: 6px; white-space: nowrap; }
+
+.lesson-example .example-subheading { margin: 22px 0 8px; padding-top: 18px; border-top: 1px solid var(--example-border); }
+.lesson-example .grammar-example + .example-reading + .example-guide { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--example-border); }

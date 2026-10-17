@@ -25,7 +25,7 @@ const Navigation = (() => {
     let item = Object.hasOwn(pages, hash) ? pages[hash] : null;
     if (!item && hash.startsWith("#study/")) {
       const course = Content.getCourse(hash.slice(7));
-      if (course) item = [course.title, course.type === "kana" || course.home === "kana" ? "#kana" : "#grammar", "lesson"];
+      if (course) item = [Content.displayTitle(course.id), course.type === "kana" || course.home === "kana" ? "#kana" : "#grammar", "lesson"];
     }
     if (!item && hash.startsWith("#travel/")) {
       const category = Content.phrasebook.find(c => c.id === hash.slice(8));

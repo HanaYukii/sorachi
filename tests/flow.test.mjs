@@ -733,7 +733,7 @@ test("feedback returns to the current study card with its course title", () => {
   assert.match(b.html, /認識第 2 步/);
   b.action('feedback-back');
   assert.equal(b.hash, '#study/g-question');
-  assert.match(b.title, /疑問句/);
+  assert.match(b.title, /問對方：你是學生嗎/);
   assert.equal(b.state.study.courses['g-question'].active.cursor, 1);
 });
 
@@ -1821,7 +1821,7 @@ test('returning learners get a home dashboard of next steps, everything on offer
   assert.match(progress, /aria-hidden="true"><i style="width:/, 'Bars are decoration; the counts are text');
   assert.match(progress, /最近 3 次完成的練習計算。第一次答對只算每題第一次的選擇，重試和複習不算/);
   const next = section('dash-next');
-  assert.match(next, /data-action="study-open" data-course="g-demo"[\s\S]*?下一課：指示詞：これ・それ・あれ[\s\S]*?基本句子/);
+  assert.match(next, /data-action="study-open" data-course="g-demo"[\s\S]*?下一課：指東西：這個、那個[\s\S]*?基本句子/);
   assert.match(next, /data-action="study-grammar-review"[\s\S]*?4 題/, 'Two finished lessons offer the grammar review');
   assert.match(next, /href="#travel\/favorites"[\s\S]*?1 張/);
   const everything = section('dash-tools');
@@ -1975,7 +1975,7 @@ test('回 leads back to where a lesson or review was opened, through the next gr
   for (let i = 0; i < 5; i++) b.study('study-next');
   finishKanaRound(b);
   const records = b.state.history.length;
-  assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-open" data-course="h-ka">下一組：か行<\/button><button class="text-button" data-action="study-restart">重新練習<\/button><\/div>/);
+  assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-open" data-course="h-ka">下一組：か行<\/button><\/div><details class="result-extra"><summary>其他練習選項<\/summary><button class="text-button" data-action="study-restart">重新練習<\/button><\/details>/);
   assert.equal(b.hash, '#study/h-a', 'Answers and the done page add no history entries');
   b.back();
   assert.equal(b.hash, '#home');
@@ -2212,7 +2212,7 @@ test('句型隨機練習: one click from home, five different questions from a c
   }
   assert.equal(new Set(asked).size, 5, 'No question twice in a round');
   assert.match(b.html, /這輪答對 <strong>2 \/ 5<\/strong> 題/);
-  assert.match(b.html, /想多看說明，可以看這幾課：[\s\S]*data-action="study-open"/);
+  assert.match(b.html, /回看相關課程[\s\S]*data-action="study-open"/);
   assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-grammar-random-again">再練一次<\/button><\/div>/);
   assert.equal(b.stored, before, 'A random round records nothing: no completion, review round or mistake');
   b.study('study-grammar-random-again');

@@ -210,7 +210,7 @@ const Study = (() => {
   const kanaCells = (course) => `<span class="kana-cells">${course.letters.map((letter, i) => `<span class="kana-cell"><span lang="ja">${escape(letter)}</span><span class="kana-roman">${escape(course.readings[i])}</span></span>`).join("")}</span>`;
   function row(course) {
     const learned = state().courses[course.id];
-    const name = course.type === "kana" ? `<strong lang="ja">${escape(course.row)}</strong>${course.row.endsWith("行") ? `<span class="row-roman">（${escape(course.readings[0])}）</span>` : ""}` : `<strong>${escape(Content.lessonPresentation[course.id]?.title || course.title)}</strong>`;
+    const name = course.type === "kana" ? `<strong lang="ja">${escape(course.row)}</strong>${course.row.endsWith("行") ? `<span class="row-roman">（${escape(course.readings[0])}）</span>` : ""}` : `<strong>${escape(Content.displayTitle(course.id))}</strong>`;
     return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span>${name}${course.type === "kana" ? kanaCells(course) : `<span class="course-subtitle"${course.home === "kana" ? ' lang="ja"' : ""}>${escape(course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span>`}</span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
   }
   const kanaRows = (script, group) => Content.rowGroups[group].map((key) => courses[`${script}-${key}`]).filter(Boolean);
@@ -261,7 +261,7 @@ const Study = (() => {
   function grammarNext() {
     const unfinished = c => state().courses[c.id]?.active?.touched && state().courses[c.id].active.phase !== "done";
     const course = GRAMMAR.find(c => c.id === state().lastGrammarId && unfinished(c)) || GRAMMAR.find(unfinished) || GRAMMAR.find(c => !state().courses[c.id]?.completedAt);
-    return course ? {courseId:course.id,title:course.title,resume:Boolean(unfinished(course))} : null;
+    return course ? {courseId:course.id,title:Content.displayTitle(course.id),resume:Boolean(unfinished(course))} : null;
   }
   function grammarNextEntry() {
     const next = grammarNext();
@@ -375,7 +375,7 @@ const Study = (() => {
     if (round?.done) {
       const firstCorrect = round.items.filter((_, i) => round.first[i] === true).length;
       const missed = [...new Set(round.items.filter((_, i) => round.first[i] === false).map(item => item.courseId))];
-      body = `<section class="study-card study-result"><h2>複習完成</h2><p>第一次答對 <strong>${firstCorrect} / ${round.items.length}</strong> 題</p>${missed.length ? `<p class="study-note">可以回這幾課再看看：</p><ul class="review-lessons">${missed.map(id => `<li><button class="text-button" data-action="study-open" data-course="${id}">${escape(courses[id].title)} →</button></li>`).join("")}</ul>` : '<p class="study-note">這次都答對了。</p>'}<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a><button class="text-button" data-action="study-grammar-review">再複習 ${reviewSize()} 題</button></div></section>`;
+      body = `<section class="study-card study-result"><h2>複習完成</h2><p class="result-scope">這輪用來複習，不新增課程成績。</p><p class="result-score">第一次答對 <strong>${firstCorrect} / ${round.items.length}</strong> 題</p>${missed.length ? `<details class="result-lessons"><summary>回看相關課程（${missed.length}）</summary><ul class="review-lessons">${missed.map(id => `<li><button class="text-button" data-action="study-open" data-course="${id}">${escape(Content.displayTitle(id))} →</button></li>`).join("")}</ul></details>` : '<p class="study-note">這次都答對了。</p>'}${resultActions(exit, exitLabel, `<button class="text-button" data-action="study-grammar-review">再複習 ${reviewSize()} 題</button>`)}</section>`;
     } else if (round) {
       const { item, course, question } = roundItem(round), solved = round.solved[round.cursor] === true;
       body = `<p class="reading-label">複習 · ${round.cursor + 1} / ${round.items.length} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map(choice => `<button class="answer${(solved || round.wrong !== null) && choice === question.answer ? " correct" : round.wrong === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${solved}"${solved ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${(solved || round.wrong !== null) && choice === question.answer ? (solved ? " ✓ 答對了" : " ✓ 正確答案") : round.wrong === choice ? " ✕ 再試一次" : ""}</span></button>`).join("")}</div><p class="study-feedback${!solved && round.wrong !== null ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarReviewFeedback(round))}</p><div class="look-back-slot">${grammarReviewLook(round)}</div></section><div class="study-nav"><button class="primary" data-action="study-next"${solved ? "" : " disabled"}>${round.cursor === round.items.length - 1 ? "完成複習" : "下一題 →"}</button></div>`;
@@ -634,7 +634,7 @@ const Study = (() => {
   function audioButton(course, index, travel = false, full = false) {
     const step = course.steps?.[index];
     const text = course.type === "kana" ? course.letters[index] : full ? step.polite : step.example;
-    return `<button class="audio-button" data-action="${travel ? "study-travel-audio" : "study-audio"}" data-course="${course.id}" data-index="${index}"${travel ? ` data-full="${full ? 1 : 0}"` : ""}>${speaker}<span class="visually-hidden">播放「<span lang="ja">${escape(text)}</span>」的讀音</span></button><p class="study-audio-status study-note"${travel ? ` data-audio-for="${course.id}-${index}${full ? "-full" : ""}"` : ""} role="status" aria-live="polite"></p>`;
+    return `<button class="audio-button" data-action="${travel ? "study-travel-audio" : "study-audio"}" data-course="${course.id}" data-index="${index}"${travel ? ` data-full="${full ? 1 : 0}"` : ""}>${speaker}<span class="visually-hidden">播放「<span lang="ja">${escape(text)}</span>」的讀音</span></button><p class="study-audio-status study-note" data-audio-for="${course.id}-${index}${full ? "-full" : ""}" role="status" aria-live="polite"></p>`;
   }
   function keywordBox(keywords) {
     // The kana reading in （） stays on one line so narrow screens do not split it.
@@ -653,10 +653,13 @@ const Study = (() => {
     return `<aside class="kana-hint"><p class="hint-title">記憶提示</p><dl class="hint-list">${hints.map(item).join("")}</dl>${hints.some((hint) => hint.word) ? '<p class="study-audio-status study-note" data-audio-for="hint-word" role="status" aria-live="polite"></p>' : ""}${KanaHints.notice && hints.some((hint) => hint.label === "字源" || hint.word) ? `<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>` : ""}</aside>`;
   }
   const sameSoundNote = { "ぢ": "ぢ 和 じ 同音，都讀 ji；一般多寫 じ。", "づ": "づ 和 ず 同音，都讀 zu；一般多寫 ず。", "ヂ": "ヂ 和 ジ 同音，都讀 ji；一般多寫 ジ。", "ヅ": "ヅ 和 ズ 同音，都讀 zu；一般多寫 ズ。" };
-  function lessonExample(course, step) {
-    const parts = Content.lessonPresentation[course.id]?.parts[step.id];
-    if (!parts) return `<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="example-reading">${escape(step.reading)}</p>` : ""}`;
-    return `<div class="example-parts">${parts.map(([word, reading, meaning]) => `<div class="example-part"><span lang="ja">${escape(word)}</span><span class="example-reading">${escape(reading)}</span><span class="part-meaning">${escape(meaning)}</span></div>`).join("")}</div>`;
+  function fullExample(step) {
+    return `<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="example-reading">${escape(step.reading)}</p>` : ""}`;
+  }
+  function lessonExample(course, step, wordsOnly = false) {
+    const parts = Content.lessonPresentation[course.id]?.parts?.[step.id];
+    if (!parts) return fullExample(step);
+    return `${wordsOnly ? "" : fullExample(step)}<p class="example-guide">${wordsOnly ? "先認識這兩個單字。" : "分開看：每組依序是日文、讀音和意思。"}</p><div class="example-parts">${parts.map(([word, reading, meaning]) => `<div class="example-part"><span lang="ja">${escape(word)}</span><span class="example-reading">${escape(reading)}</span><span class="part-meaning">${escape(meaning)}</span></div>`).join("")}</div>`;
   }
   function card(course, active) {
     const i = active.cursor;
@@ -675,7 +678,10 @@ const Study = (() => {
       // A lesson card: the example, its reading and meaning, and the explanation (travel-only parts are rejected by
       // Content.validate, so there is nothing else to show).
       const step = course.steps[i];
-      body = `<h2>${escape(step.title)}</h2><div class="lesson-blocks"><section class="lesson-example" aria-label="例句與意思"><h3>例句與意思</h3>${lessonExample(course, step)}<p class="example-meaning">${escape(step.meaning)}</p>${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(step.body)}</p></section></div>`;
+      const note = Content.lessonPresentation[course.id]?.notes?.[step.id];
+      const previewIndex = course.steps.findIndex(item => item.id === Content.lessonPresentation[course.id]?.previews?.[step.id]);
+      const preview = course.steps[previewIndex];
+      body = `<h2>${escape(step.title)}</h2><div class="lesson-blocks"><section class="lesson-example" aria-label="例句與意思"><h3>${preview ? "這課會說的句子" : "例句與意思"}</h3>${preview ? `${fullExample(preview)}<p class="example-meaning">${escape(preview.meaning)}</p>${audioButton(course, previewIndex)}<h3 class="example-subheading">先認識單字</h3>` : ""}${lessonExample(course, step, Boolean(preview))}${preview ? "" : `<p class="example-meaning">${escape(step.meaning)}</p>`}${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(note?.main || step.body)}</p>${note?.extra ? `<details class="lesson-extra"><summary>補充說明</summary><p>${escape(note.extra)}</p></details>` : ""}</section></div>`;
     }
     // Once a grammar quiz has answers, the cards lead back to the question instead of restarting it.
     const resumable = course.type === "grammar" && Object.keys(active.first || {}).length > 0;
@@ -720,12 +726,12 @@ const Study = (() => {
     let body;
     if (round.done) {
       const missed = round.items.filter((q, i) => q.options[round.answers[i]] !== q.id).map((q) => KanaPractice.entry(q.id));
-      body = `<section class="study-card study-result"><h2>${missed.length ? "練習完成" : "全部答對"}</h2><p>這輪答對 <strong>${total - missed.length} / ${total}</strong> 題</p>${missed.length ? `<p class="study-note">答錯的字：${missed.map((item) => escape(`${item.character}（${item.reading}）`)).join("、")}</p>` : ""}<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a><button class="text-button" data-action="study-random-again">再練 ${RANDOM_SIZE} 題</button></div></section>`;
+      body = `<section class="study-card study-result"><h2>${missed.length ? "練習完成" : "全部答對"}</h2><p class="result-scope">隨機練習只顯示這輪結果，不加入學習紀錄。</p><p class="result-score">這輪答對 <strong>${total - missed.length} / ${total}</strong> 題</p>${missed.length ? `<p class="study-note">答錯的字：${missed.map((item) => escape(`${item.character}（${item.reading}）`)).join("、")}</p>` : ""}${resultActions(exit, exitLabel, `<button class="text-button" data-action="study-random-again">再練 ${RANDOM_SIZE} 題</button>`)}</section>`;
     } else {
       const q = round.items[round.cursor], item = KanaPractice.entry(q.id), chosen = round.answers[round.cursor], answered = chosen !== undefined, correct = answered && q.options[chosen] === q.id;
       body = `<p class="reading-label">基本平假名 · ${round.cursor + 1} / ${total} · 選一個答案</p><section class="study-card study-quiz"><h2>${q.direction === "reading" ? "這個讀音，對應哪個字？" : "這個字，讀音是哪一個？"}</h2><div class="kana-character"${q.direction === "character" ? ' lang="ja"' : ""}>${escape(q.direction === "reading" ? item.reading : item.character)}</div><div class="study-options kana-options" role="group" aria-label="答案選項">${q.options.map((id, index) => { const option = KanaPractice.entry(id); return `<button class="answer${answered && id === q.id ? " correct" : answered && chosen === index ? " wrong" : ""}" data-action="study-answer" data-choice="${index}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}>${q.direction === "reading" ? `<span lang="ja">${escape(option.character)}</span>` : escape(option.reading)}<span class="answer-status">${answered ? answerMark(chosen === index, id === q.id, correct) : ""}</span></button>`; }).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(randomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${round.cursor + 1 === total ? "看結果 →" : "下一題 →"}</button></div>`;
     }
-    return wrap(`<h1 class="focus-heading" tabindex="-1">五十音隨機練習</h1>${body}<p class="study-note">從 46 個基本平假名隨機出題，不用先學過；這裡的作答不會記成成績，也不會改變複習。</p><div class="lesson-utilities">${table}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">五十音隨機練習</h1>${body}${round.done ? "" : '<p class="study-note">從 46 個基本平假名隨機出題，不用先學過；這裡的作答不會記成成績，也不會改變複習。</p>'}<div class="lesson-utilities">${table}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
   // Like updatePractice: a random round's answer is marked in place, so a screen reader hears the feedback and
   // focus moves on to 下一題. After a miss the right option is marked too.
@@ -770,12 +776,12 @@ const Study = (() => {
     let body;
     if (round.done) {
       const missed = [...new Set(round.items.filter((item, i) => !right(item, i)).map((item) => item.courseId))];
-      body = `<section class="study-card study-result"><h2>${missed.length ? "練習完成" : "全部答對"}</h2><p>這輪答對 <strong>${round.items.filter(right).length} / ${total}</strong> 題</p>${missed.length ? `<p class="study-note">想多看說明，可以看這幾課：</p><ul class="review-lessons">${missed.map((id) => `<li><button class="text-button" data-action="study-open" data-course="${id}">${escape(courses[id].title)} →</button></li>`).join("")}</ul>` : ""}<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a><button class="text-button" data-action="study-grammar-random-again">再練一次</button></div></section>`;
+      body = `<section class="study-card study-result"><h2>${missed.length ? "練習完成" : "全部答對"}</h2><p class="result-scope">隨機練習只顯示這輪結果，不加入學習紀錄。</p><p class="result-score">這輪答對 <strong>${round.items.filter(right).length} / ${total}</strong> 題</p>${missed.length ? `<details class="result-lessons"><summary>回看相關課程（${missed.length}）</summary><ul class="review-lessons">${missed.map((id) => `<li><button class="text-button" data-action="study-open" data-course="${id}">${escape(Content.displayTitle(id))} →</button></li>`).join("")}</ul></details>` : ""}${resultActions(exit, exitLabel, `<button class="text-button" data-action="study-grammar-random-again">再練一次</button>`)}</section>`;
     } else {
       const { item, question } = roundItem(round), chosen = round.answers[round.cursor], answered = chosen !== undefined, correct = chosen === question.answer;
       body = `<p class="reading-label">入門句型 · ${round.cursor + 1} / ${total} · 選一個答案</p><section class="study-card study-quiz"><h2>${escape(question.prompt)}</h2><div class="study-options" role="group" aria-label="答案選項">${item.options.map((choice) => `<button class="answer${answered && choice === question.answer ? " correct" : answered && chosen === choice ? " wrong" : ""}" data-action="study-answer" data-choice="${choice}" aria-disabled="${answered}"${answered ? ' tabindex="-1"' : ""}>${question.readings ? `<span lang="ja">${escape(question.options[choice])}</span><span class="option-reading">${escape(question.readings[choice])}</span>` : escape(question.options[choice])}<span class="answer-status">${answered ? answerMark(chosen === choice, choice === question.answer, correct) : ""}</span></button>`).join("")}</div><p class="study-feedback${answered && !correct ? " wrong" : ""}" role="status" aria-live="polite">${escape(grammarRandomFeedback(round))}</p></section><div class="study-nav"><button class="primary" data-action="study-next"${answered ? "" : " disabled"}>${round.cursor + 1 === total ? "看結果 →" : "下一題 →"}</button></div>`;
     }
-    return wrap(`<h1 class="focus-heading" tabindex="-1">句型隨機練習</h1>${body}<p class="study-note">從「基本句子」開頭幾課的名詞句隨機出題，不用先學過；這裡的作答不會記成成績，也不會改變複習。</p><div class="lesson-utilities">${list}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
+    return wrap(`<h1 class="focus-heading" tabindex="-1">句型隨機練習</h1>${body}${round.done ? "" : '<p class="study-note">從「基本句子」開頭幾課的名詞句隨機出題，不用先學過；這裡的作答不會記成成績，也不會改變複習。</p>'}<div class="lesson-utilities">${list}<button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
   function practiceFeedback(session) {
     if(!KanaPractice.answered(session))return '';
@@ -812,7 +818,7 @@ const Study = (() => {
       const remaining=session.questions.filter(q=>state().kanaReview[q.id]?.wrong).map(q=>KanaPractice.entry(q.id));
       // retryQuestions are this round's first-time misses; a miss fixed in the retry is not "all right".
       const missed=session.retryQuestions.length, retryRight=session.retryQuestions.every((q,i)=>q.options[session.retryAnswers[i]]===q.id);
-      body=`<h2>複習完成</h2><p>這次練了 ${session.questions.length} 個字。</p>${remaining.length?`<p>還可以再練：${remaining.map(item=>escape(`${item.character}（${item.reading}）`)).join('、')}</p>`:missed?`<p>第一次答錯 ${missed} 個字${retryRight?`，再考一次${missed>1?'都':''}答對了`:''}。</p>`:'<p>這次的字都答對了。</p>'}<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a><button class="text-button" data-action="study-review-start">再複習 ${Math.min(5,summary.availableCount)} 個字</button></div>`;
+      body=`<section class="study-card study-result"><h2>複習完成</h2><p class="result-scope">這輪用來複習，不新增課程成績。</p><p>這次練了 ${session.questions.length} 個字。</p>${remaining.length?`<p>還可以再練：${remaining.map(item=>escape(`${item.character}（${item.reading}）`)).join('、')}</p>`:missed?`<p>第一次答錯 ${missed} 個字${retryRight?`，再考一次${missed>1?'都':''}答對了`:''}。</p>`:'<p>這次的字都答對了。</p>'}${resultActions(exit, exitLabel, `<button class="text-button" data-action="study-review-start">再複習 ${Math.min(5,summary.availableCount)} 個字</button>`)}</section>`;
     }else if(session)body=practiceQuiz(session,true);
     else body=`<p>先練答錯的字，較早答錯的先練；再複習較久沒練的字，最多 5 個。</p>${summary.wrongLabels.length?`<p>${wrongLine(summary)}</p>`:''}${summary.availableCount?'<button class="primary" data-action="study-review-start">開始複習</button>':'<p>先完成一組五十音練習，就可以在這裡複習。</p>'}`;
     return wrap(`<h1 class="focus-heading" tabindex="-1">五十音複習</h1>${body}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`,exit,exitLabel);
@@ -863,12 +869,15 @@ const Study = (() => {
       return `第 ${number} 題`;
     });
   }
+  function resultActions(exit, exitLabel, secondary, extra = "") {
+    return `<div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a>${secondary}</div>${extra ? `<details class="result-extra"><summary>其他練習選項</summary>${extra}</details>` : ""}`;
+  }
   function result(course, saved) {
     const score = saved.lastResult, active = peekAttempt(course.id);
     const retries = retryLabels({ courseId: course.id, courseRevision: active.courseRevision, questionIds: active.order.map(q => active.questionIds[q]), retryQuestions: active.order.flatMap((q, index) => active.first[q] === false ? [index + 1] : []) });
     // The way back comes first; the next group and a fresh round are the quieter choices (#82).
     const next = nextCourse(course.id), [exit, exitLabel] = exitTo(backHash(course));
-    return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p>第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}${retries.length ? `<p class="study-note">第一次答錯：${retries.map(escape).join("、")}</p>` : ""}<p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><div class="study-nav"><a class="primary" href="${exit}">${exitLabel}</a>${next ? `<button class="text-button" data-action="study-open" data-course="${next}">${courses[next].type === "kana" ? `下一組：${escape(courses[next].row)}` : `下一課：${escape(courses[next].title)}`}</button>` : ""}<button class="text-button" data-action="study-restart">重新練習</button></div></section>`;
+    return `<section class="study-card study-result"><h2>${score && score.firstCorrect === score.total ? "全部答對" : "練習完成"}</h2>${score ? `<p class="result-score">第一次答對 <strong>${score.firstCorrect} / ${score.total}</strong> 題</p>` : ""}${retries.length ? `<p class="study-note">第一次答錯：${retries.map(escape).join("、")}</p>` : ""}<p class="reading-label">${saved.completedAt ? `完成於 ${escape(new Date(saved.completedAt).toLocaleDateString("zh-TW"))}` : ""}</p><p class="result-scope">課後練習會記錄第一次作答的成績。</p>${resultActions(exit, exitLabel, next ? `<button class="text-button" data-action="study-open" data-course="${next}">${courses[next].type === "kana" ? `下一組：${escape(courses[next].row)}` : `下一課：${escape(Content.displayTitle(next))}`}</button>` : '<button class="text-button" data-action="study-restart">重新練習</button>', next ? '<button class="text-button" data-action="study-restart">重新練習</button>' : "")}</section>`;
   }
   function updateAnswer(course, active) {
     const q = active.order[active.cursor];
@@ -895,7 +904,7 @@ const Study = (() => {
   function coursePage(course) {
     const saved = courseState(course.id);
     const active = peekAttempt(course.id) || draftAttempt(course, saved);
-    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(Content.lessonPresentation[course.id]?.title || course.title)}</h1>${Content.lessonPresentation[course.id] ? `<p class="study-note">${escape(course.title)}</p>` : ""}${lessonPhases(active.phase)}${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)), course.type !== "kana");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(Content.displayTitle(course.id))}</h1>${Content.lessonPresentation[course.id] ? `<p class="study-note">${escape(course.title)}</p>` : ""}${lessonPhases(active.phase)}${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)), course.type !== "kana");
   }
   function render(hash) {
     // The opened search result gets focus only when coming back from the travel cards, not on a later visit.
@@ -1156,7 +1165,7 @@ const Study = (() => {
     if (!active) return true;
     if (action === "study-audio") {
       const index = Number(button.dataset.index);
-      if (active.phase === "cards" && (course.type === "kana" || course.type === "grammar") && Number.isInteger(index) && index >= 0 && index < cards(course)) speak(course, index, ".study-audio-status", false, button);
+      if (active.phase === "cards" && (course.type === "kana" || course.type === "grammar") && Number.isInteger(index) && index >= 0 && index < cards(course)) speak(course, index, `[data-audio-for="${course.id}-${index}"]`, false, button);
       return true;
     }
     if (action === "study-word-audio") {
