@@ -3,7 +3,7 @@ import { resolve, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { prepareRelease, sha256, isMain } from './prepare-release.mjs';
 
-const matchesMime = (actual, expected) => actual === expected || (expected === 'text/javascript' && actual === 'application/javascript') || (expected === 'image/x-icon' && actual === 'image/vnd.microsoft.icon');
+const matchesMime = (actual, expected) => actual === expected || (expected === 'text/javascript' && actual === 'application/javascript') || (expected === 'image/x-icon' && actual === 'image/vnd.microsoft.icon') || (expected === 'application/xml' && actual === 'text/xml');
 
 export async function verifyDeployment({ dir = resolve('dist'), url = 'https://sorachi.app/', timeoutMs = 10000 } = {}) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) throw new Error('timeoutMs must be a positive integer');
@@ -13,8 +13,8 @@ export async function verifyDeployment({ dir = resolve('dist'), url = 'https://s
   const manifest = await prepareRelease({ dir, check: true });
   const releaseBytes = await readFile(join(dir, 'release.json'));
   const files = [...manifest.files, { path: 'release.json', bytes: releaseBytes.length, sha256: sha256(releaseBytes), mime: 'application/json' }];
-  for (const file of files) {
-    const target = new URL(file.path.split('/').map(encodeURIComponent).join('/'), base);
+  async function verifyFile(file, path = file.path) {
+    const target = new URL(path.split('/').map(encodeURIComponent).join('/'), base);
     const response = await fetch(target, { signal: AbortSignal.timeout(timeoutMs), redirect: 'error', headers: { 'Cache-Control': 'no-cache' } });
     if (response.status !== 200) throw new Error(`${file.path}: expected HTTP 200, got ${response.status}`);
     const mime = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
@@ -22,7 +22,10 @@ export async function verifyDeployment({ dir = resolve('dist'), url = 'https://s
     const bytes = Buffer.from(await response.arrayBuffer());
     if (bytes.length !== file.bytes || sha256(bytes) !== file.sha256) throw new Error(`${file.path}: deployed bytes do not match release ${manifest.buildId}`);
   }
-  // Hash routes exist only in the client: HTTP cannot prove that #travel or #study renders.
+  for (let at = 0; at < files.length; at += 6) await Promise.all(files.slice(at, at + 6).map(file => verifyFile(file)));
+  // A real directory entry must work directly, not only its index.html filename.
+  const entries = files.filter(file => file.path.endsWith('/index.html'));
+  for (let at = 0; at < entries.length; at += 6) await Promise.all(entries.slice(at, at + 6).map(file => verifyFile(file, file.path.slice(0, -10))));
   const missing = await fetch(new URL(`__sorachi_missing_${manifest.buildId}.txt`, base), { signal: AbortSignal.timeout(timeoutMs), redirect: 'error' });
   await missing.body?.cancel();
   if (missing.status !== 404) throw new Error(`Missing resource must return HTTP 404, got ${missing.status}`);
@@ -65,6 +68,6 @@ if (isMain(import.meta.url)) {
     if (attempts > 60 || intervalMs > 60000 || (options.timeoutMs || 10000) > 60000) throw new Error('Limits: 60 attempts, 60000 ms interval/timeout');
     const result = await verifyWithRetry({ attempts, intervalMs, ...options });
     console.log(`Verified ${result.files} files, root and missing-resource 404: ${result.buildId}`);
-    console.log('Hash-route rendering, interactions and audio still require browser QA.');
+    console.log('Page interactions and audio still require browser QA.');
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

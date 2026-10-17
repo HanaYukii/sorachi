@@ -6,17 +6,17 @@ const Account = (() => {
     const url = new URL(`${location.pathname || "/"}${location.search || ""}${location.hash || ""}`, location.origin || "https://sorachi.app");
     const fragment = new URL(`?${url.hash.slice(1)}`, url).searchParams;
     const failed = [url.searchParams, fragment].some(params => params.has("error") && (params.has("error_description") || params.has("error_code")));
-    const hasCode = url.hash === "#account" && url.searchParams.has("code");
+    const hasCode = (url.hash === "#account" || /^\/account\/?$/.test(url.pathname)) && url.searchParams.has("code");
     if (!failed && !hasCode) return null;
     // Never render provider text or leave failed authorization codes in the address.
     for (const key of ["error", "error_code", "error_description", "code", "state"]) url.searchParams.delete(key);
-    return {failed, cleanPath:`${url.pathname}${url.search}#account`};
+    return {failed, cleanPath:`/account/${url.search}`};
   }
   function create(api) {
     let service=null, busy=false, message="", remote=null, revision=null, alive=true, initialized=false;
     const configured = () => Boolean(CloudConfig.url && CloudConfig.publishableKey);
     const user = () => service?.user() || null;
-    const redraw = () => { if(location.hash === "#account") api.render(); };
+    const redraw = () => { if(Routes.current() === "#account") api.render(); };
     const errors = {
       "backup-conflict":"另一台裝置已更新雲端備份。請重新查看並帶入雲端備份，再儲存；這次沒有覆寫。",
       "backup-unavailable":"目前連不上雲端，這台裝置的紀錄仍保留，請稍後重試。",

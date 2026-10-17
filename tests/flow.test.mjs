@@ -21,6 +21,7 @@ function browser({
   saved = null,
   raw,
   hash = "#home",
+  address = null,
   storageBlocked = false,
   sharedStorage = null,
   historyState = null,
@@ -40,9 +41,10 @@ function browser({
   let reloads = 0;
   const created = [];
   let focused = null;
-  let currentHash = hash;
+  let currentURL = new URL(address || hash, "http://localhost/");
+  let currentHash = currentURL.hash;
   // The tab's history: one entry per hash change, each with its own state; a reload keeps the current entry's state.
-  const entries = [{ hash, state: historyState }];
+  const entries = [{ url: currentURL.href, state: historyState }];
   let at = 0;
   const url = (value) => `http://localhost/${value}`;
   const elements = new Map();
@@ -211,30 +213,31 @@ function browser({
       add(documentListeners, type, fn);
     },
   };
-  const location = { pathname: "/", search: "", reload() { reloads++; } };
+  const applyURL = value => { currentURL = new URL(value, currentURL); currentHash = currentURL.hash; };
+  const location = {
+    get pathname() { return currentURL.pathname; }, set pathname(value) { currentURL.pathname = value; },
+    get search() { return currentURL.search; }, set search(value) { currentURL.search = value; },
+    get origin() { return currentURL.origin; },
+    get hostname() { return currentURL.hostname; }, set hostname(value) { currentURL.hostname = value; },
+    get href() { return currentURL.href; }, reload() { reloads++; }
+  };
   Object.defineProperty(location, "hash", {
-    get() {
-      return currentHash;
-    },
+    get() { return currentHash; },
     set(value) {
       if (value !== currentHash) {
-        const oldURL = url(currentHash);
-        currentHash = value;
-        entries.splice(at + 1, Infinity, { hash: value, state: null });
-        at++;
-        // A browser fires popstate for a new address too, before hashchange.
-        pending.push(() => dispatch(windowListeners, "popstate", { state: null }), () => dispatch(windowListeners, "hashchange", { oldURL, newURL: url(value) }));
+        const oldURL = currentURL.href;
+        currentURL.hash = value; currentHash = currentURL.hash;
+        entries.splice(at + 1, Infinity, { url: currentURL.href, state: null }); at++;
+        pending.push(() => dispatch(windowListeners, "popstate", { state: null }), () => dispatch(windowListeners, "hashchange", { oldURL, newURL: currentURL.href }));
       }
     },
   });
-  // Like a browser: popstate on every move through history, hashchange only when the address changes.
   function traverse(step) {
     if (!entries[at + step]) return;
-    const oldHash = currentHash;
-    at += step;
-    currentHash = entries[at].hash;
+    const oldURL = currentURL.href, oldHash = currentHash;
+    at += step; applyURL(entries[at].url);
     dispatch(windowListeners, "popstate", { state: entries[at].state });
-    if (currentHash !== oldHash) dispatch(windowListeners, "hashchange", { oldURL: url(oldHash), newURL: url(currentHash) });
+    if (currentHash !== oldHash) dispatch(windowListeners, "hashchange", { oldURL, newURL: currentURL.href });
     flush();
   }
   const context = vm.createContext({
@@ -245,9 +248,13 @@ function browser({
       history: {
         get state() { return entries[at].state; },
         // A browser keeps a copy of the state, not the object itself.
-        replaceState(state, _title, hash) {
-          entries[at] = { hash: hash == null ? entries[at].hash : new URL(hash, "http://localhost/").hash, state: state == null ? null : structuredClone(state) };
-          currentHash = entries[at].hash;
+        replaceState(state, _title, address) {
+          if (address != null) applyURL(address);
+          entries[at] = { url: currentURL.href, state: state == null ? null : structuredClone(state) };
+        },
+        pushState(state, _title, address) {
+          applyURL(address);
+          entries.splice(at + 1, Infinity, { url: currentURL.href, state: state == null ? null : structuredClone(state) }); at++;
         },
       },
       scrollTo() {},
@@ -289,6 +296,7 @@ function browser({
     while (pending.length) pending.shift()();
   };
   for (const file of ["content.js", "drill-bank.js", "drill.js", "storage.js", "kana-practice.js", "kana-hints.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
+  vm.runInContext(readFileSync(new URL("../dist/routes.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/diagnostics.js", import.meta.url), "utf8"), context);
@@ -400,9 +408,9 @@ function browser({
     get html() {
       return html;
     },
-    get hash() {
-      return currentHash;
-    },
+    // Existing flow cases use stable route IDs; address verifies the public URL.
+    get hash() { const id = vm.runInContext("Routes.current()", context); return id === "#home" ? "" : id; },
+    get address() { return currentURL.href; },
     get focused() {
       return focused;
     },
@@ -780,7 +788,7 @@ test("feedback returns to the current study card with its course title", () => {
   assert.match(b.html, /認識第 2 步/);
   b.action('feedback-back');
   assert.equal(b.hash, '#study/g-question');
-  assert.match(b.title, /問對方：你是學生嗎/);
+  assert.match(b.title, /疑問句：〜ですか/);
   assert.equal(b.state.study.courses['g-question'].active.cursor, 1);
 });
 
@@ -804,7 +812,7 @@ test("home explains the task: the kana card leads to the table, and anyone can s
 
 test('retired travel quiz routes open the phrasebook and old travel records keep their titles', () => {
   const list = browser({hash:'#travel'});
-  assert.equal(list.title, '旅遊常用語｜SoraChi');
+  assert.equal(list.title, '旅遊常用語：關鍵字、讀音與例句｜SoraChi');
   list.action('feedback');
   assert.match(list.html, /旅遊常用語列表/);
   list.action('feedback-back');
@@ -832,15 +840,15 @@ test('home travel entry is separate from grammar and phrasebook feedback returns
   b.action('travel');
   assert.equal(b.hash, '#travel');
   assert.doesNotMatch(b.html, /data-action="study-open"/);
-  assert.match(b.html, /href="#travel" aria-current="page"/);
+  assert.match(b.html, /href="\/travel\/" aria-current="page"/);
   assert.deepEqual(Object.keys(b.state.study.courses), []);
   const item = browser({hash:'#travel/hotel'});
-  assert.equal(item.title, '飯店與預約｜SoraChi');
+  assert.equal(item.title, '飯店與預約｜旅遊日文｜SoraChi');
   item.action('feedback');
   assert.match(item.html, /旅遊常用語・飯店與預約/);
   item.action('feedback-back');
   assert.equal(item.hash, '#travel/hotel');
-  assert.equal(item.title, '飯店與預約｜SoraChi');
+  assert.equal(item.title, '飯店與預約｜旅遊日文｜SoraChi');
   assert.equal(item.state.history.length, 0);
   assert.deepEqual(Object.keys(item.state.study.courses), []);
 });
@@ -1059,7 +1067,7 @@ test('author route links the personal website without changing learning progress
  assert.match(b.html,/href="https:\/\/hanayukii.dev\/about" target="_blank" rel="noopener noreferrer"/);
  assert.doesNotMatch(b.html,/#guide|使用說明書/);
  assert.equal(b.stored,stored);
- b.navigate('#home'); assert.match(b.html,/href="#about"/);
+ b.navigate('#home'); assert.match(b.html,/href="\/about\/"/);
  assert.doesNotMatch(b.html,/#guide|使用說明書/);
 });
 
@@ -1187,7 +1195,7 @@ test('old t-* course progress loads quietly, survives saves, and only known phra
   assert.equal(JSON.parse(b.stored).learning.study.courses['t-pay'].attempts, 2, 'Retired progress stays in storage untouched');
   b.navigate('#study/t-charge');
   assert.equal(b.hash, '#travel/t-charge');
-  assert.equal(b.title, '交通卡加值｜SoraChi');
+  assert.equal(b.title, '交通卡加值｜旅遊日文｜SoraChi');
   b.navigate('#study/t-unknown');
   assert.equal(b.hash, '#study/t-unknown');
   assert.match(b.html, /找不到這堂課/);
@@ -1199,7 +1207,7 @@ test('old t-* course progress loads quietly, survives saves, and only known phra
 test('accessibility details: progress text, list role, form descriptions, plain warnings and not-found title', () => {
   const lesson = browser({ hash: '#lesson' });
   assert.match(lesson.html, /role="progressbar"[^>]*aria-valuemin="1"[^>]*aria-valuenow="1" aria-valuetext="第 1 步，共 6 步"><span style="width:16\.\d+%">/);
-  assert.match(lesson.html, /<a class="exit" href="#home">/);
+  assert.match(lesson.html, /<a class="exit" href="\/">/);
   const home = browser();
   assert.match(home.html, /<h2>基礎句型<\/h2>/);
   assert.doesNotMatch(home.html, /<h3>基礎句型<\/h3>/);
@@ -1234,12 +1242,12 @@ test('a change in saving state is announced once outside the page, not on every 
 
 test('home uses four entry cards while utility and focused pages use a shared return header', () => {
   const b = browser();
-  assert.doesNotMatch(b.html.match(/<header[\s\S]*?<\/header>/)[0], /href="#travel"/);
+  assert.doesNotMatch(b.html.match(/<header[\s\S]*?<\/header>/)[0], /href="\/travel\/"/);
   b.action("travel");
   assert.equal(b.hash, "#travel");
   for (const hash of ['#history', '#about', '#feedback', '#lesson']) {
     b.navigate(hash);
-    assert.doesNotMatch(b.html.match(/<header[\s\S]*?<\/header>/)[0], /href="#travel"|section-nav/, hash);
+    assert.doesNotMatch(b.html.match(/<header[\s\S]*?<\/header>/)[0], /href="\/travel\/"|section-nav/, hash);
   }
 });
 
@@ -1870,9 +1878,9 @@ test('returning learners get a home dashboard of next steps, everything on offer
   const next = section('dash-next');
   assert.match(next, /data-action="study-open" data-course="g-demo"[\s\S]*?下一課：指東西：這個、那個[\s\S]*?基本句子/);
   assert.match(next, /data-action="study-grammar-review"[\s\S]*?4 題/, 'Two finished lessons offer the grammar review');
-  assert.match(next, /href="#travel\/favorites"[\s\S]*?1 張/);
+  assert.match(next, /href="\/travel\/favorites\/"[\s\S]*?1 張/);
   const everything = section('dash-tools');
-  assert.match(everything, /href="#history"/);
+  assert.match(everything, /href="\/history\/"/);
   for (const action of ['kana', 'grammar', 'travel']) assert.equal((html.match(new RegExp(`data-action="${action}"`, 'g')) || []).length, 1, action);
   assert.match(everything, /data-action="start"[\s\S]*?還沒看/, 'After practice the introduction waits in 全部內容');
   assert.equal((html.match(/data-action="start"/g) || []).length, 1, 'One way into the writing-system introduction');
@@ -1896,7 +1904,7 @@ test('home dashboard edge cases: paused introduction, saved phrases only, kana f
   traveller.study('study-favorite', { phrase: 'phrase/hotel/check-in' });
   traveller.navigate('#home');
   assert.match(traveller.html, /home-dashboard/);
-  assert.match(section(traveller, 'dash-next'), /href="#travel\/favorites"[\s\S]*?1 張/);
+  assert.match(section(traveller, 'dash-next'), /href="\/travel\/favorites\/"[\s\S]*?1 張/);
   assert.equal(starts(traveller), 1);
   // Both scripts and the 促音・長音 lessons done: the main card leads to grammar instead of replaying kana.
   const data = JSON.parse(browser().stored);
@@ -2018,45 +2026,45 @@ test('回 leads back to where a lesson or review was opened, through the next gr
   const b = browser();
   b.study('study-open', { course: 'h-a' });
   assert.deepEqual(b.historyState, { from: '#home' });
-  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  assert.deepEqual(exit(b), ['/', '回首頁']);
   for (let i = 0; i < 5; i++) b.study('study-next');
   finishKanaRound(b);
   const records = b.state.history.length;
-  assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-open" data-course="h-ka">下一組：か行<\/button><\/div><details class="result-extra"><summary>其他練習選項<\/summary><button class="text-button" data-action="study-restart">重新練習<\/button><\/details>/);
+  assert.match(b.html, /<div class="study-nav"><a class="primary" href="\/">回首頁<\/a><button class="text-button" data-action="study-open" data-course="h-ka">下一組：か行<\/button><\/div><details class="result-extra"><summary>其他練習選項<\/summary><button class="text-button" data-action="study-restart">重新練習<\/button><\/details>/);
   assert.equal(b.hash, '#study/h-a', 'Answers and the done page add no history entries');
   b.back();
   assert.equal(b.hash, '');
   b.forward();
   assert.equal(b.hash, '#study/h-a');
-  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  assert.deepEqual(exit(b), ['/', '回首頁']);
   assert.equal(b.state.history.length, records, 'Going back and forth records nothing again');
   // The next group, a feedback detour and a reload keep the first source.
   b.study('study-open', { course: 'h-ka' });
-  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  assert.deepEqual(exit(b), ['/', '回首頁']);
   b.action('feedback'); b.action('feedback-back');
   assert.equal(b.hash, '#study/h-ka');
-  assert.deepEqual(exit(b), ['#home', '回首頁']);
-  assert.deepEqual(exit(reload(b)), ['#home', '回首頁']);
+  assert.deepEqual(exit(b), ['/', '回首頁']);
+  assert.deepEqual(exit(reload(b)), ['/', '回首頁']);
   // From the kana table: back to the table; a direct link has no source and leads there too.
   const table = browser({ hash: '#kana' });
   table.study('study-open', { course: 'h-ka' });
-  assert.deepEqual(exit(table), ['#kana', '回五十音表']);
-  assert.deepEqual(exit(browser({ hash: '#study/h-ka' })), ['#kana', '回五十音表']);
-  assert.deepEqual(exit(browser({ hash: '#study/s-sokuon' })), ['#kana', '回五十音表']);
+  assert.deepEqual(exit(table), ['/kana/', '回五十音表']);
+  assert.deepEqual(exit(browser({ hash: '#study/h-ka' })), ['/kana/', '回五十音表']);
+  assert.deepEqual(exit(browser({ hash: '#study/s-sokuon' })), ['/kana/', '回五十音表']);
   // The short review: home leads home, the table leads to the table; its done page puts the way back first.
   b.navigate('#home'); b.study('study-review-start');
   assert.equal(b.hash, '#kana-review');
-  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  assert.deepEqual(exit(b), ['/', '回首頁']);
   playRound(b, 'review');
-  assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-review-start">再複習 \d 個字<\/button><\/div>/);
+  assert.match(b.html, /<div class="study-nav"><a class="primary" href="\/">回首頁<\/a><button class="text-button" data-action="study-review-start">再複習 \d 個字<\/button><\/div>/);
   b.navigate('#kana'); b.navigate('#kana-review');
-  assert.deepEqual(exit(b), ['#kana', '回五十音表']);
+  assert.deepEqual(exit(b), ['/kana/', '回五十音表']);
   // Grammar works the same way: home leads home, the list leads to the list.
   const g = browser({ hash: '#grammar' });
   g.study('study-open', { course: 'g-identity' });
-  assert.deepEqual(exit(g), ['#grammar', '回基礎句型']);
+  assert.deepEqual(exit(g), ['/grammar/', '回基礎句型']);
   g.navigate('#home'); g.study('study-open', { course: 'g-identity' });
-  assert.deepEqual(exit(g), ['#home', '回首頁']);
+  assert.deepEqual(exit(g), ['/', '回首頁']);
   // Back on a list, the lesson just left has focus.
   table.click('.exit');
   assert.equal(table.hash, '#kana');
@@ -2081,24 +2089,24 @@ test('the grammar review leads back by source, and odd or missing history state 
   const exit = (b) => b.html.match(/<a class="exit" href="([^"]+)">← ([^<]+)<\/a>/)?.slice(1);
   const g = completedGrammarBrowser();
   g.navigate('#home'); g.study('study-grammar-review');
-  assert.deepEqual(exit(g), ['#home', '回首頁']);
+  assert.deepEqual(exit(g), ['/', '回首頁']);
   g.navigate('#grammar'); g.navigate('#grammar-review');
-  assert.deepEqual(exit(g), ['#grammar', '回基礎句型']);
+  assert.deepEqual(exit(g), ['/grammar/', '回基礎句型']);
   // Saved state from elsewhere or from older versions falls back to the list; it never becomes a link.
   for (const historyState of [{ from: 'https://example.com/' }, { from: '#travel' }, { from: 42 }, { from: ['#home'] }, 'junk', null]) {
-    assert.deepEqual(exit(browser({ hash: '#study/h-ka', historyState })), ['#kana', '回五十音表'], JSON.stringify(historyState));
+    assert.deepEqual(exit(browser({ hash: '#study/h-ka', historyState })), ['/kana/', '回五十音表'], JSON.stringify(historyState));
   }
   // A direct link keeps its plain way back even after going home and coming back with the back button.
   const direct = browser({ hash: '#study/h-a' });
   direct.navigate('#home');
   direct.back();
   assert.equal(direct.hash, '#study/h-a');
-  assert.deepEqual(exit(direct), ['#kana', '回五十音表']);
+  assert.deepEqual(exit(direct), ['/kana/', '回五十音表']);
   // An address that shows home counts as home.
   const odd = browser({ hash: '#nowhere' });
   assert.match(odd.html, /日文入門/);
   odd.study('study-open', { course: 'h-a' });
-  assert.deepEqual(exit(odd), ['#home', '回首頁']);
+  assert.deepEqual(exit(odd), ['/', '回首頁']);
 });
 
 test('the kana card stays the same whatever the progress: 學五十音 and 五十音隨機練習; carrying on and the review are under 接著做', () => {
@@ -2146,8 +2154,8 @@ test('五十音隨機練習: one click from home, five different basic hiragana,
   b.study('study-kana-random');
   assert.equal(b.hash, '#kana-random');
   assert.equal(b.title, '五十音隨機練習｜SoraChi');
-  assert.match(b.html, /<a class="exit" href="#home">← 回首頁<\/a>/);
-  assert.match(b.html, /<a class="text-button" href="#kana">看五十音表<\/a>/, 'The table is a plain link, not a way back');
+  assert.match(b.html, /<a class="exit" href="\/">← 回首頁<\/a>/);
+  assert.match(b.html, /<a class="text-button" href="\/kana\/">看五十音表<\/a>/, 'The table is a plain link, not a way back');
   const asked = [];
   for (let n = 1; n <= 5; n++) {
     assert.match(b.html, new RegExp(`基本平假名 · ${n} / 5 · 選一個答案`));
@@ -2174,7 +2182,7 @@ test('五十音隨機練習: one click from home, five different basic hiragana,
   }
   assert.equal(new Set(asked).size, 5, 'No question twice in a round');
   assert.match(b.html, /這輪答對 <strong>3 \/ 5<\/strong> 題/);
-  assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-random-again">再練 5 題<\/button><\/div>/);
+  assert.match(b.html, /<div class="study-nav"><a class="primary" href="\/">回首頁<\/a><button class="text-button" data-action="study-random-again">再練 5 題<\/button><\/div>/);
   assert.equal(b.stored, before, 'A random round records nothing');
   b.study('study-random-again');
   assert.match(b.html, /基本平假名 · 1 \/ 5/);
@@ -2229,8 +2237,8 @@ test('句型隨機練習: one click from home, five different questions from a c
   b.study('study-grammar-random');
   assert.equal(b.hash, '#grammar-random');
   assert.equal(b.title, '句型隨機練習｜SoraChi');
-  assert.match(b.html, /<a class="exit" href="#home">← 回首頁<\/a>/);
-  assert.match(b.html, /<a class="text-button" href="#grammar">看基礎句型<\/a>/);
+  assert.match(b.html, /<a class="exit" href="\/">← 回首頁<\/a>/);
+  assert.match(b.html, /<a class="text-button" href="\/grammar\/">看基礎句型<\/a>/);
   const asked = [];
   for (let n = 1; n <= 5; n++) {
     // The progress line names the pool, never the lesson, which would give the answer away.
@@ -2260,7 +2268,7 @@ test('句型隨機練習: one click from home, five different questions from a c
   assert.equal(new Set(asked).size, 5, 'No question twice in a round');
   assert.match(b.html, /這輪答對 <strong>2 \/ 5<\/strong> 題/);
   assert.match(b.html, /回看相關課程[\s\S]*data-action="study-open"/);
-  assert.match(b.html, /<div class="study-nav"><a class="primary" href="#home">回首頁<\/a><button class="text-button" data-action="study-grammar-random-again">再練一次<\/button><\/div>/);
+  assert.match(b.html, /<div class="study-nav"><a class="primary" href="\/">回首頁<\/a><button class="text-button" data-action="study-grammar-random-again">再練一次<\/button><\/div>/);
   assert.equal(b.stored, before, 'A random round records nothing: no completion, review round or mistake');
   b.study('study-grammar-random-again');
   assert.match(b.html, /入門句型 · 1 \/ 5/);
@@ -2268,7 +2276,7 @@ test('句型隨機練習: one click from home, five different questions from a c
   b.navigate('#grammar');
   assert.match(b.html, /data-action="study-grammar-random">練 5 題/);
   b.study('study-grammar-random');
-  assert.match(b.html, /<a class="exit" href="#grammar">← 回基礎句型<\/a>/);
+  assert.match(b.html, /<a class="exit" href="\/grammar\/">← 回基礎句型<\/a>/);
   assert.doesNotMatch(b.html, /看基礎句型/);
   // Over many rounds every question in the pool comes up, and nothing else does.
   const seen = new Set();
@@ -2292,12 +2300,12 @@ test('回 follows the entry, not the address: same-address jumps, older feedback
   b.study('study-open', { course: 'h-ka' });
   b.navigate('#travel'); b.navigate('#home');
   b.study('study-open', { course: 'h-ka' });
-  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  assert.deepEqual(exit(b), ['/', '回首頁']);
   b.go(-3);
   assert.equal(b.hash, '#study/h-ka');
-  assert.deepEqual(exit(b), ['#kana', '回五十音表']);
+  assert.deepEqual(exit(b), ['/kana/', '回五十音表']);
   b.go(3);
-  assert.deepEqual(exit(b), ['#home', '回首頁']);
+  assert.deepEqual(exit(b), ['/', '回首頁']);
   // An older feedback page returns where it was opened from, with that page's context.
   const f = browser();
   f.study('study-open', { course: 'h-ka' });
@@ -2311,7 +2319,7 @@ test('回 follows the entry, not the address: same-address jumps, older feedback
   assert.doesNotMatch(f.html, /ら行/);
   f.action('feedback-back');
   assert.equal(f.hash, '#study/h-ka');
-  assert.deepEqual(exit(f), ['#home', '回首頁']);
+  assert.deepEqual(exit(f), ['/', '回首頁']);
   // Two feedback pages about lessons that were both opened from home: the older one still reports its own lesson.
   const h = browser();
   h.study('study-open', { course: 'h-ka' });
@@ -2328,7 +2336,7 @@ test('回 follows the entry, not the address: same-address jumps, older feedback
   assert.doesNotMatch(body, /ら行/);
   h.action('feedback-back');
   assert.equal(h.hash, '#study/h-ka');
-  assert.deepEqual(exit(h), ['#home', '回首頁']);
+  assert.deepEqual(exit(h), ['/', '回首頁']);
   // Two feedback entries about the same step are the same page: going between them draws nothing again.
   const same = browser();
   same.study('study-open', { course: 'h-ka' });
@@ -2407,7 +2415,7 @@ test('random rounds: reports name the question, a double click never answers, re
   past.navigate('#kana');
   assert.match(past.html, /data-action="study-kana-random">練 5 題/);
   past.study('study-kana-random');
-  assert.match(past.html, /<a class="exit" href="#kana">← 回五十音表<\/a>/);
+  assert.match(past.html, /<a class="exit" href="\/kana\/">← 回五十音表<\/a>/);
 });
 
 test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, opens the card, and keeps nothing', () => {
@@ -2657,13 +2665,13 @@ test('overview navigation tracks the current section while focused and utility p
     b.navigate(hash);
     const header=b.html.match(/<header[\s\S]*?<\/header>/)[0];
     assert.match(header,/aria-label="學習與旅遊"/);
-    assert.match(header,new RegExp(`href="${section}" aria-current="page"`));
+    assert.match(header,new RegExp(`href="${section.slice(1) ? "/" + section.slice(1) + "/" : "/"}" aria-current="page"`));
     assert.equal((header.match(/aria-current="page"/g)||[]).length,1);
   }
   for(const hash of ['#study/g-identity','#study/h-a','#kana-random','#grammar-random','#settings','#history','#about','#feedback']){
     b.navigate(hash);
     const header=b.html.match(/<header[\s\S]*?<\/header>/)[0];
-    assert.doesNotMatch(header,/section-nav|href="#travel"/);
+    assert.doesNotMatch(header,/section-nav|href="\/travel\/"/);
     assert.match(header,/class="exit"/);
   }
 });
@@ -2837,4 +2845,31 @@ test('new travel needs and staff replies are searchable and favorites survive re
   assert.match(reloaded.html, /便利商店：要筷子、湯匙或吸管/);
   assert.match(reloaded.html, /少々お待ちください/);
   assert.deepEqual(JSON.parse(reloaded.stored).favorites, ['phrase/hotel/towels','phrase/dining/utensils']);
+});
+
+test('path entries keep lesson source, progress and feedback context through reload and history', () => {
+  const b=browser({address:'http://localhost/grammar/'});
+  assert.equal(b.address,'http://localhost/grammar/');
+  b.study('study-open',{course:'g-identity'});
+  b.study('study-next');
+  assert.equal(b.address,'http://localhost/study/g-identity/');
+  assert.match(b.html,/<a class="exit" href="\/grammar\/">/);
+  const reloaded=browser({address:b.address,raw:b.stored,historyState:b.historyState});
+  assert.match(reloaded.html,/句型說明 · 2 \/ 3/);
+  reloaded.action('feedback');
+  assert.equal(reloaded.address,'http://localhost/feedback/');
+  reloaded.action('feedback-back');
+  assert.equal(reloaded.address,'http://localhost/study/g-identity/');
+  assert.match(reloaded.html,/句型說明 · 2 \/ 3/);
+  b.back(); assert.equal(b.address,'http://localhost/grammar/');
+  b.forward(); assert.equal(b.address,'http://localhost/study/g-identity/');
+});
+
+test('legacy bookmarks switch to paths and direct unknown paths have an honest missing page', () => {
+  for(const [hash,path] of [['#home','/'],['#kana','/kana/'],['#travel/hotel','/travel/hotel/'],['#study/t-pay','/travel/t-pay/']]) {
+    const b=browser({hash});assert.equal(b.address,`http://localhost${path}`);
+    assert.doesNotMatch(b.html,/href="#(?:home|kana|grammar|travel|study)/);
+  }
+  const missing=browser({address:'http://localhost/nothing-here/'});
+  assert.match(missing.html,/>找不到頁面</);assert.equal(missing.title,'找不到頁面｜SoraChi');
 });

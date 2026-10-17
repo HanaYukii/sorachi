@@ -4,6 +4,8 @@
 
 網站：https://sorachi.app/
 
+直接入口：[五十音](https://sorachi.app/kana/) · [基礎句型](https://sorachi.app/grammar/) · [旅遊常用語](https://sorachi.app/travel/) · [基礎刷題](https://sorachi.app/drill/)。舊的 `#` 連結仍可使用，會自動切換成新網址。
+
 舊站保留在 https://hanayukii.github.io/sorachi/ ，供原有使用者匯出進度。到舊站的「學習紀錄」下載備份，再到新站的「學習紀錄」從備份檔還原；請使用原本學習時的瀏覽器。
 
 這是新手入門的雛形，不是完整的 N5／N4 教材。

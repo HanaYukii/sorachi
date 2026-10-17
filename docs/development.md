@@ -1,6 +1,6 @@
 # SoraChi 開發與發佈
 
-純靜態網站：`dist/` 就是原始碼，不需要建置或安裝套件。`HanaYukii/sorachi` 的 `main` 放程式與測試，`HanaYukii/sorachi-site` 的 `gh-pages` 只發佈 `dist/` 到 https://sorachi.app/ 。原 repo 的 `gh-pages` 保留為舊站，不再推送新版本。
+純靜態網站：互動程式、樣式和教材直接維護在 `dist/`，不用安裝套件。`prepare-release` 會產生各路徑的 HTML 和 sitemap；標有 Generated 的 HTML 不手動修改。`HanaYukii/sorachi` 的 `main` 放程式與測試，`HanaYukii/sorachi-site` 的 `gh-pages` 只發佈 `dist/` 到 https://sorachi.app/ 。原 repo 的 `gh-pages` 保留為舊站，不再推送新版本。
 
 ## 本機預覽與檢查
 
@@ -169,3 +169,13 @@ Cloudflare DNS：四筆 GitHub Pages A（185.199.108–111.153）、四筆 AAAA�
 - 窄螢幕的關鍵字改成日文、讀音、中文上下排列，避免長假名與中文擠在一起。所有既有課程 revision、題庫及舊收藏 ID 保持相容；本批不增加刷題題目。230 → 300 題為後續題庫階段，題目仍須對應已教範圍。
 - 偶像系列 [#90](https://github.com/HanaYukii/sorachi/issues/90) 後續可補特典會、拍立得券與排隊指示，接續現有入場、物販、再入場與飲料費；本批不實作。機場異常、醫療、租車等較少遇到或需要較完整說明的情境先不擴充。
 - 本批驗收：331/331 Node 測試、教材檢查及 release 檢查通過。獨立 localhost:4231 檢查搜尋筷子／坐過站／牛丼、收藏後重載、短句及食物單字播放；1280px 與 320px 無水平捲動，320px 長假名與中文分行，主控台無錯誤。未做實機發音或手機瀏覽器驗證。
+
+## 路徑網址與搜尋資料（2026-10-18）
+
+- 參考 Jabiko 的 `routes.ts`、`seo.ts` 與靜態頁生成，公開網址改為 `/kana/`、`/grammar/`、`/travel/`、`/study/g-identity/`；GitHub Pages 使用目錄入口，尾斜線為標準網址。舊 `#` 連結用 replaceState 轉換，不額外增加歷史。既有內部課程、回報和返回來源 ID 保留，不遷移儲存資料。
+- `routes.js` 統一網址轉換與搜尋資料；一般左鍵站內連結使用 History API，另開分頁仍是可直接載入的真實連結。舊旅遊課、已完成／重學、回報返回、上一頁與下一頁的保護維持。
+- `scripts/render-pages.mjs` 從現有教材產生各路徑的 HTML、標題、description、canonical、Open Graph、Twitter 摘要與 sitemap。公開課程與旅遊頁直接送出教材文字，不依賴爬蟲執行 JavaScript；帳號、紀錄、設定、收藏與個人複習頁 noindex，且不放進 sitemap。不存在的路徑維持 HTTP 404。
+- 發佈檢查包含全部靜態頁與每個目錄入口，確認都是該版內容。所有頁面使用相同版本標記，更新提示讀取根目錄 index.html；新增課程時仍只更新教材並執行 prepare-release。
+- Google OAuth 保留既有允許的 `/#account` callback；路由轉換保留 code 和 provider fragment 給 SDK，失敗時移除回傳細節。測試包含舊、新帳號網址；未更換 OAuth 憑證或後端設定。
+- 一般連結不加底線，以既有色框、顏色與 focus-visible 保留互動辨識。頁尾與控制項採 14px，輔助說明提高到 13–14px；假名標音維持適當比例。文字內連結用淡紫底色辨識。
+- 本批驗收：339/339 Node 測試、教材檢查與靜態版本檢查通過；本機逐檔與目錄網址驗證共 174 檔。CUA 使用獨立 localhost:4232，檢查首頁、五十音、句型、旅遊、設定與關於頁；320px／1280px 無水平溢出。課程第二張重載可接續，回報返回及瀏覽器前後頁保留課程位置；未提交回報或改正式站資料。localhost 的 Turnstile 出現網域不符警告（110200），不據此宣稱真人驗證已測過；本批未重做 Google 真人登入或手機實機測試。

@@ -39,6 +39,7 @@ function harness(saved, voices = [], history = [], options = {}) {
   const context = vm.createContext({ setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); }, document, location, window: { speechSynthesis }, SpeechSynthesisUtterance: class { constructor(text) { this.text = text; } }, console });
   vm.runInContext(readFileSync(new URL("../dist/content.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/kana-practice.js", import.meta.url), "utf8"), context);
+  vm.runInContext(readFileSync(new URL("../dist/routes.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   for(const file of ["drill-bank","drill"]) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`,import.meta.url),"utf8"),context);
   vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice; globalThis.moduleDrill = Drill; globalThis.moduleDrillPool = Drill.pool(Content.grammar,DrillBank.questions);`, context);
