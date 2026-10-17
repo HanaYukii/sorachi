@@ -196,12 +196,12 @@ const Study = (() => {
   const warning = () => api.warning ? api.warning() : "";
   const wasEarlierDay = (date) => date && new Date(date).toDateString() !== new Date().toDateString();
   function header(destination, label) {
-    return `<header class="lesson-header"><a class="exit" href="${destination}">← ${label}</a>${globalThis.location?.hash?.startsWith("#travel") ? '<span class="lesson-name">SoraChi · 日文入門</span>' : '<a class="header-link" href="#travel">旅遊常用語</a>'}</header>`;
+    return `<header class="lesson-header"><a class="exit" href="${destination}">← ${label}</a><span class="lesson-name">SoraChi · 日文入門</span></header>`;
   }
   // 回 leads back to where a lesson or review was opened (#82): home, or else its own list, also for a direct link.
   const exitTo = (list) => api.from?.() === "#home" ? ["#home", "回首頁"] : list === "#kana" ? ["#kana", "回五十音表"] : ["#grammar", "回基礎句型"];
-  function wrap(content, destination = "#home", label = "回首頁") {
-    return `<div class="lesson-shell">${header(destination, label)}<main id="main" tabindex="-1" class="study-main">${content}${warning()}</main>${footer()}</div>`;
+  function wrap(content, destination = "#home", label = "回首頁", wide = false) {
+    return `<div class="lesson-shell${wide ? " lesson-wide" : ""}">${header(destination, label)}<main id="main" tabindex="-1" class="study-main">${content}${warning()}</main>${footer()}</div>`;
   }
   function status(id) {
     const saved = state().courses[id];
@@ -213,7 +213,7 @@ const Study = (() => {
   const kanaCells = (course) => `<span class="kana-cells">${course.letters.map((letter, i) => `<span class="kana-cell"><span lang="ja">${escape(letter)}</span><span class="kana-roman">${escape(course.readings[i])}</span></span>`).join("")}</span>`;
   function row(course) {
     const learned = state().courses[course.id];
-    const name = course.type === "kana" ? `<strong lang="ja">${escape(course.row)}</strong>${course.row.endsWith("行") ? `<span class="row-roman">（${escape(course.readings[0])}）</span>` : ""}` : `<strong>${escape(course.title)}</strong>`;
+    const name = course.type === "kana" ? `<strong lang="ja">${escape(course.row)}</strong>${course.row.endsWith("行") ? `<span class="row-roman">（${escape(course.readings[0])}）</span>` : ""}` : `<strong>${escape(Content.lessonPresentation[course.id]?.title || course.title)}</strong>`;
     return `<button class="course-row" data-action="study-open" data-course="${course.id}"><span>${name}${course.type === "kana" ? kanaCells(course) : `<span class="course-subtitle"${course.home === "kana" ? ' lang="ja"' : ""}>${escape(course.subtitle || `一個句型 · ${size(course)} 題練習`)}</span>`}</span><span class="course-state">${status(course.id)}${learned?.lastResult && learned.lastResult.firstCorrect === learned.lastResult.total ? " · 上次全對" : ""}</span></button>`;
   }
   const kanaRows = (script, group) => Content.rowGroups[group].map((key) => courses[`${script}-${key}`]).filter(Boolean);
@@ -643,6 +643,11 @@ const Study = (() => {
     return `<aside class="kana-hint"><p class="hint-title">記憶提示</p><dl class="hint-list">${hints.map(item).join("")}</dl>${hints.some((hint) => hint.word) ? '<p class="study-audio-status study-note" data-audio-for="hint-word" role="status" aria-live="polite"></p>' : ""}${KanaHints.notice && hints.some((hint) => hint.label === "字源" || hint.word) ? `<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>` : ""}</aside>`;
   }
   const sameSoundNote = { "ぢ": "ぢ 和 じ 同音，都讀 ji；一般多寫 じ。", "づ": "づ 和 ず 同音，都讀 zu；一般多寫 ず。", "ヂ": "ヂ 和 ジ 同音，都讀 ji；一般多寫 ジ。", "ヅ": "ヅ 和 ズ 同音，都讀 zu；一般多寫 ズ。" };
+  function lessonExample(course, step) {
+    const parts = Content.lessonPresentation[course.id]?.parts[step.id];
+    if (!parts) return `<p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="example-reading">${escape(step.reading)}</p>` : ""}`;
+    return `<div class="example-parts">${parts.map(([word, reading, meaning]) => `<div class="example-part"><span lang="ja">${escape(word)}</span><span class="example-reading">${escape(reading)}</span><span class="part-meaning">${escape(meaning)}</span></div>`).join("")}</div>`;
+  }
   function card(course, active) {
     const i = active.cursor;
     let body;
@@ -660,11 +665,11 @@ const Study = (() => {
       // A lesson card: the example, its reading and meaning, and the explanation (travel-only parts are rejected by
       // Content.validate, so there is nothing else to show).
       const step = course.steps[i];
-      body = `<h2>${escape(step.title)}</h2><p class="grammar-example" lang="ja">${escape(step.example)}</p>${step.reading ? `<p class="reading-label">${escape(step.reading)}</p>` : ""}<p>${escape(step.meaning)}</p>${audioButton(course, i)}<p class="study-note">${escape(step.body)}</p>`;
+      body = `<h2>${escape(step.title)}</h2><div class="lesson-blocks"><section class="lesson-example" aria-label="例句與意思"><h3>例句與意思</h3>${lessonExample(course, step)}<p class="example-meaning">${escape(step.meaning)}</p>${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(step.body)}</p></section></div>`;
     }
     // Once a grammar quiz has answers, the cards lead back to the question instead of restarting it.
     const resumable = course.type === "grammar" && Object.keys(active.first || {}).length > 0;
-    return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : course.home === "kana" ? "發音說明" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button>${resumable && i < cards(course) - 1 ? '<button class="text-button" data-action="study-resume">回到題目</button>' : ""}${resumable && i === cards(course) - 1 ? '<button class="primary" data-action="study-resume">回到題目</button>' : `<button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button>`}</div>`;
+    return `<p class="reading-label">${course.type === "kana" ? "認字與讀音" : course.home === "kana" ? "發音說明" : "句型說明"} · ${i + 1} / ${cards(course)}</p><section class="study-card${course.type === "kana" ? "" : " lesson-card"}">${body}</section><div class="study-nav"><button class="text-button" data-action="study-prev"${i === 0 ? " disabled" : ""}>← 上一張</button>${resumable && i < cards(course) - 1 ? '<button class="text-button" data-action="study-resume">回到題目</button>' : ""}${resumable && i === cards(course) - 1 ? '<button class="primary" data-action="study-resume">回到題目</button>' : `<button class="primary" data-action="study-next">${i === cards(course) - 1 ? "開始練習" : "下一張 →"}</button>`}</div>`;
   }
   // 五十音隨機練習 (#82): five basic-hiragana questions drawn at random, for anyone, with or without records. A round
   // lives in this page only: it records nothing and never touches course completion, review rounds or the mistake
@@ -883,10 +888,14 @@ const Study = (() => {
     const next = document.querySelector('[data-action="study-next"]');
     if (next) { next.disabled = !solved; if (solved) next.focus({ preventScroll: true }); }
   }
+  // Orientation only: these labels reflect the existing attempt, never advance or reset it.
+  function lessonPhases(phase) {
+    return `<ol class="lesson-phases" aria-label="課程進度">${[["cards", "看說明"], ["quiz", "做練習"], ["done", "完成"]].map(([key, label], index) => `<li${key === phase ? ' aria-current="step"' : ""}><span aria-hidden="true">${index + 1}</span>${label}</li>`).join("")}</ol>`;
+  }
   function coursePage(course) {
     const saved = courseState(course.id);
     const active = peekAttempt(course.id) || draftAttempt(course, saved);
-    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(course.title)}</h1>${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)));
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${escape(Content.lessonPresentation[course.id]?.title || course.title)}</h1>${Content.lessonPresentation[course.id] ? `<p class="study-note">${escape(course.title)}</p>` : ""}${lessonPhases(active.phase)}${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)), course.type !== "kana");
   }
   function render(hash) {
     // The opened search result gets focus only when coming back from the travel cards, not on a later visit.

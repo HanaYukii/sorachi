@@ -6834,6 +6834,19 @@ const Content = (() => {
     }
     return registry;
   }
+  // Display-only annotations are separate from course revisions: a layout change must not discard an attempt.
+  // Manually authored groups; do not infer Japanese word boundaries from spaces.
+  const identityParts = [["わたし", "watashi", "我"], ["は", "wa", "說到…"], ["がくせい", "gakusei", "學生"], ["です", "desu", "禮貌結尾"]];
+  const lessonPresentation = {
+    "g-identity": {
+      title: "介紹自己：我是學生",
+      parts: {
+        "g-identity/card/nouns": [["わたし", "watashi", "我"], ["がくせい", "gakusei", "學生"]],
+        "g-identity/card/noun-sentence": identityParts,
+        "g-identity/card/topic-reading": identityParts,
+      },
+    },
+  };
   const data = { rows, grammar, lessonPlan, sounds, phrasebook, intro };
   // Kana row groups in teaching order; the kana page and home recommendation follow them.
   const rowGroups = Object.freeze({
@@ -7104,6 +7117,6 @@ const Content = (() => {
     }
     return value;
   }
-  deepFreeze(data); deepFreeze(courses);
-  return Object.freeze({ rows, rowGroups, grammar, lessonPlan, sounds, phrasebook, intro, retiredTitles, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
+  deepFreeze(data); deepFreeze(courses); deepFreeze(lessonPresentation);
+  return Object.freeze({ rows, rowGroups, grammar, lessonPlan, lessonPresentation, sounds, phrasebook, intro, retiredTitles, courses, getCourse, courseRevision, revisionOf, legacyCourseRevision, validate });
 })();

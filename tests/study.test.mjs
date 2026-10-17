@@ -700,7 +700,7 @@ test('audio buttons say what is visible, keyword boxes are not repeated landmark
   assert.match(b.html, /<span class="course-subtitle">/);
 });
 
-test('travel pages show staff questions and Japanese keywords; other pages link to travel phrases', () => {
+test('travel pages show staff questions and Japanese keywords; study headers keep the return route', () => {
   const b = harness();
   b.render('#travel');
   // Situations come in four groups, each with its own colour, and the saved phrases' arrow is not read out.
@@ -734,7 +734,8 @@ test('travel pages show staff questions and Japanese keywords; other pages link 
   b.render('#travel/dining');
   assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">店員可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
   b.render('#kana');
-  assert.match(b.html, /<a class="header-link" href="#travel">旅遊常用語<\/a>/);
+  assert.doesNotMatch(b.html.split("</header>")[0], /href="#travel"/);
+  assert.match(b.html, /class="exit" href="#home"/);
 });
 
 test('contracted-sound cards show their hint and special-sound lessons return to the kana page', () => {
@@ -1060,4 +1061,44 @@ test('extreme saved dates are dropped, so answering kana never throws', () => {
   startQuiz(b, 'h-a');
   assert.doesNotThrow(() => b.action('answer', { choice: String(chooseCurrent(b, 'h-a')) }));
   for (const item of Object.values(b.state.kanaReview)) assert.match(item.lastSeen, /^\d{4}-/);
+});
+
+
+test('lesson phases follow a saved attempt through cards, quiz, reload and completion', () => {
+  const b = harness(null);
+  b.action('open', { course: 'g-identity' });
+  const phase = html => html.match(/<li aria-current="step"><span aria-hidden="true">\d<\/span>([^<]+)/)?.[1];
+  assert.equal(phase(b.html), '看說明');
+  assert.match(b.html, /介紹自己：我是學生/);
+  assert.match(b.html, /わたし<\/span><span class="example-reading">watashi<\/span><span class="part-meaning">我/);
+  for (let i = 0; i < 3; i++) b.action('next');
+  assert.equal(phase(b.html), '做練習');
+  const restored = harness(b.stored);
+  restored.render('#study/g-identity');
+  assert.equal(phase(restored.html), '做練習');
+  assert.deepEqual(clone(restored.state.courses['g-identity'].active), clone(b.state.courses['g-identity'].active));
+  finishQuiz(restored, 'g-identity');
+  assert.equal(phase(restored.html), '完成');
+  assert.equal(restored.records.length, 1);
+});
+
+test('display annotations pair authored words with readings without changing course revisions', () => {
+  const b = harness(null);
+  const normalize = value => value.replace(/[\s／/。]/gu, '');
+  for (const [id, presentation] of Object.entries(b.content.lessonPresentation)) {
+    const course = b.content.getCourse(id);
+    assert.ok(course);
+    assert.equal(b.content.courseRevision(id), b.content.revisionOf(course));
+    assert.ok(Object.isFrozen(presentation.parts));
+    for (const [cardId, parts] of Object.entries(presentation.parts)) {
+      const step = course.steps.find(step => step.id === cardId);
+      assert.ok(step, cardId);
+      assert.equal(normalize(parts.map(p => p[0]).join('')), normalize(step.example));
+      assert.equal(normalize(parts.map(p => p[1]).join('')), normalize(step.reading));
+      for (const tuple of parts) assert.ok(tuple.length === 3 && tuple.every(v => typeof v === 'string' && v.trim()));
+    }
+  }
+  b.action('open', { course: 'g-question' });
+  assert.match(b.html, /class="grammar-example" lang="ja"/);
+  assert.match(b.html, /class="example-reading"/);
 });
