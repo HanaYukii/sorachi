@@ -2408,9 +2408,14 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
   for (const [query, steps] of [
     ['toire doko', ['t-place/toilet']], ['chekkuin onegaishimasu', ['hotel/check-in']], ['kippu wa doko', ['transit/ticket']],
     ['kaado de onegaishimasu', ['t-pay/credit-cash']], ['genkin de ii desu ka', ['t-pay/credit-cash']], ['汽車保險', []],
-    // Something no card holds lists nothing, however polite (not every card that shares 有…嗎); romaji trimming
-    // never stops on a fragment inside another word (sat of kaisatsu, den of densha).
+    // Something no card holds lists nothing, however polite (not every card that shares 有…嗎), also typed as one run
+    // of romaji with a request (satokudasai, denwawadokodesuka).
     ['有吸管嗎', []], ['有退稅嗎', []], ['satokudasai', []], ['denwawadokodesuka', []], ['請問一下廁所在哪裡', ['t-place/toilet']],
+    ['請問一下這個多少錢', ['shopping/price']], ['手洗いはどこですか', ['t-place/toilet']], ['お手洗いはどこですか', ['t-place/toilet']],
+    // A word none of whose pieces any card holds lists nothing, Chinese or romaji; so does a lone character no card
+    // has as a keyword (那). The character across a cut never stands in for a word no card holds (んを, 子嗎, 所在).
+    ['有吹風機嗎', []], ['便利商店在哪', []], ['sutoroo arimasuka', []], ['那是什麼意思', []],
+    ['ラーメンをください', []], ['お釣りをください', []], ['有筷子嗎', []], ['派出所在哪裡', []], ['我要加點', []], ['請問退稅', []], ['コーヒーがほしいです', []],
   ]) assert.deepEqual(found(query), steps, query);
   // A pasted page of text answers at once, without an error, and the box takes 80 characters.
   assert.doesNotThrow(() => found('kippukudasai'.repeat(400)));
@@ -2436,6 +2441,18 @@ test('travel search finds cards by Chinese, Japanese, romaji and a few aliases, 
     ['domo arigato', 'basics/thanks', []], ['arigatou gozaimashita', 'basics/thanks', []], ['可以嗎的日文', 'lines/photo', []], ['請問一下，可以刷卡嗎', 't-pay/credit-cash', []],
     // A trimmed word stops at what a card holds, minus a trailing kana particle; aliases apply before pairs.
     ['袋はありますか', 'shopping/bag', []], ['塑膠袋要錢嗎', 'shopping/bag', []], ['當天票還有嗎', 'lines/same-day', []], ['otearai wa doko desu ka', 't-place/toilet', []],
+    ['新宿駅、どこですか', 't-place/station', []], ['大盛りにしてください', 't-order/portion', []], ['請問一下', 'basics/attention', []], ['不好意思呢', 'basics/attention', []],
+    ['熱的日文', 't-order/drink-temperature', ['t-order/noodle-temperature']], ['冷的日文', 't-order/noodle-temperature', []], ['不好意思的日語', 'basics/attention', []],
+    ['日文的謝謝', 'basics/thanks', []], ['謝謝是什麼意思', 'basics/thanks', []], ['sumimasen wo kudasai', 'basics/attention', []],
+    // Each of these depends on one filler or piece rule: 日文的, 呢, どうも, the pair after a place word, the pair after a request.
+    ['日文的水', 'dining/water', []], ['水呢', 'dining/water', []], ['水在哪裡呢', 'dining/water', []], ['どうも ありがとう', 'basics/thanks', []],
+    ['近くの駅はどこですか', 't-place/station', []], ['我要這個日文', 'shopping/this-one', []], ['check out', 'hotel/check-out', []],
+    // Aliases: a pair tries its own (冰水 → 水); a longer one is put in before splitting (交通卡, 行李寄放); none counts twice (加大).
+    ['可以用交通卡嗎', 't-pay/suica', []], ['一杯冰水', 'dining/water', []], ['熱開水', 'dining/water', []], ['行李寄放處日文', 't-place/locker-size', []], ['有加大的尺寸嗎', 'shopping/size', []],
+    ['女廁在哪', 't-place/toilet', []], ['有小號嗎', 'shopping/size', []], ['可以再進去嗎', 'live/re-entry', []], ['手洗いはどこ', 't-place/toilet', []],
+    ['futari desu', 'dining/party-size', []], ['二人お願いします', 'dining/party-size', []], ['演唱會 現場', 'live/doors', ['live/drink']],
+    // A long sentence typed without punctuation is still searched.
+    ['すみませんチェックアウトしたあとに大きい荷物をここでしばらく預かってもらうことはできますか', 'hotel/luggage', []],
     ['演唱會 飲料', 'live/drink', ['t-order/drink-temperature']], ['飯店 預約', 'hotel/reservation', []], ['買東西 袋子', 'shopping/bag', []],
     ['水 請給我', 'dining/water', []], ['冰的 熱的', 't-order/drink-temperature', ['t-order/noodle-temperature']],
     ['Suica 加值', 't-pay/suica', ['t-charge/top-up', 't-charge/amount']], ['西瓜卡 加值', 't-pay/suica', ['t-charge/top-up', 't-charge/amount']],
