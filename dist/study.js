@@ -65,7 +65,7 @@ const Study = (() => {
     return active;
   }
   function sanitize(saved) {
-    const state = { drill: Drill.restore(saved?.drill, drillPool), script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt), grammarReview: {}, grammarReviewSession: null, lastGrammarId: null };
+    const state = { crossword: Crossword.restore(saved?.crossword), drill: Drill.restore(saved?.drill, drillPool), script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt), grammarReview: {}, grammarReviewSession: null, lastGrammarId: null };
     const review = KanaPractice.sanitize(saved?.reviewSession);
     if (review?.mode === 'review') state.reviewSession = review;
     for (const [id, course] of Object.entries(courses)) {
@@ -257,6 +257,37 @@ const Study = (() => {
     const summary=reviewSummary();
     return summary.availableCount ? `<section class="study-review-entry"><div><h2>${summary.canResume?'還有一輪沒練完':'複習學過的字'}</h2>${summary.wrongLabels.length?`<p class="study-note">${wrongLine(summary)}</p>`:''}</div><a class="text-button" href="#kana-review">${summary.canResume?'繼續複習':`複習 ${Math.min(5,summary.availableCount)} 個字`}</a></section>`:'';
   }
+  let crosswordMessage = "";
+  let crosswordChecked = false;
+  function crosswordPage() {
+    const game = state().crossword || (state().crossword = Crossword.create());
+    const board = Crossword.board(game.boardId), current = board.entries[game.entry];
+    const mistakes = crosswordChecked ? Crossword.errors(game) : [];
+    const directions = e => e.direction === "across" ? "橫向 →" : "直向 ↓";
+    const entries = board.entries.map((e,i) => `<button class="crossword-clue" data-action="study-crossword-clue" data-entry="${i}" aria-pressed="${i===game.entry}"><strong>${e.number} · ${e.meaning}</strong><span>${directions(e)} · ${e.keys.length} 格</span></button>`).join("");
+    const grid = Array.from({length:board.rows},(_,r)=>Array.from({length:board.cols},(_,c)=>{
+      const key=`${r}-${c}`,cell=board.cells[key]; if(!cell)return '<span class="crossword-blank" aria-hidden="true"></span>';
+      const starts=board.entries.filter(e=>e.keys[0]===key).map(e=>e.number).join("/");
+      return `<button class="crossword-cell${current.keys.includes(key)?" in-word":""}${game.cell===key?" selected":""}${mistakes.includes(key)?" needs-fix":""}" data-action="study-crossword-cell" data-cell="${key}" aria-pressed="${game.cell===key}" aria-label="第 ${r+1} 列第 ${c+1} 格，${game.values[key]||"空格"}${mistakes.includes(key)?"，還要修改":""}"${game.done?" disabled":""}>${starts?`<small>${starts}</small>`:""}<span lang="ja">${escape(game.values[key]||"·")}</span></button>`;
+    }).join("")).join("");
+    const complete = game.done ? `<section class="crossword-complete"><h2>這盤完成了</h2><p>再看一次剛剛填的 3 個單字。${game.hints.length?`用了 ${game.hints.length} 格提示。`:""}</p>${board.entries.map(e=>`<div class="crossword-word"><div class="spoken-line"><strong lang="ja">${e.word}</strong>${inlineAudio(e.word)}</div><span>${e.reading} · ${e.meaning}</span></div>`).join("")}<button class="primary" data-action="study-crossword-next">再玩一盤 →</button></section>` : `<section class="crossword-controls" aria-label="選字與提示"><h2>${current.number} · ${current.meaning}</h2><p>${directions(current)}，共 ${current.keys.length} 格。點下面的字，填入有深色框的格子。</p><div class="crossword-hints">${inlineAudio(current.word)}<button class="text-button" data-action="study-crossword-roman" aria-expanded="${game.roman.includes(game.entry)}">${game.roman.includes(game.entry)?"收起羅馬音":"看羅馬音"}</button><button class="text-button" data-action="study-crossword-hint">提示一格</button></div>${game.roman.includes(game.entry)?`<p class="crossword-reading">${current.reading}</p>`:""}<div class="crossword-bank" role="group" aria-label="選一個平假名">${board.bank.map(letter=>`<button data-action="study-crossword-fill" data-letter="${letter}" lang="ja">${letter}</button>`).join("")}</div><div class="crossword-actions"><button class="text-button" data-action="study-crossword-erase">清掉這格</button><button class="primary" data-action="study-crossword-check">檢查答案</button></div></section>`;
+    return wrap(`<h1 class="focus-heading" tabindex="-1">平假名小填字</h1><p class="study-note">看中文提示，點格子，再選平假名。交叉的格子是兩個詞共用的字。不會也沒關係，可以聽或看提示。</p><p class="reading-label">第 ${Crossword.boards.indexOf(board)+1} / ${Crossword.boards.length} 盤 · 每盤 3 個詞 · 不計成績</p><div class="crossword-layout"><section class="crossword-board" aria-label="填字盤面"><div class="crossword-grid" style="--cols:${board.cols}"><p class="crossword-current">${game.done?"全部填好了":`正在填：${current.number} · ${current.meaning}（${directions(current)}）`}</p>${grid}</div><div class="crossword-clues" aria-label="中文提示">${entries}</div></section>${complete}</div><p class="crossword-status" tabindex="-1" role="status" aria-live="polite">${escape(crosswordMessage)}</p><p class="study-note">會記住這一盤的進度。單字來自五十音的例子；這裡是選玩的練習，不影響課程成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`,"#kana","回五十音表",true,"crossword-page");
+  }
+  function crosswordAction(button) {
+    if(Routes.current()!=="#crossword")return true;
+    const game=state().crossword, action=button.dataset.action, board=Crossword.board(game.boardId);
+    let selector='.crossword-status'; crosswordMessage="";
+    if(action==='study-crossword-clue') { if(!Crossword.select(game,Number(button.dataset.entry)))return true; selector=`[data-action="study-crossword-clue"][data-entry="${game.entry}"]`; }
+    else if(action==='study-crossword-cell') { const key=button.dataset.cell,cell=board.cells[key];if(!cell||game.done)return true; Crossword.select(game,cell.entries.includes(game.entry)?game.entry:cell.entries[0],key); selector=`[data-cell="${key}"]`; }
+    else if(action==='study-crossword-fill') { if(!Crossword.fill(game,button.dataset.letter))return true; crosswordChecked=false; selector=`[data-cell="${game.cell}"]`; }
+    else if(action==='study-crossword-erase') { if(game.done)return true; delete game.values[game.cell];game.hints=game.hints.filter(k=>k!==game.cell);crosswordChecked=false;selector=`[data-cell="${game.cell}"]`; }
+    else if(action==='study-crossword-roman') { if(game.done)return true;game.roman=game.roman.includes(game.entry)?game.roman.filter(i=>i!==game.entry):[...game.roman,game.entry];selector='[data-action="study-crossword-roman"]'; }
+    else if(action==='study-crossword-hint') { if(game.done)return true;crosswordMessage=Crossword.hint(game)?'已填好一格，可以繼續選字。':'這個詞已經填對了，試試其他提示。';crosswordChecked=false; }
+    else if(action==='study-crossword-check') { crosswordChecked=true; const errors=Crossword.errors(game);game.done=!errors.length;crosswordMessage=game.done?'3 個詞都填對了！':`還有 ${errors.length} 格沒填好。橘框的格子可以再改，也可以用提示。`; }
+    else if(action==='study-crossword-next' && game.done) { state().crossword=Crossword.create(Crossword.boards[(Crossword.boards.indexOf(board)+1)%Crossword.boards.length].id);crosswordChecked=false;selector='.focus-heading'; }
+    else return true;
+    stopAudio();save();redraw(selector);return true;
+  }
   function kanaPage() {
     const script = state().script;
     const learnedBefore = Object.values(state().courses).some((c) => wasEarlierDay(c.completedAt));
@@ -266,6 +297,7 @@ const Study = (() => {
       <p class="study-note">${script === "h" ? "平假名用來寫許多日文詞語。" : "片假名常用來寫外來語，例如「コーヒー」（咖啡）。讀音和平假名對應，字形不同。"}每格下方的英文字母是羅馬音，幫你對照讀音。</p>
       ${readingHelp()}
       <div class="kana-practice-links">${reviewEntry()}<section class="study-review-entry"><div><h2>五十音隨機練習</h2><p class="study-note">基本平假名・5 題，不記成績。</p></div><button class="text-button" data-action="study-kana-random">練 5 題 →</button></section></div>
+      <a class="course-row crossword-entry" href="#crossword"><span><strong>平假名小填字</strong><span class="reading-label">看中文、選假名。每盤 3 個基本單字，可以聽讀音或看提示。</span></span><span aria-hidden="true">→</span></a>
       <div class="kana-layout">
         <section class="kana-section kana-basic" aria-labelledby="kana-basic-heading"><h2 id="kana-basic-heading" class="course-list-heading">基本字</h2>${learnedBefore ? '<p class="study-note">可以重新測試之前練過的組別，確認是否還記得。</p>' : ""}<div class="course-list kana-chart">${kanaRows(script, "basic").map(row).join("")}</div></section>
         <section class="kana-section kana-voiced" aria-labelledby="kana-voiced-heading"><h2 id="kana-voiced-heading" class="course-list-heading">濁音・半濁音</h2><p class="study-note">右上加兩點或小圈，讀音就會改變。例如 か ka → が ga、は ha → ぱ pa。</p><div class="course-list kana-chart">${kanaRows(script, "voiced").map(row).join("")}</div></section>
@@ -984,6 +1016,7 @@ const Study = (() => {
   function render(hash) {
     // The opened search result gets focus only when coming back from the travel cards, not on a later visit.
     if (!hash.startsWith("#travel")) travelReturn = null;
+    if (hash === "#crossword") return crosswordPage();
     if (hash === "#kana") return kanaPage();
     if (hash === "#kana-review") return reviewPage();
     if (hash === "#kana-random") return randomPage();
@@ -1163,6 +1196,7 @@ const Study = (() => {
       if (button.dataset.spoken && /^line-\d+$/.test(button.dataset.status || "")) say(button.dataset.spoken, `[data-audio-for="${button.dataset.status}"]`, button);
       return true;
     }
+    if (action.startsWith("study-crossword-")) return crosswordAction(button);
     if (action === "study-food-audio") {
       const step = PHRASEBOOK.flatMap(item => item.steps).find(step => step.id === button.dataset.phrase);
       const index = Number(button.dataset.index), keyword = Number.isInteger(index) && step?.keywords[index];

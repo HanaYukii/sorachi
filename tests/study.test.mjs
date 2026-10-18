@@ -42,6 +42,7 @@ function harness(saved, voices = [], history = [], options = {}) {
   vm.runInContext(readFileSync(new URL("../dist/routes.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   for(const file of ["drill-bank","drill"]) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`,import.meta.url),"utf8"),context);
+  vm.runInContext(readFileSync(new URL("../dist/crossword.js", import.meta.url), "utf8"), context);
   vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice; globalThis.moduleDrill = Drill; globalThis.moduleDrillPool = Drill.pool(Content.grammar,DrillBank.questions);`, context);
   const study = context.moduleStudy;
   currentState = study.sanitize(saved);
@@ -274,7 +275,7 @@ test('sanitization rejects malformed kana sessions, old versions and skipped una
   legacy.courses['h-a'].completedAt='2026-01-01T00:00:00Z';legacy.courses['h-a'].lastResult={firstCorrect:3,total:5};
   const clean=b.study.sanitize(legacy).courses['h-a'];assert.equal(clean.active,null);assert.equal(clean.lastResult.firstCorrect,3);assert.ok(clean.completedAt);
   const invalid=clone(b.stored);invalid.courses['h-a'].active.practice.questions[0].options[0]='unknown';assert.equal(b.study.sanitize(invalid).courses['h-a'].active,null);
-  assert.deepEqual(clone(b.study.sanitize(null)),{drill:{version:1,clearedAt:null,session:null},script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
+  assert.deepEqual(clone(b.study.sanitize(null)),{crossword:null,drill:{version:1,clearedAt:null,session:null},script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
 });
 
 test('old or malformed kana review rounds restart empty while completions and kana mistakes stay', () => {
@@ -1519,4 +1520,24 @@ test('grammar particle and verb forms have separate contextual audio',()=>{
  for(let i=0;i<b.content.courses['g-verb-forms'].steps.length;i++){
   assert.doesNotMatch(b.html,/data-spoken="[^"]*→/); b.action('next');
  }
+});
+
+
+test('crossword can check, hint, resume and finish without recording course scores', () => {
+  const b=harness(); b.render('#crossword');
+  b.action('crossword-check'); assert.match(b.html,/還有 5 格/);
+  b.action('crossword-roman'); assert.match(b.html,/kasa/);
+  b.action('crossword-hint'); assert.equal(b.stored.crossword.values['0-0'],'か');
+  const resumed=harness(b.stored); resumed.render('#crossword');
+  assert.equal(resumed.state.crossword.values['0-0'],'か');
+  for (const [cell,letter] of Object.entries({'0-0':'か','0-1':'さ','1-1':'か','2-0':'は','2-1':'な'})) {
+    resumed.action('crossword-cell',{cell}); resumed.action('crossword-fill',{letter});
+  }
+  resumed.action('crossword-check'); assert.equal(resumed.stored.crossword.done,true);
+  assert.match(resumed.html,/這盤完成了/); assert.equal(resumed.records.length,0);
+  assert.deepEqual(clone(resumed.state.courses),{});
+  const completed=harness(resumed.stored); completed.render('#crossword');
+  assert.match(completed.html,/再玩一盤/);
+  completed.action('crossword-next'); assert.equal(completed.stored.crossword.boardId,'basic-2');
+  assert.deepEqual(clone(completed.stored.crossword.values),{});
 });

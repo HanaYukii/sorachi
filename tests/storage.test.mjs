@@ -450,3 +450,17 @@ test('logout removal reports blocked deletions and still removes other matching 
     assert.equal(b.map.has(`${prefix}:quarantine:a`),false);
   }
 });
+
+
+test('crossword backup restores into empty progress and keeps an existing local board intact',()=>{
+ const source=setup(), progress=source.store.readProgress();
+ progress.study={crossword:{version:1,boardId:'basic-1',values:{'0-0':'か'},entry:0,cell:'0-1',roman:[],hints:[],done:false}};
+ source.store.writeProgress(progress);
+ const target=setup(), empty=target.store.readProgress(); empty.study={crossword:null};target.store.writeProgress(empty);
+ assert.equal(target.store.importBackup(source.store.exportBackup()),true);
+ assert.equal(target.store.readProgress().study.crossword.values['0-0'],'か');
+ const local=target.store.readProgress();local.study.crossword.boardId='basic-2';target.store.writeProgress(local);
+ target.store.importBackup(source.store.exportBackup());
+ const reloaded=setup(Object.fromEntries(target.map));
+ assert.equal(reloaded.store.readProgress().study.crossword.boardId,'basic-2');
+});

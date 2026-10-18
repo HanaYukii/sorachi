@@ -87,7 +87,7 @@ const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
 // lesson or review (the next group), or after feedback, keeps the earlier source; anything else, such as a direct
 // link, has none. An entry gets its source once, when it is first shown, so going back to it never changes it.
 const exits = ["#home", "#kana", "#grammar"];
-const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|kana-random$|grammar-random$|drill$|feedback$)/.test(page || "");
+const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|kana-random$|grammar-random$|drill$|crossword$|feedback$)/.test(page || "");
 let cameFrom = null, shown = null, shownRoute = null, shownFeedback = null;
 function arrive() {
   if (window.history.state?.from === undefined) window.history.replaceState({ from: exits.includes(shown) ? shown : passesOn(shown) ? cameFrom : null }, "");
