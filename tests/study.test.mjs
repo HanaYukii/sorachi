@@ -638,7 +638,8 @@ test('grammar examples can be played and Japanese quiz options show romaji', () 
   assert.match(b.html, /data-action="study-audio"/);
   b.action('audio', { index: '1' }); assert.equal(b.utterances.at(-1).text, 'わたしは がくせいです。', 'The complete sentence preview plays while still on the vocabulary card');
   b.action('audio', { index: '0' }); assert.equal(b.utterances.at(-1).text, 'わたし、がくせい');
-  assert.match(b.html, /data-audio-for="g-identity-0"/);
+  assert.doesNotMatch(b.html, /data-audio-for="g-identity-0"/);
+  assert.match(b.html, /data-spoken="わたし"/);
   assert.match(b.html, /data-audio-for="g-identity-1"/);
   b.action('next'); b.action('audio', { index: '1' }); assert.equal(b.utterances.at(-1).text, 'わたしは がくせいです。');
   b.action('next'); b.action('next');
@@ -687,7 +688,7 @@ test('the kana table pairs every character with its romaji from the lesson data,
 test('audio buttons say what is visible, keyword boxes are not repeated landmarks, kana rows are marked Japanese', () => {
   const b = harness(null, [{ lang: 'ja-JP' }]);
   b.render('#travel/t-order');
-  assert.doesNotMatch(b.html, /aria-label="播放/);
+  assert.match(b.html, /aria-label="播放/);
   // One speaker per phrase: an icon hidden from screen readers, named by the Japanese it plays; no engine notes.
   const names = [...b.html.matchAll(/<button class="audio-button"[^>]*><svg[^>]*aria-hidden="true">[\s\S]*?<\/svg><span class="visually-hidden">播放「<span lang="ja">([^<]+)<\/span>」的讀音<\/span><\/button>/g)].map((m) => m[1]);
   const order = b.content.phrasebook.find((c) => c.id === 't-order');
@@ -695,14 +696,14 @@ test('audio buttons say what is visible, keyword boxes are not repeated landmark
     assert.ok(names.includes(step.example.replace(/&/g, '&amp;')), step.example);
     if (step.polite) assert.ok(names.includes(step.polite.replace(/&/g, '&amp;')), step.polite);
   }
-  assert.equal(names.length, (b.html.match(/class="audio-button"/g) || []).length, 'Every speaker has a name');
+  assert.ok(names.length > 0, 'Full phrases remain named; individual word buttons use aria-label');
   assert.doesNotMatch(b.html, /裝置合成語音|>播放讀音</);
   // Kana cards, grammar cards and 我的常用語 use the same speaker.
   const speakerFor = (html, action, text) => new RegExp(`<button class="audio-button" data-action="${action}"[^>]*><svg[^>]*aria-hidden="true">[\\s\\S]*?</svg><span class="visually-hidden">播放「<span lang="ja">${text}</span>」的讀音</span></button>`).test(html);
   b.action('open', { course: 'h-a' });
   assert.ok(speakerFor(b.html, 'study-audio', 'あ'));
   b.action('open', { course: 'g-identity' });
-  assert.ok(speakerFor(b.html, 'study-audio', b.content.courses['g-identity'].steps[0].example));
+  assert.ok(speakerFor(b.html, 'study-audio', b.content.courses['g-identity'].steps[1].example));
   const phrase = order.steps[0];
   const saved = harness(null, [{ lang: 'ja-JP' }], [], { favorites: [phrase.id] });
   assert.ok(speakerFor(saved.render('#travel/favorites'), 'study-travel-audio', phrase.example));
@@ -747,7 +748,7 @@ test('travel pages show staff questions and Japanese keywords; study headers kee
   assert.ok(b.html.indexOf('<h2>五十音隨機練習</h2>') < b.html.indexOf('id="kana-basic-heading"'));
   b.render('#travel');
   b.render('#travel/dining');
-  assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">對方可能會問<\/span><span lang="ja">店内でお召し上がりですか？<\/span>/);
+  assert.match(b.html, /<p class="staff-asks"><span class="staff-asks-label">對方可能會問<\/span><span class="spoken-line"><span lang="ja">店内でお召し上がりですか？<\/span>/);
   b.render('#kana');
   assert.match(b.html.split("</header>")[0], /href="#kana" aria-current="page"/);
   assert.match(b.html, /class="exit" href="#home"/);
@@ -1085,7 +1086,7 @@ test('lesson phases follow a saved attempt through cards, quiz, reload and compl
   const phase = html => html.match(/<li aria-current="step"><span aria-hidden="true">\d<\/span>([^<]+)/)?.[1];
   assert.equal(phase(b.html), '看說明');
   assert.match(b.html, /介紹自己：我是學生/);
-  assert.match(kanaHtml(b.html), /わたし<\/span><span class="example-reading">watashi<\/span><span class="part-meaning">我/);
+  assert.match(kanaHtml(b.html), /わたし<\/span>[\s\S]*?<span class="example-reading">watashi<\/span><span class="part-meaning">我/);
   for (let i = 0; i < 3; i++) b.action('next');
   assert.equal(phase(b.html), '做練習');
   const restored = harness(b.stored);
@@ -1179,9 +1180,9 @@ test('word preparation keeps the complete target sentence visible and grouped ex
   for(let i=0;i<course.steps.length;i++){
    const step=course.steps[i];
    if(step.example.includes('。')){
-    const example=kanaHtml(b.html).match(/<p class="grammar-example" lang="ja">(.*?)<\/p>/s)?.[1];
+    const example=[...kanaHtml(b.html).matchAll(/<p class="grammar-example" lang="ja">(.*?)<\/p>/gs)].map(m=>m[1]).join(' ／ ');
     assert.equal(example,step.example,step.id+' retains the complete example');
-    assert.ok(b.html.replaceAll('&#39;', "'").includes(step.reading),step.id+' retains its full reading');
+    for(const reading of step.reading.split(/\s*\/\s*/)) assert.ok(b.html.replaceAll('&#39;', "'").includes(reading),step.id+' retains each reading');
    }
    if(i<course.steps.length-1)b.action('next');
   }
@@ -1201,9 +1202,10 @@ test('vocabulary and verb lists use honest labels and preserve each Japanese-rea
    if(kind&&!presentation.previews?.[step.id])assert.ok(b.html.includes('aria-label="'+labels[kind]+'"'),step.id);
    if(parts&&(kind==='words'||kind==='forms')){
     assert.equal((b.html.match(/class="example-part"/g)||[]).length,parts.length,step.id);
-    const plain=kanaHtml(b.html).replaceAll('&#39;',"'");
+    const plain=kanaHtml(b.html).replaceAll('&#39;',"'").replace(/<span class="inline-audio">[\s\S]*?<\/button><span[^>]*><\/span><\/span><\/div>/g, '');
     for(const [jp,reading,meaning] of parts){
-     assert.ok(plain.includes('<span lang="ja">'+jp+'</span><span class="example-reading">'+reading+'</span><span class="part-meaning">'+meaning+'</span>'),step.id+' keeps the pair together');
+     for(const segment of jp.split(/\s*→\s*/)) assert.ok(plain.includes('<span lang="ja">'+segment+'</span>'),step.id+' keeps each form');
+     assert.ok(plain.includes('<span class="example-reading">'+reading+'</span><span class="part-meaning">'+meaning+'</span>'),step.id+' keeps reading and meaning together');
     }
     if(kind==='forms')assert.match(b.html,/example-parts example-rows/);
    }
@@ -1489,8 +1491,32 @@ test('common travel additions speak kana and distinguish staff replies from ques
     assert.equal(b.utterances.at(-1).text, spoken, `${category}/${slug}`);
   }
   b.render('#travel/hotel');
-  assert.match(b.html, /對方可能會說<\/span><span lang="ja">少々お待ちください。<\/span><span class="staff-asks-reading">shoushou omachi kudasai<\/span><span>請稍等一下。/);
-  assert.doesNotMatch(b.html, /對方可能會問<\/span><span lang="ja">少々お待ちください/);
+  assert.match(b.html, /對方可能會說<\/span><span class="spoken-line"><span lang="ja">少々お待ちください。<\/span>[\s\S]*?<span class="staff-asks-reading">shoushou omachi kudasai<\/span><span>請稍等一下。/);
+  assert.doesNotMatch(b.html, /對方可能會問<\/span><span class="spoken-line"><span lang="ja">少々お待ちください/);
   assert.deepEqual(clone(b.state), before, 'Reading and playback do not change study progress');
   assert.equal(b.records.length, 0);
+});
+
+
+test('individual lesson words and travel keywords speak only the selected text', () => {
+ const b=harness(null,[{lang:'ja-JP'}]);
+ b.action('open',{course:'g-identity'});
+ const buttons=[...b.html.matchAll(/data-spoken="([^"]+)" data-status="([^"]+)"/g)];
+ assert.deepEqual(buttons.map(m=>m[1]),['わたし','がくせい']);
+ b.action('line-audio',{spoken:buttons[1][1],status:buttons[1][2]});
+ assert.equal(b.utterances.at(-1).text,'がくせい');
+ b.speechSynthesis.speaking=true; b.action('next'); assert.ok(b.cancels>0);
+ b.render('#travel/hotel');
+ b.action('food-audio',{phrase:'phrase/hotel/luggage',index:'0'}); b.flushTimers();
+ assert.equal(b.utterances.at(-1).text,'にもつ');
+ assert.match(b.html,/class="spoken-line"/);
+});
+
+test('grammar particle and verb forms have separate contextual audio',()=>{
+ const b=harness(null,[{lang:'ja-JP'}]); b.action('open',{course:'g-identity'}); b.action('next');
+ assert.match(b.html,/data-spoken="わ"[^>]*aria-label="播放は的讀音"/);
+ b.action('open',{course:'g-verb-forms'});
+ for(let i=0;i<b.content.courses['g-verb-forms'].steps.length;i++){
+  assert.doesNotMatch(b.html,/data-spoken="[^"]*→/); b.action('next');
+ }
 });

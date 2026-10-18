@@ -975,7 +975,7 @@ test('short review is reachable from home, clears a recent mistake, and leaves f
   const before=b.stored;
   // The hint box shows everything at once; playing its example word starts nothing and saves nothing.
   assert.match(b.html,/<dt>字源<\/dt><dd>由漢字「安」草寫變來。<\/dd>/);
-  assert.match(b.html,/<span class="hint-word" lang="ja"><mark>あ<\/mark>め<\/span><span class="hint-roman">ame<\/span><span>雨<\/span>/);
+  assert.match(b.html,/<span class="hint-word" lang="ja"><mark>あ<\/mark>め<\/span>[\s\S]*?<span class="hint-roman">ame<\/span><span>雨<\/span>/);
   assert.doesNotMatch(b.html,/換個記法|study-hint/);
   b.study('study-word-audio',{letter:'あ'});
   assert.equal(b.stored,before,'Playing an example word saves nothing');
