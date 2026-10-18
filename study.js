@@ -376,7 +376,9 @@ const Study = (() => {
     feedback.textContent = text;
     feedback.classList.toggle('wrong', wrong);
     const bounds = feedback.getBoundingClientRect?.();
-    if (!bounds || bounds.top < 0 || bounds.bottom > window.innerHeight) feedback.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    const nav = document.querySelector('.active-lesson .study-main > .study-nav')?.getBoundingClientRect?.();
+    const visibleBottom = window.innerWidth <= 700 && nav ? nav.top : window.innerHeight;
+    if (!bounds || bounds.top < 0 || bounds.bottom > visibleBottom) feedback.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
   }
   function grammarReviewFeedback(round) {
     const { question } = roundItem(round), solved = round.solved[round.cursor] === true;
@@ -404,8 +406,8 @@ const Study = (() => {
     return wrap(`<h1 class="focus-heading" tabindex="-1">句型小複習</h1>${body}<p class="study-note">複習進度會保存在這個瀏覽器，下次可以接著練；不會改變各課的完成紀錄和成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, exit, exitLabel);
   }
   // A card opened from a search result is marked, so it gets focus and comes into view.
-  function staffLine(part, label) { return part ? `<p class="staff-asks"><span class="staff-asks-label">${label}</span><span lang="ja">${escape(part.example)}</span><span class="staff-asks-reading">${escape(part.reading)}</span><span>${escape(part.meaning)}</span></p>` : ""; }
-  function travelCard(item,step,index,found=false) { return `<section class="study-card travel-card${found ? " travel-found" : ""}"${found ? ' tabindex="-1"' : ""}><div class="travel-card-heading"><h2>${escape(step.title)}</h2><button class="text-button favorite-toggle" data-action="study-favorite" data-phrase="${step.id}" aria-pressed="${favoriteIds().includes(step.id)}" aria-label="${escape(step.title)}：收藏">${favoriteIds().includes(step.id) ? "已收藏" : "收藏"}</button></div>${keywordBox(step.keywords, item.id === "food" ? step.id : null)}<div class="phrase-short"><h3 class="phrase-label">可以這樣說</h3><p lang="ja">${escape(step.example)}</p><p class="reading-label">${escape(step.reading)}</p><p>${escape(step.meaning)}</p>${audioButton(item, index, true, false)}</div>${staffLine(step.staffAsks, "對方可能會問")}${staffLine(step.staffSays, "對方可能會說")}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>看完整說法與讀音</summary><p lang="ja">${escape(step.polite)}</p><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p>${audioButton(item, index, true, true)}</details>` : ""}${step.extra ? `<details class="phrase-more"><summary>${escape(step.extra.title)}</summary>${keywordBox(step.extra.keywords)}<p lang="ja">${escape(step.extra.example)}</p><p class="reading-label">${escape(step.extra.reading)}</p><p>${escape(step.extra.meaning)}</p><p class="study-note">${escape(step.extra.body)}</p></details>` : ""}</section>`; }
+  function staffLine(part, label) { return part ? `<p class="staff-asks"><span class="staff-asks-label">${label}</span><span class="spoken-line"><span lang="ja">${escape(part.example)}</span>${inlineAudio(part.example, part.speech || part.example)}</span><span class="staff-asks-reading">${escape(part.reading)}</span><span>${escape(part.meaning)}</span></p>` : ""; }
+  function travelCard(item,step,index,found=false) { return `<section class="study-card travel-card${found ? " travel-found" : ""}"${found ? ' tabindex="-1"' : ""}><div class="travel-card-heading"><h2>${escape(step.title)}</h2><button class="text-button favorite-toggle" data-action="study-favorite" data-phrase="${step.id}" aria-pressed="${favoriteIds().includes(step.id)}" aria-label="${escape(step.title)}：收藏">${favoriteIds().includes(step.id) ? "已收藏" : "收藏"}</button></div>${keywordBox(step.keywords, step.id)}<div class="phrase-short"><h3 class="phrase-label">可以這樣說</h3><div class="spoken-line"><p lang="ja">${escape(step.example)}</p>${audioButton(item, index, true, false)}</div><p class="reading-label">${escape(step.reading)}</p><p>${escape(step.meaning)}</p></div>${staffLine(step.staffAsks, "對方可能會問")}${staffLine(step.staffSays, "對方可能會說")}<p class="study-note">${escape(step.body)}</p>${step.polite ? `<details class="phrase-more"><summary>看完整說法與讀音</summary><div class="spoken-line"><p lang="ja">${escape(step.polite)}</p>${audioButton(item, index, true, true)}</div><p class="reading-label">${escape(step.politeReading)}</p><p>${escape(step.politeMeaning)}</p></details>` : ""}${step.extra ? `<details class="phrase-more"><summary>${escape(step.extra.title)}</summary>${keywordBox(step.extra.keywords)}<div class="spoken-line"><p lang="ja">${escape(step.extra.example)}</p>${inlineAudio(step.extra.example, step.extra.speech || step.extra.example)}</div><p class="reading-label">${escape(step.extra.reading)}</p><p>${escape(step.extra.meaning)}</p><p class="study-note">${escape(step.extra.body)}</p></details>` : ""}</section>`; }
   const savedPhrases = () => favoriteIds().flatMap(id => PHRASEBOOK.flatMap(item => item.steps.flatMap((step,index) => step.id === id ? [{item,step,index}] : [])));
   function travelPage(id) {
     if (id === "favorites") {
@@ -659,6 +661,11 @@ const Study = (() => {
   // Travel cards have a short phrase and, sometimes, a fuller form; each gets its own button and status.
   // A speaker button whose name says which Japanese it plays (#78); the status line stays empty unless audio cannot play.
   const speaker = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+  let audioLineId = 0;
+  function inlineAudio(text, spoken = text) {
+    const id = `line-${++audioLineId}`;
+    return `<span class="inline-audio"><button class="audio-button" data-action="study-line-audio" data-spoken="${escape(spoken)}" data-status="${id}" aria-label="播放${escape(text)}的讀音">${speaker}</button><span class="study-audio-status study-note" data-audio-for="${id}" role="status" aria-live="polite"></span></span>`;
+  }
   function audioButton(course, index, travel = false, full = false) {
     const step = course.steps?.[index];
     const text = course.type === "kana" ? course.letters[index] : full ? step.polite : step.example;
@@ -667,7 +674,7 @@ const Study = (() => {
   function keywordBox(keywords, phrase = null) {
     // The kana reading in （） stays on one line so narrow screens do not split it.
     const word = (text) => { const at = text.indexOf("（"); return at < 0 ? escape(text) : `${escape(text.slice(0, at))}<span class="kw-kana">${escape(text.slice(at))}</span>`; };
-    return `<div class="keyword-box"><h3>關鍵字</h3><dl>${keywords.map(([text, reading, meaning], index) => `<div><dt><strong lang="ja">${word(text)}</strong><span>${escape(reading)}</span></dt><dd>${escape(meaning)}${phrase ? `<button class="audio-button keyword-audio" data-action="study-food-audio" data-phrase="${phrase}" data-index="${index}" aria-label="播放${escape(text)}的讀音">${speaker}</button><p class="study-audio-status study-note" data-audio-for="${phrase}-${index}" role="status" aria-live="polite"></p>` : ""}</dd></div>`).join("")}</dl></div>`;
+    return `<div class="keyword-box"><h3>關鍵字</h3><dl>${keywords.map(([text, reading, meaning], index) => `<div><dt><strong lang="ja">${word(text)}</strong>${phrase ? `<button class="audio-button keyword-audio" data-action="study-food-audio" data-phrase="${phrase}" data-index="${index}" aria-label="播放${escape(text)}的讀音">${speaker}</button><p class="study-audio-status study-note" data-audio-for="${phrase}-${index}" role="status" aria-live="polite"></p>` : ""}${!phrase ? inlineAudio(text, text.match(/（(.*?)）/u)?.[1] || text) : ""}<span>${escape(reading)}</span></dt><dd>${escape(meaning)}</dd></div>`).join("")}</dl></div>`;
   }
   // One box with everything a kana has (#35): its kanji origin, how it differs from a kana easy to mix up, and an
   // example word to hear with the kana marked. Nothing to switch between; words are examples and never tested.
@@ -677,7 +684,7 @@ const Study = (() => {
   function hintCard(course, index) {
     const letter = course.letters[index], hints = typeof KanaHints !== "undefined" ? KanaHints.get(letter) : [];
     if (!hints?.length) return "";
-    const item = (hint) => `<div><dt>${escape(hint.label)}</dt><dd>${hint.word ? `<span class="hint-word" lang="ja">${markKana(hint.word, hint.match || letter)}</span><span class="hint-roman">${escape(hint.romaji)}</span><span>${escape(hint.meaning)}</span>${hint.match && hint.match !== letter ? `<span class="hint-script-note">同音：<span lang="ja">${escape(letter)} ＝ ${escape(hint.match)}</span></span>` : ""}<button class="audio-button" data-action="study-word-audio" data-letter="${escape(letter)}">${speaker}<span class="visually-hidden">播放「<span lang="ja">${escape(hint.word)}</span>」的讀音</span></button>` : japaneseRuns(hint.text)}</dd></div>`;
+    const item = (hint) => `<div><dt>${escape(hint.label)}</dt><dd>${hint.word ? `<span class="spoken-line"><span class="hint-word" lang="ja">${markKana(hint.word, hint.match || letter)}</span><button class="audio-button" data-action="study-word-audio" data-letter="${escape(letter)}">${speaker}<span class="visually-hidden">播放「<span lang="ja">${escape(hint.word)}</span>」的讀音</span></button></span><span class="hint-roman">${escape(hint.romaji)}</span><span>${escape(hint.meaning)}</span>${hint.match && hint.match !== letter ? `<span class="hint-script-note">同音：<span lang="ja">${escape(letter)} ＝ ${escape(hint.match)}</span></span>` : ""}` : japaneseRuns(hint.text)}</dd></div>`;
     return `<aside class="kana-hint"><p class="hint-title">記憶提示</p><dl class="hint-list">${hints.map(item).join("")}</dl>${hints.some((hint) => hint.word) ? '<p class="study-audio-status study-note" data-audio-for="hint-word" role="status" aria-live="polite"></p>' : ""}${KanaHints.notice && hints.some((hint) => hint.label === "字源" || hint.word) ? `<details><summary>關於記憶提示</summary><p class="study-note">${escape(KanaHints.notice)}</p></details>` : ""}</aside>`;
   }
   const sameSoundNote = { "ぢ": "ぢ 和 じ 同音，都讀 ji；一般多寫 じ。", "づ": "づ 和 ず 同音，都讀 zu；一般多寫 ず。", "ヂ": "ヂ 和 ジ 同音，都讀 ji；一般多寫 ジ。", "ヅ": "ヅ 和 ズ 同音，都讀 zu；一般多寫 ズ。" };
@@ -687,7 +694,18 @@ const Study = (() => {
     return `<span class="with-furigana">${tokens.map(token => typeof token === "string" ? escape(token) : `<ruby>${escape(token[0])}<rp>（</rp><rt>${escape(token[1])}</rt><rp>）</rp></ruby>`).join("")}</span>`;
   }
   function fullExample(course, step) {
-    return `<p class="grammar-example" lang="ja">${lessonJapanese(course, step.example)}</p>${step.reading ? `<p class="example-reading">${escape(step.reading)}</p>` : ""}`;
+    if (step.example.includes("／")) {
+      const written = lessonJapanese(course, step.example).replace(/^<span class="with-furigana">/, "").replace(/<\/span>$/, "").split(/\s*／\s*/);
+      const spoken = (step.speech || step.example).split(/\s*／\s*/);
+      const readings = (step.reading || "").split(/\s*\/\s*/);
+      return step.example.split(/\s*／\s*/).map((text, i) => `<div class="spoken-line"><p class="grammar-example" lang="ja">${written[i]}</p>${inlineAudio(text, spoken.length === step.example.split("／").length ? spoken[i] : text)}</div>${readings[i] ? `<p class="example-reading">${escape(readings[i])}</p>` : ""}`).join("");
+    }
+    return `<div class="spoken-line"><p class="grammar-example" lang="ja">${lessonJapanese(course, step.example)}</p>${audioButton(course, course.steps.indexOf(step))}</div>${step.reading ? `<p class="example-reading">${escape(step.reading)}</p>` : ""}`;
+  }
+  function spokenPart(course, word, reading) {
+    const segments = word.split(/\s*→\s*/);
+    const written = lessonJapanese(course, word).replace(/^<span class="with-furigana">/, "").replace(/<\/span>$/, "").split(/\s*→\s*/);
+    return segments.map((text, i) => `<div class="spoken-line"><span lang="ja">${written[i]}</span>${inlineAudio(text, text === "は" && reading === "wa" ? "わ" : text === "へ" && reading === "e" ? "え" : text === "を" ? "お" : text)}</div>`).join('<span class="form-arrow" aria-label="変化">→</span>');
   }
   const exampleLabels = { words: "單字與意思", phrase: "短語與意思", forms: "動詞變化對照", mixed: "短語與例句", usage: "用法整理" };
   function lessonExample(course, step, kind) {
@@ -695,7 +713,7 @@ const Study = (() => {
     if (!parts) return fullExample(course, step);
     const pairedList = kind === "words" || kind === "forms";
     const guide = kind === "words" ? "日文搭配讀音與中文意思。" : kind === "forms" ? "每列是一組說法，下面是讀音和意思。" : "分開看：每組依序是日文、讀音和意思。";
-    return `${pairedList ? "" : fullExample(course, step)}<p class="example-guide">${guide}</p><div class="example-parts${kind === "forms" ? " example-rows" : kind === "words" ? " example-words" : ""}">${parts.map(([word, reading, meaning]) => `<div class="example-part"><span lang="ja">${lessonJapanese(course, word)}</span><span class="example-reading">${escape(reading)}</span><span class="part-meaning">${escape(meaning)}</span></div>`).join("")}</div>`;
+    return `${pairedList ? "" : fullExample(course, step)}<p class="example-guide">${guide}</p><div class="example-parts${kind === "forms" ? " example-rows" : kind === "words" ? " example-words" : ""}">${parts.map(([word, reading, meaning]) => `<div class="example-part">${spokenPart(course, word, reading)}<span class="example-reading">${escape(reading)}</span><span class="part-meaning">${escape(meaning)}</span></div>`).join("")}</div>`;
   }
   function card(course, active) {
     const i = active.cursor;
@@ -722,7 +740,7 @@ const Study = (() => {
       const previewIndex = course.steps.findIndex(item => item.id === Content.lessonPresentation[course.id]?.previews?.[step.id]);
       const preview = course.steps[previewIndex];
       const focus = presentation?.cardFocus?.[step.id];
-      body = `<h2>${escape(presentation?.cardTitles?.[step.id] || step.title)}</h2>${focus ? `<p class="card-focus" aria-label="這張卡片的重點">${focusText(focus)}</p>` : ""}<div class="lesson-blocks"><section class="lesson-example" aria-label="${preview ? "這課會說的句子與單字" : label}"><h3>${preview ? "這課會說的句子" : label}</h3>${preview ? `${fullExample(course, preview)}<p class="example-meaning">${escape(preview.meaning)}</p>${audioButton(course, previewIndex)}<h3 class="example-subheading">先認識單字</h3>` : ""}${lessonExample(course, step, kind)}${preview || pairedList ? "" : `<p class="example-meaning">${escape(step.meaning)}</p>`}${audioButton(course, i)}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(note?.main || step.body)}</p>${note?.extra ? `<details class="lesson-extra"><summary>補充說明</summary><p>${escape(note.extra)}</p></details>` : ""}</section></div>`;
+      body = `<h2>${escape(presentation?.cardTitles?.[step.id] || step.title)}</h2>${focus ? `<p class="card-focus" aria-label="這張卡片的重點">${focusText(focus)}</p>` : ""}<div class="lesson-blocks"><section class="lesson-example" aria-label="${preview ? "這課會說的句子與單字" : label}"><h3>${preview ? "這課會說的句子" : label}</h3>${preview ? `${fullExample(course, preview)}<p class="example-meaning">${escape(preview.meaning)}</p><h3 class="example-subheading">先認識單字</h3>` : ""}${lessonExample(course, step, kind)}${preview || pairedList ? "" : `<p class="example-meaning">${escape(step.meaning)}</p>`}</section><section class="lesson-rule" aria-label="學習重點"><h3>學習重點</h3><p>${escape(note?.main || step.body)}</p>${note?.extra ? `<details class="lesson-extra"><summary>補充說明</summary><p>${escape(note.extra)}</p></details>` : ""}</section></div>`;
     }
     // Once a grammar quiz has answers, the cards lead back to the question instead of restarting it.
     const resumable = course.type === "grammar" && Object.keys(active.first || {}).length > 0;
@@ -961,7 +979,7 @@ const Study = (() => {
   function coursePage(course) {
     const saved = courseState(course.id);
     const active = peekAttempt(course.id) || draftAttempt(course, saved);
-    return wrap(`<h1 class="focus-heading" tabindex="-1">${japaneseRuns(Content.lessonPresentation[course.id]?.focus ? course.title : Content.displayTitle(course.id))}</h1>${Content.lessonPresentation[course.id]?.focus ? `<p class="lesson-topic">${focusText([Content.lessonPresentation[course.id].focus[0] === "文法" ? "用法" : "單字", Content.displayTitle(course.id)])}</p>` : Content.lessonPresentation[course.id] ? `<p class="study-note">${escape(course.title)}</p>` : ""}${lessonPhases(active.phase)}${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)), course.type !== "kana");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">${japaneseRuns(Content.lessonPresentation[course.id]?.focus ? course.title : Content.displayTitle(course.id))}</h1>${Content.lessonPresentation[course.id]?.focus ? `<p class="lesson-topic">${focusText([Content.lessonPresentation[course.id].focus[0] === "文法" ? "用法" : "單字", Content.displayTitle(course.id)])}</p>` : Content.lessonPresentation[course.id] ? `<p class="study-note">${escape(course.title)}</p>` : ""}${lessonPhases(active.phase)}${active.phase === "done" ? result(course, saved) : active.phase === "quiz" ? quiz(course, active) : card(course, active)}<div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`, ...exitTo(backHash(course)), course.type !== "kana", active.phase === "done" ? "" : "active-lesson");
   }
   function render(hash) {
     // The opened search result gets focus only when coming back from the travel cards, not on a later visit.
@@ -1141,8 +1159,12 @@ const Study = (() => {
       }
       return true;
     }
+    if (action === "study-line-audio") {
+      if (button.dataset.spoken && /^line-\d+$/.test(button.dataset.status || "")) say(button.dataset.spoken, `[data-audio-for="${button.dataset.status}"]`, button);
+      return true;
+    }
     if (action === "study-food-audio") {
-      const step = PHRASEBOOK.find(item => item.id === "food")?.steps.find(step => step.id === button.dataset.phrase);
+      const step = PHRASEBOOK.flatMap(item => item.steps).find(step => step.id === button.dataset.phrase);
       const index = Number(button.dataset.index), keyword = Number.isInteger(index) && step?.keywords[index];
       if (Routes.current().startsWith("#travel") && keyword) {
         const text = keyword[0], spoken = text.match(/（(.*?)）/u)?.[1] || text;
