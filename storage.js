@@ -84,7 +84,7 @@ const DataStore = (() => {
     const grammarReviewSession = clearWinner === "local" ? local.grammarReviewSession ?? null
       : clearWinner === "incoming" ? incoming.grammarReviewSession ?? null
       : local.grammarReviewSession ?? incoming.grammarReviewSession ?? null;
-    return {...incoming,...local,drill:Drill.merge(local.drill,incoming.drill),crossword:local.crossword ?? incoming.crossword ?? null,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,reviewSession,grammarReview,grammarReviewSession,lastGrammarId:local.lastGrammarId ?? incoming.lastGrammarId ?? null,
+    return {...incoming,...local,drill:Drill.merge(local.drill,incoming.drill),cafe:local.cafe ?? incoming.cafe ?? null,crossword:local.crossword ?? incoming.crossword ?? null,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,reviewSession,grammarReview,grammarReviewSession,lastGrammarId:local.lastGrammarId ?? incoming.lastGrammarId ?? null,
       ...(clearedAt ? {reviewClearedAt:clearedAt} : {})};
   }
   const emptyIntro = () => ({step:0,completed:false,inProgress:false,answers:{},firstAnswers:{}});
