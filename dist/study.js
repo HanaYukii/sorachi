@@ -1236,18 +1236,21 @@ const Study = (() => {
       const game=state().cafe; let message="", focus=".cafe-status";
       if(action==="study-cafe-pick") { if(!Cafe.choose(game,button.dataset.group,button.dataset.id))return true; focus=`[data-group="${button.dataset.group}"][data-id="${button.dataset.id}"]`; }
       else if(action==="study-cafe-roman") { game.roman=!game.roman;focus='[data-action="study-cafe-roman"]'; }
-      else if(action==="study-cafe-serve") { if(Cafe.serve(game)) {message="送對了！客人收到飲料了。";focus='.focus-heading';} else message=Cafe.errors(game).map(g=>`${Cafe.groups.find(x=>x.id===g).title.slice(1)}要選「${Cafe.item(g,Cafe.current(game)[g]).zh}」`).join('，')+"，改好再送一次。"; }
+      else if(action==="study-cafe-serve") { if(Cafe.serve(game))focus='.cafe-recap';else message=Cafe.feedback(game); }
+      else if(action==="study-cafe-mode") { if(!Cafe.switchMode(game,button.dataset.mode))return true;focus='.focus-heading'; }
+      else if(action==="study-cafe-recipe") { if(!Cafe.remix(game,Number(button.dataset.id)))return true;focus='.focus-heading'; }
       else if(action==="study-cafe-fix") {
         const group=Cafe.errors(game)[0];
         if(group){const target=document.querySelector(`#cafe-${group}`);target?.focus?.({preventScroll:true});target?.scrollIntoView?.({block:'start'});}
         return true;
       }
       else if(action==="study-cafe-next") { if(!Cafe.next(game))return true;focus='.focus-heading'; }
-      else if(action==="study-cafe-again" && game.served && game.index===2) { state().cafe=Cafe.create();focus='.focus-heading'; }
+      else if(action==="study-cafe-again") { if(!Cafe.again(game))return true;focus='.focus-heading'; }
       else return true;
       stopAudio();save();redraw(focus);
       gameMessage('.cafe-status',message,focus==='.cafe-status');
-      const fix=document.querySelector('.cafe-fix');if(fix)fix.hidden=!(message&&!game.served);
+      const fix=document.querySelector('.cafe-fix');if(fix)fix.hidden=!(message&&!Cafe.draft(game).served);
+      if(focus==='.cafe-recap')document.querySelector('.cafe-recap')?.scrollIntoView?.({block:'nearest'});
       return true;
     }
     if (action.startsWith("study-crossword-")) return crosswordAction(button);

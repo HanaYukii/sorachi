@@ -29,7 +29,7 @@ const PhotoWalk=(()=>{
  function games(){return `<div class="games-intro"><img src="${Routes.path('#home')}assets/cloud-games-256.webp" width="160" height="166" alt="開心拿著遊戲手把的雲朵"><div><h1 class="focus-heading" tabindex="-1">小遊戲</h1><p>認識本站教過的日文。可以看中文、聽讀音，慢慢玩。</p></div></div><div class="games-grid">${[
  ['photo-walk','cloud-photo','雲朵拍照散步','逛公園，拍下貓、花和樹，收進自己的小相簿。','探索 · 基本單字'],
  ['suitcase','cloud-travel','雲朵行李箱','任選 3 件物品，決定旅途做法，留下不同小記。','情境 · 旅行物品'],
- ['cafe','cloud-friend','雲朵點餐店','選飲料、冷熱和數量，幫 3 位客人送餐。','情境 · 點餐關鍵字'],
+ ['cafe','cloud-friend','雲朵點餐店','接待客人，也能自由搭飲料、收進小菜單。','情境 · 點餐關鍵字'],
  ['crossword','cloud-kana','平假名小填字','看中文提示，選假名把單字填進格子。','填字 · 假名與單字'],
  ].map(([route,image,title,description,tag])=>`<a class="game-card" href="#${route}"><img src="${Routes.path('#home')}assets/${image}-256.webp" width="110" height="114" alt=""><div><span class="game-tag">${tag}</span><h2>${title}</h2><p>${description}</p><strong>開始玩 →</strong></div></a>`).join('')}</div><p class="study-note">不用登入也能玩，進度保存在目前瀏覽器，不影響課程成績。</p>`;}
  return {subjects,targets,subject,create,restore,act,complete,render,games};

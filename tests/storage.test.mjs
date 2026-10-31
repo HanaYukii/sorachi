@@ -500,3 +500,12 @@ test('suitcase v2 backup preserves route choices across import and reload withou
  saved=setup(Object.fromEntries(target.map)).store.readProgress().study.suitcase;
  assert.deepEqual([...saved.choices],['pavilion','covered','apple']);
 });
+
+
+test('cafe v2 backup preserves open receipts, independent draft and recipe book after reload',()=>{
+ const source=setup(),p=source.store.readProgress();
+ const cafe={version:2,mode:'free',orders:[0,12,17],index:1,selected:{drink:'tea'},served:false,roman:true,receipts:[{drink:'coffee',temp:'cold',count:'one'}],free:{selected:{drink:'tea',temp:'hot',count:'two'},served:true},recipes:[10]};
+ p.study={cafe};source.store.writeProgress(p);
+ const target=setup();assert.equal(target.store.importBackup(source.store.exportBackup()),true);
+ assert.deepEqual(JSON.parse(JSON.stringify(setup(Object.fromEntries(target.map)).store.readProgress().study.cafe)),cafe);
+});

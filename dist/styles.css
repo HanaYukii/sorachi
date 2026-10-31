@@ -1729,3 +1729,20 @@ button.trip-bag-item { min-height:44px;color:var(--ink); }
  .trip-choice strong[lang] { font-size:21px; }.trip-work { scroll-margin-top:235px; }
  .prop-phone,.prop-apple { font-size:28px;bottom:0; }.trip-photo-frame{inset:4px 8%;border-width:2px;}
 }
+
+.cafe-modes { display:flex;gap:10px;flex-wrap:wrap;margin:16px 0; }
+.cafe-modes button { min-height:48px;padding:12px 20px;border:2px solid #bba5ce;border-radius:14px;background:white;color:var(--ink);font-size:17px; }
+.cafe-modes button[aria-pressed=true] { background:#eee5f7;border-color:#795990;font-weight:700; }
+.cafe-freedom { font-size:15px;margin:0 0 10px;color:var(--aqua-ink); }
+.cafe-bubble>span { display:block;font-size:15px;margin-top:6px;line-height:1.5; }
+.cafe-recap { scroll-margin-top:20px; }.cafe-receipt { margin:12px 0;border:1px solid #9dc3cc;border-radius:12px;background:white;padding:12px; }
+.cafe-receipt summary { cursor:pointer;min-height:44px;display:list-item;padding:8px;box-sizing:border-box; }
+.cafe-recipes { margin-top:24px;padding:20px;border:2px solid #d7b58c;border-radius:20px;background:#fff5e9; }
+.cafe-recipe-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px; }
+.cafe-recipe-grid>button { min-width:0;border:2px solid #d7b58c;border-radius:14px;padding:14px;background:white;color:var(--ink); }
+.cafe-recipe-grid>button>strong,.cafe-recipe-grid>button>span:last-child { display:block;font-size:16px;margin-top:8px; }
+@media(max-width:650px){
+ .cafe-recipe-grid { grid-template-columns:1fr; }.cafe-recipes { padding:12px; }
+ .cafe-bubble>span { font-size:14px;margin-top:3px; }.cafe-group,.cafe-recap { scroll-margin-top:260px; }
+ .cafe-option>button { scroll-margin-top:260px; }
+}
