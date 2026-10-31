@@ -65,7 +65,7 @@ const Study = (() => {
     return active;
   }
   function sanitize(saved) {
-    const state = { suitcase: Suitcase.restore(saved?.suitcase), cafe: Cafe.restore(saved?.cafe), crossword: Crossword.restore(saved?.crossword), drill: Drill.restore(saved?.drill, drillPool), script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt), grammarReview: {}, grammarReviewSession: null, lastGrammarId: null };
+    const state = { photoWalk: PhotoWalk.restore(saved?.photoWalk), suitcase: Suitcase.restore(saved?.suitcase), cafe: Cafe.restore(saved?.cafe), crossword: Crossword.restore(saved?.crossword), drill: Drill.restore(saved?.drill, drillPool), script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt), grammarReview: {}, grammarReviewSession: null, lastGrammarId: null };
     const review = KanaPractice.sanitize(saved?.reviewSession);
     if (review?.mode === 'review') state.reviewSession = review;
     for (const [id, course] of Object.entries(courses)) {
@@ -271,7 +271,7 @@ const Study = (() => {
       return `<button class="crossword-cell${current.keys.includes(key)?" in-word":""}${game.cell===key?" selected":""}${mistakes.includes(key)?" needs-fix":""}" data-action="study-crossword-cell" data-cell="${key}" aria-pressed="${game.cell===key}" aria-label="第 ${r+1} 列第 ${c+1} 格，${game.values[key]||"空格"}${mistakes.includes(key)?"，還要修改":""}"${game.done?" disabled":""}>${starts?`<small>${starts}</small>`:""}<span lang="ja">${escape(game.values[key]||"·")}</span></button>`;
     }).join("")).join("");
     const complete = game.done ? `<section class="crossword-complete"><h2>這盤完成了</h2><p>再看一次剛剛填的 3 個單字。${game.hints.length?`用了 ${game.hints.length} 格提示。`:""}</p>${board.entries.map(e=>`<div class="crossword-word"><div class="spoken-line"><strong lang="ja">${e.word}</strong>${inlineAudio(e.word)}</div><span>${e.reading} · ${e.meaning}</span></div>`).join("")}<button class="primary" data-action="study-crossword-next">再玩一盤 →</button></section>` : `<section class="crossword-controls" aria-label="選字與提示"><h2>${current.number} · ${current.meaning}</h2><p>${directions(current)}，共 ${current.keys.length} 格。點下面的字，填入有深色框的格子。</p><div class="crossword-hints">${inlineAudio(current.word)}<button class="text-button" data-action="study-crossword-roman" aria-expanded="${game.roman.includes(game.entry)}">${game.roman.includes(game.entry)?"收起羅馬音":"看羅馬音"}</button><button class="text-button" data-action="study-crossword-hint">提示一格</button></div>${game.roman.includes(game.entry)?`<p class="crossword-reading">${current.reading}</p>`:""}<div class="crossword-bank" role="group" aria-label="選一個平假名">${board.bank.map(letter=>`<button data-action="study-crossword-fill" data-letter="${letter}" lang="ja">${letter}</button>`).join("")}</div><div class="crossword-actions"><button class="text-button" data-action="study-crossword-erase">清掉這格</button><button class="primary" data-action="study-crossword-check">檢查答案</button></div></section>`;
-    return wrap(`<h1 class="focus-heading" tabindex="-1">平假名小填字</h1><p class="study-note">看中文提示，點格子，再選平假名。交叉的格子是兩個詞共用的字。不會也沒關係，可以聽或看提示。</p><p class="reading-label">第 ${Crossword.boards.indexOf(board)+1} / ${Crossword.boards.length} 盤 · 每盤 3 個詞 · 不計成績</p><div class="crossword-layout"><section class="crossword-board" aria-label="填字盤面"><div class="crossword-grid" style="--cols:${board.cols}"><p class="crossword-current">${game.done?"全部填好了":`正在填：${current.number} · ${current.meaning}（${directions(current)}）`}</p>${grid}</div><div class="crossword-clues" aria-label="中文提示">${entries}</div></section>${complete}</div><p class="crossword-status" tabindex="-1" role="status" aria-live="polite">${escape(crosswordMessage)}</p><p class="study-note">會記住這一盤的進度。單字來自五十音的例子；這裡是選玩的練習，不影響課程成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`,"#kana","回五十音表",true,"crossword-page");
+    return wrap(`<h1 class="focus-heading" tabindex="-1">平假名小填字</h1><p class="study-note">看中文提示，點格子，再選平假名。交叉的格子是兩個詞共用的字。不會也沒關係，可以聽或看提示。</p><p class="reading-label">第 ${Crossword.boards.indexOf(board)+1} / ${Crossword.boards.length} 盤 · 每盤 3 個詞 · 不計成績</p><div class="crossword-layout"><section class="crossword-board" aria-label="填字盤面"><div class="crossword-grid" style="--cols:${board.cols}"><p class="crossword-current">${game.done?"全部填好了":`正在填：${current.number} · ${current.meaning}（${directions(current)}）`}</p>${grid}</div><div class="crossword-clues" aria-label="中文提示">${entries}</div></section>${complete}</div><p class="crossword-status" tabindex="-1" role="status" aria-live="polite">${escape(crosswordMessage)}</p><p class="study-note">會記住這一盤的進度。單字來自五十音的例子；這裡是選玩的練習，不影響課程成績。</p><div class="lesson-utilities"><button class="text-button" data-action="feedback">這一頁有問題？</button></div>`,"#games","回小遊戲",true,"crossword-page");
   }
   function crosswordAction(button) {
     if(Routes.current()!=="#crossword")return true;
@@ -1016,8 +1016,10 @@ const Study = (() => {
   function render(hash) {
     // The opened search result gets focus only when coming back from the travel cards, not on a later visit.
     if (!hash.startsWith("#travel")) travelReturn = null;
-    if (hash === "#suitcase") return wrap(Suitcase.render(state().suitcase || (state().suitcase = Suitcase.create()), inlineAudio), "#travel", "回旅遊常用語", true, "suitcase-page");
-    if (hash === "#cafe") return wrap(Cafe.render(state().cafe || (state().cafe = Cafe.create()), inlineAudio), "#travel", "回旅遊常用語", true, "cafe-page");
+    if (hash === "#games") return wrap(PhotoWalk.games(), "#home", "回首頁", true, "games-page");
+    if (hash === "#photo-walk") return wrap(PhotoWalk.render(state().photoWalk || (state().photoWalk = PhotoWalk.create()), inlineAudio), "#games", "回小遊戲", true, "photo-walk-page");
+    if (hash === "#suitcase") return wrap(Suitcase.render(state().suitcase || (state().suitcase = Suitcase.create()), inlineAudio), "#games", "回小遊戲", true, "suitcase-page");
+    if (hash === "#cafe") return wrap(Cafe.render(state().cafe || (state().cafe = Cafe.create()), inlineAudio), "#games", "回小遊戲", true, "cafe-page");
     if (hash === "#crossword") return crosswordPage();
     if (hash === "#kana") return kanaPage();
     if (hash === "#kana-review") return reviewPage();
@@ -1196,6 +1198,15 @@ const Study = (() => {
     }
     if (action === "study-line-audio") {
       if (button.dataset.spoken && /^line-\d+$/.test(button.dataset.status || "")) say(button.dataset.spoken, `[data-audio-for="${button.dataset.status}"]`, button);
+      return true;
+    }
+    if(action.startsWith("study-walk-") && Routes.current()==="#photo-walk") {
+      const verb=action.slice('study-walk-'.length),game=state().photoWalk;
+      const message=PhotoWalk.act(game,verb,button.dataset.id);if(message===null)return true;
+      stopAudio();save();
+      const focus=verb==='look'?'.walk-camera':verb==='park'?'.walk-park':verb==='roman'?'[data-action="study-walk-roman"]':verb==='snap'?'.walk-status':'.focus-heading';
+      redraw(focus);const status=document.querySelector('.walk-status');if(status)status.textContent=message;
+      if(verb==='look'||verb==='park')document.querySelector(verb==='look'?'.walk-camera':'.walk-park')?.scrollIntoView?.({block:'nearest',behavior:'instant'});
       return true;
     }
     if(action.startsWith("study-suitcase-") && Routes.current()==="#suitcase") {
