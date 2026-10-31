@@ -297,6 +297,7 @@ function browser({
   for (const file of ["content.js", "drill-bank.js", "drill.js", "storage.js", "kana-practice.js", "kana-hints.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/routes.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
+  vm.runInContext(readFileSync(new URL("../dist/photo-walk.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/suitcase.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/cafe.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/crossword.js", import.meta.url), "utf8"), context);
@@ -2699,7 +2700,7 @@ test('the update button checks unsaved work and does not overwrite storage on re
 
 test('fourth home entry opens continuous practice and feedback returns without dropping the question', () => {
   const b = browser(); const stored = b.stored;
-  assert.equal((b.html.match(/<article class="home-entry /g) || []).length, 4);
+  assert.equal((b.html.match(/<article class="home-entry /g) || []).length, 5);
   assert.match(b.html, /練習本站提到的日文基礎，也可作為 N5、N4 的準備/);
   b.study('study-drill'); assert.equal(b.hash, '#drill');
   assert.match(b.html, /第 1 題/); assert.match(b.title, /基礎刷題/);
@@ -2874,4 +2875,11 @@ test('legacy bookmarks switch to paths and direct unknown paths have an honest m
   }
   const missing=browser({address:'http://localhost/nothing-here/'});
   assert.match(missing.html,/>找不到頁面</);assert.equal(missing.title,'找不到頁面｜SoraChi');
+});
+
+
+test('home game entry and hub link to every game, with games as their return destination',()=>{
+ const b=browser();b.navigate('#home');assert.match(b.html,/cloud-games-/);b.action('games');assert.match(b.html,/雲朵拍照散步/);
+ for(const id of ['photo-walk','suitcase','cafe','crossword'])assert.match(b.html,new RegExp(`href="/${id}/"`));
+ for(const id of ['photo-walk','suitcase','cafe','crossword']){b.navigate('#'+id);assert.match(b.html,/href="\/games\/">← 回小遊戲/);}
 });

@@ -42,6 +42,7 @@ function harness(saved, voices = [], history = [], options = {}) {
   vm.runInContext(readFileSync(new URL("../dist/routes.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   for(const file of ["drill-bank","drill"]) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`,import.meta.url),"utf8"),context);
+  vm.runInContext(readFileSync(new URL("../dist/photo-walk.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/suitcase.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/cafe.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/crossword.js", import.meta.url), "utf8"), context);
@@ -277,7 +278,7 @@ test('sanitization rejects malformed kana sessions, old versions and skipped una
   legacy.courses['h-a'].completedAt='2026-01-01T00:00:00Z';legacy.courses['h-a'].lastResult={firstCorrect:3,total:5};
   const clean=b.study.sanitize(legacy).courses['h-a'];assert.equal(clean.active,null);assert.equal(clean.lastResult.firstCorrect,3);assert.ok(clean.completedAt);
   const invalid=clone(b.stored);invalid.courses['h-a'].active.practice.questions[0].options[0]='unknown';assert.equal(b.study.sanitize(invalid).courses['h-a'].active,null);
-  assert.deepEqual(clone(b.study.sanitize(null)),{suitcase:null,cafe:null,crossword:null,drill:{version:1,clearedAt:null,session:null},script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
+  assert.deepEqual(clone(b.study.sanitize(null)),{photoWalk:null,suitcase:null,cafe:null,crossword:null,drill:{version:1,clearedAt:null,session:null},script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
 });
 
 test('old or malformed kana review rounds restart empty while completions and kana mistakes stay', () => {
@@ -1562,4 +1563,10 @@ test('suitcase UI resumes packing, travels through three scenes and never record
  for(const id of ['hat','umbrella','water']){b.action('suitcase-use',{id});assert.match(b.html,/trip-prop/);b.action('suitcase-next');}
  assert.equal(b.stored.suitcase.phase,'done');assert.equal(b.records.length,0);assert.deepEqual(clone(b.state.courses),{});
  b.action('suitcase-again');assert.equal(b.stored.suitcase.phase,'pack');assert.deepEqual(clone(b.stored.suitcase.packed),[]);
+});
+
+test('photo walk UI saves freely selected photos and shows a persistent album without scores',()=>{
+ const b=harness();b.render('#photo-walk');b.action('walk-look',{id:'bird'});b.action('walk-snap');assert.deepEqual(clone(b.stored.photoWalk.photos),['bird']);
+ const c=harness(b.stored);c.render('#photo-walk');c.action('walk-album');assert.match(c.html,/とり/);c.action('walk-roman');assert.match(c.html,/tori/);c.action('walk-park');assert.equal(c.records.length,0);assert.deepEqual(clone(c.state.courses),{});
+ assert.match(c.render('#games'),/雲朵拍照散步/);for(const route of ['#cafe','#suitcase','#crossword'])assert.match(c.render(route),/回小遊戲/);
 });

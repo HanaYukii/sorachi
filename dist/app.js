@@ -62,7 +62,7 @@ const icons = {
   book: '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5C8 3 5 3 3 4v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-2-1-5-1-9 1Zm0 0v15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 // WebP sizes come from art/*.png; `size` is the largest CSS width the image is shown at.
-const imageWidths = { "cloud-friend": [128, 256, 512, 768], "cloud-complete": [256, 512], "cloud-kana": [128, 256, 512], "cloud-travel": [128, 256], "cloud-drill": [128, 256, 512] };
+const imageWidths = { "cloud-games": [128,256,512], "cloud-friend": [128, 256, 512, 768], "cloud-complete": [256, 512], "cloud-kana": [128, 256, 512], "cloud-travel": [128, 256], "cloud-drill": [128, 256, 512] };
 const friend = (className = "", alt = "", asset = "cloud-friend", size = 252, sizes = `${size}px`) => {
   const widths = imageWidths[asset];
   const [width, height] = asset === "cloud-kana" || asset === "cloud-travel" || asset === "cloud-drill" ? [256, 256] : [1229, 1280];
@@ -87,7 +87,7 @@ const warning = () => `<div id="storage-status">${warningMessage()}</div>`;
 // lesson or review (the next group), or after feedback, keeps the earlier source; anything else, such as a direct
 // link, has none. An entry gets its source once, when it is first shown, so going back to it never changes it.
 const exits = ["#home", "#kana", "#grammar"];
-const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|kana-random$|grammar-random$|drill$|suitcase$|cafe$|crossword$|feedback$)/.test(page || "");
+const passesOn = (page) => /^#(study\/|kana-review$|grammar-review$|kana-random$|grammar-random$|drill$|photo-walk$|suitcase$|cafe$|crossword$|feedback$)/.test(page || "");
 let cameFrom = null, shown = null, shownRoute = null, shownFeedback = null;
 function arrive() {
   if (window.history.state?.from === undefined) window.history.replaceState({ from: exits.includes(shown) ? shown : passesOn(shown) ? cameFrom : null }, "");
@@ -172,6 +172,7 @@ function home() {
     <main id="main" tabindex="-1" class="home"><section class="welcome"><h1 class="focus-heading" tabindex="-1">日文入門</h1><p>零基礎也可以用。學五十音、練句型，旅行時查常用語。</p></section>
     ${shortcuts}
     ${entries}
+    <section class="home-games" aria-label="小遊戲">${entry("games", "cloud-games", "小遊戲", "陪雲朵拍照、裝行李、點餐，也可以玩假名填字。", "看看小遊戲", "games")}</section>
     ${below}
     <aside class="gentle-note">${icons.book}<span>${account.user() ? "目前使用帳號進度；可到「帳號」儲存雲端備份。" : "不用登入也能學；訪客進度保存在這個瀏覽器。"}</span></aside>${warning()}</main>${footer()}</div>`);
 }
@@ -600,6 +601,9 @@ app.addEventListener("click", (event) => {
       break;
     case "kana":
       go("#kana");
+      break;
+    case "games":
+      go("#games");
       break;
     case "travel":
       go("#travel");

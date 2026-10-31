@@ -480,3 +480,10 @@ test('suitcase backup restores an empty trip and preserves an existing local tri
  const local=target.store.readProgress();local.study.suitcase.packed=['hat'];target.store.writeProgress(local);target.store.importBackup(source.store.exportBackup());
  assert.equal(setup(Object.fromEntries(target.map)).store.readProgress().study.suitcase.packed[0],'hat');
 });
+
+test('photo album backup union preserves both local and imported photos without duplicates',()=>{
+ const a=setup(),p=a.store.readProgress();p.study={photoWalk:{version:1,selected:'cat',photos:['cat'],album:false,roman:false}};a.store.writeProgress(p);
+ const b=setup(),q=b.store.readProgress();q.study={photoWalk:{version:1,selected:'dog',photos:['dog','cat'],album:true,roman:true}};b.store.writeProgress(q);
+ a.store.importBackup(b.store.exportBackup());const s=a.store.readProgress().study.photoWalk;assert.equal(s.selected,'cat');assert.deepEqual([...s.photos],['cat','dog']);
+ const blank=setup();blank.store.importBackup(a.store.exportBackup());assert.equal(blank.store.readProgress().study.photoWalk.photos.length,2);
+});

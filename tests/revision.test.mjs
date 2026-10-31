@@ -76,6 +76,7 @@ function load(mutation = '', useBaseline = false) {
   for (const file of ['drill-bank.js','drill.js','kana-practice.js','kana-hints.js']) vm.runInContext(readFileSync(new URL('../dist/' + file, import.meta.url),'utf8'),context);
   vm.runInContext(readFileSync(new URL("../dist/routes.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
+  vm.runInContext(readFileSync(new URL("../dist/photo-walk.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/suitcase.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/cafe.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/crossword.js", import.meta.url), "utf8"), context);

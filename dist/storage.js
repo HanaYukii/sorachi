@@ -60,6 +60,13 @@ const DataStore = (() => {
       lastResult: newer.lastResult ?? null,
       active};
   }
+  function mergePhotoWalk(local,incoming) {
+    const ids=new Set(['cat','flower','tree','dog','bird']);
+    const valid=x=>x && x.version===1;
+    if(!valid(local))return valid(incoming)?incoming:null;
+    if(!valid(incoming))return local;
+    return {...local,photos:[...new Set([...(Array.isArray(local.photos)?local.photos:[]),...(Array.isArray(incoming.photos)?incoming.photos:[])].filter(id=>ids.has(id)))]};
+  }
   function mergeStudy(local, incoming) {
     // A clear on either side wins: mistakes seen before the later clear are dropped, and review sessions and
     // unfinished kana rounds come only from the side that cleared later, even rounds the other side began after
@@ -84,7 +91,7 @@ const DataStore = (() => {
     const grammarReviewSession = clearWinner === "local" ? local.grammarReviewSession ?? null
       : clearWinner === "incoming" ? incoming.grammarReviewSession ?? null
       : local.grammarReviewSession ?? incoming.grammarReviewSession ?? null;
-    return {...incoming,...local,drill:Drill.merge(local.drill,incoming.drill),suitcase:local.suitcase ?? incoming.suitcase ?? null,cafe:local.cafe ?? incoming.cafe ?? null,crossword:local.crossword ?? incoming.crossword ?? null,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,reviewSession,grammarReview,grammarReviewSession,lastGrammarId:local.lastGrammarId ?? incoming.lastGrammarId ?? null,
+    return {...incoming,...local,drill:Drill.merge(local.drill,incoming.drill),photoWalk:mergePhotoWalk(local.photoWalk,incoming.photoWalk),suitcase:local.suitcase ?? incoming.suitcase ?? null,cafe:local.cafe ?? incoming.cafe ?? null,crossword:local.crossword ?? incoming.crossword ?? null,script:learned ? local.script : incoming.script ?? local.script,courses,kanaReview:review,reviewSession,grammarReview,grammarReviewSession,lastGrammarId:local.lastGrammarId ?? incoming.lastGrammarId ?? null,
       ...(clearedAt ? {reviewClearedAt:clearedAt} : {})};
   }
   const emptyIntro = () => ({step:0,completed:false,inProgress:false,answers:{},firstAnswers:{}});

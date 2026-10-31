@@ -2,7 +2,7 @@
 
 // Header presentation only. Route metadata, history and study state stay in their own modules.
 const Navigation = (() => {
-  const sections = [["#kana", "五十音"], ["#grammar", "基礎句型"], ["#travel", "旅遊常用語"], ["#drill", "基礎刷題"]];
+  const sections = [["#kana", "五十音"], ["#grammar", "基礎句型"], ["#travel", "旅遊常用語"], ["#drill", "基礎刷題"], ["#games", "小遊戲"]];
   const escape = text => String(text).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
   const page = Routes.page;
   let accountLabel = null;

@@ -5,9 +5,11 @@ const Routes = (() => {
   const origin = "https://sorachi.app";
   const pages = {
     "#home": ["日文入門", null, "home"],
-    "#suitcase": ["雲朵行李箱", "#travel", "practice"],
-    "#cafe": ["雲朵點餐店", "#travel", "practice"],
-    "#crossword": ["平假名小填字", "#kana", "practice"],
+    "#games": ["小遊戲", "#games", "overview"],
+    "#photo-walk": ["雲朵拍照散步", "#games", "practice"],
+    "#suitcase": ["雲朵行李箱", "#games", "practice"],
+    "#cafe": ["雲朵點餐店", "#games", "practice"],
+    "#crossword": ["平假名小填字", "#games", "practice"],
     "#kana": ["五十音表", "#kana", "overview"],
     "#grammar": ["基礎句型", "#grammar", "overview"],
     "#travel": ["旅遊常用語", "#travel", "overview"],
@@ -38,7 +40,7 @@ const Routes = (() => {
     const [title, section, kind] = item || ["找不到頁面", null, "unknown"];
     return {title, section, kind};
   }
-  const privateIds = new Set(["suitcase", "cafe", "crossword", "done", "kana-random", "grammar-random", "kana-review", "grammar-review", "history", "settings", "account", "feedback", "travel/favorites"]);
+  const privateIds = new Set(["photo-walk", "suitcase", "cafe", "crossword", "done", "kana-random", "grammar-random", "kana-review", "grammar-review", "history", "settings", "account", "feedback", "travel/favorites"]);
   const registered = new Set([...Object.keys(pages), ...Object.keys(Content.courses).map(id => `#study/${id}`), ...Content.phrasebook.map(item => `#travel/${item.id}`)]);
   const ids = () => [...registered];
   const known = id => registered.has(id);
