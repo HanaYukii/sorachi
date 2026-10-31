@@ -487,3 +487,16 @@ test('photo album backup union preserves both local and imported photos without 
  a.store.importBackup(b.store.exportBackup());const s=a.store.readProgress().study.photoWalk;assert.equal(s.selected,'cat');assert.deepEqual([...s.photos],['cat','dog']);
  const blank=setup();blank.store.importBackup(a.store.exportBackup());assert.equal(blank.store.readProgress().study.photoWalk.photos.length,2);
 });
+
+test('suitcase v2 backup preserves route choices across import and reload without mixing trips',()=>{
+ const source=setup(),p=source.store.readProgress();
+ const trip={version:2,phase:'done',packed:['phone','apple','water'],selected:'water',scene:2,used:true,choices:['shade','shelter','phone']};
+ p.study={suitcase:trip};source.store.writeProgress(p);
+ const target=setup();assert.equal(target.store.importBackup(source.store.exportBackup()),true);
+ let saved=setup(Object.fromEntries(target.map)).store.readProgress().study.suitcase;
+ assert.deepEqual(JSON.parse(JSON.stringify(saved)),trip);
+ const local=target.store.readProgress();local.study.suitcase={...trip,choices:['pavilion','covered','apple']};target.store.writeProgress(local);
+ target.store.importBackup(source.store.exportBackup());
+ saved=setup(Object.fromEntries(target.map)).store.readProgress().study.suitcase;
+ assert.deepEqual([...saved.choices],['pavilion','covered','apple']);
+});

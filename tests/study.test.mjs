@@ -1577,7 +1577,7 @@ test('photo walk UI saves freely selected photos and shows a persistent album wi
 test('game feedback is filled before focusing a previously empty live status',()=>{
  const b=harness();b.render('#cafe');b.action('cafe-serve');
  assert.match(b.gameStatuses['.cafe-status'].textContent,/改好再送/);assert.equal(b.focused,'.cafe-status');
- b.render('#suitcase');b.action('suitcase-depart');assert.match(b.gameStatuses['.trip-status'].textContent,/清單還需要/);assert.equal(b.focused,'.trip-status');
+ b.render('#suitcase');b.action('suitcase-depart');assert.match(b.gameStatuses['.trip-status'].textContent,/再選 3 件/);assert.equal(b.focused,'.trip-status');
  b.render('#photo-walk');b.action('walk-look',{id:'cat'});assert.equal(b.gameStatuses['.walk-status'].textContent,'');
  b.action('walk-snap');assert.match(b.gameStatuses['.walk-status'].textContent,/拍好了/);assert.equal(b.focused,'.walk-status');
 });
@@ -1586,4 +1586,21 @@ test('crossword beginners can reveal the complete written word without filling o
  assert.match(b.html,/<strong lang="ja">かさ<\/strong> · kasa/);assert.deepEqual(clone(b.state.crossword.values),{});
  const reload=harness(b.stored);reload.render('#crossword');assert.match(reload.html,/可以照著填/);
  assert.equal(reload.state.crossword.done,false);assert.equal(reload.records.length,0);
+});
+
+test('suitcase new routes resume choices, offer fallback actions and keep a truthful phone or picnic ending',()=>{
+ for(const finalChoice of ['phone','apple']){
+  let b=harness();b.render('#suitcase');for(const id of ['phone','apple','water'])b.action('suitcase-toggle',{id});
+  b.action('suitcase-depart');assert.equal(b.state.suitcase.phase,'trip');assert.match(b.html,/走樹蔭下的小路/);
+  b.action('suitcase-use',{id:'shade'});b.action('suitcase-next');
+  b=harness(b.stored);b.render('#suitcase');assert.equal(b.state.suitcase.scene,1);assert.equal(b.state.suitcase.choices[0],'shade');
+  b.action('suitcase-use',{id:'shelter'});b.action('suitcase-next');assert.match(b.html,/吃蘋果/);assert.match(b.html,/用手機拍照/);
+  b.action('suitcase-use',{id:finalChoice});b.action('suitcase-next');
+  b=harness(b.stored);b.render('#suitcase');assert.equal(b.state.suitcase.phase,'done');assert.match(b.html,finalChoice==='phone'?/帶回一張旅行照片/:/公園裡的小野餐/);
+  assert.doesNotMatch(b.html,/撐傘走過雨天|戴帽子逛公園/);assert.equal(b.records.length,0);assert.deepEqual(clone(b.state.courses),{});
+ }
+});
+test('Study migrates a legacy completed suitcase without replaying the route',()=>{
+ const b=harness({suitcase:{version:1,phase:'done',packed:['umbrella','water','hat'],selected:'hat',scene:2,used:true}});
+ b.render('#suitcase');assert.equal(b.state.suitcase.version,2);assert.equal(b.state.suitcase.phase,'done');assert.match(b.html,/喝水休息/);assert.match(b.html,/撐傘走過雨天/);
 });
