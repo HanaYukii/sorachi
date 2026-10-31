@@ -65,7 +65,7 @@ const Study = (() => {
     return active;
   }
   function sanitize(saved) {
-    const state = { cafe: Cafe.restore(saved?.cafe), crossword: Crossword.restore(saved?.crossword), drill: Drill.restore(saved?.drill, drillPool), script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt), grammarReview: {}, grammarReviewSession: null, lastGrammarId: null };
+    const state = { suitcase: Suitcase.restore(saved?.suitcase), cafe: Cafe.restore(saved?.cafe), crossword: Crossword.restore(saved?.crossword), drill: Drill.restore(saved?.drill, drillPool), script: saved?.script === "k" ? "k" : "h", courses: {}, kanaReview: KanaPractice.sanitizeReview(saved?.kanaReview), reviewSession: null, reviewClearedAt: iso(saved?.reviewClearedAt), grammarReview: {}, grammarReviewSession: null, lastGrammarId: null };
     const review = KanaPractice.sanitize(saved?.reviewSession);
     if (review?.mode === 'review') state.reviewSession = review;
     for (const [id, course] of Object.entries(courses)) {
@@ -450,7 +450,7 @@ const Study = (() => {
       const back = travelReturn;
       travelReturn = null;
       travelShown = travelResults(back);
-      return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<div class="travel-search" role="search"><label for="travel-search">找詞或情境</label><input id="travel-search" type="search" value="${escape(travelQuery)}" placeholder="例如：結帳、Suica、寄放行李" autocomplete="off" enterkeyhint="search" maxlength="80"><p id="travel-status" class="visually-hidden" role="status" aria-live="polite"></p></div><div id="travel-results">${travelShown}</div><a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span class="favorites-count">${savedPhrases().length} 張收藏<span aria-hidden="true"> →</span></span></a>${Cafe.entry}${travelGroups()}`, "#home", "回首頁", true, "travel-catalog");
+      return wrap(`<h1 class="focus-heading" tabindex="-1">旅遊常用語</h1><p class="study-note">依情境找需要的詞。先記關鍵字，配合指物或出示畫面，通常就能讓對方了解意思；需要時再看完整說法。</p>${readingHelp()}<div class="travel-search" role="search"><label for="travel-search">找詞或情境</label><input id="travel-search" type="search" value="${escape(travelQuery)}" placeholder="例如：結帳、Suica、寄放行李" autocomplete="off" enterkeyhint="search" maxlength="80"><p id="travel-status" class="visually-hidden" role="status" aria-live="polite"></p></div><div id="travel-results">${travelShown}</div><a class="course-row favorites-entry" href="#travel/favorites"><strong>我的常用語</strong><span class="favorites-count">${savedPhrases().length} 張收藏<span aria-hidden="true"> →</span></span></a>${Cafe.entry}${Suitcase.entry}${travelGroups()}`, "#home", "回首頁", true, "travel-catalog");
     }
     const item = travelItem(id), found = travelFound;
     travelFound = null;
@@ -1016,6 +1016,7 @@ const Study = (() => {
   function render(hash) {
     // The opened search result gets focus only when coming back from the travel cards, not on a later visit.
     if (!hash.startsWith("#travel")) travelReturn = null;
+    if (hash === "#suitcase") return wrap(Suitcase.render(state().suitcase || (state().suitcase = Suitcase.create()), inlineAudio), "#travel", "回旅遊常用語", true, "suitcase-page");
     if (hash === "#cafe") return wrap(Cafe.render(state().cafe || (state().cafe = Cafe.create()), inlineAudio), "#travel", "回旅遊常用語", true, "cafe-page");
     if (hash === "#crossword") return crosswordPage();
     if (hash === "#kana") return kanaPage();
@@ -1195,6 +1196,18 @@ const Study = (() => {
     }
     if (action === "study-line-audio") {
       if (button.dataset.spoken && /^line-\d+$/.test(button.dataset.status || "")) say(button.dataset.spoken, `[data-audio-for="${button.dataset.status}"]`, button);
+      return true;
+    }
+    if(action.startsWith("study-suitcase-") && Routes.current()==="#suitcase") {
+      const game=state().suitcase, verb=action.slice('study-suitcase-'.length), before=game.phase;
+      let message,focus='.trip-status';
+      if(verb==='again' && game.phase==='done'){state().suitcase=Suitcase.create();message='';focus='.focus-heading';}
+      else {message=Suitcase.act(game,verb,button.dataset.id);if(message===null)return true;
+        if(verb==='toggle')focus=`[data-action="study-suitcase-toggle"][data-id="${game.selected}"]`;
+        if(game.phase!==before||verb==='next'||(verb==='use'&&game.used))focus='.focus-heading';
+      }
+      stopAudio();save();redraw(focus);
+      const status=document.querySelector('.trip-status');if(status){status.textContent=message;if(message&&focus==='.trip-status')status.scrollIntoView?.({block:'nearest'});}
       return true;
     }
     if (action.startsWith("study-cafe-") && Routes.current()==="#cafe") {
