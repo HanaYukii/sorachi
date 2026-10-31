@@ -1604,3 +1604,14 @@ test('Study migrates a legacy completed suitcase without replaying the route',()
  const b=harness({suitcase:{version:1,phase:'done',packed:['umbrella','water','hat'],selected:'hat',scene:2,used:true}});
  b.render('#suitcase');assert.equal(b.state.suitcase.version,2);assert.equal(b.state.suitcase.phase,'done');assert.match(b.html,/喝水休息/);assert.match(b.html,/撐傘走過雨天/);
 });
+
+test('cafe free mixing and mode switches persist both drafts, recipes and actual open-order receipts',()=>{
+ let b=harness();b.render('#cafe');b.state.cafe.orders=[12,14,17];
+ b.action('cafe-pick',{group:'drink',id:'tea'});b.action('cafe-mode',{mode:'free'});
+ for(const [group,id] of Object.entries({drink:'coffee',temp:'hot',count:'three'}))b.action('cafe-pick',{group,id});
+ b.action('cafe-serve');assert.match(b.html,/收進你的小菜單了/);assert.equal(b.stored.cafe.recipes.length,1);
+ b=harness(b.stored);b.render('#cafe');assert.match(b.html,/我的小菜單 · 1 種/);b.action('cafe-mode',{mode:'orders'});assert.equal(b.state.cafe.selected.drink,'tea');
+ b.action('cafe-pick',{group:'temp',id:'cold'});b.action('cafe-pick',{group:'count',id:'two'});b.action('cafe-serve');assert.equal(b.state.cafe.served,true);assert.match(b.html,/冰的紅茶，兩份/);
+ assert.deepEqual(clone(b.state.cafe.receipts[0]),{drink:'tea',temp:'cold',count:'two'});assert.equal(b.records.length,0);assert.deepEqual(clone(b.state.courses),{});
+ b.action('cafe-mode',{mode:'free'});b.action('cafe-recipe',{id:String(b.state.cafe.recipes[0])});assert.equal(b.state.cafe.free.served,false);assert.equal(b.state.cafe.selected.drink,'tea');
+});
