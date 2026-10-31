@@ -464,3 +464,11 @@ test('crossword backup restores into empty progress and keeps an existing local 
  const reloaded=setup(Object.fromEntries(target.map));
  assert.equal(reloaded.store.readProgress().study.crossword.boardId,'basic-2');
 });
+
+test('cafe backup imports into empty state without replacing an existing local round',()=>{
+ const source=setup(),p=source.store.readProgress();p.study={cafe:{version:1,orders:[0,1,2],index:0,selected:{drink:'coffee'},served:false,roman:false}};source.store.writeProgress(p);
+ const target=setup(),empty=target.store.readProgress();empty.study={cafe:null};target.store.writeProgress(empty);
+ assert.equal(target.store.importBackup(source.store.exportBackup()),true);assert.equal(target.store.readProgress().study.cafe.selected.drink,'coffee');
+ const local=target.store.readProgress();local.study.cafe.orders=[3,4,5];target.store.writeProgress(local);target.store.importBackup(source.store.exportBackup());
+ assert.equal(setup(Object.fromEntries(target.map)).store.readProgress().study.cafe.orders[0],3);
+});

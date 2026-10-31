@@ -42,6 +42,7 @@ function harness(saved, voices = [], history = [], options = {}) {
   vm.runInContext(readFileSync(new URL("../dist/routes.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   for(const file of ["drill-bank","drill"]) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`,import.meta.url),"utf8"),context);
+  vm.runInContext(readFileSync(new URL("../dist/cafe.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/crossword.js", import.meta.url), "utf8"), context);
   vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice; globalThis.moduleDrill = Drill; globalThis.moduleDrillPool = Drill.pool(Content.grammar,DrillBank.questions);`, context);
   const study = context.moduleStudy;
@@ -275,7 +276,7 @@ test('sanitization rejects malformed kana sessions, old versions and skipped una
   legacy.courses['h-a'].completedAt='2026-01-01T00:00:00Z';legacy.courses['h-a'].lastResult={firstCorrect:3,total:5};
   const clean=b.study.sanitize(legacy).courses['h-a'];assert.equal(clean.active,null);assert.equal(clean.lastResult.firstCorrect,3);assert.ok(clean.completedAt);
   const invalid=clone(b.stored);invalid.courses['h-a'].active.practice.questions[0].options[0]='unknown';assert.equal(b.study.sanitize(invalid).courses['h-a'].active,null);
-  assert.deepEqual(clone(b.study.sanitize(null)),{crossword:null,drill:{version:1,clearedAt:null,session:null},script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
+  assert.deepEqual(clone(b.study.sanitize(null)),{cafe:null,crossword:null,drill:{version:1,clearedAt:null,session:null},script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
 });
 
 test('old or malformed kana review rounds restart empty while completions and kana mistakes stay', () => {
@@ -1540,4 +1541,14 @@ test('crossword can check, hint, resume and finish without recording course scor
   assert.match(completed.html,/再玩一盤/);
   completed.action('crossword-next'); assert.equal(completed.stored.crossword.boardId,'basic-2');
   assert.deepEqual(clone(completed.stored.crossword.values),{});
+});
+
+test('cafe renders, saves selections, resumes and offers correction without course scores',()=>{
+ const b=harness();b.render('#cafe');assert.match(b.html,/雲朵點餐店/);
+ b.action('cafe-serve');assert.equal(b.state.cafe.served,false);
+ b.action('cafe-pick',{group:'drink',id:'coffee'});assert.equal(b.stored.cafe.selected.drink,'coffee');
+ const resumed=harness(b.stored);resumed.render('#cafe');assert.equal(resumed.state.cafe.selected.drink,'coffee');
+ resumed.action('cafe-roman');assert.match(resumed.html,/koohii/);
+ resumed.action('cafe-next');assert.equal(resumed.state.cafe.index,0);assert.equal(resumed.records.length,0);
+ assert.deepEqual(clone(resumed.state.courses),{});
 });

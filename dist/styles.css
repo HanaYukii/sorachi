@@ -1547,3 +1547,58 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 
 .crossword-current { grid-column: 1 / -1; text-align: center; font-size: 16px; font-weight: 600; margin: 0 0 6px; color: var(--purple-deep); }
 .crossword-current { width: max-content; max-width: calc(100vw - 80px); justify-self: center; }
+
+/* Cloud cafe uses the existing mascot, with a small shop counter and large touch choices. */
+.cafe-entry { margin: 18px 0; border: 2px solid #e5aa82; background: #fff1e4; }
+.cafe-layout { display:grid;grid-template-columns:minmax(240px,.85fr) minmax(340px,1.4fr);gap:24px;align-items:start; }
+.cafe-customer { position:sticky;top:12px;border:2px solid #ba9ed1;border-radius:22px;background:#f0e9f8;text-align:center;overflow:hidden; }
+.cafe-awning { height:24px;background:repeating-linear-gradient(90deg,#ddc9ee 0 32px,#fff8ee 32px 64px);border-bottom:3px solid #ba9ed1; }
+.cafe-ticket { font-size:16px;font-weight:700;margin:12px; }
+.cafe-customer img { width:160px;height:160px;object-fit:contain; }
+.cafe-bubble { margin:8px 16px;padding:14px;border:2px solid #c7b2db;border-radius:16px;background:white;font-size:18px; }
+.cafe-bubble p { margin:5px 0 0;font-size:22px;font-weight:700; }
+.cafe-tray { background:#fff0e2;padding:14px;margin:16px 0 0;border-top:2px solid #e5aa82;font-size:16px; }
+.cafe-group { border:2px solid #9dc3cc;background:#edf7f8;border-radius:16px;padding:12px;margin:12px 0 18px;min-width:0; }
+.cafe-group legend { font-size:18px;font-weight:700;padding:0 8px; }
+.cafe-options { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px; }
+.cafe-group:first-of-type .cafe-options,.cafe-group:nth-of-type(2) .cafe-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.cafe-option { min-width:0;text-align:center; }
+.cafe-option > button { width:100%;min-height:104px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 5px;border:2px solid #b3c8cc;border-radius:14px;background:white;color:var(--ink);font-size:16px; }
+.cafe-option > button[aria-pressed="true"] { border:3px solid #76528d;background:#f0e7f8;box-shadow:0 0 0 2px #d9c6e7; }
+.cafe-option > button[aria-pressed="true"] strong::before { content:'✓ '; }
+.cafe-option strong { font-size:20px;overflow-wrap:anywhere; }
+.cafe-option small { font-size:14px; }
+.cafe-icon { font-size:27px;line-height:1.2; }
+.cafe-option .audio-button { min-width:44px;min-height:44px;width:44px;height:44px;margin-top:5px; }
+.cafe-submit { padding:12px;border:2px solid #e5aa82;border-radius:14px;background:#fff0e2; }
+.cafe-submit .primary { width:100%;min-height:48px; }
+.cafe-status { margin:10px 0 0;font-size:17px;line-height:1.6; }
+.cafe-status:empty { display:none; }
+.cafe-recap { padding:20px;border:2px solid #9dc3cc;border-radius:18px;background:#edf7f8; }
+.cafe-recap h2 { margin-top:0; }
+.cafe-happy img { animation:cafe-pop .5s ease-out; }
+@keyframes cafe-pop { 50% { transform:translateY(-10px) rotate(-5deg); } }
+@media(prefers-reduced-motion:reduce) { .cafe-happy img { animation:none; } }
+@media(max-width:700px) {
+ .cafe-layout { grid-template-columns:minmax(0,1fr);gap:12px; }
+ .cafe-customer { top:0;z-index:5;display:grid;grid-template-columns:64px minmax(0,1fr);padding:8px;gap:4px;overflow:visible; }
+ .cafe-awning { display:none; }
+ .cafe-ticket { grid-column:1/-1;margin:0;font-size:14px; }
+ .cafe-customer img { width:64px;height:64px;align-self:center; }
+ .cafe-bubble { margin:0;padding:7px;font-size:14px; }
+ .cafe-bubble p { font-size:18px;margin:2px 0; }
+ .cafe-tray { grid-column:1/-1;margin:0;padding:6px;font-size:14px;border-radius:8px; }
+ .cafe-group { padding:9px; }
+ .cafe-options { gap:7px; }
+ .cafe-option strong { font-size:18px; }
+ .cafe-page h1 { font-size:28px; }
+ .cafe-option > button { scroll-margin-top:180px; }
+}
+.cafe-customer img { display:block;margin-inline:auto; }
+@media(min-width:1000px) {
+ .cafe-layout { grid-template-columns:minmax(240px,.7fr) minmax(560px,1.5fr); }
+ .cafe-workspace { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
+ .cafe-workspace > .text-button,.cafe-group:nth-of-type(3),.cafe-submit,.cafe-recap { grid-column:1/-1; }
+ .cafe-workspace > .text-button { justify-self:start; }
+ .cafe-group { margin:0; }
+}

@@ -67,7 +67,7 @@ function studyHarness(saved, history = []) {
   const sandbox = vm.createContext({ console, location, window: {}, document: {
     querySelector(selector) { return selector === '#app' ? app : node; }, querySelectorAll() { return []; },
   } });
-  for (const file of ['content', 'drill-bank', 'drill', 'kana-practice', 'routes', 'navigation', 'crossword', 'study']) {
+  for (const file of ['content', 'drill-bank', 'drill', 'kana-practice', 'routes', 'navigation', 'crossword', 'cafe', 'study']) {
     vm.runInContext(readFileSync(new URL(`../dist/${file}.js`, import.meta.url), 'utf8'), sandbox);
   }
   const { S, P } = vm.runInContext('({S:Study,P:KanaPractice})', sandbox);

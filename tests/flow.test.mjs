@@ -297,6 +297,7 @@ function browser({
   for (const file of ["content.js", "drill-bank.js", "drill.js", "storage.js", "kana-practice.js", "kana-hints.js"]) vm.runInContext(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/routes.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
+  vm.runInContext(readFileSync(new URL("../dist/cafe.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/crossword.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/study.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/diagnostics.js", import.meta.url), "utf8"), context);
