@@ -1545,8 +1545,7 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
   .crossword-controls p { margin: 6px 0; }
 }
 
-.crossword-current { grid-column: 1 / -1; text-align: center; font-size: 16px; font-weight: 600; margin: 0 0 6px; color: var(--purple-deep); }
-.crossword-current { width: max-content; max-width: calc(100vw - 80px); justify-self: center; }
+.crossword-current { grid-column: 1 / -1; text-align: center; font-size: 16px; font-weight: 600; margin: 0 0 6px; color: var(--purple-deep); width: max-content; max-width: calc(100vw - 80px); justify-self: center; }
 
 /* Cloud cafe uses the existing mascot, with a small shop counter and large touch choices. */
 .cafe-entry { margin: 18px 0; border: 2px solid #e5aa82; background: #fff1e4; }
@@ -1554,7 +1553,7 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .cafe-customer { position:sticky;top:12px;border:2px solid #ba9ed1;border-radius:22px;background:#f0e9f8;text-align:center;overflow:hidden; }
 .cafe-awning { height:24px;background:repeating-linear-gradient(90deg,#ddc9ee 0 32px,#fff8ee 32px 64px);border-bottom:3px solid #ba9ed1; }
 .cafe-ticket { font-size:16px;font-weight:700;margin:12px; }
-.cafe-customer img { width:160px;height:160px;object-fit:contain; }
+.cafe-customer img { display:block;margin-inline:auto;width:160px;height:160px;object-fit:contain; }
 .cafe-bubble { margin:8px 16px;padding:14px;border:2px solid #c7b2db;border-radius:16px;background:white;font-size:18px; }
 .cafe-bubble p { margin:5px 0 0;font-size:22px;font-weight:700; }
 .cafe-tray { background:#fff0e2;padding:14px;margin:16px 0 0;border-top:2px solid #e5aa82;font-size:16px; }
@@ -1594,7 +1593,6 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
  .cafe-page h1 { font-size:28px; }
  .cafe-option > button { scroll-margin-top:180px; }
 }
-.cafe-customer img { display:block;margin-inline:auto; }
 @media(min-width:1000px) {
  .cafe-layout { grid-template-columns:minmax(240px,.7fr) minmax(560px,1.5fr); }
  .cafe-workspace { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px; }
@@ -1622,7 +1620,7 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .trip-bag { display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:12px;background:#fff0df;border-top:2px solid #d7b58c; }
 .trip-bag-label { width:100%;font-weight:700; }
 .trip-bag-item { display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center;border:1px solid #d7b58c;background:white;border-radius:10px;padding:6px;font-size:16px; }
-.trip-bag-item .text-button { min-height:44px; }
+button.trip-bag-item { min-height:44px;color:var(--ink); }
 .trip-work { min-width:0;padding:18px;border:2px solid #bba5d0;border-radius:20px;background:white; }
 .trip-work h2 { font-size:22px;margin-top:0; }
 .trip-shelf { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px; }
@@ -1647,7 +1645,7 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
  .trip-landscape { height:80px;align-self:center; }.trip-landscape img{width:75px;height:75px;}
  .trip-weather{font-size:24px;right:0;}.trip-request{margin:4px;padding:7px;font-size:16px;}
  .trip-bag{grid-column:1/-1;padding:5px;gap:5px;border-radius:10px;}.trip-bag-label{font-size:14px;}
- .trip-bag-item{font-size:14px;padding:2px 5px;}.trip-bag-item .text-button{font-size:14px;padding:4px;}
+ .trip-bag-item{font-size:14px;padding:2px 5px;}
  .trip-prop{font-size:33px;}.prop-hat{top:8px;}.prop-umbrella{font-size:48px;top:0;}.prop-water{font-size:26px;bottom:0;}
  .trip-work{padding:12px;}.trip-work h2{font-size:20px;}.trip-shelf{grid-template-columns:repeat(2,minmax(0,1fr));}
  .trip-use-list{gap:6px;}.trip-use-item>button{padding:8px 2px;}.trip-use-item strong[lang]{font-size:19px;}
@@ -1684,8 +1682,26 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 .walk-photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:20px 0;}.walk-photo{padding:10px;border:1px solid #d2c8db;border-radius:10px;background:#fffaf4;}.walk-print>span{font-size:70px;}.walk-photo .spoken-line{margin-top:16px;}.walk-photo .spoken-line>div>span{display:block;}
 @media(max-width:700px){
  .games-intro{gap:12px;}.games-intro img{width:100px;height:104px;}.games-grid{grid-template-columns:1fr;gap:14px;}.game-card{padding:14px;gap:12px;}.game-card img{width:80px;height:85px;}.game-card h2{font-size:21px;}
- .walk-layout{grid-template-columns:1fr;gap:12px;}.walk-park{height:320px;}.walk-object-art{font-size:44px;}.object-tree .walk-object-art{font-size:65px;}.walk-object{min-width:58px;min-height:64px;padding:3px;}.walk-cloud{width:65px;height:68px;left:40%;}.walk-camera{padding:12px;}.walk-view{aspect-ratio:2.8;}.walk-view>span{font-size:64px;}.walk-wishlist{gap:8px;font-size:15px;}.walk-photos{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}.walk-album{padding:12px;}.walk-print>span{font-size:52px;}.walk-photo .spoken-line{flex-wrap:wrap;}.photo-walk-page h1{font-size:28px;}
+ .walk-layout{grid-template-columns:1fr;gap:12px;}.walk-park{height:320px;}.walk-object-art{font-size:44px;}.object-tree .walk-object-art{font-size:65px;}.walk-object{min-width:58px;min-height:64px;padding:3px;}.walk-cloud{width:65px;height:68px;left:40%;}.walk-camera{padding:12px;}.walk-view{aspect-ratio:2.8;}.walk-view>span{font-size:64px;}.walk-wishlist{gap:8px;font-size:15px;}.walk-photos{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}.walk-album{padding:12px;}.walk-print>span{font-size:52px;}.photo-walk-page h1{font-size:28px;}
 }
 @media(max-width:700px){
  .walk-photo .spoken-line { display:block; }.walk-photo strong { font-size:23px;white-space:nowrap; }.walk-photo .inline-audio { margin-top:8px; }
+}
+
+/* Game review: keep actions and feedback together on small screens. */
+.cafe-cups { display:flex;justify-content:center;gap:10px;min-height:48px;align-items:center;margin-bottom:8px; }
+.cafe-cup { position:relative;display:inline-flex;align-items:center;justify-content:center;width:52px;height:48px;border-radius:12px;background:white;border:2px solid #cdb18e; }
+.cafe-cup>span { font-size:31px;line-height:1; }.cafe-cup>small { position:absolute;right:-4px;top:-9px;font-size:20px; }
+.cafe-cup.cold { background:#e1f3fa;border-color:#87b5c8; }.cafe-cup.hot { background:#fff2df;border-color:#d9a576; }
+.cafe-empty { font-size:15px; }.cafe-group { scroll-margin-top:16px; }
+.cafe-fix { margin-top:8px;min-height:44px; }.cafe-fix[hidden] { display:none; }
+.trip-scene .trip-status { grid-column:1/-1;margin:6px;padding:8px;border-radius:10px;background:white;font-size:16px; }
+.crossword-reading strong { font-size:25px;letter-spacing:.18em; }.crossword-reading>span { font-weight:400; }
+@media(max-width:650px){
+ .cafe-group { scroll-margin-top:225px; }
+ .cafe-cups { min-height:34px;margin-bottom:4px;gap:8px; }.cafe-cup { width:38px;height:32px;border-radius:8px; }.cafe-cup>span{font-size:24px;}.cafe-cup>small{font-size:16px;top:-6px;}
+ .trip-scene .trip-status { margin:4px;padding:5px;font-size:14px;line-height:1.5; }
+}
+@media(max-height:500px) and (max-width:650px){
+ .cafe-customer,.trip-scene,.crossword-grid { position:static; }
 }

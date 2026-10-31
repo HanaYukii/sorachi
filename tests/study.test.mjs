@@ -12,6 +12,9 @@ function harness(saved, voices = [], history = [], options = {}) {
   let prefs = clone(options.preferences || {}), favorites = clone(options.favorites || []), localWriteBlocked = false;
   let html = '', focused = null, stored = null, currentState, pressed = null;
   const records = [], utterances = [], speechEvents = {};
+  const gameStatuses=Object.fromEntries(['.trip-status','.walk-status','.cafe-status'].map(selector=>[selector,{
+    textContent:'', focus(){if(this.textContent)focused=selector;},scrollIntoView(){scrolls++;},
+  }]));
   const status = { textContent: '' };
   let renders = 0, scrolls = 0, saves = 0;
   const timers = new Map(); let timerId = 0;
@@ -23,12 +26,12 @@ function harness(saved, voices = [], history = [], options = {}) {
   const app = {
     get innerHTML() { return html; },
     set innerHTML(value) {
-      html = value; renders++;
+      html = value; renders++; for(const node of Object.values(gameStatuses))node.textContent='';
       answerNodes = [...value.matchAll(/data-action="study-answer" data-choice="(\d+)"/g)].map(m => { const node = makeNode(); node.dataset.choice = m[1]; node.mark = makeNode(); return node; });
     },
-    querySelector(selector) { return { focus() { focused = selector; } }; },
+    querySelector(selector) { return gameStatuses[selector] || { focus() { focused = selector; } }; },
   };
-  const document = { querySelectorAll() { return answerNodes; }, querySelector(selector) { if (selector === '.study-feedback') return feedback; if (selector === '[data-action="study-next"]') return next; if (selector === '.look-back-slot') return slot; return selector === '#app' ? app : (selector === '.study-audio-status' || selector.startsWith('[data-audio-for=')) ? status : null; } };
+  const document = { querySelectorAll() { return answerNodes; }, querySelector(selector) { if(gameStatuses[selector])return gameStatuses[selector]; if (selector === '.study-feedback') return feedback; if (selector === '[data-action="study-next"]') return next; if (selector === '.look-back-slot') return slot; return selector === '#app' ? app : (selector === '.study-audio-status' || selector.startsWith('[data-audio-for=')) ? status : null; } };
   const location = { hash: '#kana' };
   const speechSynthesis = { speaking: false, pending: false,
     getVoices() { voiceReads++; return voices; },
@@ -65,7 +68,7 @@ function harness(saved, voices = [], history = [], options = {}) {
     history: () => history, footer: () => '<footer>footer</footer>', warning: () => '', go: render,
   });
   return {
-    study, drillEngine: context.moduleDrill, drillPool: context.moduleDrillPool, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, render, feedback, next, slot, speechSynthesis,
+    study, drillEngine: context.moduleDrill, drillPool: context.moduleDrillPool, loadHints() { vm.runInContext(readFileSync(new URL('../dist/kana-hints.js', import.meta.url), 'utf8'),context); }, practice: context.modulePractice, content: context.moduleContent, records, utterances, status, gameStatuses, render, feedback, next, slot, speechSynthesis,
     get preferences() { return clone(prefs); }, get favorites() { return clone(favorites); }, blockLocalWrites() { localWriteBlocked = true; },
     get answers() { return answerNodes; }, get renders() { return renders; }, get saves() { return saves; }, get scrolls() { return scrolls; }, flushTimers() { const jobs = [...timers.values()]; timers.clear(); jobs.forEach(fn => fn()); },
     // The pressed button keeps its classes, so a test can see the speaker that is playing.
@@ -1569,4 +1572,18 @@ test('photo walk UI saves freely selected photos and shows a persistent album wi
  const b=harness();b.render('#photo-walk');b.action('walk-look',{id:'bird'});b.action('walk-snap');assert.deepEqual(clone(b.stored.photoWalk.photos),['bird']);
  const c=harness(b.stored);c.render('#photo-walk');c.action('walk-album');assert.match(c.html,/とり/);c.action('walk-roman');assert.match(c.html,/tori/);c.action('walk-park');assert.equal(c.records.length,0);assert.deepEqual(clone(c.state.courses),{});
  assert.match(c.render('#games'),/雲朵拍照散步/);for(const route of ['#cafe','#suitcase','#crossword'])assert.match(c.render(route),/回小遊戲/);
+});
+
+test('game feedback is filled before focusing a previously empty live status',()=>{
+ const b=harness();b.render('#cafe');b.action('cafe-serve');
+ assert.match(b.gameStatuses['.cafe-status'].textContent,/改好再送/);assert.equal(b.focused,'.cafe-status');
+ b.render('#suitcase');b.action('suitcase-depart');assert.match(b.gameStatuses['.trip-status'].textContent,/清單還需要/);assert.equal(b.focused,'.trip-status');
+ b.render('#photo-walk');b.action('walk-look',{id:'cat'});assert.equal(b.gameStatuses['.walk-status'].textContent,'');
+ b.action('walk-snap');assert.match(b.gameStatuses['.walk-status'].textContent,/拍好了/);assert.equal(b.focused,'.walk-status');
+});
+test('crossword beginners can reveal the complete written word without filling or grading it',()=>{
+ const b=harness();b.render('#crossword');b.action('crossword-roman');
+ assert.match(b.html,/<strong lang="ja">かさ<\/strong> · kasa/);assert.deepEqual(clone(b.state.crossword.values),{});
+ const reload=harness(b.stored);reload.render('#crossword');assert.match(reload.html,/可以照著填/);
+ assert.equal(reload.state.crossword.done,false);assert.equal(reload.records.length,0);
 });
