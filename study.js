@@ -1224,10 +1224,12 @@ const Study = (() => {
       if(verb==='again' && game.phase==='done'){state().suitcase=Suitcase.create();message='';focus='.focus-heading';}
       else {message=Suitcase.act(game,verb,button.dataset.id);if(message===null)return true;
         if(verb==='toggle')focus=`[data-action="study-suitcase-toggle"][data-id="${game.selected}"]`;
-        if(game.phase!==before||verb==='next'||(verb==='use'&&game.used))focus='.focus-heading';
+        if(game.phase!==before||verb==='next')focus='.focus-heading';
+        if(verb==='use'&&game.used)focus='.trip-work';
       }
       stopAudio();save();redraw(focus);
       gameMessage('.trip-status',message,focus==='.trip-status');
+      if(focus==='.trip-work')document.querySelector('.trip-work')?.scrollIntoView?.({block:'nearest'});
       return true;
     }
     if (action.startsWith("study-cafe-") && Routes.current()==="#cafe") {
