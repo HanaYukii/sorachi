@@ -1689,3 +1689,21 @@ summary:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; b
 @media(max-width:700px){
  .walk-photo .spoken-line { display:block; }.walk-photo strong { font-size:23px;white-space:nowrap; }.walk-photo .inline-audio { margin-top:8px; }
 }
+
+/* Game review: keep actions and feedback together on small screens. */
+.cafe-cups { display:flex;justify-content:center;gap:10px;min-height:48px;align-items:center;margin-bottom:8px; }
+.cafe-cup { position:relative;display:inline-flex;align-items:center;justify-content:center;width:52px;height:48px;border-radius:12px;background:white;border:2px solid #cdb18e; }
+.cafe-cup>span { font-size:31px;line-height:1; }.cafe-cup>small { position:absolute;right:-4px;top:-9px;font-size:20px; }
+.cafe-cup.cold { background:#e1f3fa;border-color:#87b5c8; }.cafe-cup.hot { background:#fff2df;border-color:#d9a576; }
+.cafe-empty { font-size:15px; }.cafe-group { scroll-margin-top:16px; }
+.cafe-fix { margin-top:8px;min-height:44px; }.cafe-fix[hidden] { display:none; }
+.trip-scene .trip-status { grid-column:1/-1;margin:6px;padding:8px;border-radius:10px;background:white;font-size:16px; }
+.crossword-reading strong { font-size:25px;letter-spacing:.18em; }.crossword-reading>span { font-weight:400; }
+@media(max-width:650px){
+ .cafe-group { scroll-margin-top:225px; }
+ .cafe-cups { min-height:34px;margin-bottom:4px;gap:8px; }.cafe-cup { width:38px;height:32px;border-radius:8px; }.cafe-cup>span{font-size:24px;}.cafe-cup>small{font-size:16px;top:-6px;}
+ .trip-scene .trip-status { margin:4px;padding:5px;font-size:14px;line-height:1.5; }
+}
+@media(max-height:500px) and (max-width:650px){
+ .cafe-customer,.trip-scene,.crossword-grid { position:static; }
+}
