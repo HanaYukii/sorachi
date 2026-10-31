@@ -472,3 +472,11 @@ test('cafe backup imports into empty state without replacing an existing local r
  const local=target.store.readProgress();local.study.cafe.orders=[3,4,5];target.store.writeProgress(local);target.store.importBackup(source.store.exportBackup());
  assert.equal(setup(Object.fromEntries(target.map)).store.readProgress().study.cafe.orders[0],3);
 });
+
+test('suitcase backup restores an empty trip and preserves an existing local trip',()=>{
+ const source=setup(),p=source.store.readProgress();p.study={suitcase:{version:1,phase:'pack',packed:['water'],selected:'water',scene:0,used:false}};source.store.writeProgress(p);
+ const target=setup(),empty=target.store.readProgress();empty.study={suitcase:null};target.store.writeProgress(empty);
+ assert.equal(target.store.importBackup(source.store.exportBackup()),true);assert.equal(target.store.readProgress().study.suitcase.packed[0],'water');
+ const local=target.store.readProgress();local.study.suitcase.packed=['hat'];target.store.writeProgress(local);target.store.importBackup(source.store.exportBackup());
+ assert.equal(setup(Object.fromEntries(target.map)).store.readProgress().study.suitcase.packed[0],'hat');
+});

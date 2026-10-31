@@ -42,6 +42,7 @@ function harness(saved, voices = [], history = [], options = {}) {
   vm.runInContext(readFileSync(new URL("../dist/routes.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/navigation.js", import.meta.url), "utf8"), context);
   for(const file of ["drill-bank","drill"]) vm.runInContext(readFileSync(new URL(`../dist/${file}.js`,import.meta.url),"utf8"),context);
+  vm.runInContext(readFileSync(new URL("../dist/suitcase.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/cafe.js", import.meta.url), "utf8"), context);
   vm.runInContext(readFileSync(new URL("../dist/crossword.js", import.meta.url), "utf8"), context);
   vm.runInContext(`${source}\nglobalThis.moduleStudy = Study; globalThis.moduleContent = Content; globalThis.modulePractice = KanaPractice; globalThis.moduleDrill = Drill; globalThis.moduleDrillPool = Drill.pool(Content.grammar,DrillBank.questions);`, context);
@@ -276,7 +277,7 @@ test('sanitization rejects malformed kana sessions, old versions and skipped una
   legacy.courses['h-a'].completedAt='2026-01-01T00:00:00Z';legacy.courses['h-a'].lastResult={firstCorrect:3,total:5};
   const clean=b.study.sanitize(legacy).courses['h-a'];assert.equal(clean.active,null);assert.equal(clean.lastResult.firstCorrect,3);assert.ok(clean.completedAt);
   const invalid=clone(b.stored);invalid.courses['h-a'].active.practice.questions[0].options[0]='unknown';assert.equal(b.study.sanitize(invalid).courses['h-a'].active,null);
-  assert.deepEqual(clone(b.study.sanitize(null)),{cafe:null,crossword:null,drill:{version:1,clearedAt:null,session:null},script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
+  assert.deepEqual(clone(b.study.sanitize(null)),{suitcase:null,cafe:null,crossword:null,drill:{version:1,clearedAt:null,session:null},script:'h',courses:{},kanaReview:{},reviewSession:null,reviewClearedAt:null,grammarReview:{},grammarReviewSession:null,lastGrammarId:null});
 });
 
 test('old or malformed kana review rounds restart empty while completions and kana mistakes stay', () => {
@@ -1551,4 +1552,14 @@ test('cafe renders, saves selections, resumes and offers correction without cour
  resumed.action('cafe-roman');assert.match(resumed.html,/koohii/);
  resumed.action('cafe-next');assert.equal(resumed.state.cafe.index,0);assert.equal(resumed.records.length,0);
  assert.deepEqual(clone(resumed.state.courses),{});
+});
+
+test('suitcase UI resumes packing, travels through three scenes and never records course scores',()=>{
+ let b=harness();b.render('#suitcase');b.action('suitcase-toggle',{id:'umbrella'});
+ b=harness(b.stored);b.render('#suitcase');assert.deepEqual(clone(b.state.suitcase.packed),['umbrella']);
+ for(const id of ['water','hat']){b.action('suitcase-toggle',{id});}
+ b.action('suitcase-depart');assert.match(b.html,/公園出太陽了/);
+ for(const id of ['hat','umbrella','water']){b.action('suitcase-use',{id});assert.match(b.html,/trip-prop/);b.action('suitcase-next');}
+ assert.equal(b.stored.suitcase.phase,'done');assert.equal(b.records.length,0);assert.deepEqual(clone(b.state.courses),{});
+ b.action('suitcase-again');assert.equal(b.stored.suitcase.phase,'pack');assert.deepEqual(clone(b.stored.suitcase.packed),[]);
 });
