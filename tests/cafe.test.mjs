@@ -29,3 +29,11 @@ test('cafe sanitizes corrupt data and refuses false completion',()=>{
  assert.equal(C.choose(s,'unknown','one'),false);
  assert.match(C.render(s,()=>''),/看客人的中文需求/);
 });
+test('tray reflects the actual drink, temperature and count before serving and after reload',()=>{
+ const s=C.create();C.choose(s,'drink','tea');C.choose(s,'temp','cold');C.choose(s,'count','three');
+ const html=C.render(C.restore(copy(s)),()=>'');
+ assert.equal((html.match(/class="cafe-cup cold"/g)||[]).length,3);
+ assert.match(html,/aria-label="正在準備的托盤"/);assert.match(html,/托盤：紅茶 · 冰的 · 三份/);
+ C.choose(s,'count','one');C.choose(s,'temp','hot');
+ assert.equal((C.render(s,()=>'').match(/class="cafe-cup hot"/g)||[]).length,1);
+});
